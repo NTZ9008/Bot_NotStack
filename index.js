@@ -1,0 +1,399 @@
+const { Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent } = require('discord.js');
+const dotenv = require('dotenv');
+const fs = require('fs');
+const path = require('path');
+const schedule = require("node-schedule");
+const { getWeatherEmbed } = require("./commands/weather.js");
+
+dotenv.config();
+
+// ==========================================
+// ⚙️ CONFIG & SETTINGS (ตั้งค่าระบบ)
+// ==========================================
+const LOG_CHANNEL_ID = '1369338812819312731'; // ห้องสำหรับส่ง Log ทั่วไป
+const ALERT_CHANNEL_ID = '1333089825376436295';      // ห้องสำหรับแจ้งเตือนความปลอดภัย
+const GENERAL_CHANNEL_ID = '1273939427575595184'; // ห้องสำหรับส่งพยากรณ์อากาศ
+
+// 🛡️ Security Config (ตั้งค่าความปลอดภัย)
+const SPAM_LIMIT = 6;       // จำนวนข้อความสูงสุด
+const SPAM_TIME = 5000;     // ภายใน 5 วินาที
+// Voice Spam Map (เก็บข้อมูลคนแกล้งลากเพื่อน)
+const voiceSpamMap = new Map();
+
+// ตัวแปรเก็บสถานะชั่วคราว (Memory Cache)
+const spamMap = new Map();
+
+// ==========================================
+// 🤖 CLIENT SETUP
+// ==========================================
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates
+    ]
+});
+
+// โหลดคำหยาบ (Bad Words)
+const badWordsFile = path.join(__dirname, 'badWords.json');
+let badWordsSet = new Set();
+if (fs.existsSync(badWordsFile)) {
+    try {
+        const badWordsData = JSON.parse(fs.readFileSync(badWordsFile, 'utf8'));
+        badWordsSet = new Set(badWordsData);
+    } catch (err) {
+        console.error("Error reading badWords.json:", err);
+    }
+}
+
+// ==========================================
+// 1️⃣ COMMAND HANDLER & READY EVENT
+// ==========================================
+client.commands = new Collection();
+const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
+    client.commands.set(command.data.name, command);
+}
+
+client.once(Events.ClientReady, () => {
+    console.log(`✅ Logged in as ${client.user.tag}`);
+    console.log(`🛡️ Security Systems: Active`);
+
+    // ตั้งเวลาส่งพยากรณ์อากาศ 7 โมงเช้า
+    schedule.scheduleJob("0 7 * * *", async () => {
+        const channel = await client.channels.fetch(GENERAL_CHANNEL_ID);
+        if (!channel) return console.log("❌ ไม่พบช่องทั่วไปสำหรับพยากรณ์อากาศ");
+
+        const embed = await getWeatherEmbed("Salaya,TH", process.env.OPENWEATHER_KEY);
+        if (!embed) return channel.send("❌ ไม่สามารถดึงข้อมูลอากาศได้ตอนนี้");
+
+        channel.send({ content: "☀️ พยากรณ์อากาศวันนี้", embeds: [embed] });
+    });
+});
+
+// Interaction Handler (Slash Commands)
+client.on(Events.InteractionCreate, async interaction => {
+    try {
+        if (interaction.isChatInputCommand()) {
+            const command = client.commands.get(interaction.commandName);
+            if (!command) return;
+            await command.execute(interaction);
+        }
+        if (interaction.isStringSelectMenu() || interaction.isModalSubmit()) {
+            for (const cmd of client.commands.values()) {
+                if (cmd.componentHandler) await cmd.componentHandler(interaction);
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (!interaction.replied && !interaction.deferred) {
+            await interaction.reply({ content: "❌ มีบางอย่างผิดพลาด", flags: 64 });
+        }
+    }
+});
+
+// ==========================================
+// 2️⃣ SECURITY: BITRATE MONITOR (จับตาดูการปรับ Bitrate)
+// ==========================================
+client.on('channelUpdate', async (oldChannel, newChannel) => {
+    if (oldChannel.type === ChannelType.GuildVoice && oldChannel.bitrate !== newChannel.bitrate) {
+        try {
+            await new Promise(r => setTimeout(r, 1000));
+            
+            const fetchedLogs = await newChannel.guild.fetchAuditLogs({
+                limit: 1,
+                type: AuditLogEvent.ChannelUpdate 
+            });
+            
+            const log = fetchedLogs.entries.first();
+            let executor = "ไม่ทราบ";
+            // ✅ Fix: เพิ่มการเช็ค log.target ก่อนเรียกใช้
+            if (log && log.target && log.target.id === newChannel.id && (Date.now() - log.createdTimestamp) < 10000) {
+                executor = log.executor ? log.executor.tag : "ไม่ทราบ";
+            }
+
+            const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+            if (alertChannel) {
+                const embed = {
+                    color: 0xFFA500, // สีส้ม
+                    title: '⚠️ มีการเปลี่ยนแปลง Bitrate ห้องเสียง!',
+                    fields: [
+                        { name: '🔊 ห้อง', value: `${newChannel.name}`, inline: true },
+                        { name: '👤 ผู้ปรับเปลี่ยน', value: `${executor}`, inline: true },
+                        { name: '📉 เดิม', value: `${oldChannel.bitrate / 1000} kbps`, inline: true },
+                        { name: '📈 ใหม่', value: `${newChannel.bitrate / 1000} kbps`, inline: true },
+                    ],
+                    timestamp: new Date(),
+                    footer: { text: 'Security Monitor' }
+                };
+                alertChannel.send({ embeds: [embed] });
+            }
+        } catch (error) {
+            console.error("❌ Error Bitrate Monitor:", error);
+        }
+    }
+});
+
+// ==========================================
+// 3️⃣ MESSAGE HANDLER (รวม Log, Anti-Spam, Chat Logic)
+// ==========================================
+client.on('messageCreate', async (msg) => {
+    if (msg.author.bot) return;
+
+    // --- A. System Log ---
+    const timestamp = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    const date = new Date().toISOString().split('T')[0];
+    const logFile = path.join(__dirname, 'logs', `${date}.log`);
+
+    if (!fs.existsSync(path.join(__dirname, 'logs'))) fs.mkdirSync(path.join(__dirname, 'logs'));
+    
+    const logLine = `[${timestamp}] #${msg.channel.name} (${msg.author.tag}): ${msg.content}\n`;
+    fs.appendFile(logFile, logLine, (err) => { if (err) console.error('❌ Log Error:', err); });
+    console.log(logLine.trim());
+
+    // --- B. Security: Anti-Spam ---
+    if (msg.guild) {
+        const userData = spamMap.get(msg.author.id) || { count: 0, lastMsg: 0, timer: null };
+        const now = Date.now();
+
+        if (now - userData.lastMsg > SPAM_TIME) {
+            userData.count = 0;
+            clearTimeout(userData.timer);
+        }
+
+        userData.count++;
+        userData.lastMsg = now;
+        spamMap.set(msg.author.id, userData);
+
+        if (userData.count >= SPAM_LIMIT) {
+            msg.delete().catch(() => {});
+            if (userData.count === SPAM_LIMIT) {
+                msg.channel.send(`⚠️ <@${msg.author.id}> ใจเย็นๆ ครับ! อย่าส่งข้อความรัวเกินไป`);
+                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+                if (alertChannel) alertChannel.send(`🚨 **Anti-Spam:** <@${msg.author.id}> กำลังสแปมในห้อง <#${msg.channel.id}>`);
+            }
+            return;
+        }
+    }
+
+    const contentLower = msg.content.toLowerCase();
+
+    // --- C. Filter: Bad Words ---
+    const foundBad = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
+    const extraBadWords = ['ค', 'ดอ', 'เย็ด']; 
+    const isHardcodedBad = extraBadWords.some(w => contentLower === w.toLowerCase());
+
+    if (foundBad || isHardcodedBad) {
+        msg.delete().catch(err => console.error('❌ Delete Error:', err));
+        msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ)`)
+            .then(m => setTimeout(() => m.delete(), 5000));
+        return;
+    }
+
+    // --- D. Auto Reply ---
+    if (msg.content === 'สวัสดีบอท') {
+        msg.reply(`สวัสดี <@${msg.author.id}> ครับ`);
+    } else if (msg.content === 'Hello bot') {
+        msg.reply(`Hello <@${msg.author.id}> 🙋‍♂️`);
+    } else if (msg.content.includes('กินข้าวยังบอท')) {
+        msg.reply(`กินแล้วครับคุณ <@${msg.author.id}>`);
+    } else if (msg.content.includes('หิวข้าว')) {
+        msg.reply(`ผมยังไม่หิวครับ แต่คุณหาอะไรทานด้วยนะครับ 🍛`);
+    } else if (msg.content.includes('ขอกำลังใจ')) {
+        const quotation = [
+            "ทำทุกอย่างให้ดีที่สุด แล้วความสำเร็จจะตามมาเองครับ 😊",
+            "วันนี้จะเป็นวันดีแน่นอน! 💪",
+            "ความฝันจะไม่เกิดขึ้นเลยถ้าไม่ลงมือทำ",
+            "เหนื่อยก็พักนะครับ แล้วลุยต่อ!"
+        ];
+        const randomReply = quotation[Math.floor(Math.random() * quotation.length)];
+        msg.reply(randomReply);
+    } else if (msg.content === 'จิบรี') {
+        msg.reply(`จิบรีครับนาย`);
+    }
+});
+
+// ==========================================
+// 4️⃣ VOICE STATE HANDLER (Anti-Drag & Log)
+// ==========================================
+client.on('voiceStateUpdate', async (oldState, newState) => {
+    const member = newState.member;
+    if (member.user.bot) return;
+    if (oldState.channelId && newState.channelId && oldState.channelId !== newState.channelId) {
+        
+        // 🚨 START ANTI-FORCE MOVE (กันโดนคนอื่นลาก) 🚨
+        try {
+            // รอ 1 วินาที เพื่อให้ Audit Log อัปเดต
+            await new Promise(r => setTimeout(r, 1000));
+
+            const fetchedLogs = await newState.guild.fetchAuditLogs({
+                limit: 5, 
+                type: AuditLogEvent.MemberMove
+            });
+
+            // STEP 1: หา Log ที่ตรงเป๊ะๆ
+            let log = fetchedLogs.entries.find(entry => 
+                entry.targetId === member.id && 
+                (Date.now() - entry.createdTimestamp) < 10000
+            );
+
+            // STEP 2: หา Log สำรอง
+            if (!log) {
+                log = fetchedLogs.entries.find(entry => 
+                    entry.executorId !== member.id && 
+                    (Date.now() - entry.createdTimestamp) < 3000
+                );
+            }
+
+            if (log) {
+                const executorId = log.executorId;
+                
+                // 🛑 กันบอทตีตัวเอง (สำคัญมาก)
+                if (executorId === client.user.id) return; 
+
+                const executorTag = log.executor?.tag || "Unknown";
+                const targetTag = member.user.tag;
+
+                // ถ้าคนทำไม่ใช่เจ้าตัว -> โดนแกล้ง!
+                if (executorId !== member.id) {
+                    console.log(`🚨 DETECTED: ${executorTag} dragged ${targetTag}`);
+
+                    // 1. ดึงกลับห้องเดิม
+                    if (oldState.channel) {
+                        try {
+                            await member.voice.setChannel(oldState.channelId);
+                            console.log(`🛡️ Auto-Return: ดึงกลับห้องเดิมสำเร็จ`);
+                        } catch (err) {
+                            console.log(`❌ ดึงกลับไม่ได้: ${err.message}`);
+                        }
+                    }
+
+                    // 2. จดบัญชีดำ (นับจำนวนครั้ง)
+                    const dragData = voiceSpamMap.get(executorId) || { count: 0, timer: null };
+                    dragData.count++;
+                    if (!dragData.timer) {
+                        dragData.timer = setTimeout(() => voiceSpamMap.delete(executorId), 15000);
+                    }
+                    voiceSpamMap.set(executorId, dragData);
+
+                    // 3. 📝 บันทึกลงไฟล์ .txt แทนการส่งเข้าแชท
+                    if (dragData.count >= 2) {
+                        const now = new Date();
+                        const timestamp = now.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+                        // ตั้งชื่อไฟล์เป็น abuse_report.log หรือรวมใน log รายวันก็ได้
+                        const logFile = path.join(__dirname, 'logs', `abuse_report.log`);
+
+                        if (!fs.existsSync(path.join(__dirname, 'logs'))) fs.mkdirSync(path.join(__dirname, 'logs'));
+
+                        const logMsg = `[${timestamp}] 🚨 ABUSE DETECTED: ${executorTag} (ID: ${executorId}) ลาก ${targetTag} (ID: ${member.id}) ไปมา ${dragData.count} ครั้ง\n`;
+
+                        fs.appendFile(logFile, logMsg, (err) => {
+                            if (err) console.error('❌ Error writing abuse log:', err);
+                            else console.log('📝 บันทึกพฤติกรรมเกรียนลงไฟล์เรียบร้อย');
+                        });
+                    }
+                    return; 
+                }
+            }
+
+        } catch (error) {
+            console.error("Anti-Force Move Error:", error);
+        }
+        // 🚨 END ANTI-FORCE MOVE 🚨
+    }
+
+    // --- Voice Log (บันทึกการเข้าออกปกติ) ---
+    const now = new Date();
+    const timestamp = now.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+    const logFile = path.join(__dirname, 'logs', `${now.toISOString().split('T')[0]}_history.log`);
+
+    if (!fs.existsSync(path.join(__dirname, 'logs'))) fs.mkdirSync(path.join(__dirname, 'logs'));
+
+    let action = '';
+    if (!oldState.channel && newState.channel) {
+        action = `✅ ${member.user.username} เข้าห้อง ${newState.channel.name}`;
+    } else if (oldState.channel && !newState.channel) {
+        action = `❌ ${member.user.username} ออกจากห้อง ${oldState.channel.name}`;
+    } else if (oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id) {
+        action = `🔄 ${member.user.username} ย้ายจากห้อง ${oldState.channel.name} ไปยัง ${newState.channel.name}`;
+    }
+
+    if (action) {
+        const logLine = `${timestamp} ⏰ ${action}\n`;
+        fs.appendFile(logFile, logLine, (err) => { if (err) console.error('Error logging voice:', err); });
+        try {
+            if (LOG_CHANNEL_ID) {
+                const logChannel = await client.channels.fetch(LOG_CHANNEL_ID);
+                if (logChannel) await logChannel.send(`📢 ${timestamp} ⏰ ${action}`);
+            }
+        } catch (error) { console.error("Send Log Error:", error); }
+    }
+});
+
+// ==========================================
+// 5️⃣ WELCOME / GOODBYE
+// ==========================================
+client.on(Events.GuildMemberAdd, member => {
+    const channel = member.guild.channels.cache.find(ch => ch.name === 'ยินดีต้อนรับ');
+    if (channel) channel.send(`🎉 ยินดีต้อนรับคุณ ${member.user.tag} เข้าสู่เซิร์ฟเวอร์!`);
+});
+
+client.on(Events.GuildMemberRemove, member => {
+    const channel = member.guild.channels.cache.find(ch => ch.name === 'out-member');
+    if (channel) channel.send(`📤 คุณ ${member.user.tag} ได้ออกจากเซิร์ฟเวอร์แล้ว`);
+});
+
+// ==========================================
+// 6️⃣ SECURITY: SERVER REGION MONITOR (จับตาดูการเปลี่ยนภูมิภาค)
+// ==========================================
+client.on('guildUpdate', async (oldGuild, newGuild) => {
+    if (oldGuild.rtcRegion !== newGuild.rtcRegion) {
+        try {
+            await new Promise(r => setTimeout(r, 1000));
+            const fetchedLogs = await newGuild.fetchAuditLogs({
+                limit: 1,
+                type: AuditLogEvent.GuildUpdate
+            });
+
+            const log = fetchedLogs.entries.first();
+            let executor = "ไม่ทราบ";
+
+            if (log && (Date.now() - log.createdTimestamp) < 10000) {
+                 executor = log.executor ? log.executor.tag : "ไม่ทราบ";
+            }
+
+            const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+            if (alertChannel) {
+                const oldRegion = oldGuild.rtcRegion || "Automatic (อัตโนมัติ)";
+                const newRegion = newGuild.rtcRegion || "Automatic (อัตโนมัติ)";
+
+                const embed = {
+                    color: 0xFF0000, // สีแดง
+                    title: '🌍 มีการเปลี่ยนแปลง Server Region!',
+                    description: 'มีคนเปลี่ยนที่ตั้งเซิร์ฟเวอร์ ซึ่งอาจทำให้ปิงสูงขึ้น',
+                    fields: [
+                        { name: '🏰 เซิร์ฟเวอร์', value: `${newGuild.name}`, inline: true },
+                        { name: '👤 ผู้เปลี่ยน', value: `${executor}`, inline: true },
+                        { name: '❌ เดิม', value: `${oldRegion}`, inline: true },
+                        { name: '✅ ใหม่', value: `${newRegion}`, inline: true },
+                    ],
+                    timestamp: new Date(),
+                    footer: { text: 'Security Monitor' }
+                };
+                // ส่งแจ้งเตือน
+                alertChannel.send({ embeds: [embed] });
+                
+                // (Optional) ถ้าอยากให้แจ้งเตือนแบบ Ping แอดมินด้วย ให้เปิดบรรทัดล่างนี้
+                // alertChannel.send(`⚠️ <@&ID_YOT_ADMIN> มีการเปลี่ยน Region ของเซิร์ฟเวอร์!`);
+            }
+
+        } catch (error) {
+            console.error("❌ Error Region Monitor:", error);
+        }
+    }
+});
+
+client.login(process.env.TOKEN);

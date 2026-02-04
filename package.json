@@ -1,0 +1,19 @@
+{
+  "name": "NotStack-Bot",
+  "version": "1.1.2 with Security Engine",
+  "description": "Bot for Discord NotStackOverflow Server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "AT Tech",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.2.2",
+    "node-fetch": "^3.3.2",
+    "node-schedule": "^2.1.1"
+  }
+}
