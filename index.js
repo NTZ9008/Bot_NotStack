@@ -347,51 +347,54 @@ client.on(Events.GuildMemberRemove, member => {
 });
 
 // ==========================================
-// 6️⃣ SECURITY: SERVER REGION MONITOR (จับตาดูการเปลี่ยนภูมิภาค)
+// 7️⃣ SECURITY: CHANNEL REGION MONITOR
 // ==========================================
-client.on('guildUpdate', async (oldGuild, newGuild) => {
-    if (oldGuild.rtcRegion !== newGuild.rtcRegion) {
+client.on('channelUpdate', async (oldChannel, newChannel) => {
+    // เช็คว่าเป็นห้องเสียงไหม + มีการเปลี่ยน Region ไหม
+    if (oldChannel.type === ChannelType.GuildVoice && oldChannel.rtcRegion !== newChannel.rtcRegion) {
+        console.log(`🌍 Channel Region Changed: ${oldChannel.rtcRegion} -> ${newChannel.rtcRegion}`);
+
         try {
             await new Promise(r => setTimeout(r, 1000));
-            const fetchedLogs = await newGuild.fetchAuditLogs({
+
+            // ดึง Audit Log ของการแก้ห้อง (ChannelUpdate)
+            const fetchedLogs = await newChannel.guild.fetchAuditLogs({
                 limit: 1,
-                type: AuditLogEvent.GuildUpdate
+                type: AuditLogEvent.ChannelUpdate
             });
 
             const log = fetchedLogs.entries.first();
             let executor = "ไม่ทราบ";
 
-            if (log && (Date.now() - log.createdTimestamp) < 10000) {
+            // เช็คว่าเป็น Log ของห้องนี้ + เกิดขึ้นเร็วๆ นี้
+            if (log && log.target.id === newChannel.id && (Date.now() - log.createdTimestamp) < 10000) {
                  executor = log.executor ? log.executor.tag : "ไม่ทราบ";
             }
 
             const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
             if (alertChannel) {
-                const oldRegion = oldGuild.rtcRegion || "Automatic (อัตโนมัติ)";
-                const newRegion = newGuild.rtcRegion || "Automatic (อัตโนมัติ)";
+                const oldReg = oldChannel.rtcRegion || "Automatic (อัตโนมัติ)";
+                const newReg = newChannel.rtcRegion || "Automatic (อัตโนมัติ)";
 
                 const embed = {
-                    color: 0xFF0000, // สีแดง
-                    title: '🌍 มีการเปลี่ยนแปลง Server Region!',
-                    description: 'มีคนเปลี่ยนที่ตั้งเซิร์ฟเวอร์ ซึ่งอาจทำให้ปิงสูงขึ้น',
+                    color: 0xFF4500, // สีส้มแดง
+                    title: '🌍 มีการเปลี่ยน Region ห้องเสียง!',
+                    description: `ห้อง **${newChannel.name}** ถูกเปลี่ยนโซนสัญญาณ`,
                     fields: [
-                        { name: '🏰 เซิร์ฟเวอร์', value: `${newGuild.name}`, inline: true },
+                        { name: '🔊 ห้อง', value: `<#${newChannel.id}>`, inline: true },
                         { name: '👤 ผู้เปลี่ยน', value: `${executor}`, inline: true },
-                        { name: '❌ เดิม', value: `${oldRegion}`, inline: true },
-                        { name: '✅ ใหม่', value: `${newRegion}`, inline: true },
+                        { name: '❌ เดิม', value: `${oldReg}`, inline: true },
+                        { name: '✅ ใหม่', value: `${newReg}`, inline: true },
                     ],
                     timestamp: new Date(),
                     footer: { text: 'Security Monitor' }
                 };
-                // ส่งแจ้งเตือน
-                alertChannel.send({ embeds: [embed] });
                 
-                // (Optional) ถ้าอยากให้แจ้งเตือนแบบ Ping แอดมินด้วย ให้เปิดบรรทัดล่างนี้
-                // alertChannel.send(`⚠️ <@&ID_YOT_ADMIN> มีการเปลี่ยน Region ของเซิร์ฟเวอร์!`);
+                alertChannel.send({ embeds: [embed] });
             }
 
         } catch (error) {
-            console.error("❌ Error Region Monitor:", error);
+            console.error("❌ Error Channel Region:", error);
         }
     }
 });
