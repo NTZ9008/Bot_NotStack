@@ -195,7 +195,7 @@ client.on('messageCreate', async (msg) => {
 
     // --- C. Filter: Bad Words ---
     const foundBad = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
-    const extraBadWords = ['ค', 'ดอ', 'เย็ด']; 
+    const extraBadWords = ['ค', 'ดอ', 'เย็ด', 'บ้า']; 
     const isHardcodedBad = extraBadWords.some(w => contentLower === w.toLowerCase());
 
     if (foundBad || isHardcodedBad) {
