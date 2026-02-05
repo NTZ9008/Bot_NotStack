@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const schedule = require("node-schedule");
 const { getWeatherEmbed } = require("./commands/weather.js");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
 
@@ -22,6 +23,17 @@ const voiceSpamMap = new Map();
 
 // ตัวแปรเก็บสถานะชั่วคราว (Memory Cache)
 const spamMap = new Map();
+
+// AIE
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// ตั้งค่าโควตา (Gemini Flash ให้ฟรีประมาณ 250 ครั้ง/วัน)
+const AI_DAILY_LIMIT = 250; 
+let aiUsage = {
+    date: new Date().toDateString(),
+    count: 0 
+};
 
 // ==========================================
 // 🤖 CLIENT SETUP
@@ -138,7 +150,7 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
 });
 
 // ==========================================
-// 3️⃣ MESSAGE HANDLER (รวม Log, Anti-Spam, Chat Logic)
+// 3️⃣ MESSAGE HANDLER (รวม Log, Anti-Spam, Chat Logic, AI)
 // ==========================================
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot) return;
@@ -193,7 +205,71 @@ client.on('messageCreate', async (msg) => {
         return;
     }
 
-    // --- D. Auto Reply ---
+    // ====================================================
+    // 🧠 E. AI CHAT SYSTEM (Gemini) + QUOTA CHECK
+    // ====================================================
+    // เงื่อนไข: ต้องแท็กบอท (@Bot) และไม่ใช่การแท็กทุกคน
+    if (msg.mentions.has(client.user) && !msg.mentions.everyone) {
+
+        // 1. เช็ควันใหม่? (ถ้าว้นที่เปลี่ยน ให้รีเซ็ตโควตาเป็น 0)
+        const today = new Date().toDateString();
+        if (aiUsage.date !== today) {
+            aiUsage.date = today;
+            aiUsage.count = 0;
+            console.log("🔄 รีเซ็ตโควตา AI สำหรับวันใหม่แล้ว");
+        }
+
+        // 2. เช็คโควตาหมดหรือยัง?
+        if (aiUsage.count >= AI_DAILY_LIMIT) {
+            return msg.reply({ 
+                content: `🚫 **โควตา AI ประจำวันหมดแล้วครับ!** (${AI_DAILY_LIMIT}/${AI_DAILY_LIMIT})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`
+            });
+        }
+
+        // 3. เริ่มประมวลผล
+        await msg.channel.sendTyping(); // ขึ้นสถานะ "กำลังพิมพ์..."
+
+        try {
+            // ตัดการแท็กชื่อบอทออก ให้เหลือแต่คำถาม
+            const question = msg.content.replace(/<@!?[0-9]+>/, '').trim();
+
+            if (!question) {
+                return msg.reply("ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖");
+            }
+
+            // Prompt Engineering: สั่งบุคลิกบอท
+            const prompt = `
+            คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์
+            บุคลิก: กวนนิดๆ, เป็นกันเอง, ตอบสั้นกระชับ, ใช้ Emoji บ้าง
+            ห้ามตอบเรื่องผิดกฎหมาย หรือเรื่อง 18+ เด็ดขาด
+            User ถามว่า: "${question}"
+            `;
+
+            // ส่งให้ Google Gemini
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            // 4. ตอบกลับและนับยอด
+            // Discord จำกัด 2000 ตัวอักษร
+            if (text.length > 2000) {
+                msg.reply(text.substring(0, 1990) + "...");
+            } else {
+                msg.reply(text);
+            }
+
+            // เพิ่มจำนวนการใช้งาน
+            aiUsage.count++;
+            console.log(`🧠 AI Used: ${aiUsage.count}/${AI_DAILY_LIMIT}`);
+
+        } catch (error) {
+            console.error("AI Error:", error);
+            msg.reply("❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ");
+        }
+        return;
+    }
+
+    // --- D. Auto Reply (Original) ---
     if (msg.content === 'สวัสดีบอท') {
         msg.reply(`สวัสดี <@${msg.author.id}> ครับ`);
     } else if (msg.content === 'Hello bot') {
