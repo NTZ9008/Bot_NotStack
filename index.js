@@ -193,16 +193,63 @@ client.on('messageCreate', async (msg) => {
 
     const contentLower = msg.content.toLowerCase();
 
-    // --- C. Filter: Bad Words ---
-    const foundBad = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
-    const extraBadWords = ['ค', 'ดอ', 'เย็ด', 'บ้า']; 
+    // ====================================================
+    // 🤖 C. SMART FILTER: Bad Words (ใช้ AI ตรวจสอบบริบท)
+    // ====================================================
+    // 1. ตรวจแบบเบสิคก่อน (เพื่อประหยัดโควตา AI)
+    const extraBadWords = ['ค', 'ดอ', 'เย็ด']; // คำรุนแรงชัดเจน 100% 
     const isHardcodedBad = extraBadWords.some(w => contentLower === w.toLowerCase());
+    
+    // คำที่ต้องสงสัย (มีโอกาสเป็นคำหยาบ แต่ต้องดูบริบท)
+    const isSuspicious = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
 
-    if (foundBad || isHardcodedBad) {
-        msg.delete().catch(err => console.error('❌ Delete Error:', err));
-        msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ)`)
-            .then(m => setTimeout(() => m.delete(), 5000));
-        return;
+    // 2. ถ้าเจอคำรุนแรงชัดเจน หรือ เป็นคำต้องสงสัย ให้ AI ช่วยตัดสิน
+    if (isHardcodedBad || isSuspicious) {
+        
+        // ถ้าเป็นคำหยาบชัดเจน ลบเลย ไม่ต้องถาม AI (ประหยัดโควตา)
+        if (isHardcodedBad) {
+            msg.delete().catch(() => {});
+            msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            return;
+        }
+
+        // ถ้าเป็นคำต้องสงสัย ให้ AI วิเคราะห์
+        try {
+            const prompt = `
+            วิเคราะห์ข้อความต่อไปนี้ว่าเป็นการด่าทอ, คุกคาม, หรือใช้คำหยาบคายในบริบทที่รุนแรงหรือไม่?
+            ข้อความ: "${msg.content}"
+            
+            กติกา:
+            - ถ้าเป็นการด่าทอ คุกคาม หรือหยาบคายรุนแรง ให้ตอบแค่คำว่า "BAD"
+            - ถ้าเป็นคำหยาบแต่ใช้คุยเล่นกับเพื่อน (เช่น กู มึง บ้าบอ) หรือเป็นบริบทปกติ ให้ตอบแค่คำว่า "PASS"
+            
+            ตอบแค่ BAD หรือ PASS เท่านั้น ห้ามพิมพ์คำอื่น:
+            `;
+
+            const result = await model.generateContent(prompt);
+            const analysis = result.response.text().trim().toUpperCase();
+
+            // ถ้า AI ตัดสินว่า BAD ให้ลบ
+            if (analysis === "BAD") {
+                msg.delete().catch(() => {});
+                msg.channel.send(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`);
+                
+                // แจ้งแอดมินด้วย (Optional)
+                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+                if (alertChannel) {
+                    alertChannel.send(`🚨 **Smart Filter:** ลบข้อความของ <@${msg.author.id}> ใน <#${msg.channel.id}>\nข้อความที่โดนลบ: ||${msg.content}||`);
+                }
+                return; // จบการทำงาน ไม่ต้องไปทำส่วนอื่นต่อ
+            } 
+            // ถ้า AI ตอบ PASS (หรือตอบผิดพลาด) ให้ปล่อยผ่าน
+            
+        } catch (error) {
+            console.error("AI Smart Filter Error:", error);
+            // ถ้า AI พัง ให้ยึดตามระบบเดิมไปก่อน (เผื่อเหนียว)
+            msg.delete().catch(() => {});
+            msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            return;
+        }
     }
 
     // ====================================================
