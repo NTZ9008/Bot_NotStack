@@ -14,6 +14,8 @@ dotenv.config();
 const LOG_CHANNEL_ID = '1369338812819312731'; // ห้องสำหรับส่ง Log ทั่วไป
 const ALERT_CHANNEL_ID = '1333089825376436295';      // ห้องสำหรับแจ้งเตือนความปลอดภัย
 const GENERAL_CHANNEL_ID = '1273939427575595184'; // ห้องสำหรับส่งพยากรณ์อากาศ
+const WELCOME_CHANNEL_ID = '1403025308512157746'; 
+const GOODBYE_CHANNEL_ID = '1403025414447956019';
 
 // 🛡️ Security Config (ตั้งค่าความปลอดภัย)
 const SPAM_LIMIT = 6;       // จำนวนข้อความสูงสุด
@@ -235,10 +237,10 @@ client.on('messageCreate', async (msg) => {
                 msg.channel.send(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`);
                 
                 // แจ้งแอดมินด้วย (Optional)
-                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
-                if (alertChannel) {
-                    alertChannel.send(`🚨 **Smart Filter:** ลบข้อความของ <@${msg.author.id}> ใน <#${msg.channel.id}>\nข้อความที่โดนลบ: ||${msg.content}||`);
-                }
+                // const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+                // if (alertChannel) {
+                //     alertChannel.send(`🚨 **Smart Filter:** ลบข้อความของ <@${msg.author.id}> ใน <#${msg.channel.id}>\nข้อความที่โดนลบ: ||${msg.content}||`);
+                // }
                 return; // จบการทำงาน ไม่ต้องไปทำส่วนอื่นต่อ
             } 
             // ถ้า AI ตอบ PASS (หรือตอบผิดพลาด) ให้ปล่อยผ่าน
@@ -457,16 +459,31 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 // ==========================================
+// ==========================================
 // 5️⃣ WELCOME / GOODBYE
 // ==========================================
-client.on(Events.GuildMemberAdd, member => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === 'ยินดีต้อนรับ');
-    if (channel) channel.send(`🎉 ยินดีต้อนรับคุณ ${member.user.tag} เข้าสู่เซิร์ฟเวอร์!`);
+client.on(Events.GuildMemberAdd, async member => {
+    try {
+        const channel = await member.guild.channels.fetch(WELCOME_CHANNEL_ID);
+        if (channel) {
+            // ใช้ <@${member.id}> เพื่อให้บอทแท็กเรียกคนนั้นเลย
+            channel.send(`🎉 ยินดีต้อนรับ <@${member.id}> เข้าสู่เซิร์ฟเวอร์! ขอให้สนุกนะครับ 🥳`);
+        }
+    } catch (err) {
+        console.error("❌ ไม่พบห้อง Welcome:", err);
+    }
 });
 
-client.on(Events.GuildMemberRemove, member => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === 'out-member');
-    if (channel) channel.send(`📤 คุณ ${member.user.tag} ได้ออกจากเซิร์ฟเวอร์แล้ว`);
+client.on(Events.GuildMemberRemove, async member => {
+    try {
+        const channel = await member.guild.channels.fetch(GOODBYE_CHANNEL_ID);
+        if (channel) {
+            // ใช้ member.user.username เพื่อแสดงชื่อคนที่ออกไปแล้ว
+            channel.send(`📤 คุณ **${member.user.username}** ได้ออกจากเซิร์ฟเวอร์แล้ว โชคดีนะ! 👋`);
+        }
+    } catch (err) {
+        console.error("❌ ไม่พบห้อง Goodbye:", err);
+    }
 });
 
 // ==========================================
