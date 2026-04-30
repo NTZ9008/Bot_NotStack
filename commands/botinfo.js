@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const os = require('os'); // เรียกใช้ module os เพื่อดึงค่าระบบ
 
-const BOT_VERSION = "2.0 With AI Engine";
+const BOT_VERSION = "2.1 With AI Engine";
 
 module.exports = {
   data: new SlashCommandBuilder()
