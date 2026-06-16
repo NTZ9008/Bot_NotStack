@@ -1,4 +1,5 @@
-# 🤖 Bot_NotStack  
+# Bot_NotStack
+
 ### Discord Security & Utility Bot
 
 **Bot_NotStack** คือบอท Discord อเนกประสงค์ที่พัฒนาโดย **Arlif Thongrakjan**  
@@ -7,34 +8,41 @@
 
 ---
 
-## ✨ ความสามารถหลัก (Key Features)
+## ความสามารถหลัก (Key Features)
 
-### 🛡️ ระบบรักษาความปลอดภัย (Security Systems)
-ทำงานแบบ **Real-time** ภายในไฟล์ `index.js`
+### ระบบรักษาความปลอดภัย (Security Systems)
 
-#### 🔁 Anti-Force Move (ป้องกันการลากผู้ใช้)
-- ตรวจจับการถูกลากย้ายห้องเสียงผ่าน **Audit Log**
-- **Auto Return:** ดึงผู้เสียหายกลับห้องเดิมทันที
-- **Loop Protection:** ป้องกันบอททำงานชนกับตัวเอง
-- **Abuse Logging:** บันทึกพฤติกรรมลง `logs/abuse_report.log`
+ระบบทั้งหมดทำงานแบบ **Real-time** ภายในไฟล์ `index.js`
 
-#### 🎚️ Bitrate Monitor
-แจ้งเตือนเมื่อมีการเปลี่ยน Bitrate ห้องเสียง พร้อมระบุผู้แก้ไข
+#### Anti-Force Move (ป้องกันการลากผู้ใช้)
 
-#### 🌍 Region Monitor
-แจ้งเตือนเมื่อมีการเปลี่ยน Region ของ Voice Channel
+-   ตรวจจับการถูกลากย้ายห้องเสียงผ่าน **Audit Log**
+-   **Auto Return:** ดึงผู้เสียหายกลับห้องเดิมทันที
+-   **Loop Protection:** ป้องกันบอททำงานชนกับตัวเอง
+-   **Abuse Logging:** บันทึกชื่อผู้ก่อกวนลง `logs/abuse_report.log`
 
-#### 💬 Anti-Spam
-จำกัดข้อความ **6 ข้อความ / 5 วินาที** พร้อมลบข้อความและแจ้งเตือนแอดมิน
+#### Bitrate Monitor
 
-#### 🚫 Bad Word Filter
-กรองคำหยาบจาก `badWords.json` และคำต้องห้ามเพิ่มเติม
+-   แจ้งเตือนเมื่อมีการแอบปรับ Bitrate ห้องเสียง\
+    (ช่วยป้องกันการก่อกวนหรือทำให้เซิร์ฟเวอร์แลค)
+
+#### Region Monitor
+
+-   แจ้งเตือนเมื่อมีการเปลี่ยน **Server Region**
+-   แจ้งเตือนเมื่อมีการเปลี่ยน **Voice Channel Region Override**
+
+#### Anti-Spam System
+
+-   จำกัดการส่งข้อความ: **6 ข้อความ / 5 วินาที**
+-   ลบข้อความสแปมอัตโนมัติ พร้อมแจ้งเตือน
+
+#### Bad Word Filter
 
 ---
 
 ### 🧠 AI Chat System (Gemini AI)
 
-บอทสามารถตอบคำถามแบบ AI ได้โดยใช้ **Google Gemini (gemini-2.5-flash)**
+### ระบบบันทึกข้อมูล (Logging Systems)
 
 #### วิธีใช้งาน
 เพียง **แท็กบอทในข้อความ** เช่น  
@@ -53,18 +61,23 @@
 
 ---
 
-### 📝 ระบบบันทึกข้อมูล (Logging)
+### คำสั่งของบอท (Slash Commands)
 
-| ประเภท | รายละเอียด |
-|--------|-------------|
-| Chat Log | บันทึกข้อความทั้งหมดรายวัน |
-| Voice Log | บันทึกการเข้า/ออก/ย้ายห้องเสียง |
-| Abuse Log | บันทึกผู้ใช้ที่ลากคนอื่นซ้ำๆ |
-| Role Log | บันทึกการขอ Role พิเศษ |
+#### หมวด Admin / System
+
+  คำสั่ง          ความสามารถ
+  --------------- ----------------------------------------------------
+  `/botinfo`      แสดงสถานะบอท (Uptime, RAM, CPU, OS)
+  `/serverinfo`   แสดงข้อมูลเซิร์ฟเวอร์
+  `/userinfo`     ข้อมูลผู้ใช้ (วันที่สมัคร, วันที่เข้าเซิร์ฟ, Role)
+  `/ping`         ทดสอบ Latency
+  `/admininfo`    ข้อมูลผู้พัฒนา
+
+#### หมวด Utility
 
 ---
 
-### 🛠️ คำสั่งของบอท (Slash Commands)
+#### หมวด Verification & Roles
 
 **Admin/System:** `/botinfo` • `/serverinfo` • `/userinfo` • `/ping` • `/admininfo`  
 **Utility:** `/weather` • `/poll` • `/random`  
@@ -72,12 +85,17 @@
 
 ---
 
-### 🤖 ระบบอัตโนมัติอื่น ๆ
-- Auto Reply ข้อความพื้นฐาน
-- รายงานอากาศอัตโนมัติทุก 07:00 น.
-- ระบบ Welcome / Goodbye
+### ระบบอัตโนมัติอื่น ๆ
 
----
+-   **Auto Reply** --- ตอบข้อความอัตโนมัติ เช่น "สวัสดีบอท",
+    "หิวข้าว"
+-   **Weather Scheduler** --- รายงานอากาศทุกวันเวลา **07:00 น.**
+-   **Welcome / Goodbye System** --- ต้อนรับสมาชิกใหม่
+    และแจ้งเตือนเมื่อมีคนออก
+
+------------------------------------------------------------------------
+
+## โครงสร้างโปรเจกต์ (Project Structure)
 
 ## 📂 โครงสร้างโปรเจกต์
 
@@ -91,7 +109,7 @@ BOT_NOTSTACK/
 ├── config.json  
 └── README.md  
 
----
+## การติดตั้งและใช้งาน (Installation Guide)
 
 ## 🚀 การติดตั้ง
 
@@ -118,9 +136,7 @@ node index.js
 - Manage Messages  
 - Message Content Intent  
 
----
-
-## 📦 Dependencies สำคัญ
+## Dependencies หลัก
 discord.js  
 dotenv  
 node-schedule  
