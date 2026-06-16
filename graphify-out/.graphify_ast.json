@@ -1,0 +1,1906 @@
+{
+  "nodes": [
+    {
+      "id": "commands_addrole",
+      "label": "addrole.js",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_slashcommandbuilder_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
+      "label": "{\r\n  SlashCommandBuilder,\r\n  ActionRowBuilder,\r\n  StringSelectMenuBuilder,\r\n  StringSelectMenuOptionBuilder,\r\n  ModalBuilder,\r\n  TextInputBuilder,\r\n  TextInputStyle,\r\n  InteractionType\r\n}",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_specialroles",
+      "label": "specialRoles",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_logdir",
+      "label": "logDir",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_logspecialrole",
+      "label": "logSpecialRole()",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_addrole_componenthandler",
+      "label": "componentHandler()",
+      "file_type": "code",
+      "source_file": "commands/addrole.js",
+      "source_location": "L81",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_admininfo",
+      "label": "adminInfo.js",
+      "file_type": "code",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_admininfo_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_admininfo_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_botinfo",
+      "label": "botinfo.js",
+      "file_type": "code",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_botinfo_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_botinfo_os",
+      "label": "os",
+      "file_type": "code",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_botinfo_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_helpme",
+      "label": "helpMe.js",
+      "file_type": "code",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_helpme_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_helpme_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_ping",
+      "label": "ping.js",
+      "file_type": "code",
+      "source_file": "commands/ping.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_ping_slashcommandbuilder",
+      "label": "{ SlashCommandBuilder }",
+      "file_type": "code",
+      "source_file": "commands/ping.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_ping_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/ping.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_poll",
+      "label": "poll.js",
+      "file_type": "code",
+      "source_file": "commands/poll.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_poll_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_embedbuilder",
+      "label": "{ SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/poll.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_poll_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/poll.js",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_random",
+      "label": "random.js",
+      "file_type": "code",
+      "source_file": "commands/random.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_random_slashcommandbuilder",
+      "label": "{ SlashCommandBuilder }",
+      "file_type": "code",
+      "source_file": "commands/random.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_random_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/random.js",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_rank",
+      "label": "rank.js",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_rank_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_rank_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_rank_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_rank_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_serverinfo",
+      "label": "serverInfo.js",
+      "file_type": "code",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_serverinfo_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_serverinfo_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_userinfo",
+      "label": "userinfo.js",
+      "file_type": "code",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_userinfo_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_userinfo_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_verify",
+      "label": "verify.js",
+      "file_type": "code",
+      "source_file": "commands/verify.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_verify_slashcommandbuilder_modalbuilder_textinputbuilder_textinputstyle_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder",
+      "label": "{ SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder }",
+      "file_type": "code",
+      "source_file": "commands/verify.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_verify_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/verify.js",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_verify_componenthandler",
+      "label": "componentHandler()",
+      "file_type": "code",
+      "source_file": "commands/verify.js",
+      "source_location": "L40",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_weather",
+      "label": "weather.js",
+      "file_type": "code",
+      "source_file": "commands/weather.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_weather_fetch",
+      "label": "fetch()",
+      "file_type": "code",
+      "source_file": "commands/weather.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_weather_getweatherembed",
+      "label": "getWeatherEmbed()",
+      "file_type": "code",
+      "source_file": "commands/weather.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_weather_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/weather.js",
+      "source_location": "L38",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command",
+      "label": "deploy-command.js",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_rest_routes",
+      "label": "{ REST, Routes }",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_clientid_guildid",
+      "label": "{ clientId, guildId }",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_dotenv",
+      "label": "dotenv",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_commands",
+      "label": "commands",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_commandfiles",
+      "label": "commandFiles",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "deploy_command_rest",
+      "label": "rest",
+      "file_type": "code",
+      "source_file": "deploy-command.js",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "events_interactioncreate",
+      "label": "interactionCreate.js",
+      "file_type": "code",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "events_interactioncreate_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "events_interactioncreate_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "events_interactioncreate_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "index",
+      "label": "index.js",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent",
+      "label": "{ Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent }",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_dotenv",
+      "label": "dotenv",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_schedule",
+      "label": "schedule",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_getweatherembed",
+      "label": "{ getWeatherEmbed }",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_googlegenerativeai",
+      "label": "{ GoogleGenerativeAI }",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_voicespammap",
+      "label": "voiceSpamMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L24",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_spammap",
+      "label": "spamMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L27",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_genai",
+      "label": "genAI",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L30",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_model",
+      "label": "model",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L31",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_aiusage",
+      "label": "aiUsage",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L35",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_client",
+      "label": "client",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L43",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_badwordsfile",
+      "label": "badWordsFile",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L54",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_badwordsset",
+      "label": "badWordsSet",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_levelsfile",
+      "label": "levelsFile",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_levelsdata",
+      "label": "levelsData",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L69",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_xpcooldownmap",
+      "label": "xpCooldownMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L81",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_commandfiles",
+      "label": "commandFiles",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L87",
+      "_origin": "ast"
+    },
+    {
+      "id": "package",
+      "label": "package.json",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_name",
+      "label": "name",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_version",
+      "label": "version",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_description",
+      "label": "description",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_main",
+      "label": "main",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts",
+      "label": "scripts",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_scripts_test",
+      "label": "test",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_keywords",
+      "label": "keywords",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_author",
+      "label": "author",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_license",
+      "label": "license",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_type",
+      "label": "type",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L12",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies",
+      "label": "dependencies",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_google_generative_ai",
+      "label": "@google/generative-ai",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_discord_js",
+      "label": "discord.js",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_dotenv",
+      "label": "dotenv",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_node_fetch",
+      "label": "node-fetch",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_node_schedule",
+      "label": "node-schedule",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "_origin": "ast"
+    }
+  ],
+  "edges": [
+    {
+      "source": "commands_addrole",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_slashcommandbuilder_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_specialroles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_logdir",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_logspecialrole",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole",
+      "target": "commands_addrole_componenthandler",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_addrole_componenthandler",
+      "target": "commands_addrole_logspecialrole",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/addrole.js",
+      "source_location": "L132",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_admininfo",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_admininfo",
+      "target": "commands_admininfo_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_admininfo",
+      "target": "commands_admininfo_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/adminInfo.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_botinfo",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_botinfo",
+      "target": "commands_botinfo_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_botinfo",
+      "target": "os",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_botinfo",
+      "target": "commands_botinfo_os",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_botinfo",
+      "target": "commands_botinfo_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/botinfo.js",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_helpme",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_helpme",
+      "target": "commands_helpme_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_helpme",
+      "target": "commands_helpme_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/helpMe.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_ping",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/ping.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_ping",
+      "target": "commands_ping_slashcommandbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/ping.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_ping",
+      "target": "commands_ping_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/ping.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_poll",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/poll.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_poll",
+      "target": "commands_poll_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/poll.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_poll",
+      "target": "commands_poll_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/poll.js",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_random",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/random.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_random",
+      "target": "commands_random_slashcommandbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/random.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_random",
+      "target": "commands_random_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/random.js",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "commands_rank_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "commands_rank_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "commands_rank_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "commands_rank_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_serverinfo",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_serverinfo",
+      "target": "commands_serverinfo_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_serverinfo",
+      "target": "commands_serverinfo_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/serverInfo.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_userinfo",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_userinfo",
+      "target": "commands_userinfo_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_userinfo",
+      "target": "commands_userinfo_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/userinfo.js",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_verify",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/verify.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_verify",
+      "target": "commands_verify_slashcommandbuilder_modalbuilder_textinputbuilder_textinputstyle_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/verify.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_verify",
+      "target": "commands_verify_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/verify.js",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_verify",
+      "target": "commands_verify_componenthandler",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/verify.js",
+      "source_location": "L40",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather",
+      "target": "commands_weather_fetch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather",
+      "target": "commands_weather_getweatherembed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather",
+      "target": "commands_weather_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L38",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather_fetch",
+      "target": "node_fetch",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather_getweatherembed",
+      "target": "commands_weather_fetch",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_weather_execute",
+      "target": "commands_weather_getweatherembed",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/weather.js",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_rest_routes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "config",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "bot_notstack_backup_config_clientid",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "bot_notstack_backup_config_guildid",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_clientid_guildid",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "dotenv",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_dotenv",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_commands",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_commandfiles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "deploy_command",
+      "target": "deploy_command_rest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "deploy-command.js",
+      "source_location": "L21",
+      "weight": 1.0
+    },
+    {
+      "source": "events_interactioncreate",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "events_interactioncreate",
+      "target": "events_interactioncreate_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "events_interactioncreate",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "events_interactioncreate",
+      "target": "events_interactioncreate_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "events_interactioncreate",
+      "target": "events_interactioncreate_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "events/interactionCreate.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "dotenv",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_dotenv",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "node_schedule",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_schedule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "commands_weather",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "commands_weather_getweatherembed",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_getweatherembed",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "generative_ai",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_googlegenerativeai",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_voicespammap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L24",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_spammap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L27",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_genai",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L30",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L31",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_aiusage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L35",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_client",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L43",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_badwordsfile",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L54",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_badwordsset",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_levelsfile",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_levelsdata",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L69",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_xpcooldownmap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L81",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_commandfiles",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L87",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_name",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_version",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_description",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_main",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_scripts",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "package_scripts",
+      "target": "package_scripts_test",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_keywords",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_author",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_license",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_type",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L12",
+      "weight": 1.0
+    },
+    {
+      "source": "package",
+      "target": "package_dependencies",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L13",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_google_generative_ai",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_google_generative_ai",
+      "target": "google_generative_ai",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L14",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_discord_js",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_discord_js",
+      "target": "discord_js",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_dotenv",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_dotenv",
+      "target": "dotenv",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L16",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_node_fetch",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_node_fetch",
+      "target": "node_fetch",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L17",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_node_schedule",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_node_schedule",
+      "target": "node_schedule",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L18",
+      "weight": 1.0,
+      "context": "import"
+    }
+  ],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

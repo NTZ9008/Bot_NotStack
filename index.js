@@ -63,6 +63,24 @@ if (fs.existsSync(badWordsFile)) {
 }
 
 // ==========================================
+// 🏆 LEVEL & XP SYSTEM SETUP
+// ==========================================
+const levelsFile = path.join(__dirname, 'levels.json');
+let levelsData = {};
+if (fs.existsSync(levelsFile)) {
+    try {
+        levelsData = JSON.parse(fs.readFileSync(levelsFile, 'utf8'));
+    } catch (err) {
+        console.error("Error reading levels.json:", err);
+    }
+} else {
+    fs.writeFileSync(levelsFile, JSON.stringify({}));
+}
+
+// Cooldown map สำหรับป้องกันการสแปม XP
+const xpCooldownMap = new Set();
+
+// ==========================================
 // 1️⃣ COMMAND HANDLER & READY EVENT
 // ==========================================
 client.commands = new Collection();
@@ -86,6 +104,64 @@ client.once(Events.ClientReady, () => {
 
         channel.send({ content: "☀️ พยากรณ์อากาศวันนี้", embeds: [embed] });
     });
+
+    // ==========================================
+    // 🎙️ VOICE CHANNEL XP SYSTEM
+    // ==========================================
+    setInterval(() => {
+        let isUpdated = false;
+        
+        client.guilds.cache.forEach(guild => {
+            // หาห้อง Voice ทั้งหมด (ChannelType 2 = GuildVoice)
+            const voiceChannels = guild.channels.cache.filter(c => c.type === 2); 
+            
+            voiceChannels.forEach(voiceChannel => {
+                if (voiceChannel.members.size > 0) {
+                    voiceChannel.members.forEach(member => {
+                        // บอท, คนที่ปิดหูฟัง (Deaf), และ คนที่ปิดไมค์ (Mute) จะไม่ได้ XP
+                        // ให้ XP เฉพาะคนที่เปิดเสียงฟัง และ เปิดไมค์ เท่านั้น!
+                        const isMuted = member.voice.selfMute || member.voice.serverMute;
+                        const isDeaf = member.voice.selfDeaf || member.voice.serverDeaf;
+
+                        if (!member.user.bot && !isDeaf && !isMuted) {
+                            const userId = member.user.id;
+                            
+                            if (!levelsData[userId]) {
+                                levelsData[userId] = { xp: 0, level: 0 };
+                            }
+                            
+                            // สุ่มแจก XP (5-10 XP) ทุกๆ 1 นาทีที่อยู่ใน Voice
+                            const xpToAdd = Math.floor(Math.random() * 6) + 5;
+                            levelsData[userId].xp += xpToAdd;
+                            
+                            const currentLevel = levelsData[userId].level;
+                            const nextLevelXp = 100 * Math.pow(currentLevel + 1, 2);
+                            
+                            if (levelsData[userId].xp >= nextLevelXp) {
+                                levelsData[userId].level += 1;
+                                
+                                // หาห้องแชทเพื่อประกาศ (ลองหา GENERAL_CHANNEL_ID ก่อน ถ้าไม่มีให้หาห้องแชทแรกสุด)
+                                const chatChannel = guild.channels.cache.get(GENERAL_CHANNEL_ID) || 
+                                                    guild.channels.cache.find(c => c.type === 0 && c.permissionsFor(guild.members.me).has('SendMessages'));
+                                
+                                if (chatChannel) {
+                                    chatChannel.send(`🎙️ คุยเพลินไปหน่อยนะ! ยินดีด้วย <@${userId}> คุณอัปเลเวลเป็น **Level ${levelsData[userId].level}** แล้วจากการสิงในห้องเสียง! 🚀`);
+                                }
+                            }
+                            isUpdated = true;
+                        }
+                    });
+                }
+            });
+        });
+
+        // ถ้ามีการแจก XP ให้เซฟลงไฟล์
+        if (isUpdated) {
+            fs.writeFile(levelsFile, JSON.stringify(levelsData, null, 2), (err) => {
+                if (err) console.error("❌ Error saving voice levels:", err);
+            });
+        }
+    }, 60000); // ทำงานเช็คทุกๆ 1 นาที (60000 ms)
 });
 
 // Interaction Handler (Slash Commands)
@@ -251,6 +327,45 @@ client.on('messageCreate', async (msg) => {
             msg.delete().catch(() => {});
             msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
             return;
+        }
+    }
+
+    // ====================================================
+    // 🏆 D. LEVEL & XP SYSTEM (ให้ XP เมื่อพิมพ์แชท)
+    // ====================================================
+    if (msg.guild && !msg.author.bot) {
+        const authorId = msg.author.id;
+        
+        // เช็ค Cooldown (ให้ XP ทุกๆ 1 นาทีเท่านั้น)
+        if (!xpCooldownMap.has(authorId)) {
+            if (!levelsData[authorId]) {
+                levelsData[authorId] = { xp: 0, level: 0 };
+            }
+
+            // สุ่ม XP 15-25 หน่วย
+            const xpToAdd = Math.floor(Math.random() * 11) + 15;
+            levelsData[authorId].xp += xpToAdd;
+
+            // สูตรคำนวณ XP ที่ต้องใช้เพื่ออัปเลเวลถัดไป: 100 * (level + 1)^2
+            // Lvl 1 = 100, Lvl 2 = 400, Lvl 3 = 900
+            const currentLevel = levelsData[authorId].level;
+            const nextLevelXp = 100 * Math.pow(currentLevel + 1, 2);
+
+            if (levelsData[authorId].xp >= nextLevelXp) {
+                levelsData[authorId].level += 1;
+                msg.channel.send(`🎉 ยินดีด้วย! <@${authorId}> คุณอัปเลเวลเป็น **Level ${levelsData[authorId].level}** แล้ว! 🚀`);
+            }
+
+            // บันทึกข้อมูลลงไฟล์
+            fs.writeFile(levelsFile, JSON.stringify(levelsData, null, 2), (err) => {
+                if (err) console.error("❌ Error saving levels:", err);
+            });
+
+            // ติด Cooldown 1 นาที (60000 ms)
+            xpCooldownMap.add(authorId);
+            setTimeout(() => {
+                xpCooldownMap.delete(authorId);
+            }, 60000);
         }
     }
 
