@@ -1,6 +1,6 @@
 {
   "name": "NotStack-Bot",
-  "version": "2.0 with AI Engine",
+  "version": "2.1 with AI Engine",
   "description": "Bot for Discord NotStackOverflow Server",
   "main": "index.js",
   "scripts": {
