@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const schedule = require("node-schedule");
 const { getWeatherEmbed } = require("./commands/weather.js");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 dotenv.config();
 
@@ -13,6 +14,8 @@ dotenv.config();
 const LOG_CHANNEL_ID = '1369338812819312731'; // ห้องสำหรับส่ง Log ทั่วไป
 const ALERT_CHANNEL_ID = '1333089825376436295';      // ห้องสำหรับแจ้งเตือนความปลอดภัย
 const GENERAL_CHANNEL_ID = '1273939427575595184'; // ห้องสำหรับส่งพยากรณ์อากาศ
+const WELCOME_CHANNEL_ID = '1403025308512157746'; 
+const GOODBYE_CHANNEL_ID = '1403025414447956019';
 
 // 🛡️ Security Config (ตั้งค่าความปลอดภัย)
 const SPAM_LIMIT = 6;       // จำนวนข้อความสูงสุด
@@ -22,6 +25,17 @@ const voiceSpamMap = new Map();
 
 // ตัวแปรเก็บสถานะชั่วคราว (Memory Cache)
 const spamMap = new Map();
+
+// AIE
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+// ตั้งค่าโควตา (Gemini Flash ให้ฟรีประมาณ 250 ครั้ง/วัน)
+const AI_DAILY_LIMIT = 250; 
+let aiUsage = {
+    date: new Date().toDateString(),
+    count: 0 
+};
 
 // ==========================================
 // 🤖 CLIENT SETUP
@@ -138,7 +152,7 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
 });
 
 // ==========================================
-// 3️⃣ MESSAGE HANDLER (รวม Log, Anti-Spam, Chat Logic)
+// 3️⃣ MESSAGE HANDLER (รวม Log, Anti-Spam, Chat Logic, AI)
 // ==========================================
 client.on('messageCreate', async (msg) => {
     if (msg.author.bot) return;
@@ -181,19 +195,130 @@ client.on('messageCreate', async (msg) => {
 
     const contentLower = msg.content.toLowerCase();
 
-    // --- C. Filter: Bad Words ---
-    const foundBad = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
-    const extraBadWords = ['ค', 'ดอ', 'เย็ด']; 
+    // ====================================================
+    // 🤖 C. SMART FILTER: Bad Words (ใช้ AI ตรวจสอบบริบท)
+    // ====================================================
+    // 1. ตรวจแบบเบสิคก่อน (เพื่อประหยัดโควตา AI)
+    const extraBadWords = ['ค', 'ดอ', 'เย็ด']; // คำรุนแรงชัดเจน 100% 
     const isHardcodedBad = extraBadWords.some(w => contentLower === w.toLowerCase());
+    
+    // คำที่ต้องสงสัย (มีโอกาสเป็นคำหยาบ แต่ต้องดูบริบท)
+    const isSuspicious = [...badWordsSet].some(badWord => contentLower.includes(badWord.toLowerCase()));
 
-    if (foundBad || isHardcodedBad) {
-        msg.delete().catch(err => console.error('❌ Delete Error:', err));
-        msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ)`)
-            .then(m => setTimeout(() => m.delete(), 5000));
+    // 2. ถ้าเจอคำรุนแรงชัดเจน หรือ เป็นคำต้องสงสัย ให้ AI ช่วยตัดสิน
+    if (isHardcodedBad || isSuspicious) {
+        
+        // ถ้าเป็นคำหยาบชัดเจน ลบเลย ไม่ต้องถาม AI (ประหยัดโควตา)
+        if (isHardcodedBad) {
+            msg.delete().catch(() => {});
+            msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            return;
+        }
+
+        // ถ้าเป็นคำต้องสงสัย ให้ AI วิเคราะห์
+        try {
+            const prompt = `
+            วิเคราะห์ข้อความต่อไปนี้ว่าเป็นการด่าทอ, คุกคาม, หรือใช้คำหยาบคายในบริบทที่รุนแรงหรือไม่?
+            ข้อความ: "${msg.content}"
+            
+            กติกา:
+            - ถ้าเป็นการด่าทอ คุกคาม หรือหยาบคายรุนแรง ให้ตอบแค่คำว่า "BAD"
+            - ถ้าเป็นคำหยาบแต่ใช้คุยเล่นกับเพื่อน (เช่น กู มึง บ้าบอ) หรือเป็นบริบทปกติ ให้ตอบแค่คำว่า "PASS"
+            
+            ตอบแค่ BAD หรือ PASS เท่านั้น ห้ามพิมพ์คำอื่น:
+            `;
+
+            const result = await model.generateContent(prompt);
+            const analysis = result.response.text().trim().toUpperCase();
+
+            // ถ้า AI ตัดสินว่า BAD ให้ลบ
+            if (analysis === "BAD") {
+                msg.delete().catch(() => {});
+                msg.channel.send(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`);
+                
+                // แจ้งแอดมินด้วย (Optional)
+                // const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+                // if (alertChannel) {
+                //     alertChannel.send(`🚨 **Smart Filter:** ลบข้อความของ <@${msg.author.id}> ใน <#${msg.channel.id}>\nข้อความที่โดนลบ: ||${msg.content}||`);
+                // }
+                return; // จบการทำงาน ไม่ต้องไปทำส่วนอื่นต่อ
+            } 
+            // ถ้า AI ตอบ PASS (หรือตอบผิดพลาด) ให้ปล่อยผ่าน
+            
+        } catch (error) {
+            console.error("AI Smart Filter Error:", error);
+            // ถ้า AI พัง ให้ยึดตามระบบเดิมไปก่อน (เผื่อเหนียว)
+            msg.delete().catch(() => {});
+            msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            return;
+        }
+    }
+
+    // ====================================================
+    // 🧠 E. AI CHAT SYSTEM (Gemini) + QUOTA CHECK
+    // ====================================================
+    // เงื่อนไข: ต้องแท็กบอท (@Bot) และไม่ใช่การแท็กทุกคน
+    if (msg.mentions.has(client.user) && !msg.mentions.everyone) {
+
+        // 1. เช็ควันใหม่? (ถ้าว้นที่เปลี่ยน ให้รีเซ็ตโควตาเป็น 0)
+        const today = new Date().toDateString();
+        if (aiUsage.date !== today) {
+            aiUsage.date = today;
+            aiUsage.count = 0;
+            console.log("🔄 รีเซ็ตโควตา AI สำหรับวันใหม่แล้ว");
+        }
+
+        // 2. เช็คโควตาหมดหรือยัง?
+        if (aiUsage.count >= AI_DAILY_LIMIT) {
+            return msg.reply({ 
+                content: `🚫 **โควตา AI ประจำวันหมดแล้วครับ!** (${AI_DAILY_LIMIT}/${AI_DAILY_LIMIT})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`
+            });
+        }
+
+        // 3. เริ่มประมวลผล
+        await msg.channel.sendTyping(); // ขึ้นสถานะ "กำลังพิมพ์..."
+
+        try {
+            // ตัดการแท็กชื่อบอทออก ให้เหลือแต่คำถาม
+            const question = msg.content.replace(/<@!?[0-9]+>/, '').trim();
+
+            if (!question) {
+                return msg.reply("ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖");
+            }
+
+            // Prompt Engineering: สั่งบุคลิกบอท
+            const prompt = `
+            คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์
+            บุคลิก: กวนนิดๆ, เป็นกันเอง, ตอบสั้นกระชับ, ใช้ Emoji บ้าง
+            ห้ามตอบเรื่องผิดกฎหมาย หรือเรื่อง 18+ เด็ดขาด
+            User ถามว่า: "${question}"
+            `;
+
+            // ส่งให้ Google Gemini
+            const result = await model.generateContent(prompt);
+            const response = await result.response;
+            const text = response.text();
+
+            // 4. ตอบกลับและนับยอด
+            // Discord จำกัด 2000 ตัวอักษร
+            if (text.length > 2000) {
+                msg.reply(text.substring(0, 1990) + "...");
+            } else {
+                msg.reply(text);
+            }
+
+            // เพิ่มจำนวนการใช้งาน
+            aiUsage.count++;
+            console.log(`🧠 AI Used: ${aiUsage.count}/${AI_DAILY_LIMIT}`);
+
+        } catch (error) {
+            console.error("AI Error:", error);
+            msg.reply("❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ");
+        }
         return;
     }
 
-    // --- D. Auto Reply ---
+    // --- D. Auto Reply (Original) ---
     if (msg.content === 'สวัสดีบอท') {
         msg.reply(`สวัสดี <@${msg.author.id}> ครับ`);
     } else if (msg.content === 'Hello bot') {
@@ -334,16 +459,31 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 });
 
 // ==========================================
+// ==========================================
 // 5️⃣ WELCOME / GOODBYE
 // ==========================================
-client.on(Events.GuildMemberAdd, member => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === 'ยินดีต้อนรับ');
-    if (channel) channel.send(`🎉 ยินดีต้อนรับคุณ ${member.user.tag} เข้าสู่เซิร์ฟเวอร์!`);
+client.on(Events.GuildMemberAdd, async member => {
+    try {
+        const channel = await member.guild.channels.fetch(WELCOME_CHANNEL_ID);
+        if (channel) {
+            // ใช้ <@${member.id}> เพื่อให้บอทแท็กเรียกคนนั้นเลย
+            channel.send(`🎉 ยินดีต้อนรับ <@${member.id}> เข้าสู่เซิร์ฟเวอร์! ขอให้สนุกนะครับ 🥳`);
+        }
+    } catch (err) {
+        console.error("❌ ไม่พบห้อง Welcome:", err);
+    }
 });
 
-client.on(Events.GuildMemberRemove, member => {
-    const channel = member.guild.channels.cache.find(ch => ch.name === 'out-member');
-    if (channel) channel.send(`📤 คุณ ${member.user.tag} ได้ออกจากเซิร์ฟเวอร์แล้ว`);
+client.on(Events.GuildMemberRemove, async member => {
+    try {
+        const channel = await member.guild.channels.fetch(GOODBYE_CHANNEL_ID);
+        if (channel) {
+            // ใช้ member.user.username เพื่อแสดงชื่อคนที่ออกไปแล้ว
+            channel.send(`📤 คุณ **${member.user.username}** ได้ออกจากเซิร์ฟเวอร์แล้ว โชคดีนะ! 👋`);
+        }
+    } catch (err) {
+        console.error("❌ ไม่พบห้อง Goodbye:", err);
+    }
 });
 
 // ==========================================

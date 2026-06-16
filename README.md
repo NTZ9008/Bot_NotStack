@@ -2,13 +2,11 @@
 
 ### Discord Security & Utility Bot
 
-**Bot_NotStack** คือบอท Discord อเนกประสงค์ที่พัฒนาโดย **Arlif
-Thongrakjan**\
-เน้นระบบ **ความปลอดภัยในห้องเสียง (Voice Security)** และ **ระบบบันทึก
-Log ภายในเซิร์ฟเวอร์**\
-พัฒนาด้วย **Node.js** และ **Discord.js v14**
+**Bot_NotStack** คือบอท Discord อเนกประสงค์ที่พัฒนาโดย **Arlif Thongrakjan**  
+โดดเด่นด้าน **ระบบความปลอดภัยห้องเสียง**, **ระบบ Log ขั้นสูง** และล่าสุดเพิ่ม **AI Chat Assistant ภายในเซิร์ฟเวอร์**  
+พัฒนาด้วย **Node.js**, **Discord.js v14** และ **Google Gemini AI**
 
-------------------------------------------------------------------------
+---
 
 ## ความสามารถหลัก (Key Features)
 
@@ -40,26 +38,28 @@ Log ภายในเซิร์ฟเวอร์**\
 
 #### Bad Word Filter
 
--   กรองคำหยาบจากไฟล์ `badWords.json`
--   ลบข้อความไม่เหมาะสมอัตโนมัติ
+---
 
-------------------------------------------------------------------------
+### 🧠 AI Chat System (Gemini AI)
 
 ### ระบบบันทึกข้อมูล (Logging Systems)
 
-  -----------------------------------------------------------------------
-  ประเภท                      รายละเอียด
-  --------------------------- -------------------------------------------
-  **Chat Log**                บันทึกข้อความทั้งหมด แยกไฟล์ตามวันที่
+#### วิธีใช้งาน
+เพียง **แท็กบอทในข้อความ** เช่น  
+@Bot_NotStack อธิบายเรื่อง Black Hole แบบสั้นๆ
 
-  **Voice Log**               บันทึกเข้า/ออก/ย้ายห้องเสียง ลง
-                              `_history.log` และส่งเข้า Discord
+#### ความสามารถ
+- ตอบคำถามทั่วไป
+- โทนเป็นกันเอง กวนเล็กน้อย
+- จำกัดเนื้อหาผิดกฎหมายและ 18+ อัตโนมัติ
+- แสดงสถานะ "กำลังพิมพ์..." ก่อนตอบ
 
-  **Special Role Log**        บันทึกการขอ Role พิเศษ ผ่าน `/addroles` ลง
-                              `logs/special/`
-  -----------------------------------------------------------------------
+#### ระบบจำกัดโควตา
+- ใช้ได้ประมาณ **250 ครั้ง / วัน**
+- รีเซ็ตอัตโนมัติทุกวัน
+- หากเกินโควตา บอทจะแจ้งเตือนว่าหมดสิทธิ์ใช้งาน AI ชั่วคราว
 
-------------------------------------------------------------------------
+---
 
 ### คำสั่งของบอท (Slash Commands)
 
@@ -75,20 +75,15 @@ Log ภายในเซิร์ฟเวอร์**\
 
 #### หมวด Utility
 
-  คำสั่ง       ความสามารถ
-  ------------ ---------------------------------------
-  `/weather`   ตรวจสอบสภาพอากาศ (OpenWeatherMap API)
-  `/poll`      สร้างโพลโหวต
-  `/random`    สุ่มรายการจากข้อความ
+---
 
 #### หมวด Verification & Roles
 
-  คำสั่ง        ความสามารถ
-  ------------- -----------------------------------------------------
-  `/verify`     ยืนยันตัวตนด้วยรหัสผ่านเพื่อรับยศรุ่น (DST04/DST05)
-  `/addroles`   เลือกรับยศผ่านเมนู (มีระบบรหัสผ่านสำหรับ VIP)
+**Admin/System:** `/botinfo` • `/serverinfo` • `/userinfo` • `/ping` • `/admininfo`  
+**Utility:** `/weather` • `/poll` • `/random`  
+**Roles:** `/verify` • `/addroles`
 
-------------------------------------------------------------------------
+---
 
 ### ระบบอัตโนมัติอื่น ๆ
 
@@ -102,90 +97,54 @@ Log ภายในเซิร์ฟเวอร์**\
 
 ## โครงสร้างโปรเจกต์ (Project Structure)
 
-``` text
-BOT_NOTSTACK/
-├── commands/
-├── events/
-├── logs/
-├── .env
-├── badWords.json
-├── config.json
-├── deploy-command.js
-├── index.js
-├── package.json
-└── README.md
-```
+## 📂 โครงสร้างโปรเจกต์
 
-------------------------------------------------------------------------
+BOT_NOTSTACK/  
+├── commands/  
+├── events/  
+├── logs/  
+├── index.js  
+├── deploy-command.js  
+├── badWords.json  
+├── config.json  
+└── README.md  
 
 ## การติดตั้งและใช้งาน (Installation Guide)
 
-### 1️⃣ สิ่งที่ต้องมี (Prerequisites)
+## 🚀 การติดตั้ง
 
--   Node.js **v16.9.0 ขึ้นไป**
--   npm
-
-### 2️⃣ ติดตั้ง Dependencies
-
-``` bash
+### 1️⃣ ติดตั้งแพ็กเกจ
 npm install
-```
 
-### 3️⃣ ตั้งค่าไฟล์ `.env`
+### 2️⃣ ตั้งค่าไฟล์ `.env`
+TOKEN=DISCORD_BOT_TOKEN  
+OPENWEATHER_KEY=OPENWEATHER_API_KEY  
+GEMINI_KEY=GOOGLE_GEMINI_API_KEY  
 
-``` env
-TOKEN=DISCORD_BOT_TOKEN
-OPENWEATHER_KEY=OPENWEATHER_API_KEY
-```
-
-### 4️⃣ แก้ไข `config.json`
-
-``` json
-{
-  "clientId": "BOT_CLIENT_ID",
-  "guildId": "YOUR_SERVER_GUILD_ID"
-}
-```
-
-### 5️⃣ ตั้งค่า Channel ID ใน `index.js`
-
-``` js
-const LOG_CHANNEL_ID = '...';
-const ALERT_CHANNEL_ID = '...';
-const GENERAL_CHANNEL_ID = '...';
-```
-
-### 6️⃣ ลงทะเบียนคำสั่งและรันบอท
-
-``` bash
+### 3️⃣ ลงทะเบียนคำสั่ง
 node deploy-command.js
+
+### 4️⃣ รันบอท
 node index.js
-```
 
-------------------------------------------------------------------------
+---
 
-## ⚠️ สิทธิ์ที่บอทต้องมี (Required Permissions)
-
-  Permission               ใช้สำหรับ
-  ------------------------ -----------------------------------
-  View Audit Log           ตรวจจับการลากคน/เปลี่ยนค่าห้อง
-  Move Members             ดึงผู้ใช้กลับห้องเดิม
-  Manage Roles             ระบบ `/verify` และ `/addroles`
-  Manage Messages          ลบสแปมและคำหยาบ
-  Message Content Intent   จำเป็นต้องเปิดใน Developer Portal
-
-------------------------------------------------------------------------
+## ⚠️ Permissions ที่ต้องเปิดให้บอท
+- View Audit Log  
+- Move Members  
+- Manage Roles  
+- Manage Messages  
+- Message Content Intent  
 
 ## Dependencies หลัก
+discord.js  
+dotenv  
+node-schedule  
+node-fetch  
+@google/generative-ai  
 
--   **discord.js**
--   **dotenv**
--   **node-schedule**
--   **node-fetch**
-
-------------------------------------------------------------------------
+---
 
 ## 👨‍💻 ผู้พัฒนา
-
-**Arlif Thongrakjan**\
+**Arlif Thongrakjan**  
 AT Tech
