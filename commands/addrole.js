@@ -3,8 +3,8 @@ const path = require("path");
 const {
   SlashCommandBuilder,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
+  ButtonBuilder,
+  ButtonStyle,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -39,59 +39,35 @@ function logSpecialRole(interaction, roleName, status) {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("addroles")
-    .setDescription("เลือกรุ่นหรือยศพิเศษที่ต้องการ (เพิ่ม/ลบ)"),
-
-  // 1. ทำงานเมื่อพิมพ์คำสั่ง /addroles
+    .setDescription("เลือกรุ่นหรือยศพิเศษที่ต้องการ (ต้องใช้รหัสผ่าน)"),
+    
   async execute(interaction) {
-    // สร้างเมนู Dropdown สวยๆ พร้อม Emoji และคำอธิบาย
-    const menu = new StringSelectMenuBuilder()
-      .setCustomId("role-select")
-      .setPlaceholder("🔍 คลิกลูกศรเพื่อเลือกยศที่ต้องการ...")
-      .addOptions([
-        new StringSelectMenuOptionBuilder()
-          .setLabel("DST04")
-          .setValue("DST04")
-          .setDescription("รับหรือลบยศ รุ่นที่ 4")
-          .setEmoji("🎓"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("DST05")
-          .setValue("DST05")
-          .setDescription("รับหรือลบยศ รุ่นที่ 5")
-          .setEmoji("🎓"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("คนหน้าตาดีประจำซีซั่น")
-          .setValue("คนหน้าตาดีประจำซีซั่น")
-          .setDescription("ยศคนหน้าตาดี (รับได้ทุกคน)")
-          .setEmoji("✨"),
-        new StringSelectMenuOptionBuilder()
-          .setLabel("บัตร vip")
-          .setValue("บัตร vip")
-          .setDescription("ยศพิเศษ (จำเป็นต้องมีรหัสผ่าน)")
-          .setEmoji("💎"),
-      ]);
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId("role-btn-บัตร vip")
+        .setLabel("รับยศ บัตร vip")
+        .setEmoji("💎")
+        .setStyle(ButtonStyle.Danger)
+    );
 
     await interaction.reply({
-      content: "🎭 **ระบบจัดการยศ (Role Manager)**\nโปรดเลือกยศที่คุณต้องการ **เพิ่ม** หรือ **เอาออก** จากเมนูด้านล่างนี้ครับ:",
-      components: [new ActionRowBuilder().addComponents(menu)],
-      ephemeral: true // ให้เห็นเฉพาะคนกด (เหมือน flags: 64)
+      content: "🎭 **ระบบจัดการยศพิเศษ**\nโปรดกดปุ่มด้านล่างนี้ และกรอกรหัสผ่านเพื่อรับยศครับ:",
+      components: [row],
+      ephemeral: true // ให้เห็นเฉพาะคนกด
     });
   },
 
-  // 2. ทำงานเมื่อโต้ตอบกับปุ่มหรือ Pop-up
   async componentHandler(interaction) {
-    
-    // --- ด่านที่ 1: เมื่อผู้ใช้กดเลือกเมนู ---
-    if (interaction.isStringSelectMenu() && interaction.customId === "role-select") {
-      const roleName = interaction.values[0];
+    // --- ด่านที่ 1: เมื่อผู้ใช้กดปุ่มเลือกยศ ---
+    if (interaction.isButton() && interaction.customId.startsWith("role-btn-")) {
+      const roleName = interaction.customId.replace("role-btn-", "");
       const role = interaction.guild.roles.cache.find(r => r.name === roleName);
 
       if (!role) {
         return interaction.reply({ content: `❌ ระบบขัดข้อง: ไม่พบยศชื่อ **${roleName}** ในเซิร์ฟเวอร์`, ephemeral: true });
       }
 
-      // ตรวจสอบว่าเป็นยศที่ต้องใช้รหัสผ่านไหม (VIP)
       if (specialRoles[roleName]) {
-        // สร้าง Pop-up ให้กรอกรหัส
         const modal = new ModalBuilder()
           .setCustomId(`role-password-${roleName}`)
           .setTitle(`🔒 ยืนยันรหัสผ่านสำหรับยศ ${roleName}`);
@@ -104,16 +80,7 @@ module.exports = {
           .setRequired(true);
 
         modal.addComponents(new ActionRowBuilder().addComponents(passwordInput));
-        return interaction.showModal(modal); // เด้ง Pop-up
-      }
-
-      // ถ้ายศปกติ (ไม่ต้องใช้รหัส) ให้สลับยศ (Toggle) ทันที
-      if (interaction.member.roles.cache.has(role.id)) {
-        await interaction.member.roles.remove(role);
-        return interaction.reply({ content: `🗑️ ระบบได้ **ดึงยศ** **${roleName}** ออกจากคุณแล้วครับ`, ephemeral: true });
-      } else {
-        await interaction.member.roles.add(role);
-        return interaction.reply({ content: `✅ **สำเร็จ!** คุณได้รับยศ **${roleName}** เรียบร้อยแล้ว`, ephemeral: true });
+        return interaction.showModal(modal);
       }
     }
 
@@ -127,15 +94,13 @@ module.exports = {
         return interaction.reply({ content: `❌ ระบบขัดข้อง: ไม่พบยศชื่อ **${roleName}** ในเซิร์ฟเวอร์`, ephemeral: true });
       }
 
-      // ตรวจสอบรหัสผ่าน
       if (specialRoles[roleName] !== password) {
-        logSpecialRole(interaction, roleName, "FAIL"); // บันทึก Log คนใส่ผิด
+        logSpecialRole(interaction, roleName, "FAIL");
         return interaction.reply({ content: "❌ **รหัสผ่านไม่ถูกต้อง!** ไม่สามารถรับยศ VIP ได้", ephemeral: true });
       }
 
-      logSpecialRole(interaction, roleName, "SUCCESS"); // บันทึก Log คนใส่ถูก
+      logSpecialRole(interaction, roleName, "SUCCESS");
 
-      // สลับยศ VIP (Toggle)
       if (interaction.member.roles.cache.has(role.id)) {
         await interaction.member.roles.remove(role);
         return interaction.reply({ content: `🗑️ ระบบได้ **ดึงยศ** **${roleName}** ออกจากคุณแล้วครับ`, ephemeral: true });
