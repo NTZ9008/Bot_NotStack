@@ -1,4 +1,4 @@
-const { Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent } = require('discord.js');
+const { Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent, Partials } = require('discord.js');
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
@@ -46,8 +46,10 @@ const client = new Client({
         GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates
-    ]
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessageReactions
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
 
 // โหลดคำหยาบ (Bad Words)
@@ -140,13 +142,7 @@ client.once(Events.ClientReady, () => {
                             if (levelsData[userId].xp >= nextLevelXp) {
                                 levelsData[userId].level += 1;
                                 
-                                // หาห้องแชทเพื่อประกาศ (ลองหา GENERAL_CHANNEL_ID ก่อน ถ้าไม่มีให้หาห้องแชทแรกสุด)
-                                const chatChannel = guild.channels.cache.get(GENERAL_CHANNEL_ID) || 
-                                                    guild.channels.cache.find(c => c.type === 0 && c.permissionsFor(guild.members.me).has('SendMessages'));
-                                
-                                if (chatChannel) {
-                                    chatChannel.send(`🎙️ คุยเพลินไปหน่อยนะ! ยินดีด้วย <@${userId}> คุณอัปเลเวลเป็น **Level ${levelsData[userId].level}** แล้วจากการสิงในห้องเสียง! 🚀`);
-                                }
+
                             }
                             isUpdated = true;
                         }
@@ -172,7 +168,7 @@ client.on(Events.InteractionCreate, async interaction => {
             if (!command) return;
             await command.execute(interaction);
         }
-        if (interaction.isStringSelectMenu() || interaction.isModalSubmit()) {
+        if (interaction.isStringSelectMenu() || interaction.isModalSubmit() || interaction.isButton()) {
             for (const cmd of client.commands.values()) {
                 if (cmd.componentHandler) await cmd.componentHandler(interaction);
             }
@@ -353,7 +349,7 @@ client.on('messageCreate', async (msg) => {
 
             if (levelsData[authorId].xp >= nextLevelXp) {
                 levelsData[authorId].level += 1;
-                msg.channel.send(`🎉 ยินดีด้วย! <@${authorId}> คุณอัปเลเวลเป็น **Level ${levelsData[authorId].level}** แล้ว! 🚀`);
+
             }
 
             // บันทึกข้อมูลลงไฟล์
@@ -650,6 +646,64 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
 
         } catch (error) {
             console.error("❌ Error Channel Region:", error);
+        }
+    }
+});
+
+// ==========================================
+// 8️⃣ REACTION ROLES (Carl-bot Style)
+// ==========================================
+const reactionRolesMap = {
+    "4️⃣": "DST04",
+    "5️⃣": "DST05",
+    "6️⃣": "DST06",
+    "✨": "คนหน้าตาดีประจำซีซั่น"
+};
+
+client.on(Events.MessageReactionAdd, async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) {
+        try { await reaction.fetch(); } catch (err) { return; }
+    }
+    if (reaction.message.partial) {
+        try { await reaction.message.fetch(); } catch (err) { return; }
+    }
+
+    if (reaction.message.author.id !== client.user.id) return;
+    if (!reaction.message.guild) return;
+
+    const roleName = reactionRolesMap[reaction.emoji.name];
+    if (roleName) {
+        const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+        if (role) {
+            const member = await reaction.message.guild.members.fetch(user.id);
+            if (member) {
+                await member.roles.add(role).catch(console.error);
+            }
+        }
+    }
+});
+
+client.on(Events.MessageReactionRemove, async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) {
+        try { await reaction.fetch(); } catch (err) { return; }
+    }
+    if (reaction.message.partial) {
+        try { await reaction.message.fetch(); } catch (err) { return; }
+    }
+
+    if (reaction.message.author.id !== client.user.id) return;
+    if (!reaction.message.guild) return;
+
+    const roleName = reactionRolesMap[reaction.emoji.name];
+    if (roleName) {
+        const role = reaction.message.guild.roles.cache.find(r => r.name === roleName);
+        if (role) {
+            const member = await reaction.message.guild.members.fetch(user.id);
+            if (member) {
+                await member.roles.remove(role).catch(console.error);
+            }
         }
     }
 });

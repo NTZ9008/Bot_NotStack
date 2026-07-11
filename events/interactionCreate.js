@@ -22,7 +22,7 @@ module.exports = {
     }
 
     // ✅ จัดการ component (ปุ่ม / select menu / modal)
-    if (interaction.isStringSelectMenu() || interaction.isModalSubmit()) {
+    if (interaction.isStringSelectMenu() || interaction.isModalSubmit() || interaction.isButton()) {
       // หาคำสั่งที่มี componentHandler
       const commandFiles = fs.readdirSync(path.join(__dirname, "../commands")).filter(file => file.endsWith(".js"));
       for (const file of commandFiles) {
