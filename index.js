@@ -5,17 +5,32 @@ const path = require('path');
 const schedule = require("node-schedule");
 const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { getConfig, saveAllLevelsToDB, getAllLevels } = require('./db.js');
+const { startServer } = require('./server.js');
 
 dotenv.config();
 
 // ==========================================
-// ⚙️ CONFIG & SETTINGS (ตั้งค่าระบบ)
+// 🤖 CLIENT SETUP
 // ==========================================
-const LOG_CHANNEL_ID = '1369338812819312731'; // ห้องสำหรับส่ง Log ทั่วไป
-const ALERT_CHANNEL_ID = '1333089825376436295';      // ห้องสำหรับแจ้งเตือนความปลอดภัย
-const GENERAL_CHANNEL_ID = '1273939427575595184'; // ห้องสำหรับส่งพยากรณ์อากาศ
-const WELCOME_CHANNEL_ID = '1403025308512157746'; 
-const GOODBYE_CHANNEL_ID = '1403025414447956019';
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessageReactions
+    ],
+    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+});
+
+// เริ่มทำงาน Dashboard Server
+startServer(client);
+
+// ==========================================
+// ⚙️ CONFIG & SETTINGS (ตั้งค่าระบบถูกย้ายไป DB แล้ว)
+// ==========================================
 
 // 🛡️ Security Config (ตั้งค่าความปลอดภัย)
 const SPAM_LIMIT = 6;       // จำนวนข้อความสูงสุด
@@ -37,20 +52,7 @@ let aiUsage = {
     count: 0 
 };
 
-// ==========================================
-// 🤖 CLIENT SETUP
-// ==========================================
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMessageReactions
-    ],
-    partials: [Partials.Message, Partials.Channel, Partials.Reaction]
-});
+
 
 // โหลดคำหยาบ (Bad Words)
 const badWordsFile = path.join(__dirname, 'badWords.json');
@@ -65,19 +67,10 @@ if (fs.existsSync(badWordsFile)) {
 }
 
 // ==========================================
-// 🏆 LEVEL & XP SYSTEM SETUP
+// 🏆 LEVEL & XP SYSTEM SETUP (Migrated to DB)
 // ==========================================
-const levelsFile = path.join(__dirname, 'levels.json');
 let levelsData = {};
-if (fs.existsSync(levelsFile)) {
-    try {
-        levelsData = JSON.parse(fs.readFileSync(levelsFile, 'utf8'));
-    } catch (err) {
-        console.error("Error reading levels.json:", err);
-    }
-} else {
-    fs.writeFileSync(levelsFile, JSON.stringify({}));
-}
+// ข้อมูลจะถูกโหลดเข้า memory ตอน ClientReady
 
 // Cooldown map สำหรับป้องกันการสแปม XP
 const xpCooldownMap = new Set();
@@ -92,13 +85,26 @@ for (const file of commandFiles) {
     client.commands.set(command.data.name, command);
 }
 
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     console.log(`🛡️ Security Systems: Active`);
 
+    // โหลด Levels จาก DB เข้า Memory
+    try {
+        const rows = await getAllLevels();
+        rows.forEach(r => {
+            levelsData[r.userId] = { xp: r.xp, level: r.level };
+        });
+        console.log(`✅ Loaded ${rows.length} users' levels from DB`);
+    } catch (err) {
+        console.error("❌ Error loading levels from DB:", err);
+    }
+
     // ตั้งเวลาส่งพยากรณ์อากาศ 7 โมงเช้า
     schedule.scheduleJob("0 7 * * *", async () => {
-        const channel = await client.channels.fetch(GENERAL_CHANNEL_ID);
+        const genChannelId = await getConfig('GENERAL_CHANNEL_ID');
+        if (!genChannelId) return console.log("❌ ไม่พบการตั้งค่าช่องทั่วไป");
+        const channel = await client.channels.fetch(genChannelId).catch(() => null);
         if (!channel) return console.log("❌ ไม่พบช่องทั่วไปสำหรับพยากรณ์อากาศ");
 
         const embed = await getWeatherEmbed("Salaya,TH", process.env.OPENWEATHER_KEY);
@@ -151,11 +157,9 @@ client.once(Events.ClientReady, () => {
             });
         });
 
-        // ถ้ามีการแจก XP ให้เซฟลงไฟล์
+        // ถ้ามีการแจก XP ให้เซฟลง Database
         if (isUpdated) {
-            fs.writeFile(levelsFile, JSON.stringify(levelsData, null, 2), (err) => {
-                if (err) console.error("❌ Error saving voice levels:", err);
-            });
+            saveAllLevelsToDB(levelsData).catch(err => console.error("❌ Error saving voice levels to DB:", err));
         }
     }, 60000); // ทำงานเช็คทุกๆ 1 นาที (60000 ms)
 });
@@ -201,7 +205,10 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
                 executor = log.executor ? log.executor.tag : "ไม่ทราบ";
             }
 
-            const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+            const alertChannelId = await getConfig('ALERT_CHANNEL_ID');
+            let alertChannel = null;
+            if (alertChannelId) alertChannel = await client.channels.fetch(alertChannelId).catch(() => null);
+
             if (alertChannel) {
                 const embed = {
                     color: 0xFFA500, // สีส้ม
@@ -258,8 +265,11 @@ client.on('messageCreate', async (msg) => {
             msg.delete().catch(() => {});
             if (userData.count === SPAM_LIMIT) {
                 msg.channel.send(`⚠️ <@${msg.author.id}> ใจเย็นๆ ครับ! อย่าส่งข้อความรัวเกินไป`);
-                const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
-                if (alertChannel) alertChannel.send(`🚨 **Anti-Spam:** <@${msg.author.id}> กำลังสแปมในห้อง <#${msg.channel.id}>`);
+                const alertChannelId = await getConfig('ALERT_CHANNEL_ID');
+                if (alertChannelId) {
+                    const alertChannel = await client.channels.fetch(alertChannelId).catch(() => null);
+                    if (alertChannel) alertChannel.send(`🚨 **Anti-Spam:** <@${msg.author.id}> กำลังสแปมในห้อง <#${msg.channel.id}>`);
+                }
             }
             return;
         }
@@ -352,10 +362,8 @@ client.on('messageCreate', async (msg) => {
 
             }
 
-            // บันทึกข้อมูลลงไฟล์
-            fs.writeFile(levelsFile, JSON.stringify(levelsData, null, 2), (err) => {
-                if (err) console.error("❌ Error saving levels:", err);
-            });
+            // บันทึกข้อมูลลง Database
+            saveAllLevelsToDB(levelsData).catch(err => console.error("❌ Error saving levels to DB:", err));
 
             // ติด Cooldown 1 นาที (60000 ms)
             xpCooldownMap.add(authorId);
@@ -561,8 +569,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
         const logLine = `${timestamp} ⏰ ${action}\n`;
         fs.appendFile(logFile, logLine, (err) => { if (err) console.error('Error logging voice:', err); });
         try {
-            if (LOG_CHANNEL_ID) {
-                const logChannel = await client.channels.fetch(LOG_CHANNEL_ID);
+            const logChannelId = await getConfig('LOG_CHANNEL_ID');
+            if (logChannelId) {
+                const logChannel = await client.channels.fetch(logChannelId).catch(() => null);
                 if (logChannel) await logChannel.send(`📢 ${timestamp} ⏰ ${action}`);
             }
         } catch (error) { console.error("Send Log Error:", error); }
@@ -575,7 +584,9 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
 // ==========================================
 client.on(Events.GuildMemberAdd, async member => {
     try {
-        const channel = await member.guild.channels.fetch(WELCOME_CHANNEL_ID);
+        const welcomeChannelId = await getConfig('WELCOME_CHANNEL_ID');
+        if (!welcomeChannelId) return;
+        const channel = await member.guild.channels.fetch(welcomeChannelId).catch(() => null);
         if (channel) {
             // ใช้ <@${member.id}> เพื่อให้บอทแท็กเรียกคนนั้นเลย
             channel.send(`🎉 ยินดีต้อนรับ <@${member.id}> เข้าสู่เซิร์ฟเวอร์! ขอให้สนุกนะครับ 🥳`);
@@ -587,7 +598,9 @@ client.on(Events.GuildMemberAdd, async member => {
 
 client.on(Events.GuildMemberRemove, async member => {
     try {
-        const channel = await member.guild.channels.fetch(GOODBYE_CHANNEL_ID);
+        const goodbyeChannelId = await getConfig('GOODBYE_CHANNEL_ID');
+        if (!goodbyeChannelId) return;
+        const channel = await member.guild.channels.fetch(goodbyeChannelId).catch(() => null);
         if (channel) {
             // ใช้ member.user.username เพื่อแสดงชื่อคนที่ออกไปแล้ว
             channel.send(`📤 คุณ **${member.user.username}** ได้ออกจากเซิร์ฟเวอร์แล้ว โชคดีนะ! 👋`);
@@ -622,7 +635,10 @@ client.on('channelUpdate', async (oldChannel, newChannel) => {
                  executor = log.executor ? log.executor.tag : "ไม่ทราบ";
             }
 
-            const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
+            const alertChannelId = await getConfig('ALERT_CHANNEL_ID');
+            let alertChannel = null;
+            if (alertChannelId) alertChannel = await client.channels.fetch(alertChannelId).catch(() => null);
+
             if (alertChannel) {
                 const oldReg = oldChannel.rtcRegion || "Automatic (อัตโนมัติ)";
                 const newReg = newChannel.rtcRegion || "Automatic (อัตโนมัติ)";

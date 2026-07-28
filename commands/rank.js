@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { getAllLevels } = require('../db.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,13 +24,15 @@ module.exports = {
         if (target.bot) {
             return interaction.reply({ content: "🤖 บอทไม่มีเลเวลนะคร้าบ!", flags: 64 });
         }
-        const levelsFile = path.join(__dirname, '..', 'levels.json');
         let levelsData = {};
 
         try {
-            if (fs.existsSync(levelsFile)) {
-                levelsData = JSON.parse(fs.readFileSync(levelsFile, 'utf8'));
-                const showLeaderboard = interaction.options.getBoolean('leaderboard');
+            const rows = await getAllLevels();
+            rows.forEach(r => {
+                levelsData[r.userId] = { xp: r.xp, level: r.level };
+            });
+            
+            const showLeaderboard = interaction.options.getBoolean('leaderboard');
 
                 // ถ้าเลือกดู Leaderboard (ลำดับรวม)
                 if (showLeaderboard) {
@@ -63,7 +66,6 @@ module.exports = {
 
                     return interaction.reply({ embeds: [embed] });
                 }
-            }
         } catch (err) {
             console.error(err);
             return interaction.reply({ content: "❌ ไม่สามารถโหลดข้อมูล Level ได้ในขณะนี้", flags: 64 });

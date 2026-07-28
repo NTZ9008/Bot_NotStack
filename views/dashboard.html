@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Bot NotStack</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo" id="bot-avatar">
+                </div>
+                <div style="flex: 1;">
+                    <h1>Bot_NotStack V3.0.0</h1>
+                    <p>Dashboard & Configuration Control Panel</p>
+                </div>
+                <div>
+                    <button id="logout-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.5rem 1rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('config-tab')">Configuration</button>
+                    <button class="tab-btn" onclick="switchTab('logs-tab')">Logs</button>
+                    <button class="tab-btn" onclick="switchTab('levels-tab')">Levels</button>
+                    <button class="tab-btn" onclick="switchTab('news-tab')">News</button>
+                </div>
+            </div>
+
+            <!-- Config Tab -->
+            <section id="config-tab" class="card tab-content active">
+                <div class="card-header">
+                    <h2>Channel Configuration</h2>
+                    <p>ปรับแต่งเลข ID ห้องสำหรับระบบต่างๆ ของบอท</p>
+                </div>
+                
+                <div id="loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>กำลังโหลดข้อมูล...</p>
+                </div>
+                
+                <div id="config-form" class="hidden">
+                    <!-- Config fields will be rendered here dynamically -->
+                </div>
+            </section>
+
+            <!-- Logs Tab -->
+            <section id="logs-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>System Logs</h2>
+                    <p>ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท</p>
+                </div>
+                <div class="form-group">
+                    <label for="log-file-select">Select Log File</label>
+                    <select id="log-file-select" class="input-select" onchange="fetchLogContent()">
+                        <option value="">Loading files...</option>
+                    </select>
+                </div>
+                <div class="log-viewer" id="log-viewer">
+                    Select a log file to view its contents.
+                </div>
+            </section>
+
+            <!-- Levels Tab -->
+            <section id="levels-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>User Levels & XP</h2>
+                    <p>อันดับผู้ใช้งานในเซิร์ฟเวอร์</p>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="level-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>User ID</th>
+                                <th>Level</th>
+                                <th>XP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="levels-tbody">
+                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- News Tab -->
+            <section id="news-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>Send News to Discord</h2>
+                    <p>ประกาศข่าวสารไปยังช่องที่ตั้งค่าไว้</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="news-type">ประเภทข่าวสาร (Type)</label>
+                    <select id="news-type" class="input-select" style="margin-bottom: 1.5rem;">
+                        <option value="general">📰 ข่าวทั่วไป - General News</option>
+                        <option value="urgent">📢 ข่าวด่วน - Urgent News</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="news-title">หัวข้อประกาศ - Title</label>
+                    <input type="text" id="news-title" class="input-select" placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่..." style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px;">
+                </div>
+                
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="news-content">รายละเอียด - Content</label>
+                    <textarea id="news-content" rows="6" class="input-select" placeholder="พิมพ์เนื้อหาข่าวสารที่ต้องการแจ้งที่นี่..." style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px; resize: vertical;"></textarea>
+                </div>
+
+                <button onclick="sendNews()" id="send-news-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; background: #fbbf24; color: #1e293b;">
+                    ส่งประกาศเข้า Discord
+                </button>
+            </section>
+        </main>
+        
+        <footer>
+            <p>Developed by arlifzs &copy; 2026. NotStackOverflow Server Bot.</p>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">
+        <span class="icon">✅</span>
+        <span class="message">Saved successfully!</span>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            }
+        });
+    </script>
+</body>
+</html>

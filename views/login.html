@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bot NotStack Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-container {
+            max-width: 400px;
+            margin: 10vh auto;
+            text-align: center;
+        }
+        .login-container .card {
+            padding: 2.5rem;
+            border-radius: 10px; /* คืนความโค้งให้การ์ดหน้า Login */
+        }
+        .login-container h2 {
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+        .form-group-login {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        .form-group-login label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        .form-group-login input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 0.875rem 1rem;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+        }
+        .form-group-login input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        .btn-login {
+            width: 100%;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+        .error-message {
+            color: #ef4444;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <div class="login-container">
+        <div class="logo" style="margin-bottom: 1.5rem;">
+            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo">
+        </div>
+        
+        <div class="card">
+            <h2>BotNotStack Dashboard</h2>
+            <form id="login-form">
+                <div class="form-group-login">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group-login">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                
+                <button type="submit" class="btn-login" id="login-btn">
+                    Login
+                </button>
+                <div id="error-msg" class="error-message">Invalid username or password</div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('login-btn');
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            btn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (res.ok) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'เข้าสู่ระบบสำเร็จ!',
+                        text: 'กำลังพาท่านไปยังหน้า Dashboard...',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = '/';
+                    });
+                } else {
+                    const data = await res.json();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เข้าสู่ระบบล้มเหลว',
+                        text: data.error || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง',
+                        confirmButtonColor: '#6366f1'
+                    });
+                    btn.innerHTML = 'Login';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เชื่อมต่อไม่สำเร็จ',
+                    text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่',
+                    confirmButtonColor: '#6366f1'
+                });
+                btn.innerHTML = 'Login';
+                btn.disabled = false;
+            }
+        });
+
+        // รองรับการกด Enter เพื่อล็อกอิน
+        const handleEnter = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('login-btn').click();
+            }
+        };
+        document.getElementById('username').addEventListener('keypress', handleEnter);
+        document.getElementById('password').addEventListener('keypress', handleEnter);
+    </script>
+</body>
+</html>
