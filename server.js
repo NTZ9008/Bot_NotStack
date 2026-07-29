@@ -15,6 +15,10 @@ app.use(helmet({
     contentSecurityPolicy: false, // ปิดไว้เพื่อให้ดึงรูป/ฟอนต์จากภายนอกได้ง่าย
 }));
 app.use(cors());
+
+// PR Bot: ต้องมาก่อน express.json() เพื่อให้ signature verify ด้วย raw body ได้
+app.use('/webhook', require('./prbot/routes/github'));
+
 app.use(express.json());
 
 // Session Configuration (ระบบ Login)
@@ -151,6 +155,9 @@ app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
 });
 
 const startServer = (client) => {
+    // PR Bot: ส่งต่อ client ตัวเดียวกับที่บอทหลักใช้ ให้ webhook handler เอาไปส่งข้อความได้
+    require('./prbot/discordClient').setClient(client);
+
     // --- News Notification API ---
     app.post('/api/news', requireApiAuth, async (req, res) => {
         const { type, title, content } = req.body;
