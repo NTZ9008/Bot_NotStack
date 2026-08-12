@@ -4,11 +4,13 @@ const path = require('path');
 const session = require('express-session');
 const helmet = require('helmet');
 const fs = require('fs');
-const { getAllConfigs, updateConfig, getAllLevels, getConfig } = require('./db');
+const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord } = require('./db');
+const schedule = require('node-schedule');
 
 const app = express();
 const port = process.env.PORT || 3035;
 const { EmbedBuilder } = require('discord.js');
+let discordClient = null;
 
 // Security Middleware (Helmet + CORS)
 app.use(helmet({
@@ -115,7 +117,28 @@ app.post('/api/config', requireApiAuth, async (req, res) => {
 // --- Levels API ---
 app.get('/api/levels', requireApiAuth, async (req, res) => {
     try {
-        const levels = await getAllLevels();
+        let levels = await getAllLevels();
+        
+        if (discordClient) {
+            levels = await Promise.all(levels.map(async (lvl) => {
+                let username = 'Unknown User';
+                try {
+                    let user = discordClient.users.cache.get(lvl.userId);
+                    if (!user) {
+                        user = await discordClient.users.fetch(lvl.userId).catch(() => null);
+                    }
+                    if (user) {
+                        username = user.globalName || user.username;
+                    }
+                } catch(e) {}
+                
+                return {
+                    ...lvl,
+                    username
+                };
+            }));
+        }
+
         res.json(levels);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -155,6 +178,7 @@ app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
 });
 
 const startServer = (client) => {
+    discordClient = client;
     // PR Bot: ส่งต่อ client ตัวเดียวกับที่บอทหลักใช้ ให้ webhook handler เอาไปส่งข้อความได้
     require('./prbot/discordClient').setClient(client);
 
@@ -197,6 +221,173 @@ const startServer = (client) => {
             res.status(500).json({ error: err.message });
         }
     });
+
+    // --- Room Access API ---
+    app.post('/api/grant-access', requireApiAuth, async (req, res) => {
+        const { userId, roomId, action, duration } = req.body;
+        if (!userId || !roomId || !action) {
+            return res.status(400).json({ error: 'User ID, Room ID, and Action are required' });
+        }
+
+        try {
+            const targetRooms = roomId === 'all' 
+                ? ['1475009551475675299', '1430932852928680059', '1420442631120490667', '1383415462158929990'] 
+                : [roomId];
+
+            let successCount = 0;
+            let errors = [];
+
+            for (const id of targetRooms) {
+                try {
+                    const channel = await client.channels.fetch(id).catch(() => null);
+                    if (!channel) {
+                        errors.push(`หาห้อง ${id} ไม่พบ`);
+                        continue;
+                    }
+                    
+                    if (action === 'grant') {
+                        await channel.permissionOverwrites.edit(userId, {
+                            ViewChannel: true,
+                            ReadMessageHistory: true,
+                            Connect: true,
+                            Speak: true,
+                            SendMessages: true
+                        }, { type: 1 });
+                        
+                        // Clear old records if any
+                        await removeRoomAccess(userId, id);
+                        
+                        // If duration provided, save to DB
+                        if (duration && duration > 0) {
+                            const expireAt = Date.now() + (duration * 60 * 1000); // duration is in minutes
+                            await addRoomAccess(userId, id, expireAt);
+                            
+                            // Send DM with native Discord countdown
+                            try {
+                                const userObj = await client.users.fetch(userId).catch(() => null);
+                                if (userObj) {
+                                    const unixTime = Math.floor(expireAt / 1000);
+                                    await userObj.send(`🎫 คุณได้รับตั๋วเข้าห้อง **${channel.name}** แล้ว (หมดเวลา: <t:${unixTime}:R>)`).catch(() => {});
+                                }
+                            } catch (dmErr) {
+                                console.error('Cannot send DM to user:', dmErr);
+                            }
+                        }
+                    } else if (action === 'revoke') {
+                        await channel.permissionOverwrites.delete(userId);
+                        await removeRoomAccess(userId, id);
+                    }
+                    
+                    successCount++;
+                } catch (e) {
+                    errors.push(`เกิดข้อผิดพลาดกับห้อง ${id}: ${e.message}`);
+                }
+            }
+
+            if (successCount === 0 && errors.length > 0) {
+                return res.status(500).json({ error: errors.join(', ') });
+            }
+
+            const actionText = action === 'grant' ? 'ให้สิทธิ์' : 'ถอนสิทธิ์';
+            res.json({ success: true, message: `${actionText}สำเร็จ ${successCount} ห้อง`, errors: errors.length > 0 ? errors : undefined });
+        } catch (err) {
+            console.error('Error granting access:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // --- Room Access List API ---
+    app.get('/api/room-access-list', requireApiAuth, async (req, res) => {
+        try {
+            const targetRooms = ['1475009551475675299', '1430932852928680059', '1420442631120490667', '1383415462158929990'];
+            const activeAccess = await getActiveRoomAccess();
+            
+            let resultList = [];
+
+            for (const roomId of targetRooms) {
+                // Use force: true to bypass cache and get the latest overwrites
+                const channel = await client.channels.fetch(roomId, { force: true }).catch(() => null);
+                if (!channel) continue;
+
+                // 1 = Member (User) in Discord.js v14 OverwriteType
+                const overwrites = channel.permissionOverwrites.cache.filter(o => o.type === 1 || o.type === 'member');
+                
+                for (const [userId, overwrite] of overwrites) {
+                    if (overwrite.allow.has('ViewChannel')) {
+                        let username = userId;
+                        let avatar = null;
+                        try {
+                            const u = await client.users.fetch(userId);
+                            username = u.globalName || u.username;
+                            avatar = u.displayAvatarURL({ size: 64 });
+                        } catch (e) {}
+
+                        const tempRecord = activeAccess.find(r => r.userId === userId && r.roomId === roomId);
+                        
+                        resultList.push({
+                            userId,
+                            username,
+                            avatar,
+                            roomId,
+                            roomName: channel.name,
+                            type: tempRecord ? 'temporary' : 'permanent',
+                            expireAt: tempRecord ? tempRecord.expireAt : null
+                        });
+                    }
+                }
+            }
+
+            res.json(resultList);
+        } catch (err) {
+            console.error('Error fetching room access list:', err);
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // Check for room access expiry every 5 seconds for precise revocation
+    setInterval(async () => {
+        try {
+            const activeAccess = await getActiveRoomAccess();
+            const now = Date.now();
+            const notifyBefore = 5 * 60 * 1000; // 5 minutes
+
+            for (const record of activeAccess) {
+                // 1. Check if expired
+                if (now >= record.expireAt) {
+                    try {
+                        const channel = await client.channels.fetch(record.roomId).catch(() => null);
+                        if (channel) {
+                            await channel.permissionOverwrites.delete(record.userId).catch(() => {});
+                            
+                            // Send expiration message
+                            const user = await client.users.fetch(record.userId).catch(() => null);
+                            if (user) {
+                                user.send(`❌ ตั๋วเข้าห้อง **${channel.name}** ของคุณหมดเวลาแล้ว`).catch(() => {});
+                            }
+                        }
+                        await deleteRoomAccessRecord(record.id);
+                    } catch (e) {
+                        console.error('Error expiring room access:', e);
+                    }
+                } 
+                // 2. Check if near expiry and not notified
+                else if (!record.notified && (record.expireAt - now) <= notifyBefore) {
+                    try {
+                        const channel = await client.channels.fetch(record.roomId).catch(() => null);
+                        const user = await client.users.fetch(record.userId).catch(() => null);
+                        if (user && channel) {
+                            user.send(`⚠️ ตั๋วเข้าห้อง **${channel.name}** ของคุณกำลังจะหมดเวลา!`).catch(() => {});
+                            await markRoomAccessNotified(record.id);
+                        }
+                    } catch (e) {
+                        console.error('Error notifying room access expiry:', e);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Error in room access schedule task:', error);
+        }
+    }, 5000);
 
     app.listen(port, () => {
         console.log(`🚀 Secure Dashboard Server running on http://localhost:${port}`);

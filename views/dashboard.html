@@ -18,7 +18,7 @@
                     <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo" id="bot-avatar">
                 </div>
                 <div style="flex: 1;">
-                    <h1>Bot_NotStack V3.0.0</h1>
+                    <h1>Bot_NotStack V3.1.0</h1>
                     <p>Dashboard & Configuration Control Panel</p>
                 </div>
                 <div>
@@ -41,6 +41,7 @@
                     <button class="tab-btn" onclick="switchTab('logs-tab')">Logs</button>
                     <button class="tab-btn" onclick="switchTab('levels-tab')">Levels</button>
                     <button class="tab-btn" onclick="switchTab('news-tab')">News</button>
+                    <button class="tab-btn" onclick="switchTab('access-tab')">Room Access</button>
                 </div>
             </div>
 
@@ -89,7 +90,7 @@
                         <thead>
                             <tr>
                                 <th>Rank</th>
-                                <th>User ID</th>
+                                <th>User</th>
                                 <th>Level</th>
                                 <th>XP</th>
                             </tr>
@@ -129,6 +130,75 @@
                 <button onclick="sendNews()" id="send-news-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; background: #fbbf24; color: #1e293b;">
                     ส่งประกาศเข้า Discord
                 </button>
+            </section>
+
+            <!-- Room Access Tab -->
+            <section id="access-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>Grant Room Access</h2>
+                    <p>ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ</p>
+                </div>
+                
+                <div class="form-group">
+                    <label for="access-user-id">Discord User ID</label>
+                    <input type="text" id="access-user-id" class="input-select" placeholder="กรอก User ID ของผู้ใช้" style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px;">
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label for="access-room-id">เลือกห้องที่ต้องการให้สิทธิ์</label>
+                    <select id="access-room-id" class="input-select" style="margin-bottom: 1.5rem;">
+                        <option value="1475009551475675299">🎶About Us สาขา 2💃🕺👯</option>
+                        <option value="1430932852928680059">ห้องลับ V2</option>
+                        <option value="1420442631120490667">🫂นัวPR🫂</option>
+                        <option value="1383415462158929990">ไหลลื่นคลื่นศาลายา</option>
+                        <option value="all">ให้สิทธิ์ทุกห้องข้างต้น</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="access-action">เลือกรูปแบบการดำเนินการ</label>
+                    <select id="access-action" class="input-select" onchange="toggleDurationInput()">
+                        <option value="grant">ให้สิทธิ์ถาวร</option>
+                        <option value="grant_temp">ให้สิทธิ์ชั่วคราว</option>
+                        <option value="revoke">ถอนสิทธิ์</option>
+                    </select>
+                </div>
+
+                <div class="form-group hidden" id="duration-group" style="margin-top: 1.5rem;">
+                    <label>ระยะเวลา (ชั่วโมง : นาที : วินาที)</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <select id="access-hours" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
+                        <span style="display: flex; align-items: center; font-weight: bold;">:</span>
+                        <select id="access-minutes" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
+                        <span style="display: flex; align-items: center; font-weight: bold;">:</span>
+                        <select id="access-seconds" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
+                    </div>
+                </div>
+
+                <button onclick="grantAccess()" id="grant-access-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; background: #6366f1; color: white;">
+                    ดำเนินการ
+                </button>
+
+                <div style="margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 2rem;">
+                    <h3>รายชื่อผู้ได้รับสิทธิ์เข้าห้อง</h3>
+                    <p style="margin-bottom: 1rem; font-size: 0.875rem;">ผู้ที่มีสิทธิ์ถาวร และจำกัดเวลา (อัปเดตอัตโนมัติ)</p>
+                    <div style="overflow-x: auto;">
+                        <table class="level-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Room</th>
+                                    <th>Type</th>
+                                    <th>Time Left</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="access-list-tbody">
+                                <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </main>
         

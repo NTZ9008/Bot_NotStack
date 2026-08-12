@@ -2,6 +2,25 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchConfig();
     fetchLogsList();
     fetchLevels();
+    fetchRoomAccessList();
+    
+    // Populate Time Dropdowns
+    const hoursSelect = document.getElementById('access-hours');
+    const minutesSelect = document.getElementById('access-minutes');
+    const secondsSelect = document.getElementById('access-seconds');
+    if (hoursSelect && minutesSelect && secondsSelect) {
+        for (let i = 0; i <= 72; i++) {
+            hoursSelect.innerHTML += `<option value="${i}">${i.toString().padStart(2, '0')} ชม.</option>`;
+        }
+        for (let i = 0; i < 60; i++) {
+            const opt = `<option value="${i}">${i.toString().padStart(2, '0')} นาที</option>`;
+            minutesSelect.innerHTML += opt;
+        }
+        for (let i = 0; i < 60; i++) {
+            const opt = `<option value="${i}">${i.toString().padStart(2, '0')} วิ</option>`;
+            secondsSelect.innerHTML += opt;
+        }
+    }
 });
 
 // --- Tab Navigation ---
@@ -11,6 +30,10 @@ function switchTab(tabId) {
     
     event.currentTarget.classList.add('active');
     document.getElementById(tabId).classList.remove('hidden');
+    
+    if (tabId === 'access-tab') {
+        fetchRoomAccessList();
+    }
 }
 
 // --- Config Methods ---
@@ -216,7 +239,10 @@ async function fetchLevels() {
             html += `
                 <tr>
                     <td><span class="rank-badge ${rankClass}">${rankText}</span></td>
-                    <td style="font-family: monospace;">${user.userId}</td>
+                    <td>
+                        <strong style="color: #f8fafc;">${user.username || 'Unknown User'}</strong><br>
+                        <small style="color: #64748b; font-family: monospace;">${user.userId}</small>
+                    </td>
                     <td><strong style="color: var(--primary);">Lvl ${user.level}</strong></td>
                     <td>${user.xp.toLocaleString()} XP</td>
                 </tr>
@@ -298,3 +324,218 @@ async function sendNews() {
         btn.disabled = false;
     }
 }
+
+// --- Room Access Methods ---
+function toggleDurationInput() {
+    const action = document.getElementById('access-action').value;
+    const durationGroup = document.getElementById('duration-group');
+    if (action === 'grant_temp') {
+        durationGroup.classList.remove('hidden');
+    } else {
+        durationGroup.classList.add('hidden');
+    }
+}
+
+async function grantAccess() {
+    const userId = document.getElementById('access-user-id').value.trim();
+    const roomId = document.getElementById('access-room-id').value;
+    let action = document.getElementById('access-action').value;
+    const btn = document.getElementById('grant-access-btn');
+
+    if (!userId) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'ข้อมูลไม่ครบถ้วน',
+            text: 'กรุณากรอก User ID ของผู้ใช้'
+        });
+        return;
+    }
+
+    let duration = null;
+    if (action === 'grant_temp') {
+        const h = parseInt(document.getElementById('access-hours').value) || 0;
+        const m = parseInt(document.getElementById('access-minutes').value) || 0;
+        const s = parseInt(document.getElementById('access-seconds').value) || 0;
+        
+        if (h === 0 && m === 0 && s === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'ข้อมูลไม่ครบถ้วน',
+                text: 'กรุณาระบุระยะเวลาที่มากกว่า 0'
+            });
+            return;
+        }
+        
+        // Convert to minutes for backend (allows decimals for seconds)
+        duration = (h * 60) + m + (s / 60);
+        action = 'grant'; // ส่งให้ backend ทราบว่าเป็นการ grant แต่มีเวลา
+    }
+
+    const actionText = action === 'grant' ? 'ให้สิทธิ์' : 'ถอนสิทธิ์';
+    const confirmResult = await Swal.fire({
+        title: `ยืนยันการ${actionText}?`,
+        text: `คุณต้องการ${actionText}ผู้ใช้นี้เข้าห้องใช่หรือไม่?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: action === 'revoke' ? '#ef4444' : '#6366f1',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ยืนยัน',
+        cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> กำลังดำเนินการ...';
+    btn.disabled = true;
+
+    try {
+        const response = await fetch('/api/grant-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, roomId, action, duration })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            let msg = result.message;
+            if (result.errors && result.errors.length > 0) {
+                msg += '\n\n⚠️ พบปัญหาบางส่วน:\n' + result.errors.join('\n');
+            }
+            Swal.fire({
+                icon: result.errors && result.errors.length > 0 ? 'warning' : 'success',
+                title: 'ดำเนินการเสร็จสิ้น',
+                text: msg
+            });
+            fetchRoomAccessList();
+            if (action === 'revoke' || action === 'grant') {
+                 // reset form but keep id
+            }
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'ดำเนินการไม่สำเร็จ',
+                text: result.error
+            });
+        }
+    } catch (e) {
+        Swal.fire({
+            icon: 'error',
+            title: 'เชื่อมต่อไม่สำเร็จ',
+            text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้'
+        });
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+// Global variable for access list
+let roomAccessData = [];
+let countdownInterval = null;
+
+async function fetchRoomAccessList() {
+    try {
+        const res = await fetch('/api/room-access-list');
+        roomAccessData = await res.json();
+        renderRoomAccessList();
+        
+        // Start countdown interval if there are temporary accesses
+        if (countdownInterval) clearInterval(countdownInterval);
+        countdownInterval = setInterval(renderRoomAccessList, 1000); // Update every second
+    } catch (e) {
+        console.error('Error fetching room access list:', e);
+        document.getElementById('access-list-tbody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Error loading data.</td></tr>';
+    }
+}
+
+function renderRoomAccessList() {
+    const tbody = document.getElementById('access-list-tbody');
+    if (!roomAccessData || roomAccessData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">ไม่มีผู้ได้รับสิทธิ์</td></tr>';
+        return;
+    }
+
+    const now = Date.now();
+    let html = '';
+
+    roomAccessData.forEach(item => {
+        let typeBadge = item.type === 'temporary' 
+            ? '<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">จำกัดเวลา</span>'
+            : '<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">ถาวร</span>';
+
+        let timeLeftStr = '-';
+        if (item.type === 'temporary' && item.expireAt) {
+            const diff = item.expireAt - now;
+            if (diff <= 0) {
+                timeLeftStr = '<span style="color: #ef4444;">หมดเวลาแล้ว</span>';
+            } else {
+                const totalSeconds = Math.floor(diff / 1000);
+                const h = Math.floor(totalSeconds / 3600);
+                const m = Math.floor((totalSeconds % 3600) / 60);
+                const s = totalSeconds % 60;
+                timeLeftStr = `<span style="font-family: monospace;">${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</span>`;
+            }
+        }
+
+        html += `
+            <tr>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        ${item.avatar ? `<img src="${item.avatar}" style="width: 24px; height: 24px; border-radius: 50%;">` : '<div style="width: 24px; height: 24px; border-radius: 50%; background: #475569;"></div>'}
+                        <div>
+                            <strong style="color: #f8fafc;">${item.username}</strong><br>
+                            <small style="color: #64748b; font-family: monospace;">${item.userId}</small>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size: 0.875rem;">${item.roomName}</td>
+                <td>${typeBadge}</td>
+                <td>${timeLeftStr}</td>
+                <td>
+                    <button onclick="revokeAccessDirectly('${item.userId}', '${item.roomId}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.3rem 0.6rem; font-size: 0.75rem; width: auto;">
+                        ถอนสิทธิ์
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = html;
+}
+
+async function revokeAccessDirectly(userId, roomId) {
+    const confirmResult = await Swal.fire({
+        title: 'ยืนยันการถอนสิทธิ์?',
+        text: "คุณต้องการถอนสิทธิ์ผู้ใช้นี้ทันทีใช่หรือไม่?",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'ถอนสิทธิ์',
+        cancelButtonText: 'ยกเลิก'
+    });
+
+    if (!confirmResult.isConfirmed) return;
+
+    try {
+        const response = await fetch('/api/grant-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, roomId, action: 'revoke' })
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ถอนสิทธิ์สำเร็จ', showConfirmButton: false, timer: 3000 });
+            fetchRoomAccessList();
+        } else {
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: result.error });
+        }
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' });
+    }
+}
+
+

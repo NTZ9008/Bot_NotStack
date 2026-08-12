@@ -242,11 +242,21 @@ footer {
     display: flex;
     justify-content: flex-start;
     margin-bottom: 0; /* Attach directly to card */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    width: 100%;
+}
+
+.tabs-container::-webkit-scrollbar {
+    display: none;
 }
 
 .tabs {
     display: flex;
     gap: 0; /* ติดกัน ไม่มีช่องว่าง */
+    width: 100%;
 }
 
 .tab-btn {
@@ -256,7 +266,9 @@ footer {
     border-bottom: none;
     margin-left: -1px; /* ขยับขอบให้ทับซ้อนกันเพื่อไม่ให้เส้นหนาเกินไป */
     padding: 0.75rem 1rem;
-    width: 180px; /* กำหนดความกว้างตายตัวให้เท่ากัน */
+    flex: 1;
+    min-width: 130px;
+    white-space: nowrap;
     justify-content: center; /* จัดให้อยู่กึ่งกลาง */
     border-radius: 10px 10px 0 0;
     cursor: pointer;
