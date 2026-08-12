@@ -1,5 +1,3 @@
-const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
 async function getWeatherEmbed(city, apiKey) {
   const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}&units=metric&lang=th`;
   const res = await fetch(url);
