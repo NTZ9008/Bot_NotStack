@@ -1,44 +1,56 @@
 {
   "communities": {
     "0": [
+      "commands_weather",
+      "commands_weather_execute",
+      "commands_weather_getweatherembed",
       "index",
       "index_aiusage",
       "index_badwordsfile",
       "index_badwordsset",
       "index_client",
-      "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent",
+      "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent_partials",
       "index_commandfiles",
       "index_dotenv",
       "index_fs",
       "index_genai",
+      "index_getconfig_savealllevelstodb_getalllevels",
       "index_getweatherembed",
       "index_googlegenerativeai",
-      "index_levelsfile",
-      "index_messagecreate",
+      "index_levelsdata",
       "index_model",
       "index_path",
+      "index_reactionrolesmap",
       "index_schedule",
       "index_spammap",
-      "index_xpcooldownmap",
-      "readme_ai_chat",
-      "readme_anti_spam"
+      "index_startserver",
+      "index_voicespammap",
+      "index_xpcooldownmap"
     ],
     "1": [
-      "commands_rank",
-      "commands_rank_execute",
-      "commands_rank_fs",
-      "commands_rank_path",
-      "commands_rank_slashcommandbuilder_embedbuilder",
-      "commands_weather",
-      "commands_weather_execute",
-      "commands_weather_fetch",
-      "commands_weather_getweatherembed",
-      "index_clientready",
-      "index_levelsdata",
-      "solution_bot_api",
-      "solution_database_migration",
-      "solution_level_to_token_system",
-      "solution_shared_json"
+      "db",
+      "db_db",
+      "db_dbpath",
+      "db_fs",
+      "db_getallconfigs",
+      "db_getconfig",
+      "db_path",
+      "db_savealllevelstodb",
+      "db_sqlite3",
+      "db_updateconfig",
+      "server",
+      "server_app",
+      "server_cors",
+      "server_embedbuilder",
+      "server_express",
+      "server_fs",
+      "server_getallconfigs_updateconfig_getalllevels_getconfig",
+      "server_helmet",
+      "server_path",
+      "server_requireapiauth",
+      "server_requireauth",
+      "server_session",
+      "server_startserver"
     ],
     "2": [
       "package",
@@ -54,6 +66,30 @@
       "package_version"
     ],
     "3": [
+      "package_dependencies",
+      "package_dependencies_cors",
+      "package_dependencies_discord_js",
+      "package_dependencies_dotenv",
+      "package_dependencies_express",
+      "package_dependencies_express_session",
+      "package_dependencies_google_generative_ai",
+      "package_dependencies_helmet",
+      "package_dependencies_node_schedule",
+      "package_dependencies_sqlite3"
+    ],
+    "4": [
+      "public_script",
+      "public_script_fetchconfig",
+      "public_script_fetchlevels",
+      "public_script_fetchlogcontent",
+      "public_script_fetchlogslist",
+      "public_script_logout",
+      "public_script_sendnews",
+      "public_script_showtoast",
+      "public_script_switchtab",
+      "public_script_updateconfig"
+    ],
+    "5": [
       "commands_addrole",
       "commands_addrole_componenthandler",
       "commands_addrole_execute",
@@ -61,10 +97,10 @@
       "commands_addrole_logdir",
       "commands_addrole_logspecialrole",
       "commands_addrole_path",
-      "commands_addrole_slashcommandbuilder_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
+      "commands_addrole_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
       "commands_addrole_specialroles"
     ],
-    "4": [
+    "6": [
       "deploy_command",
       "deploy_command_clientid_guildid",
       "deploy_command_commandfiles",
@@ -74,100 +110,86 @@
       "deploy_command_rest",
       "deploy_command_rest_routes"
     ],
-    "5": [
-      "package_dependencies",
-      "package_dependencies_discord_js",
-      "package_dependencies_dotenv",
-      "package_dependencies_google_generative_ai",
-      "package_dependencies_node_fetch",
-      "package_dependencies_node_schedule"
-    ],
-    "6": [
-      "events_interactioncreate",
-      "events_interactioncreate_execute",
-      "events_interactioncreate_fs",
-      "events_interactioncreate_path",
-      "index_interactioncreate"
-    ],
     "7": [
+      "commands_rank",
+      "commands_rank_execute",
+      "commands_rank_fs",
+      "commands_rank_getalllevels",
+      "commands_rank_path",
+      "commands_rank_slashcommandbuilder_embedbuilder",
+      "db_getalllevels"
+    ],
+    "8": [
       "commands_botinfo",
       "commands_botinfo_execute",
       "commands_botinfo_os",
       "commands_botinfo_slashcommandbuilder_embedbuilder"
     ],
-    "8": [
+    "9": [
       "commands_verify",
       "commands_verify_componenthandler",
       "commands_verify_execute",
       "commands_verify_slashcommandbuilder_modalbuilder_textinputbuilder_textinputstyle_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder"
     ],
-    "9": [
+    "10": [
+      "events_interactioncreate",
+      "events_interactioncreate_execute",
+      "events_interactioncreate_fs",
+      "events_interactioncreate_path"
+    ],
+    "11": [
       "commands_admininfo",
       "commands_admininfo_execute",
       "commands_admininfo_slashcommandbuilder_embedbuilder"
     ],
-    "10": [
+    "12": [
       "commands_helpme",
       "commands_helpme_execute",
       "commands_helpme_slashcommandbuilder_embedbuilder"
     ],
-    "11": [
+    "13": [
       "commands_ping",
       "commands_ping_execute",
       "commands_ping_slashcommandbuilder"
     ],
-    "12": [
+    "14": [
       "commands_poll",
       "commands_poll_execute",
       "commands_poll_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_embedbuilder"
     ],
-    "13": [
+    "15": [
       "commands_random",
       "commands_random_execute",
       "commands_random_slashcommandbuilder"
     ],
-    "14": [
+    "16": [
       "commands_serverinfo",
       "commands_serverinfo_execute",
       "commands_serverinfo_slashcommandbuilder_embedbuilder"
     ],
-    "15": [
+    "17": [
+      "commands_setuproles",
+      "commands_setuproles_execute",
+      "commands_setuproles_slashcommandbuilder_embedbuilder"
+    ],
+    "18": [
       "commands_userinfo",
       "commands_userinfo_execute",
       "commands_userinfo_slashcommandbuilder_embedbuilder"
-    ],
-    "16": [
-      "index_channelupdate",
-      "readme_bitrate_monitor",
-      "readme_region_monitor"
-    ],
-    "17": [
-      "index_voicespammap",
-      "index_voicestateupdate",
-      "readme_anti_force_move"
-    ],
-    "18": [
-      "index_guildmemberadd"
-    ],
-    "19": [
-      "index_guildmemberremove"
-    ],
-    "20": [
-      "readme_bot_notstack"
     ]
   },
   "cohesion": {
-    "0": 0.11428571428571428,
-    "1": 0.1523809523809524,
+    "0": 0.08666666666666667,
+    "1": 0.09881422924901186,
     "2": 0.18181818181818182,
-    "3": 0.25,
-    "4": 0.25,
-    "5": 0.3333333333333333,
-    "6": 0.4,
-    "7": 0.5,
+    "3": 0.2,
+    "4": 0.2,
+    "5": 0.25,
+    "6": 0.25,
+    "7": 0.3333333333333333,
     "8": 0.5,
-    "9": 0.6666666666666666,
-    "10": 0.6666666666666666,
+    "9": 0.5,
+    "10": 0.5,
     "11": 0.6666666666666666,
     "12": 0.6666666666666666,
     "13": 0.6666666666666666,
@@ -175,30 +197,23 @@
     "15": 0.6666666666666666,
     "16": 0.6666666666666666,
     "17": 0.6666666666666666,
-    "18": 1.0,
-    "19": 1.0,
-    "20": 1.0
+    "18": 0.6666666666666666
   },
   "gods": [
     {
-      "id": "index_messagecreate",
-      "label": "messageCreate Event",
-      "degree": 8
+      "id": "db_getalllevels",
+      "label": "getAllLevels()",
+      "degree": 5
     },
     {
       "id": "commands_weather_getweatherembed",
       "label": "getWeatherEmbed()",
-      "degree": 5
+      "degree": 3
     },
     {
-      "id": "index_levelsdata",
-      "label": "levelsData",
-      "degree": 5
-    },
-    {
-      "id": "solution_level_to_token_system",
-      "label": "Level to Token System",
-      "degree": 4
+      "id": "db_getconfig",
+      "label": "getConfig()",
+      "degree": 3
     },
     {
       "id": "commands_addrole_logspecialrole",
@@ -216,108 +231,64 @@
       "degree": 2
     },
     {
-      "id": "commands_weather_fetch",
-      "label": "fetch()",
-      "degree": 2
-    },
-    {
       "id": "commands_weather_execute",
       "label": "execute()",
       "degree": 2
     },
     {
-      "id": "events_interactioncreate_execute",
-      "label": "execute()",
+      "id": "db_getallconfigs",
+      "label": "getAllConfigs()",
+      "degree": 2
+    },
+    {
+      "id": "db_updateconfig",
+      "label": "updateConfig()",
+      "degree": 2
+    },
+    {
+      "id": "db_savealllevelstodb",
+      "label": "saveAllLevelsToDB()",
       "degree": 2
     }
   ],
   "surprises": [
     {
-      "source": "AI Chat System",
-      "target": "messageCreate Event",
-      "source_files": [
-        "README.md",
-        "index.js"
-      ],
-      "confidence": "INFERRED",
-      "relation": "conceptually_related_to",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories; peripheral node `AI Chat System` unexpectedly reaches hub `messageCreate Event`"
-    },
-    {
-      "source": "Anti-Spam System",
-      "target": "messageCreate Event",
-      "source_files": [
-        "README.md",
-        "index.js"
-      ],
-      "confidence": "INFERRED",
-      "relation": "conceptually_related_to",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories; peripheral node `Anti-Spam System` unexpectedly reaches hub `messageCreate Event`"
-    },
-    {
       "source": "execute()",
-      "target": "InteractionCreate Event",
+      "target": "getAllLevels()",
       "source_files": [
-        "events/interactionCreate.js",
-        "index.js"
+        "commands/rank.js",
+        "db.js"
       ],
-      "confidence": "INFERRED",
-      "relation": "semantically_similar_to",
-      "why": "inferred connection - not explicitly stated in source; connects across different repos/directories; semantically similar concepts with no structural link"
-    },
-    {
-      "source": "Level to Token System",
-      "target": "levelsData",
-      "source_files": [
-        "SOLUTION.md",
-        "index.js"
-      ],
-      "confidence": "INFERRED",
-      "relation": "conceptually_related_to",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories"
-    },
-    {
-      "source": "Bitrate Monitor",
-      "target": "channelUpdate Event",
-      "source_files": [
-        "README.md",
-        "index.js"
-      ],
-      "confidence": "INFERRED",
-      "relation": "conceptually_related_to",
-      "why": "inferred connection - not explicitly stated in source; crosses file types (code ↔ doc); connects across different repos/directories"
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "why": "connects across different repos/directories; peripheral node `execute()` unexpectedly reaches hub `getAllLevels()`"
     }
   ],
   "questions": [
     {
       "type": "bridge_node",
-      "question": "Why does `levelsData` connect `Community 1` to `Community 0`?",
-      "why": "High betweenness centrality (0.049) - this node is a cross-community bridge."
+      "question": "Why does `getAllLevels()` connect `Community 7` to `Community 0`, `Community 1`?",
+      "why": "High betweenness centrality (0.015) - this node is a cross-community bridge."
     },
     {
-      "type": "verify_inferred",
-      "question": "Are the 8 inferred relationships involving `messageCreate Event` (e.g. with `aiUsage` and `badWordsSet`) actually correct?",
-      "why": "`messageCreate Event` has 8 INFERRED edges - model-reasoned connections that need verification."
-    },
-    {
-      "type": "verify_inferred",
-      "question": "Are the 4 inferred relationships involving `levelsData` (e.g. with `execute()` and `ClientReady Event`) actually correct?",
-      "why": "`levelsData` has 4 INFERRED edges - model-reasoned connections that need verification."
-    },
-    {
-      "type": "verify_inferred",
-      "question": "Are the 4 inferred relationships involving `Level to Token System` (e.g. with `Bot API Solution` and `Database Migration Solution`) actually correct?",
-      "why": "`Level to Token System` has 4 INFERRED edges - model-reasoned connections that need verification."
+      "type": "bridge_node",
+      "question": "Why does `dependencies` connect `Community 3` to `Community 2`?",
+      "why": "High betweenness centrality (0.014) - this node is a cross-community bridge."
     },
     {
       "type": "isolated_nodes",
-      "question": "What connects `fs`, `path`, `{\r\n  SlashCommandBuilder,\r\n  ActionRowBuilder,\r\n  StringSelectMenuBuilder,\r\n  StringSelectMenuOptionBuilder,\r\n  ModalBuilder,\r\n  TextInputBuilder,\r\n  TextInputStyle,\r\n  InteractionType\r\n}` to the rest of the system?",
-      "why": "65 weakly-connected nodes found - possible documentation gaps or missing edges."
+      "question": "What connects `fs`, `path`, `{\r\n  SlashCommandBuilder,\r\n  ActionRowBuilder,\r\n  ButtonBuilder,\r\n  ButtonStyle,\r\n  ModalBuilder,\r\n  TextInputBuilder,\r\n  TextInputStyle,\r\n  InteractionType\r\n}` to the rest of the system?",
+      "why": "82 weakly-connected nodes found - possible documentation gaps or missing edges."
     },
     {
       "type": "low_cohesion",
       "question": "Should `Community 0` be split into smaller, more focused modules?",
-      "why": "Cohesion score 0.11428571428571428 - nodes in this community are weakly interconnected."
+      "why": "Cohesion score 0.08666666666666667 - nodes in this community are weakly interconnected."
+    },
+    {
+      "type": "low_cohesion",
+      "question": "Should `Community 1` be split into smaller, more focused modules?",
+      "why": "Cohesion score 0.09881422924901186 - nodes in this community are weakly interconnected."
     }
   ]
 }
