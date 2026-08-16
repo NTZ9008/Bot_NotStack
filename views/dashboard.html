@@ -42,6 +42,7 @@
                     <button class="tab-btn" onclick="switchTab('levels-tab')">Levels</button>
                     <button class="tab-btn" onclick="switchTab('news-tab')">News</button>
                     <button class="tab-btn" onclick="switchTab('access-tab')">Room Access</button>
+                    <button class="tab-btn" onclick="switchTab('prbot-tab')">PR Bot</button>
                 </div>
             </div>
 
@@ -200,6 +201,51 @@
                     </div>
                 </div>
             </section>
+
+            <!-- PR Bot Tab -->
+            <section id="prbot-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>PR Bot — GitHub Notifications</h2>
+                    <p>ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo</p>
+                </div>
+
+                <div id="prbot-loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>กำลังโหลดข้อมูล...</p>
+                </div>
+
+                <div id="prbot-content" class="hidden">
+                    <div class="form-group">
+                        <label for="prbot-default-channel">ห้อง Default</label>
+                        <span class="desc">ใช้กับ organization/repo ที่ไม่ได้ระบุไว้ด้านล่าง</span>
+                        <div class="input-wrapper">
+                            <input type="text" id="prbot-default-channel" placeholder="Channel ID">
+                            <button onclick="savePrDefaultChannel()">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                                Save
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="prbot-section-title">📂 ห้องแยกตาม Organization</div>
+                    <p class="prbot-hint">PR จาก organization ไหน ให้ไปลงห้องไหน — เพิ่ม/ลบได้ตามต้องการ</p>
+                    <div id="prbot-org-rows"></div>
+                    <button class="prbot-add-btn" type="button" onclick="addOrgRow()">+ เพิ่ม Organization</button>
+                    <button onclick="saveOrgMap()" style="margin-top: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        บันทึก Organization Mapping
+                    </button>
+
+                    <div class="prbot-section-title">📣 Mention แยกตาม Repo</div>
+                    <p class="prbot-hint">PR เปิดจาก repo ไหน (พิมพ์แบบ owner/repo) ให้ mention role อะไร — พิมพ์ชื่อ role ให้ตรงเป๊ะ หรือใส่ mention tag เช่น &lt;@&amp;1234567890&gt; ก็ได้ — repo ที่ไม่ได้ระบุจะไม่ mention</p>
+                    <div id="prbot-mention-rows"></div>
+                    <button class="prbot-add-btn" type="button" onclick="addMentionRow()">+ เพิ่ม Repo</button>
+                    <button onclick="saveMentionMap()" style="margin-top: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        บันทึก Mention Mapping
+                    </button>
+                </div>
+            </section>
         </main>
         
         <footer>
@@ -214,6 +260,7 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="prbot-dashboard.js"></script>
     <script>
         document.getElementById('logout-btn').addEventListener('click', async () => {
             if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
