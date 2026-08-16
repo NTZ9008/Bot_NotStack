@@ -392,3 +392,55 @@ footer {
         padding: 1.5rem;
     }
 }
+
+/* PR Bot tab - key/value row editor */
+.prbot-section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 2rem 0 0.5rem;
+    color: var(--text-primary);
+}
+
+.prbot-hint {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.prbot-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    align-items: center;
+}
+
+.prbot-row input {
+    flex: 1;
+}
+
+.prbot-remove-btn {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    padding: 0.6rem 0.9rem;
+    flex: none;
+}
+
+.prbot-remove-btn:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.prbot-add-btn {
+    background: rgba(99, 102, 241, 0.15);
+    color: #818cf8;
+}
+
+.prbot-add-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+}
+
+@media (max-width: 640px) {
+    .prbot-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

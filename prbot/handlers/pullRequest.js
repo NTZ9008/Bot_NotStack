@@ -4,22 +4,18 @@ const prOpenedPayload = require('../discord/embeds/prOpened');
 const prClosedPayload = require('../discord/embeds/prClosed');
 const { saveMessage, getMessage } = require('../store/messageStore');
 
-// PR จาก org Pegasus → ใช้ channel ของ Pegasus ถ้าตั้งไว้ ไม่งั้น fallback ไป channel default
+// แต่ละ GitHub org แยก channel ได้ตาม PR_ORG_CHANNEL_MAP (ตั้งผ่าน Dashboard) — org ที่ไม่ได้ระบุไว้จะ fallback ไป channel default
 async function resolveChannelId(repo) {
-    const isPegasusOrg = repo.full_name.toLowerCase().startsWith(`${config.PEGASUS_ORG.toLowerCase()}/`);
-    if (isPegasusOrg) {
-        const pegasusChannel = await config.getPegasusChannelId();
-        if (pegasusChannel) return pegasusChannel;
-    }
+    const orgLogin = repo.full_name.split('/')[0];
+    const orgChannel = await config.getChannelIdForOrg(orgLogin);
+    if (orgChannel) return orgChannel;
     return config.getDefaultChannelId();
 }
 
-// PR จาก repo pegasus-tcg-web โดยเฉพาะ → mention role ที่ตั้งไว้ในหน้า Dashboard
+// แต่ละ repo mention role ได้ตาม PR_REPO_MENTION_MAP (ตั้งผ่าน Dashboard) — repo ที่ไม่ได้ระบุไว้จะไม่ mention เลย
 // ต้องใส่เป็น content ของข้อความ (ไม่ใช่ใน embed) ถึงจะ ping แจ้งเตือนจริงได้ — ข้อจำกัดของ Discord
 async function resolveMention(repo, channel) {
-    if (repo.full_name.toLowerCase() !== config.PEGASUS_TCG_WEB_REPO.toLowerCase()) return '';
-
-    const mentionValue = await config.getPegasusTcgWebMention();
+    const mentionValue = await config.getMentionForRepo(repo.full_name);
     if (!mentionValue) return '';
     if (mentionValue.startsWith('<@')) return mentionValue; // ตั้งเป็น mention tag ตรงๆ อยู่แล้ว
 

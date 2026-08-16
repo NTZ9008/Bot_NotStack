@@ -14,10 +14,18 @@
 1. เพิ่มตัวแปรใน `.env` (root) ตามตัวอย่างใน `prbot/.env.example`:
    - `GITHUB_WEBHOOK_SECRET`
 2. รันบอทตามปกติ (`node index.js`) — webhook พร้อมใช้งานทันทีที่ dashboard server (`server.js`) start
-3. เข้าหน้า Dashboard → tab **Configuration** → จะเห็นแถวใหม่ 3 แถว (ถูกเพิ่มเข้า DB อัตโนมัติตอน start) → กรอกแล้วกด Save เหมือนช่องอื่นๆ (`LOG_CHANNEL_ID`, `ALERT_CHANNEL_ID` ฯลฯ) — ไม่ต้องแก้โค้ดหรือ redeploy เวลาจะเปลี่ยนห้อง/role:
-   - `PR_CHANNEL_ID` — channel default สำหรับ PR ของ repo ทั่วไป
-   - `PR_CHANNEL_PEGASUS` — channel เฉพาะสำหรับ PR ของ org `MUDST-2026-Pegasus` (ถ้าเว้นว่างไว้ จะ fallback ไปใช้ `PR_CHANNEL_ID` แทน)
-   - `PR_MENTION_PEGASUS_TCG_WEB` — ชื่อ Role ใน Discord ที่จะ mention เมื่อ PR เปิดจาก repo `MUDST-2026-Pegasus/pegasus-tcg-web` โดยเฉพาะ (พิมพ์ชื่อ role ให้ตรงเป๊ะ เช่น `frontman-pegasus` แล้วบอทจะหา role นั้นใน guild ให้เอง — หรือจะใส่ mention tag ตรงๆ เช่น `<@&1234567890>` ก็ได้)
+3. เข้าหน้า Dashboard → tab **Configuration** → จะเห็นแถวใหม่ (ถูกเพิ่มเข้า DB อัตโนมัติตอน start) → กรอกแล้วกด Save เหมือนช่องอื่นๆ (`LOG_CHANNEL_ID`, `ALERT_CHANNEL_ID` ฯลฯ) — ไม่ต้องแก้โค้ดหรือ redeploy เวลาจะเปลี่ยนห้อง/org/role:
+   - `PR_CHANNEL_ID` — channel default สำหรับ org/repo ที่ไม่ได้ระบุไว้ใน `PR_ORG_CHANNEL_MAP`
+   - `PR_ORG_CHANNEL_MAP` — JSON กำหนด channel แยกตาม **GitHub organization** ได้เอง ไม่จำกัดจำนวน org เช่น:
+     ```json
+     {"MUDST-2026-Pegasus":"1234567890123456789","another-org":"9876543210987654321"}
+     ```
+     org ไหนไม่ได้ใส่ไว้ในนี้ (หรือเว้นว่างทั้ง field เป็น `{}`) จะ fallback ไปใช้ `PR_CHANNEL_ID` แทนโดยอัตโนมัติ — เพิ่ม org ใหม่ได้ตลอดโดยแก้ JSON นี้ผ่านหน้าเว็บ ไม่ต้องแตะโค้ด
+   - `PR_REPO_MENTION_MAP` — JSON กำหนดว่า repo ไหน (เขียนแบบ `owner/repo`) ให้ mention role อะไรตอนเปิด PR ได้เอง ไม่จำกัดจำนวน repo เช่น:
+     ```json
+     {"MUDST-2026-Pegasus/pegasus-tcg-api":"frontman-pegasus"}
+     ```
+     พิมพ์ชื่อ role ให้ตรงเป๊ะ (case-sensitive) แล้วบอทจะหา role นั้นใน guild ให้เอง หรือจะใส่ mention tag ตรงๆ เช่น `<@&1234567890>` ก็ได้ — repo ไหนไม่ได้ใส่ไว้ในนี้ (หรือเว้นว่างเป็น `{}`) จะไม่ mention เลย
 4. ตั้ง GitHub repo webhook: Settings → Webhooks → Add webhook
    - Payload URL: `https://<your-domain>/webhook/github`
    - Content type: `application/json`
@@ -29,8 +37,10 @@
 - `pull_request` action `opened` / `reopened` / `ready_for_review` → ส่ง embed ใหม่ + ปุ่ม Open PR / Latest Commit ผ่าน channel ที่ตั้งไว้
 - `pull_request` action `closed` → แก้ไขข้อความเดิม (หา message id จาก SQLite แยกไฟล์ `prbot/data/messages.sqlite`) เป็นสีม่วง "Merged" (ถ้า `pr.merged === true`) หรือสีแดง "Closed"
 - Routing ตาม org/repo:
-  - PR จาก org `MUDST-2026-Pegasus` (repo ไหนก็ได้ในนั้น) → ส่งเข้า `PR_CHANNEL_PEGASUS` แทน `PR_CHANNEL_ID` (ถ้าตั้งไว้)
-  - PR ที่เปิดจาก repo `MUDST-2026-Pegasus/pegasus-tcg-web` โดยเฉพาะ → mention role ที่ตั้งไว้ใน `PR_MENTION_PEGASUS_TCG_WEB` ต่อท้ายข้อความด้วย
+  - PR จาก org ไหนก็ตามที่ระบุไว้ใน `PR_ORG_CHANNEL_MAP` → ส่งเข้า channel ของ org นั้นแทน `PR_CHANNEL_ID`
+  - PR ที่เปิดจาก repo ไหนก็ตามที่ระบุไว้ใน `PR_REPO_MENTION_MAP` → mention role ที่ตั้งไว้ต่อท้ายข้อความด้วย (เป็น `content` ของข้อความ ไม่ใช่ field ใน embed เพราะ Discord ping ได้จาก content เท่านั้น) — repo อื่นที่ไม่ได้ระบุไว้จะไม่ mention
+
+**หมายเหตุ migration:** ถ้าเคยใช้รุ่นก่อน (มี key `PR_CHANNEL_PEGASUS` หรือ `PR_MENTION_PEGASUS_TCG_WEB` แบบเจาะจง org/repo เดียว) บอทจะย้ายค่าที่เคยตั้งไว้เข้า `PR_ORG_CHANNEL_MAP` / `PR_REPO_MENTION_MAP` ให้อัตโนมัติตอน start ครั้งแรกหลังอัปเดต แล้วลบ key เก่าทิ้ง
 
 Event อื่น ๆ ตามแผน (review, workflow_run/CI) ยังไม่ได้ทำในรอบนี้ — เพิ่ม handler ใหม่ใน `handlers/` แล้ว map event ใน `routes/github.js` ได้โดยไม่กระทบของเดิม
 
@@ -38,7 +48,7 @@ Event อื่น ๆ ตามแผน (review, workflow_run/CI) ยังไ
 
 ```
 prbot/
-├── config.js              # อ่าน GITHUB_WEBHOOK_SECRET จาก .env, อ่าน/seed PR_CHANNEL_ID, PR_CHANNEL_PEGASUS, PR_MENTION_PEGASUS_TCG_WEB ในตาราง config ของ db.js
+├── config.js              # อ่าน GITHUB_WEBHOOK_SECRET จาก .env, อ่าน/seed PR_CHANNEL_ID, PR_ORG_CHANNEL_MAP, PR_REPO_MENTION_MAP ในตาราง config ของ db.js
 ├── discordClient.js        # เก็บ reference ของ client ตัวเดียวกับบอทหลัก
 ├── routes/github.js        # POST /webhook/github → verify signature → dispatch
 ├── handlers/pullRequest.js # logic ต่อ action: opened/reopened → send, closed → edit
