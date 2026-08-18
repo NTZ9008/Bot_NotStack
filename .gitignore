@@ -2,3 +2,5 @@
 node_modules
 logs
 levels_migrated.json
+database.sqlite
+notstackutdash-le-ssl.conf

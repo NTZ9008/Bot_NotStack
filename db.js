@@ -62,6 +62,17 @@ const db = new sqlite3.Database(dbPath, (err) => {
                 }
             }
         });
+
+        // สร้าง Table สำหรับ Room Access แบบมีเวลา
+        db.run(`CREATE TABLE IF NOT EXISTS room_access (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            userId TEXT,
+            roomId TEXT,
+            expireAt INTEGER,
+            notified INTEGER DEFAULT 0
+        )`, (err) => {
+            if (err) console.error('Error creating room_access table', err);
+        });
     }
 });
 
@@ -119,4 +130,53 @@ const saveAllLevelsToDB = (levelsData) => {
     });
 };
 
-module.exports = { db, getConfig, getAllConfigs, updateConfig, getAllLevels, saveAllLevelsToDB };
+// --- Room Access Functions ---
+const addRoomAccess = (userId, roomId, expireAt) => {
+    return new Promise((resolve, reject) => {
+        db.run('INSERT INTO room_access (userId, roomId, expireAt) VALUES (?, ?, ?)', [userId, roomId, expireAt], function(err) {
+            if (err) reject(err);
+            else resolve(this.lastID);
+        });
+    });
+};
+
+const removeRoomAccess = (userId, roomId) => {
+    return new Promise((resolve, reject) => {
+        db.run('DELETE FROM room_access WHERE userId = ? AND roomId = ?', [userId, roomId], function(err) {
+            if (err) reject(err);
+            else resolve(this.changes);
+        });
+    });
+};
+
+const getActiveRoomAccess = () => {
+    return new Promise((resolve, reject) => {
+        db.all('SELECT * FROM room_access', [], (err, rows) => {
+            if (err) reject(err);
+            else resolve(rows);
+        });
+    });
+};
+
+const markRoomAccessNotified = (id) => {
+    return new Promise((resolve, reject) => {
+        db.run('UPDATE room_access SET notified = 1 WHERE id = ?', [id], function(err) {
+            if (err) reject(err);
+            else resolve(this.changes);
+        });
+    });
+};
+
+const deleteRoomAccessRecord = (id) => {
+    return new Promise((resolve, reject) => {
+        db.run('DELETE FROM room_access WHERE id = ?', [id], function(err) {
+            if (err) reject(err);
+            else resolve(this.changes);
+        });
+    });
+};
+
+module.exports = { 
+    db, getConfig, getAllConfigs, updateConfig, getAllLevels, saveAllLevelsToDB,
+    addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord
+};

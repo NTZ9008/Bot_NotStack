@@ -25,8 +25,8 @@
       "_origin": "ast"
     },
     {
-      "id": "commands_addrole_slashcommandbuilder_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
-      "label": "{\r\n  SlashCommandBuilder,\r\n  ActionRowBuilder,\r\n  StringSelectMenuBuilder,\r\n  StringSelectMenuOptionBuilder,\r\n  ModalBuilder,\r\n  TextInputBuilder,\r\n  TextInputStyle,\r\n  InteractionType\r\n}",
+      "id": "commands_addrole_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
+      "label": "{\r\n  SlashCommandBuilder,\r\n  ActionRowBuilder,\r\n  ButtonBuilder,\r\n  ButtonStyle,\r\n  ModalBuilder,\r\n  TextInputBuilder,\r\n  TextInputStyle,\r\n  InteractionType\r\n}",
       "file_type": "code",
       "source_file": "commands/addrole.js",
       "source_location": "L3",
@@ -61,7 +61,7 @@
       "label": "execute()",
       "file_type": "code",
       "source_file": "commands/addrole.js",
-      "source_location": "L45",
+      "source_location": "L44",
       "_origin": "ast"
     },
     {
@@ -69,7 +69,7 @@
       "label": "componentHandler()",
       "file_type": "code",
       "source_file": "commands/addrole.js",
-      "source_location": "L81",
+      "source_location": "L60",
       "_origin": "ast"
     },
     {
@@ -257,11 +257,19 @@
       "_origin": "ast"
     },
     {
+      "id": "commands_rank_getalllevels",
+      "label": "{ getAllLevels }",
+      "file_type": "code",
+      "source_file": "commands/rank.js",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
       "id": "commands_rank_execute",
       "label": "execute()",
       "file_type": "code",
       "source_file": "commands/rank.js",
-      "source_location": "L19",
+      "source_location": "L20",
       "_origin": "ast"
     },
     {
@@ -285,6 +293,30 @@
       "label": "execute()",
       "file_type": "code",
       "source_file": "commands/serverInfo.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_setuproles",
+      "label": "setuproles.js",
+      "file_type": "code",
+      "source_file": "commands/setuproles.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_setuproles_slashcommandbuilder_embedbuilder",
+      "label": "{ SlashCommandBuilder, EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "commands/setuproles.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "commands_setuproles_execute",
+      "label": "execute()",
+      "file_type": "code",
+      "source_file": "commands/setuproles.js",
       "source_location": "L8",
       "_origin": "ast"
     },
@@ -353,19 +385,11 @@
       "_origin": "ast"
     },
     {
-      "id": "commands_weather_fetch",
-      "label": "fetch()",
-      "file_type": "code",
-      "source_file": "commands/weather.js",
-      "source_location": "L1",
-      "_origin": "ast"
-    },
-    {
       "id": "commands_weather_getweatherembed",
       "label": "getWeatherEmbed()",
       "file_type": "code",
       "source_file": "commands/weather.js",
-      "source_location": "L3",
+      "source_location": "L1",
       "_origin": "ast"
     },
     {
@@ -373,7 +397,95 @@
       "label": "execute()",
       "file_type": "code",
       "source_file": "commands/weather.js",
-      "source_location": "L38",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "db",
+      "label": "db.js",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_sqlite3",
+      "label": "sqlite3",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_dbpath",
+      "label": "dbPath",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_db",
+      "label": "db",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_getconfig",
+      "label": "getConfig()",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L68",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_getallconfigs",
+      "label": "getAllConfigs()",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L77",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_updateconfig",
+      "label": "updateConfig()",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L86",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_getalllevels",
+      "label": "getAllLevels()",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L96",
+      "_origin": "ast"
+    },
+    {
+      "id": "db_savealllevelstodb",
+      "label": "saveAllLevelsToDB()",
+      "file_type": "code",
+      "source_file": "db.js",
+      "source_location": "L105",
       "_origin": "ast"
     },
     {
@@ -481,8 +593,8 @@
       "_origin": "ast"
     },
     {
-      "id": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent",
-      "label": "{ Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent }",
+      "id": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent_partials",
+      "label": "{ Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEvent, Partials }",
       "file_type": "code",
       "source_file": "index.js",
       "source_location": "L1",
@@ -537,43 +649,19 @@
       "_origin": "ast"
     },
     {
-      "id": "index_voicespammap",
-      "label": "voiceSpamMap",
+      "id": "index_getconfig_savealllevelstodb_getalllevels",
+      "label": "{ getConfig, saveAllLevelsToDB, getAllLevels }",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L24",
+      "source_location": "L8",
       "_origin": "ast"
     },
     {
-      "id": "index_spammap",
-      "label": "spamMap",
+      "id": "index_startserver",
+      "label": "{ startServer }",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L27",
-      "_origin": "ast"
-    },
-    {
-      "id": "index_genai",
-      "label": "genAI",
-      "file_type": "code",
-      "source_file": "index.js",
-      "source_location": "L30",
-      "_origin": "ast"
-    },
-    {
-      "id": "index_model",
-      "label": "model",
-      "file_type": "code",
-      "source_file": "index.js",
-      "source_location": "L31",
-      "_origin": "ast"
-    },
-    {
-      "id": "index_aiusage",
-      "label": "aiUsage",
-      "file_type": "code",
-      "source_file": "index.js",
-      "source_location": "L35",
+      "source_location": "L9",
       "_origin": "ast"
     },
     {
@@ -581,7 +669,47 @@
       "label": "client",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L43",
+      "source_location": "L16",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_voicespammap",
+      "label": "voiceSpamMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L39",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_spammap",
+      "label": "spamMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L42",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_genai",
+      "label": "genAI",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L45",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_model",
+      "label": "model",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L46",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_aiusage",
+      "label": "aiUsage",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L50",
       "_origin": "ast"
     },
     {
@@ -589,7 +717,7 @@
       "label": "badWordsFile",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L54",
+      "source_location": "L58",
       "_origin": "ast"
     },
     {
@@ -597,15 +725,7 @@
       "label": "badWordsSet",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L55",
-      "_origin": "ast"
-    },
-    {
-      "id": "index_levelsfile",
-      "label": "levelsFile",
-      "file_type": "code",
-      "source_file": "index.js",
-      "source_location": "L68",
+      "source_location": "L59",
       "_origin": "ast"
     },
     {
@@ -613,7 +733,7 @@
       "label": "levelsData",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L69",
+      "source_location": "L72",
       "_origin": "ast"
     },
     {
@@ -621,7 +741,7 @@
       "label": "xpCooldownMap",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L81",
+      "source_location": "L76",
       "_origin": "ast"
     },
     {
@@ -629,7 +749,15 @@
       "label": "commandFiles",
       "file_type": "code",
       "source_file": "index.js",
-      "source_location": "L87",
+      "source_location": "L82",
+      "_origin": "ast"
+    },
+    {
+      "id": "index_reactionrolesmap",
+      "label": "reactionRolesMap",
+      "file_type": "code",
+      "source_file": "index.js",
+      "source_location": "L672",
       "_origin": "ast"
     },
     {
@@ -737,11 +865,19 @@
       "_origin": "ast"
     },
     {
+      "id": "package_dependencies_cors",
+      "label": "cors",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "_origin": "ast"
+    },
+    {
       "id": "package_dependencies_discord_js",
       "label": "discord.js",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "_origin": "ast"
     },
     {
@@ -749,15 +885,31 @@
       "label": "dotenv",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "_origin": "ast"
     },
     {
-      "id": "package_dependencies_node_fetch",
-      "label": "node-fetch",
+      "id": "package_dependencies_express",
+      "label": "express",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_express_session",
+      "label": "express-session",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_helmet",
+      "label": "helmet",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L20",
       "_origin": "ast"
     },
     {
@@ -765,7 +917,199 @@
       "label": "node-schedule",
       "file_type": "code",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L21",
+      "_origin": "ast"
+    },
+    {
+      "id": "package_dependencies_sqlite3",
+      "label": "sqlite3",
+      "file_type": "code",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script",
+      "label": "script.js",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_switchtab",
+      "label": "switchTab()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L8",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_fetchconfig",
+      "label": "fetchConfig()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_updateconfig",
+      "label": "updateConfig()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L55",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_logout",
+      "label": "logout()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L114",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_showtoast",
+      "label": "showToast()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L137",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_fetchlogslist",
+      "label": "fetchLogsList()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L151",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_fetchlogcontent",
+      "label": "fetchLogContent()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L172",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_fetchlevels",
+      "label": "fetchLevels()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L197",
+      "_origin": "ast"
+    },
+    {
+      "id": "public_script_sendnews",
+      "label": "sendNews()",
+      "file_type": "code",
+      "source_file": "public/script.js",
+      "source_location": "L234",
+      "_origin": "ast"
+    },
+    {
+      "id": "server",
+      "label": "server.js",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_express",
+      "label": "express",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_cors",
+      "label": "cors",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L2",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_path",
+      "label": "path",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L3",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_session",
+      "label": "session",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L4",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_helmet",
+      "label": "helmet",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L5",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_fs",
+      "label": "fs",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L6",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_getallconfigs_updateconfig_getalllevels_getconfig",
+      "label": "{ getAllConfigs, updateConfig, getAllLevels, getConfig }",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_app",
+      "label": "app",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_embedbuilder",
+      "label": "{ EmbedBuilder }",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L11",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_requireauth",
+      "label": "requireAuth()",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L36",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_requireapiauth",
+      "label": "requireApiAuth()",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L44",
+      "_origin": "ast"
+    },
+    {
+      "id": "server_startserver",
+      "label": "startServer()",
+      "file_type": "code",
+      "source_file": "server.js",
+      "source_location": "L153",
       "_origin": "ast"
     }
   ],
@@ -820,7 +1164,7 @@
     },
     {
       "source": "commands_addrole",
-      "target": "commands_addrole_slashcommandbuilder_actionrowbuilder_stringselectmenubuilder_stringselectmenuoptionbuilder_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
+      "target": "commands_addrole_slashcommandbuilder_actionrowbuilder_buttonbuilder_buttonstyle_modalbuilder_textinputbuilder_textinputstyle_interactiontype",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/addrole.js",
@@ -860,7 +1204,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/addrole.js",
-      "source_location": "L45",
+      "source_location": "L44",
       "weight": 1.0
     },
     {
@@ -869,7 +1213,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/addrole.js",
-      "source_location": "L81",
+      "source_location": "L60",
       "weight": 1.0
     },
     {
@@ -879,7 +1223,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "commands/addrole.js",
-      "source_location": "L132",
+      "source_location": "L98",
       "weight": 1.0
     },
     {
@@ -1128,11 +1472,40 @@
     },
     {
       "source": "commands_rank",
+      "target": "db",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "db_getalllevels",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
+      "target": "commands_rank_getalllevels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/rank.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank",
       "target": "commands_rank_execute",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/rank.js",
-      "source_location": "L19",
+      "source_location": "L20",
       "weight": 1.0
     },
     {
@@ -1160,6 +1533,34 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/serverInfo.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_setuproles",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/setuproles.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_setuproles",
+      "target": "commands_setuproles_slashcommandbuilder_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/setuproles.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_setuproles",
+      "target": "commands_setuproles_execute",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "commands/setuproles.js",
       "source_location": "L8",
       "weight": 1.0
     },
@@ -1230,20 +1631,11 @@
     },
     {
       "source": "commands_weather",
-      "target": "commands_weather_fetch",
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "commands/weather.js",
-      "source_location": "L1",
-      "weight": 1.0
-    },
-    {
-      "source": "commands_weather",
       "target": "commands_weather_getweatherembed",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/weather.js",
-      "source_location": "L3",
+      "source_location": "L1",
       "weight": 1.0
     },
     {
@@ -1252,27 +1644,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "commands/weather.js",
-      "source_location": "L38",
-      "weight": 1.0
-    },
-    {
-      "source": "commands_weather_fetch",
-      "target": "node_fetch",
-      "relation": "imports_from",
-      "context": "import",
-      "confidence": "EXTRACTED",
-      "source_file": "commands/weather.js",
-      "source_location": "L1",
-      "weight": 1.0
-    },
-    {
-      "source": "commands_weather_getweatherembed",
-      "target": "commands_weather_fetch",
-      "relation": "calls",
-      "context": "call",
-      "confidence": "EXTRACTED",
-      "source_file": "commands/weather.js",
-      "source_location": "L5",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -1282,7 +1654,117 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "commands/weather.js",
-      "source_location": "L43",
+      "source_location": "L41",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_sqlite3",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_dbpath",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_db",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_getconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L68",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_getallconfigs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L77",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_updateconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L86",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_getalllevels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L96",
+      "weight": 1.0
+    },
+    {
+      "source": "db",
+      "target": "db_savealllevelstodb",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "db.js",
+      "source_location": "L105",
       "weight": 1.0
     },
     {
@@ -1467,7 +1949,7 @@
     },
     {
       "source": "index",
-      "target": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent",
+      "target": "index_client_gatewayintentbits_events_collection_channeltype_auditlogevent_partials",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
@@ -1600,47 +2082,80 @@
     },
     {
       "source": "index",
-      "target": "index_voicespammap",
-      "relation": "contains",
+      "target": "db",
+      "relation": "imports_from",
+      "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L24",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
       "source": "index",
-      "target": "index_spammap",
-      "relation": "contains",
+      "target": "db_getconfig",
+      "relation": "imports",
+      "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L27",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
       "source": "index",
-      "target": "index_genai",
-      "relation": "contains",
+      "target": "db_savealllevelstodb",
+      "relation": "imports",
+      "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L30",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
       "source": "index",
-      "target": "index_model",
-      "relation": "contains",
+      "target": "db_getalllevels",
+      "relation": "imports",
+      "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L31",
+      "source_location": "L8",
       "weight": 1.0
     },
     {
       "source": "index",
-      "target": "index_aiusage",
+      "target": "index_getconfig_savealllevelstodb_getalllevels",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L35",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "server",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "server_startserver",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_startserver",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L9",
       "weight": 1.0
     },
     {
@@ -1649,7 +2164,52 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L43",
+      "source_location": "L16",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_voicespammap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L39",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_spammap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L42",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_genai",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L45",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_model",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L46",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_aiusage",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L50",
       "weight": 1.0
     },
     {
@@ -1658,7 +2218,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L54",
+      "source_location": "L58",
       "weight": 1.0
     },
     {
@@ -1667,16 +2227,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L55",
-      "weight": 1.0
-    },
-    {
-      "source": "index",
-      "target": "index_levelsfile",
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "index.js",
-      "source_location": "L68",
+      "source_location": "L59",
       "weight": 1.0
     },
     {
@@ -1685,7 +2236,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L69",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -1694,7 +2245,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L81",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -1703,7 +2254,16 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "index.js",
-      "source_location": "L87",
+      "source_location": "L82",
+      "weight": 1.0
+    },
+    {
+      "source": "index",
+      "target": "index_reactionrolesmap",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "index.js",
+      "source_location": "L672",
       "weight": 1.0
     },
     {
@@ -1826,11 +2386,30 @@
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_discord_js",
+      "target": "package_dependencies_cors",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
       "source_location": "L15",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_cors",
+      "target": "cors",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L15",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_discord_js",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -1839,7 +2418,7 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0,
       "context": "import"
     },
@@ -1849,7 +2428,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0
     },
     {
@@ -1858,26 +2437,64 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L16",
+      "source_location": "L17",
       "weight": 1.0,
       "context": "import"
     },
     {
       "source": "package_dependencies",
-      "target": "package_dependencies_node_fetch",
+      "target": "package_dependencies_express",
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
       "weight": 1.0
     },
     {
-      "source": "package_dependencies_node_fetch",
-      "target": "node_fetch",
+      "source": "package_dependencies_express",
+      "target": "express",
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L17",
+      "source_location": "L18",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_express_session",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_express_session",
+      "target": "express_session",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L19",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_helmet",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L20",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_helmet",
+      "target": "helmet",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L20",
       "weight": 1.0,
       "context": "import"
     },
@@ -1887,7 +2504,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L21",
       "weight": 1.0
     },
     {
@@ -1896,9 +2513,348 @@
       "relation": "imports",
       "confidence": "EXTRACTED",
       "source_file": "package.json",
-      "source_location": "L18",
+      "source_location": "L21",
       "weight": 1.0,
       "context": "import"
+    },
+    {
+      "source": "package_dependencies",
+      "target": "package_dependencies_sqlite3",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "weight": 1.0
+    },
+    {
+      "source": "package_dependencies_sqlite3",
+      "target": "sqlite3",
+      "relation": "imports",
+      "confidence": "EXTRACTED",
+      "source_file": "package.json",
+      "source_location": "L22",
+      "weight": 1.0,
+      "context": "import"
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_switchtab",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_fetchconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L17",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_updateconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L55",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_logout",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L114",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_showtoast",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L137",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_fetchlogslist",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L151",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_fetchlogcontent",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L172",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_fetchlevels",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L197",
+      "weight": 1.0
+    },
+    {
+      "source": "public_script",
+      "target": "public_script_sendnews",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "public/script.js",
+      "source_location": "L234",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "express",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_express",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L1",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "cors",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_cors",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L2",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_path",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L3",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "express_session",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_session",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L4",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "helmet",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_helmet",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L5",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_fs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L6",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "db",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "db_getallconfigs",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "db_updateconfig",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "db_getalllevels",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "db_getconfig",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_getallconfigs_updateconfig_getalllevels_getconfig",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L7",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_app",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L9",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "discord_js",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_embedbuilder",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L11",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_requireauth",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L36",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_requireapiauth",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L44",
+      "weight": 1.0
+    },
+    {
+      "source": "server",
+      "target": "server_startserver",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "server.js",
+      "source_location": "L153",
+      "weight": 1.0
+    },
+    {
+      "source": "commands_rank_execute",
+      "target": "db_getalllevels",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "commands/rank.js",
+      "source_location": "L30",
+      "weight": 1.0
     }
   ],
   "input_tokens": 0,
