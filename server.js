@@ -4,6 +4,8 @@ const path = require('path');
 const session = require('express-session');
 const helmet = require('helmet');
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
 const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord } = require('./db');
 const schedule = require('node-schedule');
 
@@ -14,14 +16,43 @@ let discordClient = null;
 
 // Security Middleware (Helmet + CORS)
 app.use(helmet({
-    contentSecurityPolicy: false, // ปิดไว้เพื่อให้ดึงรูป/ฟอนต์จากภายนอกได้ง่าย
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://static.cloudflareinsights.com"],
+            "script-src-attr": ["'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com"],
+            connectSrc: ["'self'", "https://notstackutdash.arlifzs.site", "https://cloudflareinsights.com"]
+        }
+    }
 }));
-app.use(cors());
+app.use(cors({
+    origin: function(origin, callback) {
+        // ถ้าไม่ใช่ production หรือตรงกับ DASHBOARD_URL หรือเรียกจาก Postman/ตัวเอง(ไม่มี origin) ให้อนุญาต
+        if (process.env.NODE_ENV !== 'production' || !origin || origin === (process.env.DASHBOARD_URL || 'https://notstackutdash.arlifzs.site')) {
+            callback(null, true);
+        } else {
+            callback(new Error('ไม่อนุญาตโดย CORS Policy'));
+        }
+    },
+    credentials: true
+}));
+
+// Rate Limiting (ป้องกัน Brute Force ทั่วไปและการโจมตี)
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 นาที
+    max: 5, // จำกัด 5 ครั้งต่อ IP
+    message: { error: 'คุณพยายามเข้าสู่ระบบผิดพลาดบ่อยเกินไป กรุณารอสักครู่' }
+});
 
 // PR Bot: ต้องมาก่อน express.json() เพื่อให้ signature verify ด้วย raw body ได้
 app.use('/webhook', require('./prbot/routes/github'));
 
 app.use(express.json());
+
+app.set('trust proxy', 1); // Trust first proxy (Nginx)
 
 // Session Configuration (ระบบ Login)
 app.use(session({
@@ -29,8 +60,9 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // ถ้าใช้ HTTPS ให้เปลี่ยนเป็น true
+        secure: process.env.NODE_ENV === 'production', // ถ้าใช้ HTTPS ควรให้เป็น true
         httpOnly: true,
+        sameSite: 'strict', // ป้องกัน CSRF
         maxAge: 1000 * 60 * 60 * 24 // ล็อกอินอยู่ได้ 1 วัน
     }
 }));
@@ -66,19 +98,25 @@ app.get('/login', (req, res) => {
 });
 
 // --- Auth API ---
-app.post('/api/login', (req, res) => {
+app.post('/api/login', loginLimiter, async (req, res) => {
     const { username, password } = req.body;
     
-    // ดึงรหัสจาก .env ถ้าไม่มีค่าให้ใช้ค่าเริ่มต้น
-    const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'adminbot';
+    const adminUser = process.env.ADMIN_USERNAME;
+    const adminPassHash = process.env.ADMIN_PASSWORD;
     
-    if (username === adminUser && password === adminPass) {
-        req.session.loggedIn = true;
-        res.json({ success: true, message: 'Logged in successfully' });
-    } else {
-        res.status(401).json({ error: 'รหัสผ่านหรือชื่อผู้ใช้ไม่ถูกต้อง' });
+    if (!adminUser || !adminPassHash) {
+        return res.status(500).json({ error: 'ระบบยังไม่ได้ตั้งค่ารหัสผ่านผู้ดูแลระบบใน .env (ADMIN_USERNAME / ADMIN_PASSWORD)' });
     }
+    
+    if (username === adminUser) {
+        const isMatch = await bcrypt.compare(password, adminPassHash);
+        if (isMatch) {
+            req.session.loggedIn = true;
+            return res.json({ success: true, message: 'Logged in successfully' });
+        }
+    }
+    
+    res.status(401).json({ error: 'รหัสผ่านหรือชื่อผู้ใช้ไม่ถูกต้อง' });
 });
 
 app.post('/api/logout', (req, res) => {
@@ -160,10 +198,11 @@ app.get('/api/logs', requireApiAuth, (req, res) => {
 });
 
 app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
-    const filename = req.params.filename;
     // ป้องกัน Directory Traversal
-    if (filename.includes('..') || filename.includes('/') || filename.includes('\\')) {
-        return res.status(400).json({ error: 'Invalid filename' });
+    const filename = path.basename(req.params.filename);
+    
+    if (!filename.endsWith('.log')) {
+        return res.status(400).json({ error: 'Invalid file type' });
     }
     
     const filePath = path.join(__dirname, 'logs', filename);
