@@ -28,7 +28,8 @@ function switchTab(tabId) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
     
-    event.currentTarget.classList.add('active');
+    const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+    if (activeBtn) activeBtn.classList.add('active');
     document.getElementById(tabId).classList.remove('hidden');
     
     if (tabId === 'access-tab') {
