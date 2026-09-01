@@ -7,6 +7,7 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord } = require('./db');
+const { registerLogManagerRoutes } = require('./logmanager/routes');
 const schedule = require('node-schedule');
 
 const app = express();
@@ -215,6 +216,9 @@ app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
         res.send(data);
     });
 });
+
+// --- Log Manager API (ตั้งค่าว่าจะติดตาม log อะไร ส่งเข้าห้องไหน สีอะไร) ---
+registerLogManagerRoutes(app, requireApiAuth, () => discordClient);
 
 const startServer = (client) => {
     discordClient = client;

@@ -7,6 +7,7 @@ const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getConfig, saveAllLevelsToDB, getAllLevels } = require('./db.js');
 const { startServer } = require('./server.js');
+const { initLogManager, logFilterAction } = require('./logmanager');
 
 dotenv.config();
 
@@ -20,7 +21,9 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.GuildMessageReactions
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildModeration,   // Log Manager: แบน / ปลดแบน
+        GatewayIntentBits.GuildInvites       // Log Manager: คำเชิญของเซิร์ฟเวอร์
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
@@ -88,6 +91,13 @@ for (const file of commandFiles) {
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Logged in as ${client.user.tag}`);
     console.log(`🛡️ Security Systems: Active`);
+
+    // เริ่มระบบ Log Management (ตั้งค่าได้จาก Dashboard แท็บ Log Management)
+    try {
+        await initLogManager(client);
+    } catch (err) {
+        console.error("❌ Error starting Log Manager:", err);
+    }
 
     // โหลด Levels จาก DB เข้า Memory
     try {
@@ -264,6 +274,7 @@ client.on('messageCreate', async (msg) => {
         if (userData.count >= SPAM_LIMIT) {
             msg.delete().catch(() => {});
             if (userData.count === SPAM_LIMIT) {
+                logFilterAction({ user: msg.author, channelId: msg.channel.id, reason: 'Anti-Spam (ส่งข้อความถี่เกินกำหนด)', content: msg.content });
                 msg.channel.send(`⚠️ <@${msg.author.id}> ใจเย็นๆ ครับ! อย่าส่งข้อความรัวเกินไป`);
                 const alertChannelId = await getConfig('ALERT_CHANNEL_ID');
                 if (alertChannelId) {
@@ -294,6 +305,7 @@ client.on('messageCreate', async (msg) => {
         if (isHardcodedBad) {
             msg.delete().catch(() => {});
             msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            logFilterAction({ user: msg.author, channelId: msg.channel.id, reason: 'Bad Words Filter (คำหยาบชัดเจน)', content: msg.content });
             return;
         }
 
@@ -317,6 +329,7 @@ client.on('messageCreate', async (msg) => {
             if (analysis === "BAD") {
                 msg.delete().catch(() => {});
                 msg.channel.send(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`);
+                logFilterAction({ user: msg.author, channelId: msg.channel.id, reason: 'Smart Filter (AI ตรวจพบเนื้อหารุนแรง)', content: msg.content });
                 
                 // แจ้งแอดมินด้วย (Optional)
                 // const alertChannel = await client.channels.fetch(ALERT_CHANNEL_ID);
@@ -332,6 +345,7 @@ client.on('messageCreate', async (msg) => {
             // ถ้า AI พัง ให้ยึดตามระบบเดิมไปก่อน (เผื่อเหนียว)
             msg.delete().catch(() => {});
             msg.channel.send(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`);
+            logFilterAction({ user: msg.author, channelId: msg.channel.id, reason: 'Bad Words Filter (AI ไม่พร้อมใช้งาน — ใช้ระบบสำรอง)', content: msg.content });
             return;
         }
     }
