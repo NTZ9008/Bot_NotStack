@@ -7,7 +7,7 @@ const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getConfig, saveAllLevelsToDB, getAllLevels } = require('./db.js');
 const { startServer } = require('./server.js');
-const { initLogManager, logFilterAction } = require('./logmanager');
+const { initLogManager, logFilterAction, logInvitePosted } = require('./logmanager');
 
 dotenv.config();
 
@@ -22,8 +22,12 @@ const client = new Client({
         GatewayIntentBits.MessageContent,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessageReactions,
-        GatewayIntentBits.GuildModeration,   // Log Manager: แบน / ปลดแบน
-        GatewayIntentBits.GuildInvites       // Log Manager: คำเชิญของเซิร์ฟเวอร์
+        GatewayIntentBits.GuildModeration,             // Log Manager: แบน / ปลดแบน / audit log
+        GatewayIntentBits.GuildInvites,                // Log Manager: คำเชิญของเซิร์ฟเวอร์
+        GatewayIntentBits.GuildExpressions,            // Log Manager: อีโมจิ / สติกเกอร์
+        GatewayIntentBits.GuildScheduledEvents,        // Log Manager: กิจกรรมของเซิร์ฟเวอร์
+        GatewayIntentBits.AutoModerationConfiguration, // Log Manager: กฎ AutoMod
+        GatewayIntentBits.AutoModerationExecution      // Log Manager: AutoMod ทำงาน
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction]
 });
@@ -285,6 +289,9 @@ client.on('messageCreate', async (msg) => {
             return;
         }
     }
+
+    // --- B2. ตรวจลิงก์เชิญเซิร์ฟเวอร์อื่น (เฉพาะบันทึก log ไม่ได้ลบข้อความ) ---
+    if (msg.guild) logInvitePosted(msg);
 
     const contentLower = msg.content.toLowerCase();
 

@@ -633,3 +633,105 @@ footer {
         flex-direction: column;
     }
 }
+
+/* --- ตัวกรอง Ignore List --- */
+.log-ignore-panel {
+    background: rgba(15, 23, 42, 0.4);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.log-ignore-head h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.25rem;
+}
+
+.log-ignore-bots {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--card-border);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.log-ignore-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.log-ignore-col > label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.log-chip-input {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.log-chip-input .input-select {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.85rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 10px;
+}
+
+.log-chip-input button {
+    padding: 0.625rem 1rem;
+    font-size: 0.85rem;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.log-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    min-height: 1.5rem;
+}
+
+.log-chips-empty {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.log-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 999px;
+    padding: 0.25rem 0.5rem 0.25rem 0.75rem;
+    font-size: 0.8rem;
+    max-width: 100%;
+    word-break: break-all;
+}
+
+.log-chip button {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0;
+    font-size: 0.85rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.log-chip button:hover {
+    background: transparent;
+    color: #ef4444;
+}

@@ -11,6 +11,20 @@ const SYSTEM_KEY = '__system__';
 
 // cache: eventKey -> { enabled, channelId, color }
 const cache = new Map();
+
+// ตัวกรองส่วนกลาง (ยกเว้นไม่ต้อง log) — เก็บเป็น Set เพื่อเช็คเร็วตอน event ยิงถี่
+const options = {
+    ignoredChannels: new Set(),
+    ignoredUsers: new Set(),
+    ignoredRoles: new Set(),
+    ignoreBots: true,
+};
+
+const OPTION_KEYS = {
+    IGNORED_CHANNELS: 'ignoredChannels',
+    IGNORED_USERS: 'ignoredUsers',
+    IGNORED_ROLES: 'ignoredRoles',
+};
 let ready = false;
 let readyPromise = null;
 
@@ -44,6 +58,16 @@ async function initLogSettings() {
             color TEXT DEFAULT ''
         )`);
 
+        // ตัวกรองส่วนกลาง: ห้อง/คน/ยศ ที่ไม่ต้อง log + จะ log การกระทำของบอทไหม
+        await run(`CREATE TABLE IF NOT EXISTS log_options (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        )`);
+        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_CHANNELS', '[]')`);
+        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_USERS', '[]')`);
+        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_ROLES', '[]')`);
+        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORE_BOTS', '1')`);
+
         // ระบบเปิดไว้ตั้งแต่แรก แต่ทุก event ปิดอยู่ → แอดมินค่อยเลือกเปิดทีละอันจากหน้า Dashboard
         await run(`INSERT OR IGNORE INTO log_settings (event_key, enabled, channel_id, color) VALUES (?, 1, '', '')`, [SYSTEM_KEY]);
 
@@ -63,6 +87,7 @@ async function initLogSettings() {
 }
 
 async function reloadCache() {
+    await reloadOptions();
     const rows = await all(`SELECT event_key, enabled, channel_id, color FROM log_settings`);
     cache.clear();
     for (const row of rows) {
@@ -149,8 +174,64 @@ async function setChannelForAll(channelId) {
     await reloadCache();
 }
 
+async function reloadOptions() {
+    const rows = await all(`SELECT key, value FROM log_options`);
+    for (const row of rows) {
+        if (row.key === 'IGNORE_BOTS') {
+            options.ignoreBots = row.value === '1';
+            continue;
+        }
+        const field = OPTION_KEYS[row.key];
+        if (!field) continue;
+        try {
+            const parsed = JSON.parse(row.value || '[]');
+            options[field] = new Set(Array.isArray(parsed) ? parsed : []);
+        } catch (err) {
+            options[field] = new Set();
+        }
+    }
+}
+
+// อ่านจาก cache (sync) — ใช้ตอนกรอง event
+function getOptions() {
+    return options;
+}
+
+// ส่งให้ Dashboard ในรูปแบบ array
+function listOptions() {
+    return {
+        ignoredChannels: [...options.ignoredChannels],
+        ignoredUsers: [...options.ignoredUsers],
+        ignoredRoles: [...options.ignoredRoles],
+        ignoreBots: options.ignoreBots,
+    };
+}
+
+async function updateOptions({ ignoredChannels, ignoredUsers, ignoredRoles, ignoreBots }) {
+    const saveList = async (dbKey, list) => {
+        if (!Array.isArray(list)) return;
+        const cleaned = [...new Set(list.map(id => String(id).trim()).filter(Boolean))];
+        const invalid = cleaned.find(id => !SNOWFLAKE.test(id));
+        if (invalid) throw new Error(`ไอดีไม่ถูกต้อง: ${invalid}`);
+        await run(`UPDATE log_options SET value = ? WHERE key = ?`, [JSON.stringify(cleaned), dbKey]);
+    };
+
+    await saveList('IGNORED_CHANNELS', ignoredChannels);
+    await saveList('IGNORED_USERS', ignoredUsers);
+    await saveList('IGNORED_ROLES', ignoredRoles);
+    if (typeof ignoreBots === 'boolean') {
+        await run(`UPDATE log_options SET value = ? WHERE key = 'IGNORE_BOTS'`, [ignoreBots ? '1' : '0']);
+    }
+
+    await reloadOptions();
+    return listOptions();
+}
+
 module.exports = {
     initLogSettings,
+    getOptions,
+    listOptions,
+    updateOptions,
     isReady: () => ready,
     isSystemEnabled,
     getSetting,

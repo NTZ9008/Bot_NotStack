@@ -1,8 +1,11 @@
 // Log Management tab — เปิด/ปิด log แต่ละชนิด + เลือกห้องปลายทาง + เลือกสี embed
 // บันทึกอัตโนมัติทันทีที่แก้ค่า (ไม่ต้องกดปุ่ม Save)
 
-let logChannels = [];   // รายชื่อห้องข้อความในเซิร์ฟเวอร์
+let logChannels = [];   // รายชื่อห้องในเซิร์ฟเวอร์ (ห้องส่ง log ใช้เฉพาะที่ sendable)
+let logRoles = [];      // รายชื่อยศ ใช้กับ ignore list
 let logEvents = [];     // การตั้งค่าปัจจุบันของแต่ละ event
+let logOptions = { ignoredChannels: [], ignoredUsers: [], ignoredRoles: [], ignoreBots: true };
+let ignoredUserNames = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     initLogManagerTab();
@@ -10,20 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function initLogManagerTab() {
     try {
-        const [channelsRes, settingsRes] = await Promise.all([
+        const [channelsRes, rolesRes, settingsRes] = await Promise.all([
             fetch('/api/guild-channels'),
+            fetch('/api/guild-roles'),
             fetch('/api/log-settings')
         ]);
 
         // ถ้าบอทยังไม่ออนไลน์ ยังให้ตั้งค่าต่อได้ แค่ dropdown ว่าง
         logChannels = channelsRes.ok ? await channelsRes.json() : [];
+        logRoles = rolesRes.ok ? await rolesRes.json() : [];
 
         if (!settingsRes.ok) throw new Error('โหลดการตั้งค่าไม่สำเร็จ');
         const settings = await settingsRes.json();
         logEvents = settings.events || [];
+        logOptions = settings.options || logOptions;
+        ignoredUserNames = settings.ignoredUserNames || {};
 
         document.getElementById('log-system-toggle').checked = settings.systemEnabled !== false;
         renderLogBulkChannel();
+        renderIgnorePanel();
         renderLogGroups(settings.groups || []);
 
         document.getElementById('logmanager-loading').classList.add('hidden');
@@ -46,7 +54,7 @@ function buildChannelOptions(selectedId) {
     let html = `<option value="">เลือก ..</option>`;
 
     const byCategory = {};
-    logChannels.forEach(ch => {
+    logChannels.filter(ch => ch.sendable).forEach(ch => {
         if (!byCategory[ch.category]) byCategory[ch.category] = [];
         byCategory[ch.category].push(ch);
     });
@@ -61,7 +69,7 @@ function buildChannelOptions(selectedId) {
     });
 
     // ห้องที่เคยตั้งไว้แต่หาไม่เจอแล้ว (ถูกลบ / บอทมองไม่เห็น) — ยังคงค่าไว้ไม่ให้หายไปเงียบๆ
-    if (selectedId && !logChannels.some(ch => ch.id === selectedId)) {
+    if (selectedId && !logChannels.some(ch => ch.sendable && ch.id === selectedId)) {
         html += `<option value="${escapeLogHtml(selectedId)}" selected>ID: ${escapeLogHtml(selectedId)} (ไม่พบห้องนี้)</option>`;
     }
 
@@ -198,6 +206,135 @@ async function applyChannelToAll() {
         renderLogGroups([...new Set(logEvents.map(e => e.group))]);
         showLogToast('ตั้งห้องให้ทุกรายการแล้ว');
     } catch (error) {
+        Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: error.message, confirmButtonColor: '#6366f1' });
+    }
+}
+
+// ==========================================
+// 🚫 IGNORE LIST
+// ==========================================
+function ignoreConfig(kind) {
+    if (kind === 'channel') {
+        return {
+            listKey: 'ignoredChannels',
+            chipsId: 'ignore-channel-chips',
+            inputId: 'ignore-channel-select',
+            nameOf: id => {
+                const ch = logChannels.find(c => c.id === id);
+                if (!ch) return `ID: ${id}`;
+                return ch.isCategory ? `📂 ${ch.name}` : `#${ch.name}`;
+            },
+        };
+    }
+    if (kind === 'role') {
+        return {
+            listKey: 'ignoredRoles',
+            chipsId: 'ignore-role-chips',
+            inputId: 'ignore-role-select',
+            nameOf: id => {
+                const role = logRoles.find(r => r.id === id);
+                return role ? `@${role.name}` : `ID: ${id}`;
+            },
+        };
+    }
+    return {
+        listKey: 'ignoredUsers',
+        chipsId: 'ignore-user-chips',
+        inputId: 'ignore-user-input',
+        nameOf: id => ignoredUserNames[id] ? `@${ignoredUserNames[id]}` : `ID: ${id}`,
+    };
+}
+
+function renderIgnorePanel() {
+    document.getElementById('log-ignore-bots').checked = logOptions.ignoreBots !== false;
+
+    const channelSelect = document.getElementById('ignore-channel-select');
+    if (channelSelect) {
+        let html = '<option value="">เลือกห้องหรือหมวดหมู่ ..</option>';
+        logChannels.forEach(ch => {
+            const label = ch.isCategory ? `📂 ${ch.name} (ทั้งหมวด)` : `#${ch.name}`;
+            html += `<option value="${escapeLogHtml(ch.id)}">${escapeLogHtml(label)}</option>`;
+        });
+        channelSelect.innerHTML = html;
+    }
+
+    const roleSelect = document.getElementById('ignore-role-select');
+    if (roleSelect) {
+        let html = '<option value="">เลือกยศ ..</option>';
+        logRoles.forEach(r => {
+            html += `<option value="${escapeLogHtml(r.id)}">@${escapeLogHtml(r.name)}</option>`;
+        });
+        roleSelect.innerHTML = html;
+    }
+
+    ['channel', 'role', 'user'].forEach(renderIgnoreChips);
+}
+
+function renderIgnoreChips(kind) {
+    const config = ignoreConfig(kind);
+    const container = document.getElementById(config.chipsId);
+    if (!container) return;
+
+    const list = logOptions[config.listKey] || [];
+    if (list.length === 0) {
+        container.innerHTML = '<span class="log-chips-empty">ยังไม่ได้ยกเว้นอะไร</span>';
+        return;
+    }
+
+    container.innerHTML = list.map(id => `
+        <span class="log-chip">
+            ${escapeLogHtml(config.nameOf(id))}
+            <button type="button" onclick="removeIgnoreEntry('${escapeLogHtml(kind)}', '${escapeLogHtml(id)}')">✕</button>
+        </span>
+    `).join('');
+}
+
+async function addIgnoreEntry(kind) {
+    const config = ignoreConfig(kind);
+    const input = document.getElementById(config.inputId);
+    const value = (input.value || '').trim();
+    if (!value) return;
+
+    const list = logOptions[config.listKey] || [];
+    if (list.includes(value)) {
+        input.value = '';
+        return showLogToast('มีอยู่ในรายการแล้ว');
+    }
+
+    logOptions[config.listKey] = [...list, value];
+    input.value = '';
+    await saveLogOptions();
+}
+
+async function removeIgnoreEntry(kind, id) {
+    const config = ignoreConfig(kind);
+    logOptions[config.listKey] = (logOptions[config.listKey] || []).filter(x => x !== id);
+    await saveLogOptions();
+}
+
+async function saveLogOptions() {
+    const snapshot = JSON.parse(JSON.stringify(logOptions));
+    logOptions.ignoreBots = document.getElementById('log-ignore-bots').checked;
+
+    try {
+        const response = await fetch('/api/log-settings/options', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logOptions)
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.error || 'บันทึกไม่สำเร็จ');
+
+        logOptions = result.options;
+        // ดึงชื่อผู้ใช้ที่เพิ่งเพิ่มเข้ามาใหม่
+        const refreshed = await fetch('/api/log-settings').then(r => r.ok ? r.json() : null).catch(() => null);
+        if (refreshed?.ignoredUserNames) ignoredUserNames = refreshed.ignoredUserNames;
+
+        renderIgnorePanel();
+        showLogToast('บันทึกตัวกรองแล้ว');
+    } catch (error) {
+        logOptions = snapshot; // ย้อนค่ากลับ ไม่ให้หน้าจอโกหกว่าบันทึกแล้ว
+        renderIgnorePanel();
         Swal.fire({ icon: 'error', title: 'บันทึกไม่สำเร็จ', text: error.message, confirmButtonColor: '#6366f1' });
     }
 }

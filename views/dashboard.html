@@ -275,6 +275,53 @@
                         <button type="button" class="log-bulk-btn" onclick="applyChannelToAll()">ใช้ห้องนี้กับทุกรายการ</button>
                     </div>
 
+                    <!-- ตัวกรอง: ยกเว้นไม่ต้อง log (แนวเดียวกับ Carl-bot) -->
+                    <div class="log-ignore-panel">
+                        <div class="log-ignore-head">
+                            <div>
+                                <h3>ตัวกรอง — ไม่ต้องบันทึก log</h3>
+                                <p class="prbot-hint">ยกเว้นห้อง คน หรือยศ ที่ไม่อยากให้ขึ้น log — เลือกหมวดหมู่เท่ากับยกเว้นทุกห้องในหมวดนั้น</p>
+                            </div>
+                        </div>
+
+                        <label class="log-ignore-bots">
+                            <span>ไม่ต้องบันทึกการกระทำของบอท</span>
+                            <span class="switch">
+                                <input type="checkbox" id="log-ignore-bots" onchange="saveLogOptions()">
+                                <span class="slider"></span>
+                            </span>
+                        </label>
+
+                        <div class="log-ignore-grid">
+                            <div class="log-ignore-col">
+                                <label for="ignore-channel-select">ห้อง / หมวดหมู่ที่ยกเว้น</label>
+                                <div class="log-chip-input">
+                                    <select id="ignore-channel-select" class="input-select"></select>
+                                    <button type="button" onclick="addIgnoreEntry('channel')">เพิ่ม</button>
+                                </div>
+                                <div class="log-chips" id="ignore-channel-chips"></div>
+                            </div>
+
+                            <div class="log-ignore-col">
+                                <label for="ignore-role-select">ยศที่ยกเว้น</label>
+                                <div class="log-chip-input">
+                                    <select id="ignore-role-select" class="input-select"></select>
+                                    <button type="button" onclick="addIgnoreEntry('role')">เพิ่ม</button>
+                                </div>
+                                <div class="log-chips" id="ignore-role-chips"></div>
+                            </div>
+
+                            <div class="log-ignore-col">
+                                <label for="ignore-user-input">สมาชิกที่ยกเว้น (กรอก User ID)</label>
+                                <div class="log-chip-input">
+                                    <input type="text" id="ignore-user-input" class="input-select" placeholder="เช่น 1273939427575595184">
+                                    <button type="button" onclick="addIgnoreEntry('user')">เพิ่ม</button>
+                                </div>
+                                <div class="log-chips" id="ignore-user-chips"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="log-groups"></div>
                 </div>
             </section>
