@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    fetchAppVersion();
     fetchConfig();
     fetchLogsList();
     fetchLevels();
@@ -35,6 +36,16 @@ function switchTab(tabId) {
     if (tabId === 'access-tab') {
         fetchRoomAccessList();
     }
+}
+
+// --- App Version ---
+async function fetchAppVersion() {
+    try {
+        const res = await fetch('/api/version');
+        const data = await res.json();
+        const el = document.getElementById('app-version');
+        if (el && data.version) el.textContent = `V${data.version}`;
+    } catch (e) {}
 }
 
 // --- Config Methods ---

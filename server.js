@@ -88,6 +88,8 @@ const requireApiAuth = (req, res, next) => {
     }
 };
 
+const pkgVersion = require('./package.json').version;
+
 // --- HTML Routes ---
 app.get('/', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
@@ -124,6 +126,11 @@ app.post('/api/logout', (req, res) => {
     req.session.destroy(() => {
         res.json({ success: true });
     });
+});
+
+// --- Version API ---
+app.get('/api/version', requireApiAuth, (req, res) => {
+    res.json({ version: pkgVersion });
 });
 
 // --- Config API (Protected) ---
