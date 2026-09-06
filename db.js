@@ -176,7 +176,129 @@ const deleteRoomAccessRecord = (id) => {
     });
 };
 
-module.exports = { 
+// ==========================================
+// Voice Guard — Whitelist Tables & Functions
+// ==========================================
+db.run(`CREATE TABLE IF NOT EXISTS voice_whitelist_channels (
+    channelId TEXT PRIMARY KEY,
+    enabled INTEGER DEFAULT 1
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS voice_whitelist_users (
+    channelId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    PRIMARY KEY(channelId, userId)
+)`);
+
+const getWhitelistChannels = () => new Promise((resolve, reject) => {
+    db.all('SELECT * FROM voice_whitelist_channels', [], (err, rows) => err ? reject(err) : resolve(rows));
+});
+
+const getWhitelistChannel = (channelId) => new Promise((resolve, reject) => {
+    db.get('SELECT * FROM voice_whitelist_channels WHERE channelId = ?', [channelId], (err, row) => err ? reject(err) : resolve(row));
+});
+
+const upsertWhitelistChannel = (channelId, enabled = 1) => new Promise((resolve, reject) => {
+    db.run('INSERT OR REPLACE INTO voice_whitelist_channels (channelId, enabled) VALUES (?, ?)', [channelId, enabled], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const deleteWhitelistChannel = (channelId) => new Promise((resolve, reject) => {
+    db.serialize(() => {
+        db.run('DELETE FROM voice_whitelist_users WHERE channelId = ?', [channelId]);
+        db.run('DELETE FROM voice_whitelist_channels WHERE channelId = ?', [channelId], function(err) {
+            err ? reject(err) : resolve(this.changes);
+        });
+    });
+});
+
+const getWhitelistUsers = (channelId) => new Promise((resolve, reject) => {
+    db.all('SELECT userId FROM voice_whitelist_users WHERE channelId = ?', [channelId], (err, rows) => {
+        err ? reject(err) : resolve(rows.map(r => r.userId));
+    });
+});
+
+const getAllWhitelistUsers = () => new Promise((resolve, reject) => {
+    db.all('SELECT * FROM voice_whitelist_users', [], (err, rows) => err ? reject(err) : resolve(rows));
+});
+
+const addWhitelistUser = (channelId, userId) => new Promise((resolve, reject) => {
+    db.run('INSERT OR IGNORE INTO voice_whitelist_users (channelId, userId) VALUES (?, ?)', [channelId, userId], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const removeWhitelistUser = (channelId, userId) => new Promise((resolve, reject) => {
+    db.run('DELETE FROM voice_whitelist_users WHERE channelId = ? AND userId = ?', [channelId, userId], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+// ==========================================
+// Voice Guard — Blacklist Tables & Functions
+// ==========================================
+db.run(`CREATE TABLE IF NOT EXISTS voice_blacklist_channels (
+    channelId TEXT PRIMARY KEY,
+    enabled INTEGER DEFAULT 1
+)`);
+
+db.run(`CREATE TABLE IF NOT EXISTS voice_blacklist_users (
+    channelId TEXT NOT NULL,
+    userId TEXT NOT NULL,
+    PRIMARY KEY(channelId, userId)
+)`);
+
+const getBlacklistChannels = () => new Promise((resolve, reject) => {
+    db.all('SELECT * FROM voice_blacklist_channels', [], (err, rows) => err ? reject(err) : resolve(rows));
+});
+
+const getBlacklistChannel = (channelId) => new Promise((resolve, reject) => {
+    db.get('SELECT * FROM voice_blacklist_channels WHERE channelId = ?', [channelId], (err, row) => err ? reject(err) : resolve(row));
+});
+
+const upsertBlacklistChannel = (channelId, enabled = 1) => new Promise((resolve, reject) => {
+    db.run('INSERT OR REPLACE INTO voice_blacklist_channels (channelId, enabled) VALUES (?, ?)', [channelId, enabled], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const deleteBlacklistChannel = (channelId) => new Promise((resolve, reject) => {
+    db.serialize(() => {
+        db.run('DELETE FROM voice_blacklist_users WHERE channelId = ?', [channelId]);
+        db.run('DELETE FROM voice_blacklist_channels WHERE channelId = ?', [channelId], function(err) {
+            err ? reject(err) : resolve(this.changes);
+        });
+    });
+});
+
+const getBlacklistUsers = (channelId) => new Promise((resolve, reject) => {
+    db.all('SELECT userId FROM voice_blacklist_users WHERE channelId = ?', [channelId], (err, rows) => {
+        err ? reject(err) : resolve(rows.map(r => r.userId));
+    });
+});
+
+const getAllBlacklistUsers = () => new Promise((resolve, reject) => {
+    db.all('SELECT * FROM voice_blacklist_users', [], (err, rows) => err ? reject(err) : resolve(rows));
+});
+
+const addBlacklistUser = (channelId, userId) => new Promise((resolve, reject) => {
+    db.run('INSERT OR IGNORE INTO voice_blacklist_users (channelId, userId) VALUES (?, ?)', [channelId, userId], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const removeBlacklistUser = (channelId, userId) => new Promise((resolve, reject) => {
+    db.run('DELETE FROM voice_blacklist_users WHERE channelId = ? AND userId = ?', [channelId, userId], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+module.exports = {
     db, getConfig, getAllConfigs, updateConfig, getAllLevels, saveAllLevelsToDB,
-    addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord
+    addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord,
+    getWhitelistChannels, getWhitelistChannel, upsertWhitelistChannel, deleteWhitelistChannel,
+    getWhitelistUsers, getAllWhitelistUsers, addWhitelistUser, removeWhitelistUser,
+    getBlacklistChannels, getBlacklistChannel, upsertBlacklistChannel, deleteBlacklistChannel,
+    getBlacklistUsers, getAllBlacklistUsers, addBlacklistUser, removeBlacklistUser
 };
