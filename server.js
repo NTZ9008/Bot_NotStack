@@ -6,7 +6,10 @@ const helmet = require('helmet');
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
-const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord } = require('./db');
+const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord,
+    getWhitelistChannels, upsertWhitelistChannel, deleteWhitelistChannel, getWhitelistUsers, addWhitelistUser, removeWhitelistUser,
+    getBlacklistChannels, upsertBlacklistChannel, deleteBlacklistChannel, getBlacklistUsers, addBlacklistUser, removeBlacklistUser
+} = require('./db');
 const { registerLogManagerRoutes } = require('./logmanager/routes');
 const schedule = require('node-schedule');
 
@@ -88,6 +91,8 @@ const requireApiAuth = (req, res, next) => {
     }
 };
 
+const pkgVersion = require('./package.json').version;
+
 // --- HTML Routes ---
 app.get('/', requireAuth, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
@@ -124,6 +129,11 @@ app.post('/api/logout', (req, res) => {
     req.session.destroy(() => {
         res.json({ success: true });
     });
+});
+
+// --- Version API ---
+app.get('/api/version', requireApiAuth, (req, res) => {
+    res.json({ version: pkgVersion });
 });
 
 // --- Config API (Protected) ---
@@ -431,6 +441,193 @@ const startServer = (client) => {
             console.error('Error in room access schedule task:', error);
         }
     }, 5000);
+
+    // ==========================================
+    // Voice Guard API — Search Members & Voice Channels
+    // ==========================================
+    app.get('/api/search-members', requireApiAuth, async (req, res) => {
+        const query = (req.query.q || '').trim().toLowerCase();
+        if (!query || query.length < 1) return res.json([]);
+        try {
+            const guild = client.guilds.cache.first();
+            if (!guild) return res.json([]);
+            const fetched = await guild.members.fetch({ query, limit: 15 });
+            const results = fetched.filter(m => !m.user.bot).map(m => ({
+                userId: m.id,
+                username: m.user.globalName || m.user.username,
+                tag: m.user.username,
+                avatar: m.user.displayAvatarURL({ size: 64 }),
+                nickname: m.nickname || null
+            }));
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.get('/api/voice-channels', requireApiAuth, async (req, res) => {
+        try {
+            const guild = client.guilds.cache.first();
+            if (!guild) return res.json([]);
+            const channels = guild.channels.cache
+                .filter(c => c.type === 2)
+                .map(c => ({ id: c.id, name: c.name }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+            res.json(channels);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ==========================================
+    // Voice Guard API — Whitelist
+    // ==========================================
+    async function resolveUserInfos(userIds, guild) {
+        const result = [];
+        for (const userId of userIds) {
+            let username = userId;
+            let avatar = `https://cdn.discordapp.com/embed/avatars/${parseInt(userId) % 5}.png`;
+            try {
+                let user = client.users.cache.get(userId);
+                if (!user) user = await client.users.fetch(userId).catch(() => null);
+                if (user) {
+                    username = user.globalName || user.username;
+                    avatar = user.displayAvatarURL({ size: 64 });
+                }
+            } catch (e) {}
+            result.push({ userId, username, avatar });
+        }
+        return result;
+    }
+
+    app.get('/api/whitelist', requireApiAuth, async (req, res) => {
+        try {
+            const channels = await getWhitelistChannels();
+            const guild = client.guilds.cache.first();
+            const result = [];
+            for (const ch of channels) {
+                const userIds = await getWhitelistUsers(ch.channelId);
+                const users = await resolveUserInfos(userIds, guild);
+                let channelName = ch.channelId;
+                if (guild) {
+                    const dc = guild.channels.cache.get(ch.channelId);
+                    if (dc) channelName = dc.name;
+                }
+                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, users });
+            }
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/whitelist/channel', requireApiAuth, async (req, res) => {
+        const { channelId, enabled } = req.body;
+        if (!channelId) return res.status(400).json({ error: 'channelId required' });
+        try {
+            await upsertWhitelistChannel(channelId, enabled !== undefined ? enabled : 1);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/whitelist/channel/delete', requireApiAuth, async (req, res) => {
+        try {
+            await deleteWhitelistChannel(req.body.channelId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/whitelist/user', requireApiAuth, async (req, res) => {
+        const { channelId, userId } = req.body;
+        if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
+        try {
+            await addWhitelistUser(channelId, userId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/whitelist/user/delete', requireApiAuth, async (req, res) => {
+        const { channelId, userId } = req.body;
+        if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
+        try {
+            await removeWhitelistUser(channelId, userId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    // ==========================================
+    // Voice Guard API — Blacklist
+    // ==========================================
+    app.get('/api/blacklist', requireApiAuth, async (req, res) => {
+        try {
+            const channels = await getBlacklistChannels();
+            const guild = client.guilds.cache.first();
+            const result = [];
+            for (const ch of channels) {
+                const userIds = await getBlacklistUsers(ch.channelId);
+                const users = await resolveUserInfos(userIds, guild);
+                let channelName = ch.channelId;
+                if (guild) {
+                    const dc = guild.channels.cache.get(ch.channelId);
+                    if (dc) channelName = dc.name;
+                }
+                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, users });
+            }
+            res.json(result);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/blacklist/channel', requireApiAuth, async (req, res) => {
+        const { channelId, enabled } = req.body;
+        if (!channelId) return res.status(400).json({ error: 'channelId required' });
+        try {
+            await upsertBlacklistChannel(channelId, enabled !== undefined ? enabled : 1);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/blacklist/channel/delete', requireApiAuth, async (req, res) => {
+        try {
+            await deleteBlacklistChannel(req.body.channelId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/blacklist/user', requireApiAuth, async (req, res) => {
+        const { channelId, userId } = req.body;
+        if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
+        try {
+            await addBlacklistUser(channelId, userId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    app.post('/api/blacklist/user/delete', requireApiAuth, async (req, res) => {
+        const { channelId, userId } = req.body;
+        if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
+        try {
+            await removeBlacklistUser(channelId, userId);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
 
     app.listen(port, () => {
         console.log(`🚀 Secure Dashboard Server running on http://localhost:${port}`);

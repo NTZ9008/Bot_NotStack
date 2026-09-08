@@ -5,7 +5,7 @@ const path = require('path');
 const schedule = require("node-schedule");
 const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { getConfig, saveAllLevelsToDB, getAllLevels } = require('./db.js');
+const { getConfig, saveAllLevelsToDB, getAllLevels, getWhitelistChannel, getWhitelistUsers, getBlacklistChannel, getBlacklistUsers } = require('./db.js');
 const { startServer } = require('./server.js');
 const { initLogManager, logFilterAction, logInvitePosted } = require('./logmanager');
 
@@ -487,6 +487,30 @@ client.on('messageCreate', async (msg) => {
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const member = newState.member;
     if (member.user.bot) return;
+
+    // Voice Guard: Whitelist check
+    if (newState.channelId) {
+        const wlChannel = await getWhitelistChannel(newState.channelId);
+        if (wlChannel && wlChannel.enabled) {
+            const allowedUsers = await getWhitelistUsers(newState.channelId);
+            if (!allowedUsers.includes(member.id)) {
+                await member.voice.disconnect().catch(() => {});
+                await member.send(`❌ คุณไม่ได้อยู่ใน whitelist ของห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
+                return;
+            }
+        }
+        // Voice Guard: Blacklist check
+        const blChannel = await getBlacklistChannel(newState.channelId);
+        if (blChannel && blChannel.enabled) {
+            const bannedUsers = await getBlacklistUsers(newState.channelId);
+            if (bannedUsers.includes(member.id)) {
+                await member.voice.disconnect().catch(() => {});
+                await member.send(`🚫 คุณถูกแบนจากห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
+                return;
+            }
+        }
+    }
+
     if (oldState.channelId && newState.channelId && oldState.channelId !== newState.channelId) {
         
         // 🚨 START ANTI-FORCE MOVE (กันโดนคนอื่นลาก) 🚨

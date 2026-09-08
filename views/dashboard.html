@@ -18,7 +18,7 @@
                     <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo" id="bot-avatar">
                 </div>
                 <div style="flex: 1;">
-                    <h1>Bot_NotStack V3.1.0</h1>
+                    <h1>Bot_NotStack <span id="app-version"></span></h1>
                     <p>Dashboard & Configuration Control Panel</p>
                 </div>
                 <div>
@@ -43,6 +43,7 @@
                     <button class="tab-btn" onclick="switchTab('news-tab')">News</button>
                     <button class="tab-btn" onclick="switchTab('access-tab')">Room Access</button>
                     <button class="tab-btn" onclick="switchTab('logmanager-tab')">Log Management</button>
+                    <button class="tab-btn" onclick="switchTab('voiceguard-tab')">Voice Guard</button>
                     <button class="tab-btn" onclick="switchTab('prbot-tab')">PR Bot</button>
                 </div>
             </div>
@@ -203,6 +204,31 @@
                 </div>
             </section>
 
+            <!-- Voice Guard Tab -->
+            <section id="voiceguard-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>Voice Guard</h2>
+                    <p>จัดการ Whitelist / Blacklist สำหรับห้องเสียง</p>
+                </div>
+
+                <div class="vg-mode-toggle">
+                    <button class="vg-mode-btn vg-mode-active" id="vg-mode-wl" onclick="switchVGMode('whitelist')">Whitelist</button>
+                    <button class="vg-mode-btn" id="vg-mode-bl" onclick="switchVGMode('blacklist')">Blacklist</button>
+                </div>
+
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <label>เพิ่มห้องเสียง</label>
+                    <div class="input-wrapper">
+                        <select id="vg-channel-select" class="input-select">
+                            <option value="">-- เลือกห้องเสียง --</option>
+                        </select>
+                        <button onclick="addVGChannel()">เพิ่มห้อง</button>
+                    </div>
+                </div>
+
+                <div id="vg-channels-container"></div>
+            </section>
+
             <!-- PR Bot Tab -->
             <section id="prbot-tab" class="card tab-content hidden">
                 <div class="card-header">
@@ -339,6 +365,7 @@
     </div>
 
     <script src="script.js"></script>
+    <script src="whitelist-dashboard.js"></script>
     <script src="prbot-dashboard.js"></script>
     <script src="logmanager-dashboard.js"></script>
     <script>

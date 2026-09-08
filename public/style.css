@@ -37,7 +37,7 @@ body {
 }
 
 .container {
-    max-width: 900px;
+    max-width: 95%;
     margin: 0 auto;
     padding: 2rem;
     display: flex;
@@ -734,4 +734,199 @@ footer {
 .log-chip button:hover {
     background: transparent;
     color: #ef4444;
+}
+
+/* ==========================================
+   Voice Guard — Mode Toggle & Cards
+   ========================================== */
+.vg-mode-toggle {
+    display: flex;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 999px;
+    padding: 4px;
+    border: 1px solid var(--card-border);
+    width: fit-content;
+}
+
+.vg-mode-btn {
+    padding: 0.5rem 1.5rem;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.vg-mode-btn.vg-mode-active {
+    background: var(--primary);
+    color: white;
+}
+
+.vg-mode-btn.vg-mode-bl-active {
+    background: #ef4444;
+    color: white;
+}
+
+.vg-card {
+    background: rgba(15, 23, 42, 0.55);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 14px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    transition: border-color 0.2s ease;
+}
+
+.vg-card:hover {
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.vg-card-bl {
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.vg-card-bl:hover {
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.vg-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.vg-card-title {
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+/* Search */
+.vg-search-wrap {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.vg-search-input {
+    font-size: 0.9rem !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.vg-search-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1e293b;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    max-height: 250px;
+    overflow-y: auto;
+    z-index: 50;
+    margin-top: 4px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.vg-search-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.vg-search-item:hover {
+    background: rgba(99, 102, 241, 0.15);
+}
+
+.vg-search-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.vg-search-name {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.vg-search-tag {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.vg-search-empty {
+    padding: 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+/* User Grid */
+.vg-users {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.75rem;
+}
+
+.vg-user {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+}
+
+.vg-user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.vg-user-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.vg-user-name {
+    font-weight: 500;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vg-user-id {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.vg-user-remove {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.vg-user-remove:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+@media (max-width: 640px) {
+    .vg-users {
+        grid-template-columns: 1fr;
+    }
 }
