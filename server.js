@@ -532,9 +532,9 @@ const startServer = (client) => {
         }
     });
 
-    app.delete('/api/whitelist/channel/:channelId', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/channel/delete', requireApiAuth, async (req, res) => {
         try {
-            await deleteWhitelistChannel(req.params.channelId);
+            await deleteWhitelistChannel(req.body.channelId);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -552,7 +552,7 @@ const startServer = (client) => {
         }
     });
 
-    app.delete('/api/whitelist/user', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/user/delete', requireApiAuth, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
@@ -598,9 +598,9 @@ const startServer = (client) => {
         }
     });
 
-    app.delete('/api/blacklist/channel/:channelId', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/channel/delete', requireApiAuth, async (req, res) => {
         try {
-            await deleteBlacklistChannel(req.params.channelId);
+            await deleteBlacklistChannel(req.body.channelId);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -618,7 +618,7 @@ const startServer = (client) => {
         }
     });
 
-    app.delete('/api/blacklist/user', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/user/delete', requireApiAuth, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
