@@ -217,7 +217,11 @@ async function deleteVGChannel(channelId) {
     if (!confirmResult.isConfirmed) return;
 
     try {
-        const res = await fetch(`${apiBase()}/channel/${channelId}`, { method: 'DELETE' });
+        const res = await fetch(`${apiBase()}/channel/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId })
+        });
         const result = await res.json();
         if (result.success) {
             Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ลบห้องสำเร็จ', showConfirmButton: false, timer: 2000, timerProgressBar: true });
@@ -230,8 +234,8 @@ async function deleteVGChannel(channelId) {
 
 async function removeVGUser(channelId, userId) {
     try {
-        const res = await fetch(`${apiBase()}/user`, {
-            method: 'DELETE',
+        const res = await fetch(`${apiBase()}/user/delete`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channelId, userId })
         });
