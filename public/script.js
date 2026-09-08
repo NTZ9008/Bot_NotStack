@@ -51,6 +51,16 @@ async function fetchAppVersion() {
     } catch (e) {}
 }
 
+// --- App Version ---
+async function fetchAppVersion() {
+    try {
+        const res = await fetch('/api/version');
+        const data = await res.json();
+        const el = document.getElementById('app-version');
+        if (el && data.version) el.textContent = `V${data.version}`;
+    } catch (e) {}
+}
+
 // --- Config Methods ---
 async function fetchConfig() {
     try {
