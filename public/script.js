@@ -35,6 +35,9 @@ function switchTab(tabId) {
     if (tabId === 'access-tab') {
         fetchRoomAccessList();
     }
+    if (tabId === 'voiceguard-tab') {
+        loadWhitelistTab();
+    }
 }
 
 // --- Config Methods ---
