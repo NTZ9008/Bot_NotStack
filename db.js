@@ -190,6 +190,9 @@ db.run(`CREATE TABLE IF NOT EXISTS voice_whitelist_users (
     PRIMARY KEY(channelId, userId)
 )`);
 
+// Migration: เพิ่มคอลัมน์ notify ให้ตารางเดิม (จะ error ถ้ามีอยู่แล้ว — ปล่อยผ่านได้)
+db.run(`ALTER TABLE voice_whitelist_channels ADD COLUMN notify INTEGER DEFAULT 1`, () => {});
+
 const getWhitelistChannels = () => new Promise((resolve, reject) => {
     db.all('SELECT * FROM voice_whitelist_channels', [], (err, rows) => err ? reject(err) : resolve(rows));
 });
@@ -198,8 +201,15 @@ const getWhitelistChannel = (channelId) => new Promise((resolve, reject) => {
     db.get('SELECT * FROM voice_whitelist_channels WHERE channelId = ?', [channelId], (err, row) => err ? reject(err) : resolve(row));
 });
 
+// ON CONFLICT: อัปเดตเฉพาะ enabled โดยไม่แตะ notify ที่มีอยู่
 const upsertWhitelistChannel = (channelId, enabled = 1) => new Promise((resolve, reject) => {
-    db.run('INSERT OR REPLACE INTO voice_whitelist_channels (channelId, enabled) VALUES (?, ?)', [channelId, enabled], function(err) {
+    db.run('INSERT INTO voice_whitelist_channels (channelId, enabled) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET enabled = excluded.enabled', [channelId, enabled], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const setWhitelistChannelNotify = (channelId, notify = 1) => new Promise((resolve, reject) => {
+    db.run('INSERT INTO voice_whitelist_channels (channelId, notify) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET notify = excluded.notify', [channelId, notify], function(err) {
         err ? reject(err) : resolve(this.changes);
     });
 });
@@ -249,6 +259,9 @@ db.run(`CREATE TABLE IF NOT EXISTS voice_blacklist_users (
     PRIMARY KEY(channelId, userId)
 )`);
 
+// Migration: เพิ่มคอลัมน์ notify ให้ตารางเดิม (จะ error ถ้ามีอยู่แล้ว — ปล่อยผ่านได้)
+db.run(`ALTER TABLE voice_blacklist_channels ADD COLUMN notify INTEGER DEFAULT 1`, () => {});
+
 const getBlacklistChannels = () => new Promise((resolve, reject) => {
     db.all('SELECT * FROM voice_blacklist_channels', [], (err, rows) => err ? reject(err) : resolve(rows));
 });
@@ -257,8 +270,15 @@ const getBlacklistChannel = (channelId) => new Promise((resolve, reject) => {
     db.get('SELECT * FROM voice_blacklist_channels WHERE channelId = ?', [channelId], (err, row) => err ? reject(err) : resolve(row));
 });
 
+// ON CONFLICT: อัปเดตเฉพาะ enabled โดยไม่แตะ notify ที่มีอยู่
 const upsertBlacklistChannel = (channelId, enabled = 1) => new Promise((resolve, reject) => {
-    db.run('INSERT OR REPLACE INTO voice_blacklist_channels (channelId, enabled) VALUES (?, ?)', [channelId, enabled], function(err) {
+    db.run('INSERT INTO voice_blacklist_channels (channelId, enabled) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET enabled = excluded.enabled', [channelId, enabled], function(err) {
+        err ? reject(err) : resolve(this.changes);
+    });
+});
+
+const setBlacklistChannelNotify = (channelId, notify = 1) => new Promise((resolve, reject) => {
+    db.run('INSERT INTO voice_blacklist_channels (channelId, notify) VALUES (?, ?) ON CONFLICT(channelId) DO UPDATE SET notify = excluded.notify', [channelId, notify], function(err) {
         err ? reject(err) : resolve(this.changes);
     });
 });
@@ -297,8 +317,8 @@ const removeBlacklistUser = (channelId, userId) => new Promise((resolve, reject)
 module.exports = {
     db, getConfig, getAllConfigs, updateConfig, getAllLevels, saveAllLevelsToDB,
     addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord,
-    getWhitelistChannels, getWhitelistChannel, upsertWhitelistChannel, deleteWhitelistChannel,
+    getWhitelistChannels, getWhitelistChannel, upsertWhitelistChannel, setWhitelistChannelNotify, deleteWhitelistChannel,
     getWhitelistUsers, getAllWhitelistUsers, addWhitelistUser, removeWhitelistUser,
-    getBlacklistChannels, getBlacklistChannel, upsertBlacklistChannel, deleteBlacklistChannel,
+    getBlacklistChannels, getBlacklistChannel, upsertBlacklistChannel, setBlacklistChannelNotify, deleteBlacklistChannel,
     getBlacklistUsers, getAllBlacklistUsers, addBlacklistUser, removeBlacklistUser
 };
