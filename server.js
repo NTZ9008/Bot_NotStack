@@ -7,8 +7,8 @@ const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcryptjs');
 const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord,
-    getWhitelistChannels, upsertWhitelistChannel, setWhitelistChannelNotify, deleteWhitelistChannel, getWhitelistUsers, addWhitelistUser, removeWhitelistUser,
-    getBlacklistChannels, upsertBlacklistChannel, setBlacklistChannelNotify, deleteBlacklistChannel, getBlacklistUsers, addBlacklistUser, removeBlacklistUser
+    getWhitelistChannels, upsertWhitelistChannel, deleteWhitelistChannel, getWhitelistUsers, addWhitelistUser, removeWhitelistUser,
+    getBlacklistChannels, upsertBlacklistChannel, deleteBlacklistChannel, getBlacklistUsers, addBlacklistUser, removeBlacklistUser
 } = require('./db');
 const { registerLogManagerRoutes } = require('./logmanager/routes');
 const schedule = require('node-schedule');
@@ -513,7 +513,7 @@ const startServer = (client) => {
                     const dc = guild.channels.cache.get(ch.channelId);
                     if (dc) channelName = dc.name;
                 }
-                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, notify: ch.notify, users });
+                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, users });
             }
             res.json(result);
         } catch (err) {
@@ -522,14 +522,10 @@ const startServer = (client) => {
     });
 
     app.post('/api/whitelist/channel', requireApiAuth, async (req, res) => {
-        const { channelId, enabled, notify } = req.body;
+        const { channelId, enabled } = req.body;
         if (!channelId) return res.status(400).json({ error: 'channelId required' });
         try {
-            if (notify !== undefined) {
-                await setWhitelistChannelNotify(channelId, notify);
-            } else {
-                await upsertWhitelistChannel(channelId, enabled !== undefined ? enabled : 1);
-            }
+            await upsertWhitelistChannel(channelId, enabled !== undefined ? enabled : 1);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -583,7 +579,7 @@ const startServer = (client) => {
                     const dc = guild.channels.cache.get(ch.channelId);
                     if (dc) channelName = dc.name;
                 }
-                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, notify: ch.notify, users });
+                result.push({ channelId: ch.channelId, channelName, enabled: ch.enabled, users });
             }
             res.json(result);
         } catch (err) {
@@ -592,14 +588,10 @@ const startServer = (client) => {
     });
 
     app.post('/api/blacklist/channel', requireApiAuth, async (req, res) => {
-        const { channelId, enabled, notify } = req.body;
+        const { channelId, enabled } = req.body;
         if (!channelId) return res.status(400).json({ error: 'channelId required' });
         try {
-            if (notify !== undefined) {
-                await setBlacklistChannelNotify(channelId, notify);
-            } else {
-                await upsertBlacklistChannel(channelId, enabled !== undefined ? enabled : 1);
-            }
+            await upsertBlacklistChannel(channelId, enabled !== undefined ? enabled : 1);
             res.json({ success: true });
         } catch (err) {
             res.status(500).json({ error: err.message });

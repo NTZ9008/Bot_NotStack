@@ -495,9 +495,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
             const allowedUsers = await getWhitelistUsers(newState.channelId);
             if (!allowedUsers.includes(member.id)) {
                 await member.voice.disconnect().catch(() => {});
-                if (wlChannel.notify) {
-                    await member.send(`❌ คุณไม่ได้อยู่ใน whitelist ของห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
-                }
+                await member.send(`❌ คุณไม่ได้อยู่ใน whitelist ของห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
                 return;
             }
         }
@@ -507,9 +505,7 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
             const bannedUsers = await getBlacklistUsers(newState.channelId);
             if (bannedUsers.includes(member.id)) {
                 await member.voice.disconnect().catch(() => {});
-                if (blChannel.notify) {
-                    await member.send(`🚫 คุณถูกแบนจากห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
-                }
+                await member.send(`🚫 คุณถูกแบนจากห้อง **${newState.channel?.name || 'ห้องเสียง'}** จึงไม่สามารถเข้าได้`).catch(() => {});
                 return;
             }
         }

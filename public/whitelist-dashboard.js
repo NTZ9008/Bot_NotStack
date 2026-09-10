@@ -57,7 +57,6 @@ function renderVGChannels() {
     vgData.forEach(ch => {
         const cardClass = vgMode === 'blacklist' ? 'vg-card vg-card-bl' : 'vg-card';
         const toggleChecked = ch.enabled ? 'checked' : '';
-        const notifyChecked = ch.notify ? 'checked' : '';
 
         html += `
         <div class="${cardClass}" id="vg-card-${ch.channelId}">
@@ -71,14 +70,6 @@ function renderVGChannels() {
                     <button class="prbot-remove-btn" onclick="deleteVGChannel('${ch.channelId}')">X</button>
                 </div>
             </div>
-
-            <label class="vg-notify-row">
-                <span>ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออก</span>
-                <span class="switch">
-                    <input type="checkbox" ${notifyChecked} onchange="toggleVGNotify('${ch.channelId}', this.checked)">
-                    <span class="slider"></span>
-                </span>
-            </label>
 
             <div class="vg-search-wrap">
                 <input type="text" class="input-select vg-search-input" placeholder="ค้นหาชื่อสมาชิก..." oninput="onVGSearch(this, '${ch.channelId}')">
@@ -207,24 +198,8 @@ async function toggleVGChannel(channelId, enabled) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ channelId, enabled: enabled ? 1 : 0 })
         });
-        const chData = vgData.find(c => c.channelId === channelId);
-        if (chData) chData.enabled = enabled ? 1 : 0;
     } catch (e) {
         console.error('Toggle error:', e);
-    }
-}
-
-async function toggleVGNotify(channelId, notify) {
-    try {
-        await fetch(`${apiBase()}/channel`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ channelId, notify: notify ? 1 : 0 })
-        });
-        const chData = vgData.find(c => c.channelId === channelId);
-        if (chData) chData.notify = notify ? 1 : 0;
-    } catch (e) {
-        console.error('Toggle notify error:', e);
     }
 }
 
