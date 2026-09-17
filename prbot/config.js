@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { db, getConfig } = require('../db');
+const { prisma, getConfig } = require('../db');
 
 // org/repo ที่เคยใช้ตอน migrate จาก key เดี่ยวรุ่นก่อน (ไม่ได้ผูกกับ logic การ route อีกต่อไป)
 const LEGACY_PEGASUS_ORG = 'MUDST-2026-Pegasus';
@@ -17,59 +17,45 @@ const CONFIG_DEFAULTS = [
     { key: 'PR_CHANNEL_ID', description: 'ห้องสำหรับแจ้งเตือน Pull Request (GitHub PR Bot) — ค่า default สำหรับ org/repo ที่ไม่ได้กำหนดไว้ใน PR_ORG_CHANNEL_MAP' },
 ];
 
-// เพิ่มแถว default ลงตาราง config ที่มีอยู่แล้ว (ถ้ายังไม่มี key นั้น)
+// เพิ่มแถว default ลงตาราง config ที่มีอยู่แล้ว (ถ้ายังไม่มี key นั้น — ไม่ทับค่าที่แอดมินตั้งไว้)
 // เพื่อให้ไปโผล่ในหน้า Dashboard ช่อง Configuration เหมือนช่องอื่นๆ (LOG_CHANNEL_ID, ALERT_CHANNEL_ID ฯลฯ)
-// โดยไม่ต้องแก้ db.js — ใช้ db handle ที่ export ไว้อยู่แล้ว
-function seedConfigDefault({ key, description, value = '' }, retriesLeft = 5) {
-    db.run(
-        `INSERT OR IGNORE INTO config (key, value, description) VALUES (?, ?, ?)`,
-        [key, value, description],
-        (err) => {
-            if (err && retriesLeft > 0) {
-                // ตาราง config อาจยังสร้างไม่เสร็จตอนที่ db.js เพิ่งเปิดไฟล์ → รอแล้วลองใหม่
-                setTimeout(() => seedConfigDefault({ key, description, value }, retriesLeft - 1), 300);
-            } else if (err) {
-                console.error(`[prbot] ไม่สามารถสร้างค่า default ${key} ได้:`, err.message);
-            }
-        }
-    );
+async function seedConfigDefault({ key, description, value = '' }) {
+    await prisma.config.createMany({ data: [{ key, value, description }], skipDuplicates: true });
 }
-CONFIG_DEFAULTS.forEach((entry) => seedConfigDefault(entry));
 
 // migration ครั้งเดียว: ถ้ายังไม่เคยมี key ปลายทาง (mapKey) ให้สร้างขึ้น
 // โดยถ้ามีค่าเก่าจาก legacyKey (รุ่นก่อนหน้า แบบเจาะจง org/repo เดียว) อยู่ ให้ย้ายมาเป็น entry แรกของ map แทนการทิ้งไป
 // แล้วลบ legacyKey ทิ้ง เพราะถูกแทนที่ด้วย map ที่กำหนดได้หลายรายการแล้ว
-function migrateSingleKeyToMap({ mapKey, mapDescription, legacyKey, legacyMapKeyName }, retriesLeft = 5) {
-    db.get(`SELECT value FROM config WHERE key = ?`, [mapKey], (err, existingRow) => {
-        if (err) {
-            if (retriesLeft > 0) return setTimeout(() => migrateSingleKeyToMap({ mapKey, mapDescription, legacyKey, legacyMapKeyName }, retriesLeft - 1), 300);
-            return console.error(`[prbot] ไม่สามารถตรวจสอบ ${mapKey} ได้:`, err.message);
-        }
-        if (existingRow) return; // มีอยู่แล้ว ไม่ต้องทำอะไรต่อ
+async function migrateSingleKeyToMap({ mapKey, mapDescription, legacyKey, legacyMapKeyName }) {
+    const existingRow = await prisma.config.findUnique({ where: { key: mapKey } });
+    if (existingRow) return; // มีอยู่แล้ว ไม่ต้องทำอะไรต่อ
 
-        db.get(`SELECT value FROM config WHERE key = ?`, [legacyKey], (err2, legacyRow) => {
-            const legacyValue = !err2 && legacyRow ? legacyRow.value : '';
-            const initialMap = legacyValue ? { [legacyMapKeyName]: legacyValue } : {};
+    const legacyRow = await prisma.config.findUnique({ where: { key: legacyKey } });
+    const legacyValue = legacyRow ? legacyRow.value : '';
+    const initialMap = legacyValue ? { [legacyMapKeyName]: legacyValue } : {};
 
-            seedConfigDefault({ key: mapKey, description: mapDescription, value: JSON.stringify(initialMap) });
-
-            db.run(`DELETE FROM config WHERE key = ?`, [legacyKey], (err3) => {
-                if (err3) console.error(`[prbot] ไม่สามารถลบ key เก่า ${legacyKey} ได้:`, err3.message);
-            });
-        });
-    });
+    await seedConfigDefault({ key: mapKey, description: mapDescription, value: JSON.stringify(initialMap) });
+    await prisma.config.deleteMany({ where: { key: legacyKey } });
 }
-migrateSingleKeyToMap({
-    mapKey: ORG_CHANNEL_MAP_KEY,
-    mapDescription: ORG_CHANNEL_MAP_DESCRIPTION,
-    legacyKey: LEGACY_ORG_CHANNEL_KEY,
-    legacyMapKeyName: LEGACY_PEGASUS_ORG,
+
+CONFIG_DEFAULTS.forEach((entry) => {
+    seedConfigDefault(entry).catch((err) => console.error(`[prbot] ไม่สามารถสร้างค่า default ${entry.key} ได้:`, err.message));
 });
-migrateSingleKeyToMap({
-    mapKey: REPO_MENTION_MAP_KEY,
-    mapDescription: REPO_MENTION_MAP_DESCRIPTION,
-    legacyKey: LEGACY_REPO_MENTION_KEY,
-    legacyMapKeyName: LEGACY_PEGASUS_TCG_WEB_REPO,
+[
+    {
+        mapKey: ORG_CHANNEL_MAP_KEY,
+        mapDescription: ORG_CHANNEL_MAP_DESCRIPTION,
+        legacyKey: LEGACY_ORG_CHANNEL_KEY,
+        legacyMapKeyName: LEGACY_PEGASUS_ORG,
+    },
+    {
+        mapKey: REPO_MENTION_MAP_KEY,
+        mapDescription: REPO_MENTION_MAP_DESCRIPTION,
+        legacyKey: LEGACY_REPO_MENTION_KEY,
+        legacyMapKeyName: LEGACY_PEGASUS_TCG_WEB_REPO,
+    },
+].forEach((entry) => {
+    migrateSingleKeyToMap(entry).catch((err) => console.error(`[prbot] ไม่สามารถย้าย ${entry.legacyKey} ไป ${entry.mapKey} ได้:`, err.message));
 });
 
 async function getJsonMap(key) {

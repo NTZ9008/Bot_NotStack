@@ -1,0 +1,111 @@
+// ==========================================
+// 🐘 PRISMA SCHEMA (PostgreSQL)
+// ย้ายมาจาก database.sqlite + prbot/data/messages.sqlite
+// ชื่อ field ฝั่ง JS คงเดิม (userId, channelId ...) ส่วนชื่อคอลัมน์ใน Postgres เป็น snake_case ผ่าน @map
+// URL ของฐานข้อมูลตั้งใน prisma.config.js (อ่านจาก DATABASE_URL ใน .env)
+// ==========================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ค่าคอนฟิกที่แก้ได้จากหน้า Dashboard (LOG_CHANNEL_ID, PR_CHANNEL_ID ฯลฯ)
+model Config {
+  key         String  @id
+  value       String?
+  description String?
+  // ลำดับที่สร้าง (แทน rowid ของ SQLite) ให้หน้า Dashboard แสดงรายการเรียงคงที่ แม้มีการแก้ค่า
+  sortOrder   Int     @default(autoincrement()) @map("sort_order")
+
+  @@map("config")
+}
+
+// ระบบ Level & XP
+model Level {
+  userId String @id @map("user_id")
+  xp     Int    @default(0)
+  level  Int    @default(0)
+
+  @@map("levels")
+}
+
+// ตั๋วเข้าห้องแบบมีเวลาหมดอายุ
+model RoomAccess {
+  id       Int      @id @default(autoincrement())
+  userId   String   @map("user_id")
+  roomId   String   @map("room_id")
+  expireAt DateTime @map("expire_at") @db.Timestamptz(3)
+  notified Boolean  @default(false)
+
+  @@index([userId, roomId])
+  @@map("room_access")
+}
+
+// Voice Guard — Whitelist
+model VoiceWhitelistChannel {
+  channelId String  @id @map("channel_id")
+  enabled   Boolean @default(true)
+  // ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออกจากห้องหรือไม่
+  notify    Boolean @default(true)
+
+  @@map("voice_whitelist_channels")
+}
+
+model VoiceWhitelistUser {
+  channelId String @map("channel_id")
+  userId    String @map("user_id")
+
+  @@id([channelId, userId])
+  @@map("voice_whitelist_users")
+}
+
+// Voice Guard — Blacklist
+model VoiceBlacklistChannel {
+  channelId String  @id @map("channel_id")
+  enabled   Boolean @default(true)
+  // ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออกจากห้องหรือไม่
+  notify    Boolean @default(true)
+
+  @@map("voice_blacklist_channels")
+}
+
+model VoiceBlacklistUser {
+  channelId String @map("channel_id")
+  userId    String @map("user_id")
+
+  @@id([channelId, userId])
+  @@map("voice_blacklist_users")
+}
+
+// Log Manager — การตั้งค่าแต่ละ event (แถว __system__ คือสวิตช์เปิด/ปิดทั้งระบบ)
+model LogSetting {
+  eventKey  String  @id @map("event_key")
+  enabled   Boolean @default(false)
+  channelId String  @default("") @map("channel_id")
+  color     String  @default("")
+
+  @@map("log_settings")
+}
+
+// Log Manager — ตัวกรองส่วนกลาง (ค่าเป็น JSON array หรือ '1'/'0')
+model LogOption {
+  key   String  @id
+  value String?
+
+  @@map("log_options")
+}
+
+// PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมตอน PR ถูกปิด
+model PrMessage {
+  repoFullName String @map("repo_full_name")
+  prNumber     Int    @map("pr_number")
+  channelId    String @map("channel_id")
+  messageId    String @map("message_id")
+
+  @@id([repoFullName, prNumber])
+  @@map("pr_messages")
+}

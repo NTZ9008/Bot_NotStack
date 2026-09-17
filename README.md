@@ -103,6 +103,13 @@ BOT_NOTSTACK/
 ├── commands/  
 ├── events/  
 ├── logs/  
+├── prisma/  
+│   ├── schema.prisma  
+│   ├── migrations/  
+│   └── client.js  
+├── scripts/  
+│   └── migrate-sqlite-to-postgres.js  
+├── db.js  
 ├── index.js  
 ├── deploy-command.js  
 ├── badWords.json  
@@ -114,17 +121,31 @@ BOT_NOTSTACK/
 ## 🚀 การติดตั้ง
 
 ### 1️⃣ ติดตั้งแพ็กเกจ
-npm install
+npm install  
+(รัน `prisma generate` ให้อัตโนมัติ — ต้องใช้ Node.js 20.19+ / 22.12+ / 24+)
 
 ### 2️⃣ ตั้งค่าไฟล์ `.env`
 TOKEN=DISCORD_BOT_TOKEN  
 OPENWEATHER_KEY=OPENWEATHER_API_KEY  
 GEMINI_KEY=GOOGLE_GEMINI_API_KEY  
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DBNAME  
 
-### 3️⃣ ลงทะเบียนคำสั่ง
+> ถ้ารหัสผ่านมีอักขระพิเศษ (เช่น `@ # / : ?`) ต้อง URL-encode ก่อน เช่น `#` → `%23`, `@` → `%40`
+
+### 3️⃣ สร้างตารางใน PostgreSQL
+npm run db:migrate
+
+### 4️⃣ (ครั้งเดียว) ย้ายข้อมูลเก่าจาก SQLite
+ถ้าเคยรันบอทเวอร์ชัน SQLite มาก่อน ให้ย้ายข้อมูลจาก `database.sqlite` และ `prbot/data/messages.sqlite` **ก่อนเปิดบอทครั้งแรก**  
+npm run db:import-sqlite -- --dry-run  ← ดูก่อนว่าจะย้ายอะไรบ้าง (ไม่เขียนลง Postgres)  
+npm run db:import-sqlite  ← ย้ายจริงใน transaction เดียว แล้วตรวจเทียบข้อมูลทุกแถว  
+
+ไฟล์ SQLite ถูกเปิดแบบ read-only ไม่ถูกแก้ไข — ถ้าเผลอเปิดบอทก่อน (ตารางใน Postgres มีค่า default อยู่แล้ว) สคริปต์จะหยุด ให้รันใหม่พร้อม `--force` เพื่อแทนที่ด้วยข้อมูลจาก SQLite
+
+### 5️⃣ ลงทะเบียนคำสั่ง
 node deploy-command.js
 
-### 4️⃣ รันบอท
+### 6️⃣ รันบอท
 node index.js
 
 ---
@@ -142,6 +163,7 @@ dotenv
 node-schedule  
 node-fetch  
 @google/generative-ai  
+prisma / @prisma/client / @prisma/adapter-pg (PostgreSQL)  
 
 ---
 

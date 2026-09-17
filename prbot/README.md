@@ -30,7 +30,7 @@
 ## ครอบคลุมตอนนี้
 
 - `pull_request` action `opened` / `reopened` / `ready_for_review` → ส่ง embed ใหม่ + ปุ่ม Open PR / Latest Commit ผ่าน channel ที่ตั้งไว้
-- `pull_request` action `closed` → แก้ไขข้อความเดิม (หา message id จาก SQLite แยกไฟล์ `prbot/data/messages.sqlite`) เป็นสีม่วง "Merged" (ถ้า `pr.merged === true`) หรือสีแดง "Closed"
+- `pull_request` action `closed` → แก้ไขข้อความเดิม (หา message id จากตาราง `pr_messages` ใน PostgreSQL) เป็นสีม่วง "Merged" (ถ้า `pr.merged === true`) หรือสีแดง "Closed"
 - Routing ตาม org/repo:
   - PR จาก org ไหนก็ตามที่ระบุไว้ใน `PR_ORG_CHANNEL_MAP` → ส่งเข้า channel ของ org นั้นแทน `PR_CHANNEL_ID`
   - PR ที่เปิดจาก repo ไหนก็ตามที่ระบุไว้ใน `PR_REPO_MENTION_MAP` → mention role ที่ตั้งไว้ต่อท้ายข้อความด้วย (เป็น `content` ของข้อความ ไม่ใช่ field ใน embed เพราะ Discord ping ได้จาก content เท่านั้น) — repo อื่นที่ไม่ได้ระบุไว้จะไม่ mention
@@ -58,7 +58,7 @@ prbot/
 ├── discord/embeds/         # pure function: PR data → { embeds, components }
 │   ├── prOpened.js
 │   └── prClosed.js
-├── store/messageStore.js   # SQLite แยกไฟล์ เก็บ PR → message id
+├── store/messageStore.js   # ตาราง pr_messages (PostgreSQL ผ่าน Prisma) เก็บ PR → message id
 └── utils/verifySignature.js # HMAC SHA-256 ตรวจ X-Hub-Signature-256
 
 public/prbot-dashboard.js   # logic ของ tab "PR Bot" ในหน้า Dashboard (ไฟล์ใหม่ แยกจาก script.js)
