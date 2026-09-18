@@ -150,6 +150,25 @@ node index.js
 
 ---
 
+## 🔐 ระบบ Login ของ Dashboard
+
+- **เข้าสู่ระบบได้ 2 ทาง:** username/password (bcrypt) หรือ **Discord OAuth2** — ผูกทั้งสองทางเข้ากับบัญชีเดียวกันได้ในแท็บ My Account
+- **Session:** JWT access token อายุ 15 นาที + refresh token 7 วันที่หมุนใบใหม่ทุกครั้ง เก็บใน httpOnly cookie ทั้งคู่ (JS อ่านไม่ได้)
+  ถ้า refresh token ใบเก่าถูกนำกลับมาใช้ซ้ำ ระบบถือว่าโดนขโมย และเตะผู้ใช้นั้นออกทุกเครื่อง
+- **Role:** `USER` เห็นแค่ Levels และบัญชีตัวเอง / `ADMIN` เห็นทุกอย่าง รวมถึงแท็บ **Users** (จัดการผู้ใช้) และ **Audit Logs**
+- **ความปลอดภัย:** ล็อกบัญชี 15 นาทีเมื่อใส่รหัสผิด 5 ครั้ง, จำกัดความถี่ต่อ IP, ตรวจ Origin ทุก request ที่แก้ข้อมูล (กัน CSRF)
+- **Audit log:** บันทึกการ login/logout และทุกการแก้ไขผ่าน Dashboard (ใคร / ทำอะไร / IP / ค่าเดิม) เก็บย้อนหลัง 180 วัน
+
+### ตั้งค่า
+1. `npm run db:migrate` — สร้างตาราง `users`, `refresh_tokens`, `audit_logs`
+2. ตั้ง `JWT_SECRET` ใน `.env` (ยาว 32 ตัวขึ้นไป)
+3. เปิดบอท — ถ้ายังไม่มี ADMIN ในระบบ จะสร้างให้จาก `ADMIN_USERNAME` / `ADMIN_PASSWORD` เดิมใน `.env` (login ด้วยรหัสเดิมได้เลย)
+   หลังจากนั้นเปลี่ยนรหัสผ่านที่แท็บ My Account — แก้ค่าใน `.env` ภายหลังจะไม่มีผลกับบัญชีที่สร้างไปแล้ว
+4. (ถ้าต้องการ Discord login) Discord Developer Portal → แอปของบอท → **OAuth2**
+   - เพิ่ม Redirect: `https://<โดเมน Dashboard>/api/auth/discord/callback`
+   - ใส่ `DISCORD_CLIENT_SECRET` และ `DISCORD_REDIRECT_URI` ใน `.env` (`DISCORD_CLIENT_ID` ถ้าไม่ใส่จะใช้ `clientId` จาก `config.json`)
+   - คนที่ login ด้วย Discord ครั้งแรกจะได้ role `USER` — ปรับเป็น `ADMIN` ในแท็บ Users หรือใส่ Discord ID ไว้ใน `ADMIN_DISCORD_IDS`
+
 ## ⚠️ Permissions ที่ต้องเปิดให้บอท
 - View Audit Log  
 - Move Members  
