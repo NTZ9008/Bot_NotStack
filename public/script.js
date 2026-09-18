@@ -594,3 +594,38 @@ async function revokeAccessDirectly(userId, roomId) {
 }
 
 
+
+// Drag to scroll for tabs
+const tabsContainer = document.querySelector('.tabs-container');
+if (tabsContainer) {
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  tabsContainer.addEventListener('mousedown', (e) => {
+    isDown = true;
+    tabsContainer.style.cursor = 'grabbing';
+    startX = e.pageX - tabsContainer.offsetLeft;
+    scrollLeft = tabsContainer.scrollLeft;
+  });
+
+  tabsContainer.addEventListener('mouseleave', () => {
+    isDown = false;
+    tabsContainer.style.cursor = 'grab';
+  });
+
+  tabsContainer.addEventListener('mouseup', () => {
+    isDown = false;
+    tabsContainer.style.cursor = 'grab';
+  });
+
+  tabsContainer.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - tabsContainer.offsetLeft;
+    const walk = (x - startX) * 2;
+    tabsContainer.scrollLeft = scrollLeft - walk;
+  });
+
+  tabsContainer.style.cursor = 'grab';
+}
