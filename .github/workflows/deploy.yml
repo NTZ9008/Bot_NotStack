@@ -1,0 +1,65 @@
+name: Deploy BotNotStack
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Connect Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+      - name: Deploy PROD (rsync)
+        run: |
+          echo "กำลังอัปโหลดไฟล์ไปยัง Server..."
+          # ซิงค์โค้ดจาก GitHub ไปยังเซิร์ฟเวอร์
+          # ข้ามโฟลเดอร์ที่ไม่จำเป็นต้องอัปโหลดขึ้นไป (เช่น node_modules, .git)
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude '.env*' \
+            --delete ./ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/arlifzs/BotNotStack/
+          
+      - name: Install Dependencies & Restart PM2
+        run: |
+          echo "รันคำสั่ง npm ci, prisma และ restart PM2..."
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            source ~/.bashrc
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
+            export PATH=\"\$PATH:\$HOME/.local/bin\"
+            
+            cd /home/arlifzs/BotNotStack
+            
+            echo 'Installing dependencies...'
+            npm ci --omit=dev
+            
+            echo 'Applying Prisma migrations...'
+            npx prisma generate
+            npx prisma migrate deploy
+            
+            echo 'Restarting PM2 process...'
+            pm2 restart BotNotStack || pm2 start server.js --name 'BotNotStack'
+          "
+          
+          echo "Deploy BotNotStack สำเร็จแล้ว! 🚀"
