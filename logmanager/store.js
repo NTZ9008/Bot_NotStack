@@ -1,9 +1,9 @@
 // ==========================================
 // 💾 LOG SETTINGS STORE
-// เก็บการตั้งค่า log แต่ละชนิดลงตาราง log_settings (ใช้ db handle ตัวเดียวกับระบบเดิม)
+// เก็บการตั้งค่า log แต่ละชนิดลงตาราง log_settings (PostgreSQL ผ่าน Prisma client ตัวเดียวกับระบบเดิม)
 // มี cache ใน memory เพราะ event ของ Discord ยิงถี่มาก ไม่ควร query DB ทุกครั้ง
 // ==========================================
-const { db } = require('../db');
+const { prisma } = require('../db');
 const { LOG_EVENTS, LOG_EVENT_MAP } = require('./events');
 
 // แถวพิเศษสำหรับสวิตช์เปิด/ปิดทั้งระบบ (ไม่ใช่ event จริง จึงถูกกรองออกตอนส่งให้ Dashboard)
@@ -28,55 +28,31 @@ const OPTION_KEYS = {
 let ready = false;
 let readyPromise = null;
 
-function run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.run(sql, params, function (err) {
-            if (err) reject(err);
-            else resolve(this);
-        });
-    });
-}
-
-function all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-        db.all(sql, params, (err, rows) => {
-            if (err) reject(err);
-            else resolve(rows || []);
-        });
-    });
-}
-
-// สร้างตาราง + เติมค่า default ของ event ที่ยังไม่มีในตาราง (รองรับกรณีเพิ่ม event ใหม่ในอนาคต)
+// เติมค่า default ของ event ที่ยังไม่มีในตาราง (รองรับกรณีเพิ่ม event ใหม่ในอนาคต)
+// ตารางถูกสร้างโดย prisma migrate แล้ว — skipDuplicates ทำให้ไม่ทับค่าที่แอดมินตั้งไว้
 async function initLogSettings() {
     if (readyPromise) return readyPromise;
 
     readyPromise = (async () => {
-        await run(`CREATE TABLE IF NOT EXISTS log_settings (
-            event_key TEXT PRIMARY KEY,
-            enabled INTEGER DEFAULT 0,
-            channel_id TEXT DEFAULT '',
-            color TEXT DEFAULT ''
-        )`);
-
         // ตัวกรองส่วนกลาง: ห้อง/คน/ยศ ที่ไม่ต้อง log + จะ log การกระทำของบอทไหม
-        await run(`CREATE TABLE IF NOT EXISTS log_options (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )`);
-        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_CHANNELS', '[]')`);
-        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_USERS', '[]')`);
-        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORED_ROLES', '[]')`);
-        await run(`INSERT OR IGNORE INTO log_options (key, value) VALUES ('IGNORE_BOTS', '1')`);
+        await prisma.logOption.createMany({
+            data: [
+                { key: 'IGNORED_CHANNELS', value: '[]' },
+                { key: 'IGNORED_USERS', value: '[]' },
+                { key: 'IGNORED_ROLES', value: '[]' },
+                { key: 'IGNORE_BOTS', value: '1' },
+            ],
+            skipDuplicates: true,
+        });
 
         // ระบบเปิดไว้ตั้งแต่แรก แต่ทุก event ปิดอยู่ → แอดมินค่อยเลือกเปิดทีละอันจากหน้า Dashboard
-        await run(`INSERT OR IGNORE INTO log_settings (event_key, enabled, channel_id, color) VALUES (?, 1, '', '')`, [SYSTEM_KEY]);
-
-        for (const event of LOG_EVENTS) {
-            await run(
-                `INSERT OR IGNORE INTO log_settings (event_key, enabled, channel_id, color) VALUES (?, 0, '', ?)`,
-                [event.key, event.color]
-            );
-        }
+        await prisma.logSetting.createMany({
+            data: [
+                { eventKey: SYSTEM_KEY, enabled: true, channelId: '', color: '' },
+                ...LOG_EVENTS.map(event => ({ eventKey: event.key, enabled: false, channelId: '', color: event.color })),
+            ],
+            skipDuplicates: true,
+        });
 
         await reloadCache();
         ready = true;
@@ -88,13 +64,13 @@ async function initLogSettings() {
 
 async function reloadCache() {
     await reloadOptions();
-    const rows = await all(`SELECT event_key, enabled, channel_id, color FROM log_settings`);
+    const rows = await prisma.logSetting.findMany();
     cache.clear();
     for (const row of rows) {
-        cache.set(row.event_key, {
-            enabled: row.enabled === 1,
-            channelId: row.channel_id || '',
-            color: row.color || LOG_EVENT_MAP.get(row.event_key)?.color || '#5865F2',
+        cache.set(row.eventKey, {
+            enabled: row.enabled,
+            channelId: row.channelId || '',
+            color: row.color || LOG_EVENT_MAP.get(row.eventKey)?.color || '#5865F2',
         });
     }
 }
@@ -132,36 +108,31 @@ async function updateSetting(eventKey, { enabled, channelId, color }) {
         throw new Error(`ไม่รู้จัก log event: ${eventKey}`);
     }
 
-    const fields = [];
-    const params = [];
+    const data = {};
 
     if (typeof enabled === 'boolean') {
-        fields.push('enabled = ?');
-        params.push(enabled ? 1 : 0);
+        data.enabled = enabled;
     }
     if (typeof channelId === 'string') {
         const trimmed = channelId.trim();
         if (trimmed && !SNOWFLAKE.test(trimmed)) throw new Error('รูปแบบ Channel ID ไม่ถูกต้อง');
-        fields.push('channel_id = ?');
-        params.push(trimmed);
+        data.channelId = trimmed;
     }
     if (typeof color === 'string') {
         const trimmed = color.trim();
         if (!HEX_COLOR.test(trimmed)) throw new Error('รูปแบบสีไม่ถูกต้อง (ต้องเป็น #RRGGBB)');
-        fields.push('color = ?');
-        params.push(trimmed);
+        data.color = trimmed;
     }
 
-    if (fields.length === 0) throw new Error('ไม่มีข้อมูลที่ต้องอัปเดต');
+    if (Object.keys(data).length === 0) throw new Error('ไม่มีข้อมูลที่ต้องอัปเดต');
 
-    params.push(eventKey);
-    await run(`UPDATE log_settings SET ${fields.join(', ')} WHERE event_key = ?`, params);
+    await prisma.logSetting.updateMany({ where: { eventKey }, data });
     await reloadCache();
     return getSetting(eventKey);
 }
 
 async function setSystemEnabled(enabled) {
-    await run(`UPDATE log_settings SET enabled = ? WHERE event_key = ?`, [enabled ? 1 : 0, SYSTEM_KEY]);
+    await prisma.logSetting.updateMany({ where: { eventKey: SYSTEM_KEY }, data: { enabled: Boolean(enabled) } });
     await reloadCache();
     return isSystemEnabled();
 }
@@ -170,12 +141,12 @@ async function setSystemEnabled(enabled) {
 async function setChannelForAll(channelId) {
     const trimmed = (channelId || '').trim();
     if (trimmed && !SNOWFLAKE.test(trimmed)) throw new Error('รูปแบบ Channel ID ไม่ถูกต้อง');
-    await run(`UPDATE log_settings SET channel_id = ? WHERE event_key != ?`, [trimmed, SYSTEM_KEY]);
+    await prisma.logSetting.updateMany({ where: { eventKey: { not: SYSTEM_KEY } }, data: { channelId: trimmed } });
     await reloadCache();
 }
 
 async function reloadOptions() {
-    const rows = await all(`SELECT key, value FROM log_options`);
+    const rows = await prisma.logOption.findMany();
     for (const row of rows) {
         if (row.key === 'IGNORE_BOTS') {
             options.ignoreBots = row.value === '1';
@@ -213,14 +184,14 @@ async function updateOptions({ ignoredChannels, ignoredUsers, ignoredRoles, igno
         const cleaned = [...new Set(list.map(id => String(id).trim()).filter(Boolean))];
         const invalid = cleaned.find(id => !SNOWFLAKE.test(id));
         if (invalid) throw new Error(`ไอดีไม่ถูกต้อง: ${invalid}`);
-        await run(`UPDATE log_options SET value = ? WHERE key = ?`, [JSON.stringify(cleaned), dbKey]);
+        await prisma.logOption.updateMany({ where: { key: dbKey }, data: { value: JSON.stringify(cleaned) } });
     };
 
     await saveList('IGNORED_CHANNELS', ignoredChannels);
     await saveList('IGNORED_USERS', ignoredUsers);
     await saveList('IGNORED_ROLES', ignoredRoles);
     if (typeof ignoreBots === 'boolean') {
-        await run(`UPDATE log_options SET value = ? WHERE key = 'IGNORE_BOTS'`, [ignoreBots ? '1' : '0']);
+        await prisma.logOption.updateMany({ where: { key: 'IGNORE_BOTS' }, data: { value: ignoreBots ? '1' : '0' } });
     }
 
     await reloadOptions();
