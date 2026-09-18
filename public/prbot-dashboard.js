@@ -1,8 +1,9 @@
 // PR Bot tab — friendly editor for PR_CHANNEL_ID, PR_ORG_CHANNEL_MAP, PR_REPO_MENTION_MAP
 // ใช้ endpoint /api/config เดิมที่มีอยู่แล้ว (เหมือนช่อง config อื่นๆ) ไม่มีการเพิ่ม backend endpoint ใหม่
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchPrBotConfig();
+document.addEventListener('DOMContentLoaded', async () => {
+    await window.authReady;
+    if (isAdmin()) fetchPrBotConfig();
 });
 
 async function fetchPrBotConfig() {

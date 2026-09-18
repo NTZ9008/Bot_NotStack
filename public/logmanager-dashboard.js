@@ -7,8 +7,9 @@ let logEvents = [];     // การตั้งค่าปัจจุบั�
 let logOptions = { ignoredChannels: [], ignoredUsers: [], ignoredRoles: [], ignoreBots: true };
 let ignoredUserNames = {};
 
-document.addEventListener('DOMContentLoaded', () => {
-    initLogManagerTab();
+document.addEventListener('DOMContentLoaded', async () => {
+    await window.authReady;
+    if (isAdmin()) initLogManagerTab();
 });
 
 async function initLogManagerTab() {

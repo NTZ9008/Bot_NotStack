@@ -109,3 +109,81 @@ model PrMessage {
   @@id([repoFullName, prNumber])
   @@map("pr_messages")
 }
+
+// ==========================================
+// 🔐 AUTH — ผู้ใช้ Dashboard / Refresh token / Audit log
+// ==========================================
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// ผู้ใช้ 1 คนเข้าสู่ระบบได้ 2 ทาง: username+password และ/หรือ Discord OAuth (ผูกทั้งสองอย่างกับบัญชีเดียวกันได้)
+model User {
+  id              Int       @id @default(autoincrement())
+  // null = บัญชีที่สมัครผ่าน Discord อย่างเดียว (login ด้วยรหัสผ่านไม่ได้)
+  username        String?   @unique
+  passwordHash    String?   @map("password_hash")
+  discordId       String?   @unique @map("discord_id")
+  discordUsername String?   @map("discord_username")
+  displayName     String?   @map("display_name")
+  avatarUrl       String?   @map("avatar_url")
+  role            UserRole  @default(USER)
+  isActive        Boolean   @default(true) @map("is_active")
+  // เพิ่มค่าเมื่อต้องการให้ access token ทุกใบของผู้ใช้นี้ใช้ไม่ได้ทันที (เปลี่ยนรหัสผ่าน / ออกจากระบบทุกเครื่อง / ปิดบัญชี)
+  tokenVersion    Int       @default(0) @map("token_version")
+  failedLogins    Int       @default(0) @map("failed_logins")
+  lockedUntil     DateTime? @map("locked_until") @db.Timestamptz(3)
+  lastLoginAt     DateTime? @map("last_login_at") @db.Timestamptz(3)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+
+  @@map("users")
+}
+
+// เก็บเฉพาะ SHA-256 ของ refresh token (ตัวจริงอยู่ใน cookie ของผู้ใช้เท่านั้น)
+// ทุกครั้งที่ refresh จะออกใบใหม่ใน family เดิม — ถ้าใบที่ถูกแทนแล้วโผล่มาใช้ซ้ำ ถือว่าโดนขโมย และยกเลิกทั้ง family
+model RefreshToken {
+  id           String    @id @default(uuid())
+  userId       Int       @map("user_id")
+  tokenHash    String    @unique @map("token_hash")
+  familyId     String    @map("family_id")
+  expiresAt    DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt    DateTime? @map("revoked_at") @db.Timestamptz(3)
+  replacedById String?   @map("replaced_by_id")
+  ip           String?
+  userAgent    String?   @map("user_agent")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
+  @@map("refresh_tokens")
+}
+
+// ประวัติการกระทำใน Dashboard — actorName เก็บชื่อไว้ ณ ตอนนั้น เพื่อให้ยังอ่านได้แม้ผู้ใช้ถูกลบไปแล้ว
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    Int?     @map("actor_id")
+  actorName  String?  @map("actor_name")
+  action     String
+  targetType String?  @map("target_type")
+  targetId   String?  @map("target_id")
+  success    Boolean  @default(true)
+  metadata   Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  actor User? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([actorId])
+  @@index([action])
+  @@map("audit_logs")
+}

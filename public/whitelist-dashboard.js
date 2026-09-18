@@ -27,7 +27,7 @@ async function loadVoiceChannels() {
         const select = document.getElementById('vg-channel-select');
         let html = '<option value="">-- เลือกห้องเสียง --</option>';
         channels.forEach(ch => {
-            html += `<option value="${ch.id}">${ch.name}</option>`;
+            html += `<option value="${escapeHtml(ch.id)}">${escapeHtml(ch.name)}</option>`;
         });
         select.innerHTML = html;
     } catch (e) {
@@ -62,7 +62,7 @@ function renderVGChannels() {
         html += `
         <div class="${cardClass}" id="vg-card-${ch.channelId}">
             <div class="vg-card-head">
-                <div class="vg-card-title">${ch.channelName}</div>
+                <div class="vg-card-title">${escapeHtml(ch.channelName)}</div>
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                     <label class="switch">
                         <input type="checkbox" ${toggleChecked} onchange="toggleVGChannel('${ch.channelId}', this.checked)">
@@ -101,10 +101,10 @@ function renderVGUsers(channelId, users) {
 
     return users.map(u => `
         <div class="vg-user" id="vg-user-${channelId}-${u.userId}">
-            <img class="vg-user-avatar" src="${u.avatar}" alt="">
+            <img class="vg-user-avatar" src="${escapeHtml(u.avatar)}" alt="">
             <div class="vg-user-info">
-                <div class="vg-user-name">${u.username}</div>
-                <div class="vg-user-id">${u.userId}</div>
+                <div class="vg-user-name">${escapeHtml(u.username)}</div>
+                <div class="vg-user-id">${escapeHtml(u.userId)}</div>
             </div>
             <button class="vg-user-remove" onclick="removeVGUser('${channelId}', '${u.userId}')">X</button>
         </div>
@@ -139,10 +139,10 @@ function onVGSearch(input, channelId) {
 
             dropdown.innerHTML = filtered.map(m => `
                 <div class="vg-search-item" onclick="selectVGMember('${channelId}', '${m.userId}', this)">
-                    <img src="${m.avatar}" alt="" class="vg-search-avatar">
+                    <img src="${escapeHtml(m.avatar)}" alt="" class="vg-search-avatar">
                     <div>
-                        <div class="vg-search-name">${m.username}${m.nickname ? ` (${m.nickname})` : ''}</div>
-                        <div class="vg-search-tag">@${m.tag}</div>
+                        <div class="vg-search-name">${escapeHtml(m.username)}${m.nickname ? ` (${escapeHtml(m.nickname)})` : ''}</div>
+                        <div class="vg-search-tag">@${escapeHtml(m.tag)}</div>
                     </div>
                 </div>
             `).join('');

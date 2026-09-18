@@ -1,16 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const session = require('express-session');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const fs = require('fs');
-const rateLimit = require('express-rate-limit');
-const bcrypt = require('bcryptjs');
 const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, removeRoomAccess, getActiveRoomAccess, markRoomAccessNotified, deleteRoomAccessRecord,
     getWhitelistChannels, upsertWhitelistChannel, setWhitelistChannelNotify, deleteWhitelistChannel, getWhitelistUsers, addWhitelistUser, removeWhitelistUser,
     getBlacklistChannels, upsertBlacklistChannel, setBlacklistChannelNotify, deleteBlacklistChannel, getBlacklistUsers, addBlacklistUser, removeBlacklistUser
 } = require('./db');
 const { registerLogManagerRoutes } = require('./logmanager/routes');
+const { initAuth, authRouter, adminRouter, authenticate, verifyOrigin, auditApiMutations, requireAuthPage, requireApiAuth, requireAdmin } = require('./auth');
 const schedule = require('node-schedule');
 
 const app = express();
@@ -44,13 +43,6 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate Limiting (ป้องกัน Brute Force ทั่วไปและการโจมตี)
-const loginLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 นาที
-    max: 5, // จำกัด 5 ครั้งต่อ IP
-    message: { error: 'คุณพยายามเข้าสู่ระบบผิดพลาดบ่อยเกินไป กรุณารอสักครู่' }
-});
-
 // PR Bot: ต้องมาก่อน express.json() เพื่อให้ signature verify ด้วย raw body ได้
 app.use('/webhook', require('./prbot/routes/github'));
 
@@ -58,77 +50,31 @@ app.use(express.json());
 
 app.set('trust proxy', 1); // Trust first proxy (Nginx)
 
-// Session Configuration (ระบบ Login)
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'super_secret_fallback',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production', // ถ้าใช้ HTTPS ควรให้เป็น true
-        httpOnly: true,
-        sameSite: 'strict', // ป้องกัน CSRF
-        maxAge: 1000 * 60 * 60 * 24 // ล็อกอินอยู่ได้ 1 วัน
-    }
-}));
-
 // Serve static assets (เฉพาะ CSS, JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Middleware เช็คสิทธิ์การเข้าถึง
-const requireAuth = (req, res, next) => {
-    if (req.session.loggedIn) {
-        next();
-    } else {
-        res.redirect('/login');
-    }
-};
+// ระบบ Login (JWT ใน httpOnly cookie) — ใส่ req.user ให้ทุก request ที่มี token ถูกต้อง
+app.use(cookieParser());
+app.use(authenticate);
+// API ที่แก้ข้อมูล (POST/PATCH/DELETE) ต้องมาจากหน้า Dashboard ของเราเท่านั้น (กัน CSRF)
+app.use('/api', verifyOrigin);
+// บันทึก audit log ของทุก API ที่แก้ข้อมูล
+app.use(auditApiMutations);
 
-const requireApiAuth = (req, res, next) => {
-    if (req.session.loggedIn) {
-        next();
-    } else {
-        res.status(401).json({ error: 'Unauthorized. Please login.' });
-    }
-};
+// ผู้ใช้ทั่วไป (USER) เข้าได้แค่ Levels + บัญชีตัวเอง ส่วน API ที่เหลือเป็นของ ADMIN ทั้งหมด
+app.use('/api/auth', authRouter);
+app.use('/api/admin', requireAdmin, adminRouter);
 
 const pkgVersion = require('./package.json').version;
 
 // --- HTML Routes ---
-app.get('/', requireAuth, (req, res) => {
+app.get('/', requireAuthPage, (req, res) => {
     res.sendFile(path.join(__dirname, 'views', 'dashboard.html'));
 });
 
 app.get('/login', (req, res) => {
-    if (req.session.loggedIn) return res.redirect('/');
+    if (req.user) return res.redirect('/');
     res.sendFile(path.join(__dirname, 'views', 'login.html'));
-});
-
-// --- Auth API ---
-app.post('/api/login', loginLimiter, async (req, res) => {
-    const { username, password } = req.body;
-    
-    const adminUser = process.env.ADMIN_USERNAME;
-    const adminPassHash = process.env.ADMIN_PASSWORD;
-    
-    if (!adminUser || !adminPassHash) {
-        return res.status(500).json({ error: 'ระบบยังไม่ได้ตั้งค่ารหัสผ่านผู้ดูแลระบบใน .env (ADMIN_USERNAME / ADMIN_PASSWORD)' });
-    }
-    
-    if (username === adminUser) {
-        const isMatch = await bcrypt.compare(password, adminPassHash);
-        if (isMatch) {
-            req.session.loggedIn = true;
-            return res.json({ success: true, message: 'Logged in successfully' });
-        }
-    }
-    
-    res.status(401).json({ error: 'รหัสผ่านหรือชื่อผู้ใช้ไม่ถูกต้อง' });
-});
-
-app.post('/api/logout', (req, res) => {
-    req.session.destroy(() => {
-        res.json({ success: true });
-    });
 });
 
 // --- Version API ---
@@ -137,7 +83,7 @@ app.get('/api/version', requireApiAuth, (req, res) => {
 });
 
 // --- Config API (Protected) ---
-app.get('/api/config', requireApiAuth, async (req, res) => {
+app.get('/api/config', requireAdmin, async (req, res) => {
     try {
         const configs = await getAllConfigs();
         res.json(configs);
@@ -146,12 +92,14 @@ app.get('/api/config', requireApiAuth, async (req, res) => {
     }
 });
 
-app.post('/api/config', requireApiAuth, async (req, res) => {
+app.post('/api/config', requireAdmin, async (req, res) => {
     const { key, value } = req.body;
     if (!key || !value) {
         return res.status(400).json({ error: 'Key and value are required' });
     }
     try {
+        // เก็บค่าเดิมไว้ใน audit log (ดูได้ว่าเปลี่ยนจากอะไรเป็นอะไร)
+        res.locals.audit = { before: await getConfig(key) };
         const changes = await updateConfig(key, value);
         if (changes > 0) {
             res.json({ success: true, message: 'Config updated successfully' });
@@ -195,7 +143,7 @@ app.get('/api/levels', requireApiAuth, async (req, res) => {
 });
 
 // --- Logs API ---
-app.get('/api/logs', requireApiAuth, (req, res) => {
+app.get('/api/logs', requireAdmin, (req, res) => {
     const logsDir = path.join(__dirname, 'logs');
     if (!fs.existsSync(logsDir)) {
         return res.json([]);
@@ -208,7 +156,7 @@ app.get('/api/logs', requireApiAuth, (req, res) => {
     });
 });
 
-app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
+app.get('/api/logs/:filename', requireAdmin, (req, res) => {
     // ป้องกัน Directory Traversal
     const filename = path.basename(req.params.filename);
     
@@ -228,15 +176,16 @@ app.get('/api/logs/:filename', requireApiAuth, (req, res) => {
 });
 
 // --- Log Manager API (ตั้งค่าว่าจะติดตาม log อะไร ส่งเข้าห้องไหน สีอะไร) ---
-registerLogManagerRoutes(app, requireApiAuth, () => discordClient);
+registerLogManagerRoutes(app, requireAdmin, () => discordClient);
 
 const startServer = (client) => {
     discordClient = client;
+    initAuth();
     // PR Bot: ส่งต่อ client ตัวเดียวกับที่บอทหลักใช้ ให้ webhook handler เอาไปส่งข้อความได้
     require('./prbot/discordClient').setClient(client);
 
     // --- News Notification API ---
-    app.post('/api/news', requireApiAuth, async (req, res) => {
+    app.post('/api/news', requireAdmin, async (req, res) => {
         const { type, title, content } = req.body;
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
@@ -276,7 +225,7 @@ const startServer = (client) => {
     });
 
     // --- Room Access API ---
-    app.post('/api/grant-access', requireApiAuth, async (req, res) => {
+    app.post('/api/grant-access', requireAdmin, async (req, res) => {
         const { userId, roomId, action, duration } = req.body;
         if (!userId || !roomId || !action) {
             return res.status(400).json({ error: 'User ID, Room ID, and Action are required' });
@@ -350,7 +299,7 @@ const startServer = (client) => {
     });
 
     // --- Room Access List API ---
-    app.get('/api/room-access-list', requireApiAuth, async (req, res) => {
+    app.get('/api/room-access-list', requireAdmin, async (req, res) => {
         try {
             const targetRooms = ['1475009551475675299', '1430932852928680059', '1420442631120490667', '1383415462158929990'];
             const activeAccess = await getActiveRoomAccess();
@@ -445,7 +394,7 @@ const startServer = (client) => {
     // ==========================================
     // Voice Guard API — Search Members & Voice Channels
     // ==========================================
-    app.get('/api/search-members', requireApiAuth, async (req, res) => {
+    app.get('/api/search-members', requireAdmin, async (req, res) => {
         const query = (req.query.q || '').trim().toLowerCase();
         if (!query || query.length < 1) return res.json([]);
         try {
@@ -465,7 +414,7 @@ const startServer = (client) => {
         }
     });
 
-    app.get('/api/voice-channels', requireApiAuth, async (req, res) => {
+    app.get('/api/voice-channels', requireAdmin, async (req, res) => {
         try {
             const guild = client.guilds.cache.first();
             if (!guild) return res.json([]);
@@ -500,7 +449,7 @@ const startServer = (client) => {
         return result;
     }
 
-    app.get('/api/whitelist', requireApiAuth, async (req, res) => {
+    app.get('/api/whitelist', requireAdmin, async (req, res) => {
         try {
             const channels = await getWhitelistChannels();
             const guild = client.guilds.cache.first();
@@ -521,7 +470,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/whitelist/channel', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/channel', requireAdmin, async (req, res) => {
         const { channelId, enabled, notify } = req.body;
         if (!channelId) return res.status(400).json({ error: 'channelId required' });
         try {
@@ -536,7 +485,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/whitelist/channel/delete', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/channel/delete', requireAdmin, async (req, res) => {
         try {
             await deleteWhitelistChannel(req.body.channelId);
             res.json({ success: true });
@@ -545,7 +494,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/whitelist/user', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/user', requireAdmin, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
@@ -556,7 +505,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/whitelist/user/delete', requireApiAuth, async (req, res) => {
+    app.post('/api/whitelist/user/delete', requireAdmin, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
@@ -570,7 +519,7 @@ const startServer = (client) => {
     // ==========================================
     // Voice Guard API — Blacklist
     // ==========================================
-    app.get('/api/blacklist', requireApiAuth, async (req, res) => {
+    app.get('/api/blacklist', requireAdmin, async (req, res) => {
         try {
             const channels = await getBlacklistChannels();
             const guild = client.guilds.cache.first();
@@ -591,7 +540,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/blacklist/channel', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/channel', requireAdmin, async (req, res) => {
         const { channelId, enabled, notify } = req.body;
         if (!channelId) return res.status(400).json({ error: 'channelId required' });
         try {
@@ -606,7 +555,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/blacklist/channel/delete', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/channel/delete', requireAdmin, async (req, res) => {
         try {
             await deleteBlacklistChannel(req.body.channelId);
             res.json({ success: true });
@@ -615,7 +564,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/blacklist/user', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/user', requireAdmin, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
@@ -626,7 +575,7 @@ const startServer = (client) => {
         }
     });
 
-    app.post('/api/blacklist/user/delete', requireApiAuth, async (req, res) => {
+    app.post('/api/blacklist/user/delete', requireAdmin, async (req, res) => {
         const { channelId, userId } = req.body;
         if (!channelId || !userId) return res.status(400).json({ error: 'channelId and userId required' });
         try {
@@ -635,6 +584,13 @@ const startServer = (client) => {
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
+    });
+
+    // error ที่ไม่ได้ดักไว้ (เช่นต่อ DB ไม่ได้) — ตอบเป็น JSON ไม่ส่ง stack trace ออกไปให้ผู้ใช้เห็น
+    app.use((err, req, res, next) => {
+        console.error(`[Server] ${req.method} ${req.path}:`, err);
+        if (res.headersSent) return next(err);
+        res.status(err.status || 500).json({ error: err.expose ? err.message : 'Internal Server Error' });
     });
 
     app.listen(port, () => {
