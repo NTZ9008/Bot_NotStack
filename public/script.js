@@ -1,8 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     fetchAppVersion();
+    await window.authReady;
+    fetchLevels();
+
+    // แท็บอื่นเป็นของ ADMIN เท่านั้น (API จะตอบ 403 ถ้า USER เรียก)
+    if (!isAdmin()) return;
     fetchConfig();
     fetchLogsList();
-    fetchLevels();
     fetchRoomAccessList();
     
     // Populate Time Dropdowns
@@ -38,6 +42,15 @@ function switchTab(tabId) {
     }
     if (tabId === 'voiceguard-tab') {
         loadWhitelistTab();
+    }
+    if (tabId === 'users-tab') {
+        loadUsers();
+    }
+    if (tabId === 'audit-tab') {
+        loadAuditLogs();
+    }
+    if (tabId === 'account-tab') {
+        renderAccount();
     }
 }
 
@@ -173,7 +186,7 @@ async function logout() {
 
     if (result.isConfirmed) {
         try {
-            await fetch('/api/logout', { method: 'POST' });
+            await fetch('/api/auth/logout', { method: 'POST' });
             window.location.href = '/login';
         } catch (e) {
             console.error('Logout error', e);
@@ -254,6 +267,7 @@ async function fetchLevels() {
         }
         
         let html = '';
+        const myDiscordId = window.currentUser?.discordId;
         levels.forEach((user, index) => {
             let rankClass = 'rank-other';
             let rankText = index + 1;
@@ -262,11 +276,11 @@ async function fetchLevels() {
             else if (index === 2) { rankClass = 'rank-3'; rankText = '3'; }
             
             html += `
-                <tr>
+                <tr${user.userId === myDiscordId ? ' class="level-row-me"' : ''}>
                     <td><span class="rank-badge ${rankClass}">${rankText}</span></td>
                     <td>
-                        <strong style="color: #f8fafc;">${user.username || 'Unknown User'}</strong><br>
-                        <small style="color: #64748b; font-family: monospace;">${user.userId}</small>
+                        <strong style="color: #f8fafc;">${escapeHtml(user.username || 'Unknown User')}</strong><br>
+                        <small style="color: #64748b; font-family: monospace;">${escapeHtml(user.userId)}</small>
                     </td>
                     <td><strong style="color: var(--primary);">Lvl ${user.level}</strong></td>
                     <td>${user.xp.toLocaleString()} XP</td>
@@ -508,14 +522,14 @@ function renderRoomAccessList() {
             <tr>
                 <td>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        ${item.avatar ? `<img src="${item.avatar}" style="width: 24px; height: 24px; border-radius: 50%;">` : '<div style="width: 24px; height: 24px; border-radius: 50%; background: #475569;"></div>'}
+                        ${item.avatar ? `<img src="${escapeHtml(item.avatar)}" style="width: 24px; height: 24px; border-radius: 50%;">` : '<div style="width: 24px; height: 24px; border-radius: 50%; background: #475569;"></div>'}
                         <div>
-                            <strong style="color: #f8fafc;">${item.username}</strong><br>
-                            <small style="color: #64748b; font-family: monospace;">${item.userId}</small>
+                            <strong style="color: #f8fafc;">${escapeHtml(item.username)}</strong><br>
+                            <small style="color: #64748b; font-family: monospace;">${escapeHtml(item.userId)}</small>
                         </div>
                     </div>
                 </td>
-                <td style="font-size: 0.875rem;">${item.roomName}</td>
+                <td style="font-size: 0.875rem;">${escapeHtml(item.roomName)}</td>
                 <td>${typeBadge}</td>
                 <td>${timeLeftStr}</td>
                 <td>
