@@ -945,3 +945,372 @@ footer {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================
+   Auth — role gating, user chip, Users / Audit Logs / My Account
+   ========================================== */
+
+/* แท็บของ ADMIN ซ่อนไว้ก่อน จนกว่า account-dashboard.js จะยืนยัน role */
+body:not(.role-admin) [data-admin-only] {
+    display: none !important;
+}
+
+.user-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.4rem 0.9rem 0.4rem 0.4rem;
+    border: 1px solid var(--card-border);
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.6);
+}
+
+.user-chip img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.user-chip strong {
+    display: block;
+    font-size: 0.9rem;
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.role-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+}
+
+.role-badge.role-admin {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+.role-badge.role-user {
+    background: rgba(148, 163, 184, 0.15);
+    color: var(--text-secondary);
+}
+
+.level-row-me {
+    background: rgba(99, 102, 241, 0.12);
+}
+
+input[type="password"] {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 0.875rem 1rem;
+    color: white;
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+}
+
+input[type="password"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* --- Users tab --- */
+.user-create {
+    padding: 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.35);
+}
+
+.user-create h3 {
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+}
+
+.user-create-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 0.75rem;
+    align-items: stretch;
+}
+
+.user-create-grid button {
+    justify-content: center;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-cell img {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+}
+
+.user-cell small,
+.muted {
+    color: #64748b;
+}
+
+.user-row-disabled td {
+    opacity: 0.55;
+}
+
+.login-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    align-items: flex-start;
+}
+
+.login-method {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    white-space: nowrap;
+}
+
+.login-method-discord {
+    background: rgba(88, 101, 242, 0.2);
+    color: #c7cbff;
+}
+
+.role-select {
+    min-width: 110px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.user-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+}
+
+.status-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.status-fail { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+.status-locked { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+.status-self { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+
+.user-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.btn-sm {
+    width: auto;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    color: #c7d2fe;
+    white-space: nowrap;
+}
+
+.btn-sm:hover { background: rgba(99, 102, 241, 0.3); }
+.btn-sm-warn { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.5); color: #fbbf24; }
+.btn-sm-warn:hover { background: rgba(245, 158, 11, 0.25); }
+.btn-sm-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.5); color: #f87171; }
+.btn-sm-danger:hover { background: rgba(239, 68, 68, 0.25); }
+
+/* --- Audit Logs tab --- */
+.audit-filters {
+    display: grid;
+    grid-template-columns: minmax(200px, 1.4fr) minmax(160px, 1fr) minmax(200px, 1.4fr) auto;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.audit-table td {
+    vertical-align: top;
+}
+
+.audit-action {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.audit-auth { background: rgba(99, 102, 241, 0.18); color: #c7d2fe; }
+.audit-user { background: rgba(236, 72, 153, 0.18); color: #f9a8d4; }
+.audit-config, .audit-log_settings { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; }
+.audit-news, .audit-room_access, .audit-voice_guard { background: rgba(245, 158, 11, 0.16); color: #fcd34d; }
+
+.audit-code,
+.mono {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.audit-more {
+    margin: 1.25rem auto 0;
+}
+
+.audit-detail {
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.audit-detail > div {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    word-break: break-all;
+}
+
+.audit-detail span {
+    flex: 0 0 90px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.audit-detail pre {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    max-height: 320px;
+    overflow: auto;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #34d399;
+    font-size: 0.78rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.swal-hint {
+    font-size: 0.8rem;
+    color: #64748b;
+    margin: 0.75rem 1.5rem 0;
+}
+
+/* --- My Account tab --- */
+.account-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+}
+
+.account-panel {
+    padding: 1.25rem;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.account-panel h3 {
+    font-size: 1rem;
+}
+
+.account-profile {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.account-profile img {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.account-profile strong {
+    font-size: 1.1rem;
+    margin-right: 0.4rem;
+}
+
+.account-meta {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.2rem;
+}
+
+.account-level {
+    display: flex;
+    gap: 1.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--card-border);
+    width: 100%;
+}
+
+.account-level span {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.account-level strong {
+    font-size: 1.1rem;
+    color: #818cf8;
+}
+
+.account-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    width: 100%;
+}
+
+.btn-danger-outline {
+    width: auto;
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid #ef4444;
+    color: #f87171;
+}
+
+.btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.25);
+}
+
+.btn-discord-sm {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.7rem 1.2rem;
+    border-radius: 8px;
+    background: #5865F2;
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.btn-discord-sm:hover {
+    background: #4752C4;
+}
+
+@media (max-width: 800px) {
+    .header-content {
+        flex-wrap: wrap;
+    }
+    .audit-filters {
+        grid-template-columns: 1fr;
+    }
+}

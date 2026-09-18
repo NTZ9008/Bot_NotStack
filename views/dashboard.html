@@ -10,6 +10,7 @@
 </head>
 <body>
     <div class="background-animation"></div>
+    <!-- แท็บ/ส่วนที่มี data-admin-only จะแสดงเฉพาะเมื่อ body มี class role-admin (ตั้งใน account-dashboard.js) -->
     
     <div class="container">
         <header>
@@ -20,6 +21,13 @@
                 <div style="flex: 1;">
                     <h1>Bot_NotStack <span id="app-version"></span></h1>
                     <p>Dashboard & Configuration Control Panel</p>
+                </div>
+                <div class="user-chip hidden" id="user-chip">
+                    <img id="user-chip-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+                    <div>
+                        <strong id="user-chip-name"></strong>
+                        <span id="user-chip-role" class="role-badge"></span>
+                    </div>
                 </div>
                 <div>
                     <button id="logout-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.5rem 1rem;">
@@ -37,19 +45,22 @@
         <main>
             <div class="tabs-container">
                 <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('config-tab')">Configuration</button>
-                    <button class="tab-btn" onclick="switchTab('logs-tab')">Logs</button>
+                    <button class="tab-btn active" onclick="switchTab('config-tab')" data-admin-only>Configuration</button>
+                    <button class="tab-btn" onclick="switchTab('logs-tab')" data-admin-only>Logs</button>
                     <button class="tab-btn" onclick="switchTab('levels-tab')">Levels</button>
-                    <button class="tab-btn" onclick="switchTab('news-tab')">News</button>
-                    <button class="tab-btn" onclick="switchTab('access-tab')">Room Access</button>
-                    <button class="tab-btn" onclick="switchTab('logmanager-tab')">Log Management</button>
-                    <button class="tab-btn" onclick="switchTab('voiceguard-tab')">Voice Guard</button>
-                    <button class="tab-btn" onclick="switchTab('prbot-tab')">PR Bot</button>
+                    <button class="tab-btn" onclick="switchTab('news-tab')" data-admin-only>News</button>
+                    <button class="tab-btn" onclick="switchTab('access-tab')" data-admin-only>Room Access</button>
+                    <button class="tab-btn" onclick="switchTab('logmanager-tab')" data-admin-only>Log Management</button>
+                    <button class="tab-btn" onclick="switchTab('voiceguard-tab')" data-admin-only>Voice Guard</button>
+                    <button class="tab-btn" onclick="switchTab('prbot-tab')" data-admin-only>PR Bot</button>
+                    <button class="tab-btn" onclick="switchTab('users-tab')" data-admin-only>Users</button>
+                    <button class="tab-btn" onclick="switchTab('audit-tab')" data-admin-only>Audit Logs</button>
+                    <button class="tab-btn" onclick="switchTab('account-tab')">My Account</button>
                 </div>
             </div>
 
             <!-- Config Tab -->
-            <section id="config-tab" class="card tab-content active">
+            <section id="config-tab" class="card tab-content active" data-admin-only>
                 <div class="card-header">
                     <h2>Channel Configuration</h2>
                     <p>ปรับแต่งเลข ID ห้องสำหรับระบบต่างๆ ของบอท</p>
@@ -66,7 +77,7 @@
             </section>
 
             <!-- Logs Tab -->
-            <section id="logs-tab" class="card tab-content hidden">
+            <section id="logs-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>System Logs</h2>
                     <p>ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท</p>
@@ -106,7 +117,7 @@
             </section>
 
             <!-- News Tab -->
-            <section id="news-tab" class="card tab-content hidden">
+            <section id="news-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Send News to Discord</h2>
                     <p>ประกาศข่าวสารไปยังช่องที่ตั้งค่าไว้</p>
@@ -136,7 +147,7 @@
             </section>
 
             <!-- Room Access Tab -->
-            <section id="access-tab" class="card tab-content hidden">
+            <section id="access-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Grant Room Access</h2>
                     <p>ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ</p>
@@ -205,7 +216,7 @@
             </section>
 
             <!-- Voice Guard Tab -->
-            <section id="voiceguard-tab" class="card tab-content hidden">
+            <section id="voiceguard-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Voice Guard</h2>
                     <p>จัดการ Whitelist / Blacklist สำหรับห้องเสียง</p>
@@ -230,7 +241,7 @@
             </section>
 
             <!-- PR Bot Tab -->
-            <section id="prbot-tab" class="card tab-content hidden">
+            <section id="prbot-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>PR Bot — GitHub Notifications</h2>
                     <p>ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo</p>
@@ -275,7 +286,7 @@
             </section>
 
             <!-- Log Management Tab -->
-            <section id="logmanager-tab" class="card tab-content hidden">
+            <section id="logmanager-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header logmanager-header">
                     <div>
                         <h2>Log Management — หมวดหมู่</h2>
@@ -351,6 +362,98 @@
                     <div id="log-groups"></div>
                 </div>
             </section>
+
+            <!-- Users Tab (ADMIN) -->
+            <section id="users-tab" class="card tab-content hidden" data-admin-only>
+                <div class="card-header">
+                    <h2>User Management</h2>
+                    <p>จัดการผู้ใช้ Dashboard — กำหนด role, ปิดบัญชี, รีเซ็ตรหัสผ่าน และบังคับออกจากระบบ</p>
+                </div>
+
+                <div class="user-create">
+                    <h3>เพิ่มผู้ใช้ (username / password)</h3>
+                    <p class="prbot-hint">คนที่เข้าสู่ระบบด้วย Discord ครั้งแรกจะถูกสร้างบัญชีให้อัตโนมัติด้วย role USER — ปรับเป็น ADMIN ได้จากตารางด้านล่าง</p>
+                    <div class="user-create-grid">
+                        <input type="text" id="new-user-username" placeholder="username (a-z 0-9 _ . -)" autocomplete="off">
+                        <input type="text" id="new-user-display" placeholder="ชื่อที่แสดง (ไม่บังคับ)" autocomplete="off">
+                        <input type="password" id="new-user-password" placeholder="รหัสผ่าน (อย่างน้อย 8 ตัว)" autocomplete="new-password">
+                        <select id="new-user-role" class="input-select">
+                            <option value="USER">USER</option>
+                            <option value="ADMIN">ADMIN</option>
+                        </select>
+                        <button type="button" onclick="createUser()">เพิ่มผู้ใช้</button>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="level-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>ช่องทาง Login</th>
+                                <th>Role</th>
+                                <th>สถานะ</th>
+                                <th>Sessions</th>
+                                <th>Login ล่าสุด</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody">
+                            <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Audit Logs Tab (ADMIN) -->
+            <section id="audit-tab" class="card tab-content hidden" data-admin-only>
+                <div class="card-header">
+                    <h2>Audit Logs</h2>
+                    <p>ประวัติการเข้าสู่ระบบ และทุกการเปลี่ยนแปลงที่ทำผ่าน Dashboard (เก็บย้อนหลัง 180 วัน)</p>
+                </div>
+
+                <div class="audit-filters">
+                    <select id="audit-action" class="input-select">
+                        <option value="">ทุก action</option>
+                    </select>
+                    <select id="audit-success" class="input-select">
+                        <option value="">ทุกผลลัพธ์</option>
+                        <option value="true">สำเร็จ</option>
+                        <option value="false">ไม่สำเร็จ / ถูกปฏิเสธ</option>
+                    </select>
+                    <input type="text" id="audit-q" placeholder="ค้นหาผู้กระทำ / เป้าหมาย / IP">
+                    <button type="button" onclick="loadAuditLogs()">ค้นหา</button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="level-table audit-table">
+                        <thead>
+                            <tr>
+                                <th>เวลา</th>
+                                <th>ผู้กระทำ</th>
+                                <th>Action</th>
+                                <th>เป้าหมาย</th>
+                                <th>IP</th>
+                                <th>ผลลัพธ์</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-tbody">
+                            <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" id="audit-more" class="audit-more hidden" onclick="loadAuditLogs(true)">โหลดเพิ่ม</button>
+            </section>
+
+            <!-- My Account Tab (ทุกคน) -->
+            <section id="account-tab" class="card tab-content hidden">
+                <div class="card-header">
+                    <h2>My Account</h2>
+                    <p>ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย</p>
+                </div>
+                <div id="account-content" class="account-grid"></div>
+            </section>
         </main>
         
         <footer>
@@ -364,17 +467,15 @@
         <span class="message">Saved successfully!</span>
     </div>
 
+    <script src="auth-client.js"></script>
     <script src="script.js"></script>
     <script src="whitelist-dashboard.js"></script>
     <script src="prbot-dashboard.js"></script>
     <script src="logmanager-dashboard.js"></script>
+    <script src="account-dashboard.js"></script>
+    <script src="admin-dashboard.js"></script>
     <script>
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            if (confirm('คุณต้องการออกจากระบบหรือไม่?')) {
-                await fetch('/api/logout', { method: 'POST' });
-                window.location.href = '/login';
-            }
-        });
+        document.getElementById('logout-btn').addEventListener('click', logout);
     </script>
 </body>
 </html>
