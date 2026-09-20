@@ -187,3 +187,33 @@ model AuditLog {
   @@index([action])
   @@map("audit_logs")
 }
+
+// ==========================================
+// 📈 ACTIVITY — เหตุการณ์ทุกอย่างที่เกิดในเซิร์ฟเวอร์ Discord
+// Log Manager ส่ง embed เข้าห้อง Discord "และ" บันทึกลงตารางนี้เสมอ
+// ใช้ทำกราฟหน้า Overview + หน้า Activity Log ที่ดูย้อนหลังได้จาก Dashboard
+// ==========================================
+model ActivityEvent {
+  id           Int      @id @default(autoincrement())
+  // key เดียวกับ Log Manager (voiceJoin, memberLeave ...) + messageSent / commandUsed ที่บันทึกเฉพาะที่นี่
+  eventKey     String   @map("event_key")
+  guildId      String?  @map("guild_id")
+  // ผู้ที่ถูกกระทำ / เจ้าของเหตุการณ์
+  userId       String?  @map("user_id")
+  userName     String?  @map("user_name")
+  isBot        Boolean  @default(false) @map("is_bot")
+  channelId    String?  @map("channel_id")
+  channelName  String?  @map("channel_name")
+  // ผู้ลงมือ (แอดมินที่เตะ/ย้าย/แบน) — ได้จาก Discord audit log
+  executorId   String?  @map("executor_id")
+  executorName String?  @map("executor_name")
+  summary      String?
+  metadata     Json?
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@index([createdAt])
+  @@index([eventKey, createdAt])
+  @@index([userId, createdAt])
+  @@index([channelId, createdAt])
+  @@map("activity_events")
+}
