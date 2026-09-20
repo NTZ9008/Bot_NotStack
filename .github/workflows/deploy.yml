@@ -1,9 +1,6 @@
 name: Deploy BotNotStack
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -11,6 +8,8 @@ permissions:
 
 jobs:
   deploy:
+    # อนุญาตให้กด Deploy ได้เฉพาะ branch main และ branch ที่ขึ้นต้นด้วย release/ เท่านั้น
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     environment: prod
 
