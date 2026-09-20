@@ -155,3 +155,82 @@ async function removeVGUser(channelId, userId) {
         Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message });
     }
 }
+
+async function addVGChannel() {
+    const select = document.getElementById('vg-channel-select');
+    const channelId = select.value;
+    if (!channelId) {
+        Swal.fire({ icon: 'warning', title: 'แจ้งเตือน', text: 'กรุณาเลือกห้องเสียง' });
+        return;
+    }
+    try {
+        const res = await fetch(`${apiBase()}/channel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, enabled: 1 })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.error || 'เพิ่มห้องไม่สำเร็จ');
+        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'เพิ่มห้องสำเร็จ', showConfirmButton: false, timer: 2000, timerProgressBar: true });
+        await loadVGData();
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message });
+    }
+}
+
+async function toggleVGChannel(channelId, checked) {
+    try {
+        const res = await fetch(`${apiBase()}/channel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, enabled: checked ? 1 : 0 })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.error || 'อัปเดตไม่สำเร็จ');
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message });
+        await loadVGData();
+    }
+}
+
+async function toggleVGNotify(channelId, checked) {
+    try {
+        const res = await fetch(`${apiBase()}/channel`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channelId, notify: checked ? 1 : 0 })
+        });
+        const result = await res.json();
+        if (!res.ok || !result.success) throw new Error(result.error || 'อัปเดตไม่สำเร็จ');
+    } catch (e) {
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message });
+        await loadVGData();
+    }
+}
+
+async function deleteVGChannel(channelId) {
+    const result = await Swal.fire({
+        title: 'ยืนยันการลบ',
+        text: 'คุณต้องการลบห้องนี้ออกจากการตั้งค่าใช่หรือไม่?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'ลบ',
+        cancelButtonText: 'ยกเลิก'
+    });
+    
+    if (result.isConfirmed) {
+        try {
+            const res = await fetch(`${apiBase()}/channel/delete`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ channelId })
+            });
+            const json = await res.json();
+            if (!res.ok || !json.success) throw new Error(json.error || 'ลบห้องไม่สำเร็จ');
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'ลบห้องสำเร็จ', showConfirmButton: false, timer: 2000, timerProgressBar: true });
+            await loadVGData();
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'ข้อผิดพลาด', text: e.message });
+        }
+    }
+}
