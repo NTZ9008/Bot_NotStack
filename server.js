@@ -185,12 +185,30 @@ const startServer = (client) => {
     require('./prbot/discordClient').setClient(client);
 
     // --- News Notification API ---
+    const NEWS_PRESETS = {
+        general: { color: '#3B82F6', prefix: '📰' },
+        urgent: { color: '#EF4444', prefix: '🚨' },
+    };
+    const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+    // รับเฉพาะลิงก์รูป http/https — กัน javascript: หรือ data: หลุดเข้าไปใน embed
+    const isHttpUrl = (value) => typeof value === 'string' && /^https?:\/\/\S+$/i.test(value);
+
     app.post('/api/news', requireAdmin, async (req, res) => {
-        const { type, title, content } = req.body;
+        const { type, title, content, color, footer, imageUrl } = req.body || {};
         if (!title || !content) {
             return res.status(400).json({ error: 'Title and content are required' });
         }
-        
+        // ลิมิตเดียวกับฝั่ง Discord — ตรวจซ้ำที่ server เพราะฝั่งเว็บแก้ได้
+        if (String(title).length > 256) {
+            return res.status(400).json({ error: 'หัวข้อยาวเกิน 256 ตัวอักษร' });
+        }
+        if (String(content).length > 4000) {
+            return res.status(400).json({ error: 'เนื้อหายาวเกิน 4000 ตัวอักษร' });
+        }
+        if (imageUrl && !isHttpUrl(imageUrl)) {
+            return res.status(400).json({ error: 'ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://' });
+        }
+
         try {
             const newsChannelId = await getConfig('NEWS_CHANNEL_ID');
             if (!newsChannelId) {
@@ -201,21 +219,16 @@ const startServer = (client) => {
             if (!channel) {
                 return res.status(404).json({ error: 'หาห้องดิสคอร์ดปลายทางไม่พบ กรุณาเช็คไอดีห้องอีกครั้ง' });
             }
-            
-            let embedColor = '#3B82F6'; // Blue
-            let titlePrefix = '📰';
-            if (type === 'urgent') {
-                embedColor = '#EF4444'; // Red
-                titlePrefix = '🚨';
-            }
-            
+
+            const preset = NEWS_PRESETS[type] || NEWS_PRESETS.general;
             const embed = new EmbedBuilder()
-                .setColor(embedColor)
-                .setTitle(`${titlePrefix} ${title}`)
+                .setColor(HEX_COLOR.test(color || '') ? color : preset.color)
+                .setTitle(`${preset.prefix} ${title}`)
                 .setDescription(content)
-                .setFooter({ text: 'NotStack News Delivery' })
+                .setFooter({ text: String(footer || 'NotStack News Delivery').slice(0, 2048) })
                 .setTimestamp();
-                
+            if (isHttpUrl(imageUrl)) embed.setImage(imageUrl);
+
             await channel.send({ embeds: [embed] });
             res.json({ success: true, message: 'ส่งข่าวสารสำเร็จ' });
         } catch (err) {
