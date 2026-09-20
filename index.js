@@ -7,7 +7,7 @@ const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getConfig, saveAllLevelsToDB, getAllLevels, getWhitelistChannel, getWhitelistUsers, getBlacklistChannel, getBlacklistUsers } = require('./db.js');
 const { startServer } = require('./server.js');
-const { initLogManager, logFilterAction, logInvitePosted } = require('./logmanager');
+const { initLogManager, logFilterAction, logInvitePosted, recordActivity } = require('./logmanager');
 
 dotenv.config();
 
@@ -42,8 +42,6 @@ startServer(client);
 // 🛡️ Security Config (ตั้งค่าความปลอดภัย)
 const SPAM_LIMIT = 6;       // จำนวนข้อความสูงสุด
 const SPAM_TIME = 5000;     // ภายใน 5 วินาที
-// Voice Spam Map (เก็บข้อมูลคนแกล้งลากเพื่อน)
-const voiceSpamMap = new Map();
 
 // ตัวแปรเก็บสถานะชั่วคราว (Memory Cache)
 const spamMap = new Map();
@@ -184,6 +182,19 @@ client.on(Events.InteractionCreate, async interaction => {
         if (interaction.isChatInputCommand()) {
             const command = client.commands.get(interaction.commandName);
             if (!command) return;
+            // บันทึกการใช้คำสั่งลง Activity Log (ใช้ดูว่าใครใช้บอทบ่อยแค่ไหนในหน้า Dashboard)
+            recordActivity('commandUsed', {
+                title: '⌨️ ใช้คำสั่งบอท',
+                context: {
+                    userId: interaction.user.id,
+                    isBot: interaction.user.bot,
+                    channelId: interaction.channelId,
+                    parentId: interaction.channel?.parentId,
+                    member: interaction.member,
+                },
+                record: { user: interaction.user, channelName: interaction.channel?.name, metadata: { command: interaction.commandName } },
+                description: `${interaction.user.username} ใช้คำสั่ง /${interaction.commandName}`,
+            });
             await command.execute(interaction);
         }
         if (interaction.isStringSelectMenu() || interaction.isModalSubmit() || interaction.isButton()) {
@@ -260,6 +271,20 @@ client.on('messageCreate', async (msg) => {
     const logLine = `[${timestamp}] #${msg.channel.name} (${msg.author.tag}): ${msg.content}\n`;
     fs.appendFile(logFile, logLine, (err) => { if (err) console.error('❌ Log Error:', err); });
     console.log(logLine.trim());
+
+    // นับยอดข้อความลง Activity Log (เก็บแค่ว่าใครส่งที่ห้องไหนเมื่อไหร่ ไม่เก็บเนื้อหาข้อความ)
+    recordActivity('messageSent', {
+        title: '💬 ส่งข้อความ',
+        context: {
+            userId: msg.author.id,
+            isBot: false,
+            channelId: msg.channel.id,
+            parentId: msg.channel.parentId,
+            member: msg.member,
+        },
+        record: { user: msg.author, channelName: msg.channel.name },
+        description: `${msg.author.username} ส่งข้อความใน #${msg.channel.name}`,
+    });
 
     // --- B. Security: Anti-Spam ---
     if (msg.guild) {
@@ -482,7 +507,7 @@ client.on('messageCreate', async (msg) => {
 });
 
 // ==========================================
-// 4️⃣ VOICE STATE HANDLER (Anti-Drag & Log)
+// 4️⃣ VOICE STATE HANDLER (Voice Guard & Log)
 // ==========================================
 client.on('voiceStateUpdate', async (oldState, newState) => {
     const member = newState.member;
@@ -513,89 +538,6 @@ client.on('voiceStateUpdate', async (oldState, newState) => {
                 return;
             }
         }
-    }
-
-    if (oldState.channelId && newState.channelId && oldState.channelId !== newState.channelId) {
-        
-        // 🚨 START ANTI-FORCE MOVE (กันโดนคนอื่นลาก) 🚨
-        try {
-            // รอ 1 วินาที เพื่อให้ Audit Log อัปเดต
-            await new Promise(r => setTimeout(r, 1000));
-
-            const fetchedLogs = await newState.guild.fetchAuditLogs({
-                limit: 5, 
-                type: AuditLogEvent.MemberMove
-            });
-
-            // STEP 1: หา Log ที่ตรงเป๊ะๆ
-            let log = fetchedLogs.entries.find(entry => 
-                entry.targetId === member.id && 
-                (Date.now() - entry.createdTimestamp) < 10000
-            );
-
-            // STEP 2: หา Log สำรอง
-            if (!log) {
-                log = fetchedLogs.entries.find(entry => 
-                    entry.executorId !== member.id && 
-                    (Date.now() - entry.createdTimestamp) < 3000
-                );
-            }
-
-            if (log) {
-                const executorId = log.executorId;
-                
-                // 🛑 กันบอทตีตัวเอง (สำคัญมาก)
-                if (executorId === client.user.id) return; 
-
-                const executorTag = log.executor?.tag || "Unknown";
-                const targetTag = member.user.tag;
-
-                // ถ้าคนทำไม่ใช่เจ้าตัว -> โดนแกล้ง!
-                if (executorId !== member.id) {
-                    console.log(`🚨 DETECTED: ${executorTag} dragged ${targetTag}`);
-
-                    // 1. ดึงกลับห้องเดิม
-                    if (oldState.channel) {
-                        try {
-                            await member.voice.setChannel(oldState.channelId);
-                            console.log(`🛡️ Auto-Return: ดึงกลับห้องเดิมสำเร็จ`);
-                        } catch (err) {
-                            console.log(`❌ ดึงกลับไม่ได้: ${err.message}`);
-                        }
-                    }
-
-                    // 2. จดบัญชีดำ (นับจำนวนครั้ง)
-                    const dragData = voiceSpamMap.get(executorId) || { count: 0, timer: null };
-                    dragData.count++;
-                    if (!dragData.timer) {
-                        dragData.timer = setTimeout(() => voiceSpamMap.delete(executorId), 15000);
-                    }
-                    voiceSpamMap.set(executorId, dragData);
-
-                    // 3. 📝 บันทึกลงไฟล์ .txt แทนการส่งเข้าแชท
-                    if (dragData.count >= 2) {
-                        const now = new Date();
-                        const timestamp = now.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
-                        // ตั้งชื่อไฟล์เป็น abuse_report.log หรือรวมใน log รายวันก็ได้
-                        const logFile = path.join(__dirname, 'logs', `abuse_report.log`);
-
-                        if (!fs.existsSync(path.join(__dirname, 'logs'))) fs.mkdirSync(path.join(__dirname, 'logs'));
-
-                        const logMsg = `[${timestamp}] 🚨 ABUSE DETECTED: ${executorTag} (ID: ${executorId}) ลาก ${targetTag} (ID: ${member.id}) ไปมา ${dragData.count} ครั้ง\n`;
-
-                        fs.appendFile(logFile, logMsg, (err) => {
-                            if (err) console.error('❌ Error writing abuse log:', err);
-                            else console.log('📝 บันทึกพฤติกรรมเกรียนลงไฟล์เรียบร้อย');
-                        });
-                    }
-                    return; 
-                }
-            }
-
-        } catch (error) {
-            console.error("Anti-Force Move Error:", error);
-        }
-        // 🚨 END ANTI-FORCE MOVE 🚨
     }
 
     // --- Voice Log (บันทึกการเข้าออกปกติ) ---
