@@ -5,6 +5,7 @@
 // ==========================================
 const { Events, EmbedBuilder, AuditLogEvent, AttachmentBuilder } = require('discord.js');
 const store = require('./store');
+const activity = require('./activity');
 const { LOG_EVENT_MAP } = require('./events');
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
@@ -200,9 +201,12 @@ async function resolveChannel(channelId) {
 async function sendLog(eventKey, payload) {
     try {
         if (!clientRef || !store.isReady()) return;
-        if (!store.isSystemEnabled()) return;
         if (payload.context && isIgnored(payload.context)) return;
 
+        // บันทึกลงฐานข้อมูลก่อนเสมอ — หน้า Dashboard ดูย้อนหลังได้ถึงแม้ยังไม่ได้ตั้งห้องส่ง log ใน Discord
+        activity.record(eventKey, payload);
+
+        if (!store.isSystemEnabled()) return;
         const setting = store.getSetting(eventKey);
         if (!setting || !setting.enabled || !setting.channelId) return;
 
@@ -231,9 +235,12 @@ async function sendLog(eventKey, payload) {
     }
 }
 
-// เช็คก่อนว่า event นี้เปิดใช้งานอยู่ไหม เพื่อไม่ต้องเสียเวลาดึง audit log ทิ้งเปล่า
+// เช็คก่อนว่าต้องประมวลผล event นี้ต่อไหม เพื่อไม่ต้องเสียเวลาดึง audit log ทิ้งเปล่า
+// ถ้าเปิดบันทึกกิจกรรมลงฐานข้อมูลอยู่ ต้องทำต่อทุก event แม้ยังไม่ได้ตั้งห้องส่ง log ใน Discord
 function isActive(eventKey) {
-    if (!store.isReady() || !store.isSystemEnabled()) return false;
+    if (!store.isReady()) return false;
+    if (activity.isEnabled()) return true;
+    if (!store.isSystemEnabled()) return false;
     const setting = store.getSetting(eventKey);
     return Boolean(setting && setting.enabled && setting.channelId);
 }
@@ -277,6 +284,7 @@ function registerListeners(client) {
 
         if (kickInfo) {
             sendLog('memberKick', {
+                record: { executor: kickInfo?.executor, reason: kickInfo?.reason },
                 title: '👢 เตะสมาชิกแล้ว',
                 context,
                 description: `${userLine(member.user)} ถูกเตะออกจากเซิร์ฟเวอร์`,
@@ -313,6 +321,7 @@ function registerListeners(client) {
         if (!isActive('memberBan')) return;
         const info = await fetchExecutor(ban.guild, AuditLogEvent.MemberBanAdd, ban.user.id);
         sendLog('memberBan', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🔨 แบนสมาชิก',
             context: { userId: ban.user.id, isBot: ban.user.bot },
             description: `${userLine(ban.user)} ถูกแบนออกจากเซิร์ฟเวอร์`,
@@ -329,6 +338,7 @@ function registerListeners(client) {
         if (!isActive('memberUnban')) return;
         const info = await fetchExecutor(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
         sendLog('memberUnban', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🕊️ ปลดแบนสมาชิก',
             context: { userId: ban.user.id, isBot: ban.user.bot },
             description: `${userLine(ban.user)} ถูกปลดแบนแล้ว`,
@@ -348,6 +358,7 @@ function registerListeners(client) {
         if (oldMember.nickname !== newMember.nickname && isActive('nicknameUpdate')) {
             const info = await fetchExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
             sendLog('nicknameUpdate', {
+                record: { executor: info?.executor, reason: info?.reason },
                 title: '✏️ เปลี่ยนชื่อเล่นแล้ว',
                 context,
                 description: `${userLine(newMember.user)} ถูกเปลี่ยนชื่อเล่น`,
@@ -370,6 +381,7 @@ function registerListeners(client) {
         if (added.size > 0 && isActive('roleGiven')) {
             const info = await fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
             sendLog('roleGiven', {
+                record: { executor: info?.executor, reason: info?.reason },
                 title: '🎭 ให้บทบาท',
                 context,
                 description: `${userLine(newMember.user)} ได้รับบทบาทใหม่`,
@@ -385,6 +397,7 @@ function registerListeners(client) {
         if (removed.size > 0 && isActive('roleRemoved')) {
             const info = await fetchExecutor(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
             sendLog('roleRemoved', {
+                record: { executor: info?.executor, reason: info?.reason },
                 title: '🎭 ลบบทบาท',
                 context,
                 description: `${userLine(newMember.user)} ถูกถอดบทบาท`,
@@ -404,6 +417,7 @@ function registerListeners(client) {
             const info = await fetchExecutor(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
             const isGiven = newTimeout > Date.now();
             sendLog('memberTimeout', {
+                record: { executor: info?.executor, reason: info?.reason },
                 title: isGiven ? '⏳ ให้หมดเวลา (Timeout)' : '⌛ ปลดหมดเวลา (Timeout)',
                 context,
                 description: `${userLine(newMember.user)} ${isGiven ? 'ถูกสั่งหมดเวลาพูดคุย' : 'ถูกปลดสถานะหมดเวลา'}`,
@@ -444,6 +458,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(message.guild, AuditLogEvent.MessageDelete, message.author?.id, 6000);
         sendLog('messageDelete', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🗑️ ข้อความที่ลบไปแล้ว',
             context: {
                 userId: message.author?.id,
@@ -508,6 +523,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(channel.guild, AuditLogEvent.MessageBulkDelete, channel.id, 8000);
         sendLog('messageBulkDelete', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: channel.id, channelName: channel.name },
             title: '🧹 ลบข้อความจำนวนมาก (Purge)',
             context: { channelId: channel.id, parentId: channel.parentId },
             description: `มีการลบข้อความหลายรายการใน <#${channel.id}>`,
@@ -526,6 +542,7 @@ function registerListeners(client) {
         if (!isActive('channelCreate')) return;
         const info = await fetchExecutor(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
         sendLog('channelCreate', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: channel.id, channelName: channel.name },
             title: '🏠 สร้างช่องแล้ว',
             description: `สร้างช่องใหม่: <#${channel.id}>`,
             fields: [
@@ -541,6 +558,7 @@ function registerListeners(client) {
         if (!isActive('channelDelete')) return;
         const info = await fetchExecutor(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
         sendLog('channelDelete', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: channel.id, channelName: channel.name },
             title: '🗑️ ลบช่องแล้ว',
             description: `ช่อง **${channel.name}** ถูกลบ`,
             fields: [
@@ -562,6 +580,7 @@ function registerListeners(client) {
                     || findInAuditBuffer(newChannel.guild.id, AuditLogEvent.ChannelOverwriteCreate, newChannel.id, 10000)
                     || findInAuditBuffer(newChannel.guild.id, AuditLogEvent.ChannelOverwriteDelete, newChannel.id, 10000);
                 sendLog('channelPermissionUpdate', {
+                    record: { executor: info?.executor, reason: info?.reason, channelId: newChannel.id, channelName: newChannel.name },
                     title: '🔐 สิทธิของช่องอัพเดทแล้ว',
                     description: `สิทธิ์ในช่อง <#${newChannel.id}> ถูกแก้ไข`,
                     fields: [
@@ -588,6 +607,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(newChannel.guild, AuditLogEvent.ChannelUpdate, newChannel.id);
         sendLog('channelUpdate', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: newChannel.id, channelName: newChannel.name },
             title: '🏠 อัปเดตช่องแล้ว',
             description: `ช่อง <#${newChannel.id}> ถูกแก้ไข`,
             fields: [
@@ -602,6 +622,7 @@ function registerListeners(client) {
         if (!isActive('threadCreate')) return;
         const info = await fetchExecutor(thread.guild, AuditLogEvent.ThreadCreate, thread.id);
         sendLog('threadCreate', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: thread.id, channelName: thread.name },
             title: '🧵 สร้างเธรด',
             context: { channelId: thread.parentId },
             description: `สร้างเธรดใหม่: <#${thread.id}>`,
@@ -617,6 +638,7 @@ function registerListeners(client) {
         if (!isActive('threadDelete')) return;
         const info = await fetchExecutor(thread.guild, AuditLogEvent.ThreadDelete, thread.id);
         sendLog('threadDelete', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: thread.id, channelName: thread.name },
             title: '🗑️ ลบเธรด',
             context: { channelId: thread.parentId },
             description: `เธรด **${thread.name}** ถูกลบ`,
@@ -639,6 +661,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(newThread.guild, AuditLogEvent.ThreadUpdate, newThread.id);
         sendLog('threadUpdate', {
+            record: { executor: info?.executor, reason: info?.reason, channelId: newThread.id, channelName: newThread.name },
             title: '🧵 อัปเดตเธรดแล้ว',
             context: { channelId: newThread.parentId },
             description: `เธรด <#${newThread.id}> ถูกแก้ไข`,
@@ -654,6 +677,7 @@ function registerListeners(client) {
         if (!isActive('roleCreate')) return;
         const info = await fetchExecutor(role.guild, AuditLogEvent.RoleCreate, role.id);
         sendLog('roleCreate', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🎭 สร้างบทบาทแล้ว',
             description: `สร้างบทบาทใหม่: <@&${role.id}>`,
             fields: [
@@ -669,6 +693,7 @@ function registerListeners(client) {
         if (!isActive('roleDelete')) return;
         const info = await fetchExecutor(role.guild, AuditLogEvent.RoleDelete, role.id);
         sendLog('roleDelete', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🗑️ ลบบทบาทแล้ว',
             description: `บทบาท **${role.name}** ถูกลบ`,
             fields: [
@@ -696,6 +721,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
         sendLog('roleUpdate', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🎭 อัพเดทบทบาทแล้ว',
             description: `บทบาท <@&${newRole.id}> ถูกแก้ไข`,
             fields: [
@@ -718,6 +744,7 @@ function registerListeners(client) {
 
         const info = await fetchExecutor(newGuild, AuditLogEvent.GuildUpdate);
         sendLog('guildUpdate', {
+            record: { executor: info?.executor, reason: info?.reason },
             title: '🏰 อัปเดตเซิร์ฟเวอร์',
             description: `ตั้งค่าเซิร์ฟเวอร์ **${newGuild.name}** ถูกแก้ไข`,
             fields: [
@@ -894,6 +921,7 @@ function registerListeners(client) {
 
             if (kickInfo) {
                 sendLog('voiceDisconnected', {
+                    record: { executor: kickInfo?.executor, reason: kickInfo?.reason },
                     title: '⛔ สมาชิกถูกตัดออกจากช่องเสียง',
                     context: { ...context, channelId: oldState.channelId },
                     description: `${userLine(member.user)} ถูกตัดออกจาก <#${oldState.channelId}>`,
@@ -929,6 +957,7 @@ function registerListeners(client) {
 
             if (moveInfo) {
                 sendLog('voiceMoved', {
+                    record: { executor: moveInfo?.executor, reason: moveInfo?.reason },
                     title: '↔️ สมาชิกถูกย้ายไปช่องเสียงอื่น',
                     context: { ...context, channelId: newState.channelId },
                     description: `${userLine(member.user)} ถูกย้ายห้องเสียง`,
@@ -1113,12 +1142,24 @@ function logInvitePosted(msg) {
     return true;
 }
 
+/**
+ * บันทึกกิจกรรมที่ไม่ได้อยู่ในแคตตาล็อกของ Log Manager (ไม่ได้ส่ง embed เข้าห้อง Discord)
+ * เช่น การส่งข้อความและการใช้คำสั่ง — ใช้ตัวกรอง "ยกเว้นไม่ต้อง log" ชุดเดียวกัน
+ */
+function recordActivity(eventKey, payload) {
+    if (!activity.isEnabled()) return;
+    if (payload.context && isIgnored(payload.context)) return;
+    activity.record(eventKey, payload);
+}
+
 // เรียกครั้งเดียวตอนบอทเริ่มทำงาน
 async function initLogManager(client) {
     clientRef = client;
     await store.initLogSettings();
+    activity.setClient(client);
+    activity.setEnabled(store.isActivityRecording());
     registerListeners(client);
     console.log('📋 Log Manager: เริ่มติดตามเหตุการณ์ในเซิร์ฟเวอร์แล้ว');
 }
 
-module.exports = { initLogManager, sendLog, logFilterAction, logInvitePosted };
+module.exports = { initLogManager, sendLog, logFilterAction, logInvitePosted, recordActivity, activity };

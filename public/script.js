@@ -1,8 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     fetchAppVersion();
+    await window.authReady;
+    fetchLevels();
+
+    // แท็บอื่นเป็นของ ADMIN เท่านั้น (API จะตอบ 403 ถ้า USER เรียก)
+    if (!isAdmin()) return;
     fetchConfig();
     fetchLogsList();
-    fetchLevels();
     fetchRoomAccessList();
     
     // Populate Time Dropdowns
@@ -25,13 +29,13 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // --- Tab Navigation ---
+// เมนูอยู่ที่ sidebar ด้านซ้าย — เลือกปุ่มจาก data-tab (ปุ่มลัดในเมนูโปรไฟล์ก็เรียกฟังก์ชันนี้ได้)
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabId));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
-    
-    const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
-    if (activeBtn) activeBtn.classList.add('active');
-    document.getElementById(tabId).classList.remove('hidden');
+
+    const section = document.getElementById(tabId);
+    if (section) section.classList.remove('hidden');
     
     if (tabId === 'access-tab') {
         fetchRoomAccessList();
@@ -39,6 +43,21 @@ function switchTab(tabId) {
     if (tabId === 'voiceguard-tab') {
         loadWhitelistTab();
     }
+    if (tabId === 'users-tab') {
+        loadUsers();
+    }
+    if (tabId === 'audit-tab') {
+        loadAuditTab();
+    }
+    if (tabId === 'overview-tab') {
+        loadOverview();
+    }
+    if (tabId === 'account-tab') {
+        renderAccount();
+    }
+
+    // อัปเดตชื่อหน้าบนแถบด้านบน + ปิดลิ้นชักเมนูบนจอเล็ก (shell.js)
+    if (typeof window.onTabSwitched === 'function') window.onTabSwitched(tabId);
 }
 
 // --- App Version ---
@@ -73,14 +92,15 @@ async function fetchConfig() {
         
         let html = '';
         configs.forEach((config, index) => {
+            // ค่าทุกตัวมาจาก DB จึง escape ก่อนใส่ลง innerHTML เสมอ
             html += `
-                <div class="form-group" style="animation-delay: ${index * 0.1}s">
-                    <label for="${config.key}">${config.key}</label>
-                    <span class="desc">${config.description}</span>
+                <div class="field config-field" style="--i: ${index}">
+                    <label for="${escapeHtml(config.key)}">${escapeHtml(config.key)}</label>
+                    <span class="field-hint">${escapeHtml(config.description || '')}</span>
                     <div class="input-wrapper">
-                        <input type="text" id="${config.key}" value="${config.value}" placeholder="Enter Channel ID">
-                        <button onclick="updateConfig('${config.key}')">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <input type="text" class="input" id="${escapeHtml(config.key)}" value="${escapeHtml(config.value || '')}" placeholder="Enter Channel ID">
+                        <button type="button" class="btn btn-primary" onclick="updateConfig('${escapeHtml(config.key)}')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                                 <polyline points="7 3 7 8 15 8"></polyline>
@@ -96,7 +116,7 @@ async function fetchConfig() {
         
     } catch (error) {
         console.error('Error fetching configs:', error);
-        document.getElementById('loading').innerHTML = '<p style="color: #ef4444;">Error loading configuration. Is the server running?</p>';
+        document.getElementById('loading').innerHTML = '<p class="cell-error">Error loading configuration. Is the server running?</p>';
     }
 }
 
@@ -109,7 +129,7 @@ async function updateConfig(key) {
     
     // UI Loading state
     const originalText = button.innerHTML;
-    button.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div>';
+    button.innerHTML = '<div class="spinner spinner-inline"></div>';
     button.disabled = true;
     
     try {
@@ -173,7 +193,7 @@ async function logout() {
 
     if (result.isConfirmed) {
         try {
-            await fetch('/api/logout', { method: 'POST' });
+            await fetch('/api/auth/logout', { method: 'POST' });
             window.location.href = '/login';
         } catch (e) {
             console.error('Logout error', e);
@@ -226,7 +246,7 @@ async function fetchLogContent() {
         return;
     }
     
-    viewer.innerHTML = '<div class="spinner" style="margin: 0 auto;"></div>';
+    viewer.innerHTML = '<div class="spinner spinner-center"></div>';
     
     try {
         const res = await fetch(`/api/logs/${filename}`);
@@ -249,11 +269,12 @@ async function fetchLevels() {
         const tbody = document.getElementById('levels-tbody');
         
         if (levels.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No level data found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" class="cell-center">No level data found.</td></tr>';
             return;
         }
         
         let html = '';
+        const myDiscordId = window.currentUser?.discordId;
         levels.forEach((user, index) => {
             let rankClass = 'rank-other';
             let rankText = index + 1;
@@ -262,13 +283,13 @@ async function fetchLevels() {
             else if (index === 2) { rankClass = 'rank-3'; rankText = '3'; }
             
             html += `
-                <tr>
+                <tr${user.userId === myDiscordId ? ' class="level-row-me"' : ''}>
                     <td><span class="rank-badge ${rankClass}">${rankText}</span></td>
                     <td>
-                        <strong style="color: #f8fafc;">${user.username || 'Unknown User'}</strong><br>
-                        <small style="color: #64748b; font-family: monospace;">${user.userId}</small>
+                        <strong class="cell-name">${escapeHtml(user.username || 'Unknown User')}</strong><br>
+                        <small class="mono cell-id">${escapeHtml(user.userId)}</small>
                     </td>
-                    <td><strong style="color: var(--primary);">Lvl ${user.level}</strong></td>
+                    <td><strong class="cell-accent">Lvl ${user.level}</strong></td>
                     <td>${user.xp.toLocaleString()} XP</td>
                 </tr>
             `;
@@ -277,22 +298,29 @@ async function fetchLevels() {
         tbody.innerHTML = html;
     } catch (e) {
         console.error('Error fetching levels:', e);
-        document.getElementById('levels-tbody').innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ef4444;">Error loading data.</td></tr>';
+        document.getElementById('levels-tbody').innerHTML = '<tr><td colspan="4" class="cell-center cell-error">Error loading data.</td></tr>';
     }
 }
 
 // --- News Methods ---
 async function sendNews() {
-    const type = document.getElementById('news-type').value;
-    const title = document.getElementById('news-title').value.trim();
-    const content = document.getElementById('news-content').value.trim();
+    const payload = collectNewsPayload();   // news-editor.js
     const btn = document.getElementById('send-news-btn');
 
-    if (!title || !content) {
+    if (!payload.title || !payload.content) {
         Swal.fire({
             icon: 'warning',
             title: 'ข้อมูลไม่ครบถ้วน',
             text: 'กรุณากรอกหัวข้อและรายละเอียดข่าวสารให้ครบก่อนส่ง'
+        });
+        return;
+    }
+
+    if (payload.content.length > 4000) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'เนื้อหายาวเกินไป',
+            text: `Discord รับได้ไม่เกิน 4000 ตัวอักษร (ตอนนี้ ${payload.content.length} ตัว)`
         });
         return;
     }
@@ -311,14 +339,14 @@ async function sendNews() {
     if (!confirmResult.isConfirmed) return;
 
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> กำลังส่ง...';
+    btn.innerHTML = '<div class="spinner spinner-inline"></div> กำลังส่ง...';
     btn.disabled = true;
 
     try {
         const response = await fetch('/api/news', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, title, content })
+            body: JSON.stringify(payload)
         });
         
         const result = await response.json();
@@ -329,8 +357,7 @@ async function sendNews() {
                 title: 'ส่งประกาศสำเร็จ!',
                 text: 'ประกาศของคุณถูกส่งเข้าดิสคอร์ดเรียบร้อยแล้ว'
             });
-            document.getElementById('news-title').value = '';
-            document.getElementById('news-content').value = '';
+            resetNewsForm();
         } else {
             Swal.fire({
                 icon: 'error',
@@ -362,7 +389,10 @@ function toggleDurationInput() {
 }
 
 async function grantAccess() {
-    const userId = document.getElementById('access-user-id').value.trim();
+    const picker = UserPicker.get('access-user');
+    // เลือกจาก dropdown มาแล้วใช้ค่านั้น ถ้าไม่ได้เลือกแต่พิมพ์เป็น User ID มาก็รับได้
+    const typed = picker.raw;
+    const userId = picker.value || (/^\d{5,25}$/.test(typed) ? typed : '');
     const roomId = document.getElementById('access-room-id').value;
     let action = document.getElementById('access-action').value;
     const btn = document.getElementById('grant-access-btn');
@@ -371,7 +401,7 @@ async function grantAccess() {
         Swal.fire({
             icon: 'warning',
             title: 'ข้อมูลไม่ครบถ้วน',
-            text: 'กรุณากรอก User ID ของผู้ใช้'
+            text: 'กรุณาเลือกผู้ใช้จากรายการค้นหา (หรือวาง User ID)'
         });
         return;
     }
@@ -411,7 +441,7 @@ async function grantAccess() {
     if (!confirmResult.isConfirmed) return;
 
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; margin: 0; border-width: 2px;"></div> กำลังดำเนินการ...';
+    btn.innerHTML = '<div class="spinner spinner-inline"></div> กำลังดำเนินการ...';
     btn.disabled = true;
 
     try {
@@ -471,14 +501,14 @@ async function fetchRoomAccessList() {
         countdownInterval = setInterval(renderRoomAccessList, 1000); // Update every second
     } catch (e) {
         console.error('Error fetching room access list:', e);
-        document.getElementById('access-list-tbody').innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Error loading data.</td></tr>';
+        document.getElementById('access-list-tbody').innerHTML = '<tr><td colspan="5" class="cell-center cell-error">Error loading data.</td></tr>';
     }
 }
 
 function renderRoomAccessList() {
     const tbody = document.getElementById('access-list-tbody');
     if (!roomAccessData || roomAccessData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">ไม่มีผู้ได้รับสิทธิ์</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="cell-center">ไม่มีผู้ได้รับสิทธิ์</td></tr>';
         return;
     }
 
@@ -487,39 +517,39 @@ function renderRoomAccessList() {
 
     roomAccessData.forEach(item => {
         let typeBadge = item.type === 'temporary' 
-            ? '<span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">จำกัดเวลา</span>'
-            : '<span style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem;">ถาวร</span>';
+            ? '<span class="status-badge status-temp">จำกัดเวลา</span>'
+            : '<span class="status-badge status-ok">ถาวร</span>';
 
         let timeLeftStr = '-';
         if (item.type === 'temporary' && item.expireAt) {
             const diff = item.expireAt - now;
             if (diff <= 0) {
-                timeLeftStr = '<span style="color: #ef4444;">หมดเวลาแล้ว</span>';
+                timeLeftStr = '<span class="cell-error">หมดเวลาแล้ว</span>';
             } else {
                 const totalSeconds = Math.floor(diff / 1000);
                 const h = Math.floor(totalSeconds / 3600);
                 const m = Math.floor((totalSeconds % 3600) / 60);
                 const s = totalSeconds % 60;
-                timeLeftStr = `<span style="font-family: monospace;">${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</span>`;
+                timeLeftStr = `<span class="mono">${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}</span>`;
             }
         }
 
         html += `
             <tr>
                 <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        ${item.avatar ? `<img src="${item.avatar}" style="width: 24px; height: 24px; border-radius: 50%;">` : '<div style="width: 24px; height: 24px; border-radius: 50%; background: #475569;"></div>'}
+                    <div class="cell-user">
+                        ${item.avatar ? `<img src="${escapeHtml(item.avatar)}" class="cell-avatar">` : '<div class="cell-avatar cell-avatar-blank"></div>'}
                         <div>
-                            <strong style="color: #f8fafc;">${item.username}</strong><br>
-                            <small style="color: #64748b; font-family: monospace;">${item.userId}</small>
+                            <strong class="cell-name">${escapeHtml(item.username)}</strong><br>
+                            <small class="mono cell-id">${escapeHtml(item.userId)}</small>
                         </div>
                     </div>
                 </td>
-                <td style="font-size: 0.875rem;">${item.roomName}</td>
+                <td class="cell-sm">${escapeHtml(item.roomName)}</td>
                 <td>${typeBadge}</td>
                 <td>${timeLeftStr}</td>
                 <td>
-                    <button onclick="revokeAccessDirectly('${item.userId}', '${item.roomId}')" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.3rem 0.6rem; font-size: 0.75rem; width: auto;">
+                    <button onclick="revokeAccessDirectly('${item.userId}', '${item.roomId}')" class="btn-sm btn-sm-danger">
                         ถอนสิทธิ์
                     </button>
                 </td>
@@ -564,3 +594,38 @@ async function revokeAccessDirectly(userId, roomId) {
 }
 
 
+
+// Drag to scroll for tabs
+const tabsContainer = document.querySelector('.tabs-container');
+if (tabsContainer) {
+  let isDown = false;
+  let startX;
+  let scrollLeft;
+
+  tabsContainer.addEventListener('mousedown', (e) => {
+    isDown = true;
+    tabsContainer.style.cursor = 'grabbing';
+    startX = e.pageX - tabsContainer.offsetLeft;
+    scrollLeft = tabsContainer.scrollLeft;
+  });
+
+  tabsContainer.addEventListener('mouseleave', () => {
+    isDown = false;
+    tabsContainer.style.cursor = 'grab';
+  });
+
+  tabsContainer.addEventListener('mouseup', () => {
+    isDown = false;
+    tabsContainer.style.cursor = 'grab';
+  });
+
+  tabsContainer.addEventListener('mousemove', (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - tabsContainer.offsetLeft;
+    const walk = (x - startX) * 2;
+    tabsContainer.scrollLeft = scrollLeft - walk;
+  });
+
+  tabsContainer.style.cursor = 'grab';
+}
