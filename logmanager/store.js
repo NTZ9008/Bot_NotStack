@@ -4,6 +4,7 @@
 // มี cache ใน memory เพราะ event ของ Discord ยิงถี่มาก ไม่ควร query DB ทุกครั้ง
 // ==========================================
 const { prisma } = require('../db');
+const activity = require('./activity');
 const { LOG_EVENTS, LOG_EVENT_MAP } = require('./events');
 
 // แถวพิเศษสำหรับสวิตช์เปิด/ปิดทั้งระบบ (ไม่ใช่ event จริง จึงถูกกรองออกตอนส่งให้ Dashboard)
@@ -18,6 +19,8 @@ const options = {
     ignoredUsers: new Set(),
     ignoredRoles: new Set(),
     ignoreBots: true,
+    // บันทึกทุกเหตุการณ์ลงฐานข้อมูลไหม (ใช้ทำกราฟหน้า Overview + ตาราง Activity Log)
+    activityRecording: true,
 };
 
 const OPTION_KEYS = {
@@ -41,6 +44,7 @@ async function initLogSettings() {
                 { key: 'IGNORED_USERS', value: '[]' },
                 { key: 'IGNORED_ROLES', value: '[]' },
                 { key: 'IGNORE_BOTS', value: '1' },
+                { key: 'ACTIVITY_RECORDING', value: '1' },
             ],
             skipDuplicates: true,
         });
@@ -152,6 +156,10 @@ async function reloadOptions() {
             options.ignoreBots = row.value === '1';
             continue;
         }
+        if (row.key === 'ACTIVITY_RECORDING') {
+            options.activityRecording = row.value !== '0';
+            continue;
+        }
         const field = OPTION_KEYS[row.key];
         if (!field) continue;
         try {
@@ -161,6 +169,7 @@ async function reloadOptions() {
             options[field] = new Set();
         }
     }
+    activity.setEnabled(options.activityRecording);
 }
 
 // อ่านจาก cache (sync) — ใช้ตอนกรอง event
@@ -175,10 +184,11 @@ function listOptions() {
         ignoredUsers: [...options.ignoredUsers],
         ignoredRoles: [...options.ignoredRoles],
         ignoreBots: options.ignoreBots,
+        activityRecording: options.activityRecording,
     };
 }
 
-async function updateOptions({ ignoredChannels, ignoredUsers, ignoredRoles, ignoreBots }) {
+async function updateOptions({ ignoredChannels, ignoredUsers, ignoredRoles, ignoreBots, activityRecording }) {
     const saveList = async (dbKey, list) => {
         if (!Array.isArray(list)) return;
         const cleaned = [...new Set(list.map(id => String(id).trim()).filter(Boolean))];
@@ -193,6 +203,9 @@ async function updateOptions({ ignoredChannels, ignoredUsers, ignoredRoles, igno
     if (typeof ignoreBots === 'boolean') {
         await prisma.logOption.updateMany({ where: { key: 'IGNORE_BOTS' }, data: { value: ignoreBots ? '1' : '0' } });
     }
+    if (typeof activityRecording === 'boolean') {
+        await prisma.logOption.updateMany({ where: { key: 'ACTIVITY_RECORDING' }, data: { value: activityRecording ? '1' : '0' } });
+    }
 
     await reloadOptions();
     return listOptions();
@@ -205,6 +218,7 @@ module.exports = {
     updateOptions,
     isReady: () => ready,
     isSystemEnabled,
+    isActivityRecording: () => options.activityRecording,
     getSetting,
     listSettings,
     updateSetting,

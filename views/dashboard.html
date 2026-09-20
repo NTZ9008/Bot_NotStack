@@ -6,61 +6,237 @@
     <title>Admin Dashboard - Bot NotStack</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="background-animation"></div>
     <!-- แท็บ/ส่วนที่มี data-admin-only จะแสดงเฉพาะเมื่อ body มี class role-admin (ตั้งใน account-dashboard.js) -->
     
-    <div class="container">
-        <header>
-            <div class="header-content">
-                <div class="logo">
-                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo" id="bot-avatar">
-                </div>
-                <div style="flex: 1;">
-                    <h1>Bot_NotStack <span id="app-version"></span></h1>
-                    <p>Dashboard & Configuration Control Panel</p>
-                </div>
-                <div class="user-chip hidden" id="user-chip">
+    <!-- เมนูซ้าย: จอเล็กจะซ่อนไว้แล้วเลื่อนออกมาเมื่อกดปุ่ม ☰ -->
+    <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-head">
+            <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot Logo" id="bot-avatar">
+            <div class="sidebar-brand">
+                <strong>Bot_NotStack</strong>
+                <span id="app-version"></span>
+            </div>
+            <button type="button" class="icon-btn sidebar-close" id="sidebar-close" aria-label="ปิดเมนู">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav" id="sidebar-nav">
+                <p class="nav-group" data-admin-only>ภาพรวม</p>
+                    <button type="button" class="nav-item active" data-tab="overview-tab" data-label="Overview" data-keywords="overview ภาพรวม กราฟ สถิติ dashboard หน้าหลัก chart active" data-admin-only onclick="switchTab('overview-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                        <span>Overview</span>
+                    </button>
+
+                <p class="nav-group" data-admin-only>จัดการบอท</p>
+                    <button type="button" class="nav-item" data-tab="config-tab" data-label="Configuration" data-keywords="configuration config ตั้งค่า คอนฟิก ไอดีห้อง channel id" data-admin-only onclick="switchTab('config-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span>Configuration</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="news-tab" data-label="News" data-keywords="news ข่าว ประกาศ แจ้งเตือน announce" data-admin-only onclick="switchTab('news-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/></svg>
+                        <span>News</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="access-tab" data-label="Room Access" data-keywords="room access สิทธิ์เข้าห้อง ตั๋ว ticket permission" data-admin-only onclick="switchTab('access-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>Room Access</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="voiceguard-tab" data-label="Voice Guard" data-keywords="voice guard ห้องเสียง whitelist blacklist กันคนเข้า" data-admin-only onclick="switchTab('voiceguard-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+                        <span>Voice Guard</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="logmanager-tab" data-label="Log Management" data-keywords="log management จัดการ log ตั้งค่าล็อก event ตัวกรอง" data-admin-only onclick="switchTab('logmanager-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+                        <span>Log Management</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="prbot-tab" data-label="PR Bot" data-keywords="pr bot github pull request webhook" data-admin-only onclick="switchTab('prbot-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7M6 9v12"/></svg>
+                        <span>PR Bot</span>
+                    </button>
+
+                <p class="nav-group">ข้อมูล &amp; ประวัติ</p>
+                    <button type="button" class="nav-item" data-tab="levels-tab" data-label="Levels" data-keywords="levels xp เลเวล อันดับ rank ประสบการณ์" onclick="switchTab('levels-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+                        <span>Levels</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="logs-tab" data-label="Logs" data-keywords="logs ไฟล์ log ประวัติ system log" data-admin-only onclick="switchTab('logs-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M16 13H8M16 17H8"/></svg>
+                        <span>Logs</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="audit-tab" data-label="Audit Logs" data-keywords="audit logs ประวัติ การกระทำ activity เหตุการณ์ discord" data-admin-only onclick="switchTab('audit-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3"/><circle cx="12" cy="12" r="10"/></svg>
+                        <span>Audit Logs</span>
+                    </button>
+
+                <p class="nav-group">ระบบ</p>
+                    <button type="button" class="nav-item" data-tab="users-tab" data-label="Users" data-keywords="users ผู้ใช้ จัดการผู้ใช้ role สิทธิ์ บัญชี" data-admin-only onclick="switchTab('users-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>Users</span>
+                    </button>
+                    <button type="button" class="nav-item" data-tab="account-tab" data-label="My Account" data-keywords="my account บัญชีของฉัน โปรไฟล์ รหัสผ่าน discord" onclick="switchTab('account-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span>My Account</span>
+                    </button>
+        </nav>
+
+        <div class="sidebar-foot">
+            <p>Developed by arlifzs &copy; 2026</p>
+        </div>
+    </aside>
+
+    <div class="app-shell">
+        <header class="topbar">
+            <button type="button" class="icon-btn sidebar-toggle" id="sidebar-toggle" aria-label="เปิดเมนู">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
+
+            <!-- บอกว่าตอนนี้อยู่หน้าไหน (ชื่อเต็มของหน้าอยู่ในหัวการ์ดด้านล่าง) -->
+            <div class="topbar-title">
+                <span class="topbar-crumb">Dashboard</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg>
+                <h1 id="page-title">Overview</h1>
+            </div>
+
+            <!-- ค้นหาหน้า: พิมพ์ชื่อเมนูแล้วกด Enter เพื่อกระโดดไปหน้านั้น (Ctrl/⌘ + K) -->
+            <div class="topbar-search" id="topbar-search">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" id="page-search" placeholder="ค้นหาหน้า..." autocomplete="off" spellcheck="false">
+                <kbd class="search-kbd" id="search-kbd">Ctrl K</kbd>
+                <div class="search-results hidden" id="search-results"></div>
+            </div>
+
+            <div class="profile-menu hidden" id="user-chip">
+                <button type="button" class="profile-btn" id="profile-btn" aria-haspopup="true" aria-expanded="false">
                     <img id="user-chip-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
-                    <div>
+                    <span class="profile-meta">
                         <strong id="user-chip-name"></strong>
                         <span id="user-chip-role" class="role-badge"></span>
-                    </div>
-                </div>
-                <div>
-                    <button id="logout-btn" style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #ef4444; padding: 0.5rem 1rem;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <polyline points="16 17 21 12 16 7"></polyline>
-                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                        </svg>
+                    </span>
+                    <svg class="profile-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="profile-dropdown hidden" id="profile-dropdown">
+                    <button type="button" onclick="switchTab('account-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My Account
+                    </button>
+                    <button type="button" id="logout-btn" class="profile-logout">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                         Logout
                     </button>
                 </div>
             </div>
         </header>
 
-        <main>
-            <div class="tabs-container">
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="switchTab('config-tab')" data-admin-only>Configuration</button>
-                    <button class="tab-btn" onclick="switchTab('logs-tab')" data-admin-only>Logs</button>
-                    <button class="tab-btn" onclick="switchTab('levels-tab')">Levels</button>
-                    <button class="tab-btn" onclick="switchTab('news-tab')" data-admin-only>News</button>
-                    <button class="tab-btn" onclick="switchTab('access-tab')" data-admin-only>Room Access</button>
-                    <button class="tab-btn" onclick="switchTab('logmanager-tab')" data-admin-only>Log Management</button>
-                    <button class="tab-btn" onclick="switchTab('voiceguard-tab')" data-admin-only>Voice Guard</button>
-                    <button class="tab-btn" onclick="switchTab('prbot-tab')" data-admin-only>PR Bot</button>
-                    <button class="tab-btn" onclick="switchTab('users-tab')" data-admin-only>Users</button>
-                    <button class="tab-btn" onclick="switchTab('audit-tab')" data-admin-only>Audit Logs</button>
-                    <button class="tab-btn" onclick="switchTab('account-tab')">My Account</button>
+        <main class="app-content">
+            <!-- Overview Tab (ADMIN) -->
+            <section id="overview-tab" class="card tab-content active" data-admin-only>
+                <div class="card-header">
+                    <h2>Overview</h2>
+                    <p>ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด</p>
                 </div>
-            </div>
+
+                <div class="ov-filters">
+                    <div class="ov-presets" id="ov-presets">
+                        <button type="button" class="ov-preset" data-hours="24">24 ชม.</button>
+                        <button type="button" class="ov-preset active" data-hours="168">7 วัน</button>
+                        <button type="button" class="ov-preset" data-hours="720">30 วัน</button>
+                        <button type="button" class="ov-preset" data-hours="2160">90 วัน</button>
+                        <button type="button" class="ov-preset" data-hours="custom">กำหนดเอง</button>
+                    </div>
+                    <div class="ov-filter-right">
+                        <select id="ov-interval" class="input-select" onchange="loadOverview()">
+                            <option value="auto">ความละเอียด: อัตโนมัติ</option>
+                            <option value="hour">รายชั่วโมง</option>
+                            <option value="day">รายวัน</option>
+                        </select>
+                        <label class="ov-toggle">
+                            <span>รวมบอท</span>
+                            <span class="switch">
+                                <input type="checkbox" id="ov-include-bots" onchange="loadOverview()">
+                                <span class="slider"></span>
+                            </span>
+                        </label>
+                        <button type="button" class="btn btn-secondary" onclick="loadOverview()">รีเฟรช</button>
+                    </div>
+                </div>
+
+                <div class="ov-custom-range hidden" id="ov-custom-range">
+                    <label>ตั้งแต่ <input type="datetime-local" id="ov-from" class="input-select"></label>
+                    <label>ถึง <input type="datetime-local" id="ov-to" class="input-select"></label>
+                    <button type="button" class="btn btn-primary" onclick="loadOverview()">ดูข้อมูล</button>
+                </div>
+
+                <p class="prbot-hint" id="ov-meta">กำลังโหลดข้อมูล...</p>
+
+                <div class="stat-grid" id="ov-stats"></div>
+
+                <div class="chart-grid">
+                    <div class="chart-card">
+                        <h3>การเข้า / ออกเซิร์ฟเวอร์</h3>
+                        <div class="chart-box"><canvas id="chart-server"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>การเข้า / ออกห้องเสียง</h3>
+                        <div class="chart-box"><canvas id="chart-voice"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>ผู้ใช้ที่เคลื่อนไหวมากที่สุด</h3>
+                        <div class="chart-box"><canvas id="chart-users"></canvas></div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>สัดส่วนเหตุการณ์ทั้งหมด</h3>
+                        <div class="chart-box"><canvas id="chart-breakdown"></canvas></div>
+                    </div>
+                </div>
+
+                <div class="ov-tables">
+                    <div class="ov-table-card ov-table-wide">
+                        <h3>อันดับผู้ใช้ที่เคลื่อนไหวมากสุด</h3>
+                        <div class="table-wrap">
+                            <table class="level-table">
+                                <thead>
+                                    <tr><th>#</th><th>ผู้ใช้</th><th>เหตุการณ์</th><th>ข้อความ</th><th>เข้าห้องเสียง</th><th>คำสั่ง</th><th>ล่าสุด</th></tr>
+                                </thead>
+                                <tbody id="ov-users-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="ov-table-card">
+                        <h3>เวลาอยู่ในห้องเสียงมากสุด</h3>
+                        <div class="table-wrap">
+                            <table class="level-table">
+                                <thead>
+                                    <tr><th>#</th><th>ผู้ใช้</th><th>เวลารวม</th><th>จำนวนครั้ง</th></tr>
+                                </thead>
+                                <tbody id="ov-voice-users-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="ov-table-card">
+                        <h3>ห้องเสียงที่ถูกใช้มากสุด</h3>
+                        <div class="table-wrap">
+                            <table class="level-table">
+                                <thead>
+                                    <tr><th>#</th><th>ห้อง</th><th>คนเข้า (ครั้ง)</th><th>คนไม่ซ้ำ</th><th>เวลารวม</th></tr>
+                                </thead>
+                                <tbody id="ov-voice-channels-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- Config Tab -->
-            <section id="config-tab" class="card tab-content active" data-admin-only>
+            <section id="config-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Channel Configuration</h2>
                     <p>ปรับแต่งเลข ID ห้องสำหรับระบบต่างๆ ของบอท</p>
@@ -82,7 +258,7 @@
                     <h2>System Logs</h2>
                     <p>ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท</p>
                 </div>
-                <div class="form-group">
+                <div class="field">
                     <label for="log-file-select">Select Log File</label>
                     <select id="log-file-select" class="input-select" onchange="fetchLogContent()">
                         <option value="">Loading files...</option>
@@ -99,7 +275,7 @@
                     <h2>User Levels & XP</h2>
                     <p>อันดับผู้ใช้งานในเซิร์ฟเวอร์</p>
                 </div>
-                <div style="overflow-x: auto;">
+                <div class="table-wrap">
                     <table class="level-table">
                         <thead>
                             <tr>
@@ -110,7 +286,7 @@
                             </tr>
                         </thead>
                         <tbody id="levels-tbody">
-                            <tr><td colspan="4" style="text-align: center;">Loading...</td></tr>
+                            <tr><td colspan="4" class="cell-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -120,30 +296,100 @@
             <section id="news-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Send News to Discord</h2>
-                    <p>ประกาศข่าวสารไปยังช่องที่ตั้งค่าไว้</p>
-                </div>
-                
-                <div class="form-group">
-                    <label for="news-type">ประเภทข่าวสาร (Type)</label>
-                    <select id="news-type" class="input-select" style="margin-bottom: 1.5rem;">
-                        <option value="general">📰 ข่าวทั่วไป - General News</option>
-                        <option value="urgent">📢 ข่าวด่วน - Urgent News</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="news-title">หัวข้อประกาศ - Title</label>
-                    <input type="text" id="news-title" class="input-select" placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่..." style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px;">
-                </div>
-                
-                <div class="form-group" style="margin-top: 1.5rem;">
-                    <label for="news-content">รายละเอียด - Content</label>
-                    <textarea id="news-content" rows="6" class="input-select" placeholder="พิมพ์เนื้อหาข่าวสารที่ต้องการแจ้งที่นี่..." style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px; resize: vertical;"></textarea>
+                    <p>เขียนประกาศเป็น embed พร้อมจัดรูปแบบข้อความ และดูตัวอย่างก่อนส่งจริง</p>
                 </div>
 
-                <button onclick="sendNews()" id="send-news-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; background: #fbbf24; color: #1e293b;">
-                    ส่งประกาศเข้า Discord
-                </button>
+                <div class="news-layout">
+                    <div class="news-editor">
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="news-type">ประเภทข่าวสาร</label>
+                                <select id="news-type" class="input-select">
+                                    <option value="general">📰 ข่าวทั่วไป — General News</option>
+                                    <option value="urgent">📢 ข่าวด่วน — Urgent News</option>
+                                </select>
+                            </div>
+
+                            <div class="field">
+                                <label for="news-color">สีแถบด้านซ้ายของ embed</label>
+                                <div class="color-field">
+                                    <input type="color" id="news-color" class="color-swatch" value="#3B82F6">
+                                    <input type="text" id="news-color-hex" class="input" value="#3B82F6" maxlength="7" spellcheck="false">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label for="news-title">หัวข้อประกาศ</label>
+                            <input type="text" id="news-title" class="input" maxlength="256" placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่...">
+                            <span class="field-hint">Discord แสดงหัวข้อเป็นข้อความธรรมดา จัดตัวหนา/เอียงไม่ได้ · <span id="news-title-count">0</span>/256</span>
+                        </div>
+
+                        <div class="field">
+                            <label for="news-content">รายละเอียด</label>
+                            <div class="md-toolbar" id="news-toolbar">
+                            <button type="button" class="md-btn" data-md="bold" title="ตัวหนา (Ctrl+B) — **ข้อความ**"><strong>B</strong></button>
+                            <button type="button" class="md-btn" data-md="italic" title="ตัวเอียง (Ctrl+I) — *ข้อความ*"><em>I</em></button>
+                            <button type="button" class="md-btn" data-md="underline" title="ขีดเส้นใต้ (Ctrl+U) — __ข้อความ__"><u>U</u></button>
+                            <button type="button" class="md-btn" data-md="strike" title="ขีดฆ่า — ~~ข้อความ~~"><s>S</s></button>
+                            <span class="md-sep"></span>
+                            <button type="button" class="md-btn" data-md="h1" title="หัวข้อใหญ่ — # ข้อความ">H1</button>
+                            <button type="button" class="md-btn" data-md="h2" title="หัวข้อกลาง — ## ข้อความ">H2</button>
+                            <button type="button" class="md-btn" data-md="h3" title="หัวข้อเล็ก — ### ข้อความ">H3</button>
+                            <span class="md-sep"></span>
+                            <button type="button" class="md-btn" data-md="quote" title="อ้างอิง — &gt; ข้อความ">❝</button>
+                            <button type="button" class="md-btn" data-md="list" title="รายการ — - ข้อความ">☰</button>
+                            <button type="button" class="md-btn" data-md="code" title="โค้ดในบรรทัด — `ข้อความ`">&lt;/&gt;</button>
+                            <button type="button" class="md-btn" data-md="codeblock" title="บล็อกโค้ด — ```ข้อความ```">{ }</button>
+                            <button type="button" class="md-btn" data-md="spoiler" title="ซ่อนข้อความ — ||ข้อความ||">👁</button>
+                            <button type="button" class="md-btn" data-md="link" title="ลิงก์ — [ข้อความ](url)">🔗</button>
+                            </div>
+                            <textarea id="news-content" class="input" rows="11" placeholder="พิมพ์เนื้อหาข่าวสาร — ลากคลุมข้อความแล้วกดปุ่มด้านบนเพื่อจัดรูปแบบ"></textarea>
+                            <span class="field-hint">รองรับ Markdown ของ Discord · <span id="news-content-count">0</span>/4000</span>
+                        </div>
+
+                        <div class="field-row">
+                            <div class="field">
+                                <label for="news-footer">ข้อความท้าย embed</label>
+                                <input type="text" id="news-footer" class="input" maxlength="2048" placeholder="NotStack News Delivery">
+                            </div>
+
+                            <div class="field">
+                                <label for="news-image">ลิงก์รูปภาพประกอบ</label>
+                                <input type="text" id="news-image" class="input" placeholder="https://... (ไม่บังคับ)" spellcheck="false">
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn btn-warning btn-block" onclick="sendNews()" id="send-news-btn">
+                            ส่งประกาศเข้า Discord
+                        </button>
+                    </div>
+
+                    <!-- ตัวอย่างข้อความที่จะไปโผล่ใน Discord (อัปเดตสดขณะพิมพ์) -->
+                    <div class="news-preview">
+                        <p class="section-hint">ตัวอย่างที่จะเห็นใน Discord</p>
+                        <div class="discord-preview">
+                            <div class="discord-msg">
+                                <img class="discord-avatar" id="preview-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+                                <div class="discord-body">
+                                    <div class="discord-head">
+                                        <span class="discord-name">Bot_NotStack</span>
+                                        <span class="discord-bot-tag">BOT</span>
+                                        <span class="discord-time" id="preview-time"></span>
+                                    </div>
+                                    <div class="discord-embed" id="preview-embed">
+                                        <div class="discord-embed-title" id="preview-title"></div>
+                                        <div class="discord-embed-desc" id="preview-desc"></div>
+                                        <img class="discord-embed-image hidden" id="preview-image" alt="">
+                                        <div class="discord-embed-footer" id="preview-footer-row">
+                                            <span id="preview-footer"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- Room Access Tab -->
@@ -153,14 +399,15 @@
                     <p>ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ</p>
                 </div>
                 
-                <div class="form-group">
-                    <label for="access-user-id">Discord User ID</label>
-                    <input type="text" id="access-user-id" class="input-select" placeholder="กรอก User ID ของผู้ใช้" style="background: rgba(15, 23, 42, 0.6); color: white; width: 100%; border: 1px solid var(--card-border); padding: 0.875rem 1rem; border-radius: 12px;">
+                <div class="field">
+                    <label for="access-user-picker-input">ผู้ใช้</label>
+                    <div data-user-picker="access-user" data-placeholder="พิมพ์ชื่อหรือ username ของสมาชิก..."></div>
+                    <span class="field-hint">พิมพ์ชื่อแล้วเลือกจากรายการ — หรือวาง User ID ลงไปตรงๆ ก็ได้</span>
                 </div>
 
-                <div class="form-group" style="margin-top: 1.5rem;">
+                <div class="field">
                     <label for="access-room-id">เลือกห้องที่ต้องการให้สิทธิ์</label>
-                    <select id="access-room-id" class="input-select" style="margin-bottom: 1.5rem;">
+                    <select id="access-room-id" class="input-select">
                         <option value="1475009551475675299">🎶About Us สาขา 2💃🕺👯</option>
                         <option value="1430932852928680059">ห้องลับ V2</option>
                         <option value="1420442631120490667">🫂นัวPR🫂</option>
@@ -169,7 +416,7 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
+                <div class="field">
                     <label for="access-action">เลือกรูปแบบการดำเนินการ</label>
                     <select id="access-action" class="input-select" onchange="toggleDurationInput()">
                         <option value="grant">ให้สิทธิ์ถาวร</option>
@@ -178,25 +425,25 @@
                     </select>
                 </div>
 
-                <div class="form-group hidden" id="duration-group" style="margin-top: 1.5rem;">
+                <div class="field hidden" id="duration-group">
                     <label>ระยะเวลา (ชั่วโมง : นาที : วินาที)</label>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <select id="access-hours" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
-                        <span style="display: flex; align-items: center; font-weight: bold;">:</span>
-                        <select id="access-minutes" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
-                        <span style="display: flex; align-items: center; font-weight: bold;">:</span>
-                        <select id="access-seconds" class="input-select" style="flex: 1; padding: 0.875rem 0.5rem;"></select>
+                    <div class="duration-row">
+                        <select id="access-hours" class="input-select"></select>
+                        <span>:</span>
+                        <select id="access-minutes" class="input-select"></select>
+                        <span>:</span>
+                        <select id="access-seconds" class="input-select"></select>
                     </div>
                 </div>
 
-                <button onclick="grantAccess()" id="grant-access-btn" style="margin-top: 1.5rem; width: 100%; justify-content: center; background: #6366f1; color: white;">
+                <button type="button" class="btn btn-primary btn-block" onclick="grantAccess()" id="grant-access-btn">
                     ดำเนินการ
                 </button>
 
-                <div style="margin-top: 3rem; border-top: 1px solid var(--card-border); padding-top: 2rem;">
-                    <h3>รายชื่อผู้ได้รับสิทธิ์เข้าห้อง</h3>
-                    <p style="margin-bottom: 1rem; font-size: 0.875rem;">ผู้ที่มีสิทธิ์ถาวร และจำกัดเวลา (อัปเดตอัตโนมัติ)</p>
-                    <div style="overflow-x: auto;">
+                <div class="section">
+                    <h3 class="section-title">รายชื่อผู้ได้รับสิทธิ์เข้าห้อง</h3>
+                    <p class="section-hint">ผู้ที่มีสิทธิ์ถาวร และจำกัดเวลา (อัปเดตอัตโนมัติ)</p>
+                    <div class="table-wrap">
                         <table class="level-table">
                             <thead>
                                 <tr>
@@ -208,7 +455,7 @@
                                 </tr>
                             </thead>
                             <tbody id="access-list-tbody">
-                                <tr><td colspan="5" style="text-align: center;">Loading...</td></tr>
+                                <tr><td colspan="5" class="cell-center">Loading...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -222,18 +469,18 @@
                     <p>จัดการ Whitelist / Blacklist สำหรับห้องเสียง</p>
                 </div>
 
-                <div class="vg-mode-toggle">
-                    <button class="vg-mode-btn vg-mode-active" id="vg-mode-wl" onclick="switchVGMode('whitelist')">Whitelist</button>
-                    <button class="vg-mode-btn" id="vg-mode-bl" onclick="switchVGMode('blacklist')">Blacklist</button>
+                <div class="segmented">
+                    <button type="button" class="active" id="vg-mode-wl" onclick="switchVGMode('whitelist')">Whitelist</button>
+                    <button type="button" id="vg-mode-bl" onclick="switchVGMode('blacklist')">Blacklist</button>
                 </div>
 
-                <div class="form-group" style="margin-top: 1.5rem;">
+                <div class="field">
                     <label>เพิ่มห้องเสียง</label>
                     <div class="input-wrapper">
                         <select id="vg-channel-select" class="input-select">
                             <option value="">-- เลือกห้องเสียง --</option>
                         </select>
-                        <button onclick="addVGChannel()">เพิ่มห้อง</button>
+                        <button type="button" class="btn btn-primary" onclick="addVGChannel()">เพิ่มห้อง</button>
                     </div>
                 </div>
 
@@ -253,12 +500,12 @@
                 </div>
 
                 <div id="prbot-content" class="hidden">
-                    <div class="form-group">
+                    <div class="field">
                         <label for="prbot-default-channel">ห้อง Default</label>
                         <span class="desc">ใช้กับ organization/repo ที่ไม่ได้ระบุไว้ด้านล่าง</span>
                         <div class="input-wrapper">
                             <input type="text" id="prbot-default-channel" placeholder="Channel ID">
-                            <button onclick="savePrDefaultChannel()">
+                            <button type="button" class="btn btn-primary" onclick="savePrDefaultChannel()">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                                 Save
                             </button>
@@ -269,7 +516,7 @@
                     <p class="prbot-hint">PR จาก organization ไหน ให้ไปลงห้องไหน — เพิ่ม/ลบได้ตามต้องการ</p>
                     <div id="prbot-org-rows"></div>
                     <button class="prbot-add-btn" type="button" onclick="addOrgRow()">+ เพิ่ม Organization</button>
-                    <button onclick="saveOrgMap()" style="margin-top: 1rem;">
+                    <button type="button" class="btn btn-primary stack-top" onclick="saveOrgMap()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         บันทึก Organization Mapping
                     </button>
@@ -278,7 +525,7 @@
                     <p class="prbot-hint">PR เปิดจาก repo ไหน (พิมพ์แบบ owner/repo) ให้ mention role อะไร — พิมพ์ชื่อ role ให้ตรงเป๊ะ หรือใส่ mention tag เช่น &lt;@&amp;1234567890&gt; ก็ได้ — repo ที่ไม่ได้ระบุจะไม่ mention</p>
                     <div id="prbot-mention-rows"></div>
                     <button class="prbot-add-btn" type="button" onclick="addMentionRow()">+ เพิ่ม Repo</button>
-                    <button onclick="saveMentionMap()" style="margin-top: 1rem;">
+                    <button type="button" class="btn btn-primary stack-top" onclick="saveMentionMap()">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         บันทึก Mention Mapping
                     </button>
@@ -305,11 +552,11 @@
 
                 <div id="logmanager-content" class="hidden">
                     <div class="log-bulk-bar">
-                        <div style="flex: 1; min-width: 200px;">
+                        <div class="log-bulk-field">
                             <label for="log-bulk-channel">ตั้งห้องเดียวกันให้ทุกรายการ</label>
                             <select id="log-bulk-channel" class="input-select"></select>
                         </div>
-                        <button type="button" class="log-bulk-btn" onclick="applyChannelToAll()">ใช้ห้องนี้กับทุกรายการ</button>
+                        <button type="button" class="btn btn-secondary" onclick="applyChannelToAll()">ใช้ห้องนี้กับทุกรายการ</button>
                     </div>
 
                     <!-- ตัวกรอง: ยกเว้นไม่ต้อง log (แนวเดียวกับ Carl-bot) -->
@@ -329,12 +576,20 @@
                             </span>
                         </label>
 
+                        <label class="log-ignore-bots">
+                            <span>บันทึกทุกเหตุการณ์ลงฐานข้อมูล (ใช้ทำกราฟหน้า Overview และตาราง Activity Log)</span>
+                            <span class="switch">
+                                <input type="checkbox" id="log-activity-recording" onchange="saveLogOptions()">
+                                <span class="slider"></span>
+                            </span>
+                        </label>
+
                         <div class="log-ignore-grid">
                             <div class="log-ignore-col">
                                 <label for="ignore-channel-select">ห้อง / หมวดหมู่ที่ยกเว้น</label>
                                 <div class="log-chip-input">
                                     <select id="ignore-channel-select" class="input-select"></select>
-                                    <button type="button" onclick="addIgnoreEntry('channel')">เพิ่ม</button>
+                                    <button type="button" class="btn btn-secondary" onclick="addIgnoreEntry('channel')">เพิ่ม</button>
                                 </div>
                                 <div class="log-chips" id="ignore-channel-chips"></div>
                             </div>
@@ -343,17 +598,14 @@
                                 <label for="ignore-role-select">ยศที่ยกเว้น</label>
                                 <div class="log-chip-input">
                                     <select id="ignore-role-select" class="input-select"></select>
-                                    <button type="button" onclick="addIgnoreEntry('role')">เพิ่ม</button>
+                                    <button type="button" class="btn btn-secondary" onclick="addIgnoreEntry('role')">เพิ่ม</button>
                                 </div>
                                 <div class="log-chips" id="ignore-role-chips"></div>
                             </div>
 
                             <div class="log-ignore-col">
-                                <label for="ignore-user-input">สมาชิกที่ยกเว้น (กรอก User ID)</label>
-                                <div class="log-chip-input">
-                                    <input type="text" id="ignore-user-input" class="input-select" placeholder="เช่น 1273939427575595184">
-                                    <button type="button" onclick="addIgnoreEntry('user')">เพิ่ม</button>
-                                </div>
+                                <label>สมาชิกที่ยกเว้น</label>
+                                <div data-user-picker="ignore-user" data-picker-manual data-placeholder="พิมพ์ชื่อสมาชิกที่ไม่ต้องการให้ขึ้น log..."></div>
                                 <div class="log-chips" id="ignore-user-chips"></div>
                             </div>
                         </div>
@@ -381,11 +633,11 @@
                             <option value="USER">USER</option>
                             <option value="ADMIN">ADMIN</option>
                         </select>
-                        <button type="button" onclick="createUser()">เพิ่มผู้ใช้</button>
+                        <button type="button" class="btn btn-primary" onclick="createUser()">เพิ่มผู้ใช้</button>
                     </div>
                 </div>
 
-                <div style="overflow-x: auto;">
+                <div class="table-wrap">
                     <table class="level-table">
                         <thead>
                             <tr>
@@ -399,7 +651,7 @@
                             </tr>
                         </thead>
                         <tbody id="users-tbody">
-                            <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
+                            <tr><td colspan="7" class="cell-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -409,8 +661,16 @@
             <section id="audit-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Audit Logs</h2>
-                    <p>ประวัติการเข้าสู่ระบบ และทุกการเปลี่ยนแปลงที่ทำผ่าน Dashboard (เก็บย้อนหลัง 180 วัน)</p>
+                    <p>ประวัติทั้งหมด — ทั้งสิ่งที่ทำผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord</p>
                 </div>
+
+                <div class="segmented" id="audit-source">
+                    <button type="button" class="active" data-source="dashboard" onclick="switchAuditSource('dashboard')">การกระทำบน Dashboard</button>
+                    <button type="button" data-source="discord" onclick="switchAuditSource('discord')">เหตุการณ์ในเซิร์ฟเวอร์ Discord</button>
+                </div>
+
+                <div id="audit-source-dashboard">
+                <p class="prbot-hint">การเข้าสู่ระบบและทุกการเปลี่ยนแปลงที่ทำผ่าน Dashboard (เก็บย้อนหลัง 180 วัน)</p>
 
                 <div class="audit-filters">
                     <select id="audit-action" class="input-select">
@@ -422,10 +682,10 @@
                         <option value="false">ไม่สำเร็จ / ถูกปฏิเสธ</option>
                     </select>
                     <input type="text" id="audit-q" placeholder="ค้นหาผู้กระทำ / เป้าหมาย / IP">
-                    <button type="button" onclick="loadAuditLogs()">ค้นหา</button>
+                    <button type="button" class="btn btn-primary" onclick="loadAuditLogs()">ค้นหา</button>
                 </div>
 
-                <div style="overflow-x: auto;">
+                <div class="table-wrap">
                     <table class="level-table audit-table">
                         <thead>
                             <tr>
@@ -439,11 +699,59 @@
                             </tr>
                         </thead>
                         <tbody id="audit-tbody">
-                            <tr><td colspan="7" style="text-align: center;">Loading...</td></tr>
+                            <tr><td colspan="7" class="cell-center">Loading...</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <button type="button" id="audit-more" class="audit-more hidden" onclick="loadAuditLogs(true)">โหลดเพิ่ม</button>
+                <button type="button" id="audit-more" class="btn btn-secondary audit-more hidden" onclick="loadAuditLogs(true)">โหลดเพิ่ม</button>
+                </div>
+
+                <!-- เหตุการณ์ที่บอทดักจับได้ในเซิร์ฟเวอร์ Discord (ตาราง activity_events) -->
+                <div id="audit-source-discord" class="hidden">
+                    <p class="prbot-hint" id="activity-meta">กำลังโหลดข้อมูล...</p>
+
+                    <div class="activity-filters">
+                        <select id="activity-event" class="input-select">
+                            <option value="">ทุกเหตุการณ์</option>
+                        </select>
+                        <select id="activity-range" class="input-select">
+                            <option value="24">24 ชั่วโมงล่าสุด</option>
+                            <option value="168" selected>7 วันล่าสุด</option>
+                            <option value="720">30 วันล่าสุด</option>
+                            <option value="2160">90 วันล่าสุด</option>
+                            <option value="8760">1 ปีล่าสุด</option>
+                        </select>
+                        <input type="text" id="activity-q" placeholder="ค้นหาชื่อ / ห้อง / รายละเอียด / User ID">
+                        <label class="ov-toggle">
+                            <span>รวมบอท</span>
+                            <span class="switch">
+                                <input type="checkbox" id="activity-include-bots">
+                                <span class="slider"></span>
+                            </span>
+                        </label>
+                        <button type="button" class="btn btn-primary" onclick="loadActivityLogs()">ค้นหา</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table class="level-table audit-table">
+                            <thead>
+                                <tr>
+                                    <th>เวลา</th>
+                                    <th>เหตุการณ์</th>
+                                    <th>ผู้ใช้</th>
+                                    <th>ห้อง</th>
+                                    <th>ผู้ลงมือ</th>
+                                    <th>รายละเอียด</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-tbody">
+                                <tr><td colspan="7" class="cell-center">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <button type="button" id="activity-more" class="btn btn-secondary audit-more hidden" onclick="loadActivityLogs(true)">โหลดเพิ่ม</button>
+                </div>
             </section>
 
             <!-- My Account Tab (ทุกคน) -->
@@ -455,9 +763,9 @@
                 <div id="account-content" class="account-grid"></div>
             </section>
         </main>
-        
+
         <footer>
-            <p>Developed by arlifzs &copy; 2026. NotStackOverflow Server Bot.</p>
+            <p>NotStackOverflow Server Bot</p>
         </footer>
     </div>
 
@@ -468,14 +776,15 @@
     </div>
 
     <script src="auth-client.js"></script>
+    <script src="user-picker.js"></script>
     <script src="script.js"></script>
     <script src="whitelist-dashboard.js"></script>
     <script src="prbot-dashboard.js"></script>
     <script src="logmanager-dashboard.js"></script>
     <script src="account-dashboard.js"></script>
     <script src="admin-dashboard.js"></script>
-    <script>
-        document.getElementById('logout-btn').addEventListener('click', logout);
-    </script>
+    <script src="overview-dashboard.js"></script>
+    <script src="news-editor.js"></script>
+    <script src="shell.js"></script>
 </body>
 </html>

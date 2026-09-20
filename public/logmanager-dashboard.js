@@ -4,7 +4,7 @@
 let logChannels = [];   // รายชื่อห้องในเซิร์ฟเวอร์ (ห้องส่ง log ใช้เฉพาะที่ sendable)
 let logRoles = [];      // รายชื่อยศ ใช้กับ ignore list
 let logEvents = [];     // การตั้งค่าปัจจุบันของแต่ละ event
-let logOptions = { ignoredChannels: [], ignoredUsers: [], ignoredRoles: [], ignoreBots: true };
+let logOptions = { ignoredChannels: [], ignoredUsers: [], ignoredRoles: [], ignoreBots: true, activityRecording: true };
 let ignoredUserNames = {};
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -40,7 +40,7 @@ async function initLogManagerTab() {
     } catch (error) {
         console.error('Error loading log settings:', error);
         const loading = document.getElementById('logmanager-loading');
-        if (loading) loading.innerHTML = '<p style="color: #ef4444;">โหลดการตั้งค่า Log ไม่สำเร็จ</p>';
+        if (loading) loading.innerHTML = '<p class="cell-error">โหลดการตั้งค่า Log ไม่สำเร็จ</p>';
     }
 }
 
@@ -241,13 +241,15 @@ function ignoreConfig(kind) {
     return {
         listKey: 'ignoredUsers',
         chipsId: 'ignore-user-chips',
-        inputId: 'ignore-user-input',
+        // หมวดสมาชิกเลือกคนผ่าน user picker (ไม่มีช่อง input ให้พิมพ์ ID เอง)
+        inputId: null,
         nameOf: id => ignoredUserNames[id] ? `@${ignoredUserNames[id]}` : `ID: ${id}`,
     };
 }
 
 function renderIgnorePanel() {
     document.getElementById('log-ignore-bots').checked = logOptions.ignoreBots !== false;
+    document.getElementById('log-activity-recording').checked = logOptions.activityRecording !== false;
 
     const channelSelect = document.getElementById('ignore-channel-select');
     if (channelSelect) {
@@ -290,22 +292,35 @@ function renderIgnoreChips(kind) {
     `).join('');
 }
 
-async function addIgnoreEntry(kind) {
+async function addIgnoreEntry(kind, valueFromPicker) {
     const config = ignoreConfig(kind);
-    const input = document.getElementById(config.inputId);
-    const value = (input.value || '').trim();
+    const input = config.inputId ? document.getElementById(config.inputId) : null;
+    const value = (valueFromPicker || input?.value || '').trim();
     if (!value) return;
 
     const list = logOptions[config.listKey] || [];
-    if (list.includes(value)) {
-        input.value = '';
-        return showLogToast('มีอยู่ในรายการแล้ว');
-    }
+    if (input) input.value = '';
+    if (list.includes(value)) return showLogToast('มีอยู่ในรายการแล้ว');
 
     logOptions[config.listKey] = [...list, value];
-    input.value = '';
     await saveLogOptions();
 }
+
+// ช่องเลือกสมาชิกที่ยกเว้น — เลือกคนแล้วเพิ่มเข้ารายการทันที
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.querySelector('[data-user-picker="ignore-user"]');
+    if (!el) return;
+    UserPicker.create(el, {
+        placeholder: el.dataset.placeholder,
+        keepSelection: false,
+        exclude: () => logOptions.ignoredUsers || [],
+        onSelect: (user) => {
+            // จำชื่อไว้ให้ chip แสดงได้ทันทีโดยไม่ต้องรอ server ตอบกลับ
+            ignoredUserNames[user.userId] = user.username;
+            addIgnoreEntry('user', user.userId);
+        },
+    });
+});
 
 async function removeIgnoreEntry(kind, id) {
     const config = ignoreConfig(kind);
@@ -316,6 +331,7 @@ async function removeIgnoreEntry(kind, id) {
 async function saveLogOptions() {
     const snapshot = JSON.parse(JSON.stringify(logOptions));
     logOptions.ignoreBots = document.getElementById('log-ignore-bots').checked;
+    logOptions.activityRecording = document.getElementById('log-activity-recording').checked;
 
     try {
         const response = await fetch('/api/log-settings/options', {

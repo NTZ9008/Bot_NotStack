@@ -9,9 +9,16 @@ const { prisma } = require('../prisma/client');
 const tokens = require('./tokens');
 const users = require('./users');
 const { audit, queryAuditLogs, listAuditActions } = require('./audit');
+const activity = require('../logmanager/activity');
 
 const router = express.Router();
 const ROLES = ['USER', 'ADMIN'];
+
+// แปลงค่าจาก query string เป็นวันที่ (คืน undefined ถ้าไม่ถูกต้อง)
+function parseDate(value) {
+    const date = typeof value === 'string' && value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date : undefined;
+}
 
 function parseId(value) {
     const id = Number(value);
@@ -177,10 +184,7 @@ router.delete('/users/:id', async (req, res) => {
 // ==========================================
 router.get('/audit-logs', async (req, res) => {
     const { action, q, success } = req.query;
-    const toDate = (value) => {
-        const date = typeof value === 'string' && value ? new Date(value) : null;
-        return date && !Number.isNaN(date.getTime()) ? date : undefined;
-    };
+    const toDate = parseDate;
     const result = await queryAuditLogs({
         action: typeof action === 'string' ? action : undefined,
         actorId: parseId(req.query.actorId) || undefined,
@@ -196,6 +200,60 @@ router.get('/audit-logs', async (req, res) => {
 
 router.get('/audit-logs/actions', async (req, res) => {
     res.json(await listAuditActions());
+});
+
+// ==========================================
+// Activity — เหตุการณ์ทุกอย่างในเซิร์ฟเวอร์ Discord (กราฟหน้า Overview + ตาราง Activity Log)
+// ==========================================
+const DEFAULT_RANGE_DAYS = 7;
+const MAX_RANGE_DAYS = 365;
+
+// ช่วงเวลาที่จะดู — ไม่ระบุ = 7 วันล่าสุด, ระบุเกิน 1 ปีจะถูกตัดให้เหลือ 1 ปี
+function parseRange(query) {
+    const now = new Date();
+    const to = parseDate(query.to) || now;
+    const from = parseDate(query.from) || new Date(to.getTime() - DEFAULT_RANGE_DAYS * 86400000);
+    const capped = new Date(Math.max(from.getTime(), to.getTime() - MAX_RANGE_DAYS * 86400000));
+    const spanHours = (to.getTime() - capped.getTime()) / 3600000;
+    // ไม่ได้เลือก interval เอง → ช่วงสั้น (ไม่เกิน 3 วัน) ดูรายชั่วโมง ที่เหลือดูรายวัน
+    const interval = query.interval === 'hour' || query.interval === 'day'
+        ? query.interval
+        : (spanHours <= 72 ? 'hour' : 'day');
+    return { from: capped, to, interval, includeBots: query.includeBots === 'true' };
+}
+
+router.get('/activity/stats', async (req, res) => {
+    const range = parseRange(req.query);
+    res.json(await activity.activityStats({
+        ...range,
+        timeZone: typeof req.query.tz === 'string' ? req.query.tz : 'Asia/Bangkok',
+        limit: Math.min(parseId(req.query.limit) || 10, 50),
+    }));
+});
+
+router.get('/activity', async (req, res) => {
+    const range = parseRange(req.query);
+    const { eventKey, userId, channelId, q } = req.query;
+    const result = await activity.queryActivity({
+        from: range.from,
+        to: range.to,
+        includeBots: range.includeBots,
+        // eventKey รับได้หลายค่า คั่นด้วย , (เช่น voiceJoin,voiceLeave)
+        eventKeys: typeof eventKey === 'string' && eventKey
+            ? eventKey.split(',').map((key) => key.trim()).filter(Boolean).slice(0, 50)
+            : undefined,
+        userId: typeof userId === 'string' && /^\d{5,25}$/.test(userId) ? userId : undefined,
+        channelId: typeof channelId === 'string' && /^\d{5,25}$/.test(channelId) ? channelId : undefined,
+        q: typeof q === 'string' ? q.trim().slice(0, 100) || undefined : undefined,
+        cursor: parseId(req.query.cursor) || undefined,
+        limit: Math.min(parseId(req.query.limit) || 50, 200),
+    });
+    res.json(result);
+});
+
+// ข้อมูลประกอบหน้าเว็บ: ชนิดเหตุการณ์ทั้งหมด + เก็บข้อมูลมาตั้งแต่เมื่อไหร่
+router.get('/activity/meta', async (req, res) => {
+    res.json(await activity.activityMeta());
 });
 
 module.exports = router;

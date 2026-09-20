@@ -26,7 +26,7 @@ async function fetchPrBotConfig() {
     } catch (error) {
         console.error('Error fetching PR bot config:', error);
         const loading = document.getElementById('prbot-loading');
-        if (loading) loading.innerHTML = '<p style="color: #ef4444;">โหลดข้อมูลไม่สำเร็จ</p>';
+        if (loading) loading.innerHTML = '<p class="cell-error">โหลดข้อมูลไม่สำเร็จ</p>';
     }
 }
 

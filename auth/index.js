@@ -8,6 +8,7 @@
 const { seedAdminFromEnv } = require('./users');
 const { deleteExpiredRefreshTokens } = require('./tokens');
 const { deleteOldAuditLogs } = require('./audit');
+const { deleteOldActivityEvents } = require('../logmanager/activity');
 
 const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
@@ -15,6 +16,7 @@ async function cleanup() {
     try {
         await deleteExpiredRefreshTokens();
         await deleteOldAuditLogs();
+        await deleteOldActivityEvents();
     } catch (err) {
         console.error('[Auth] ล้างข้อมูลเก่าไม่สำเร็จ:', err.message);
     }

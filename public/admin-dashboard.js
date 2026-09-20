@@ -41,14 +41,14 @@ async function loadUsers() {
         adminUsers = await adminRequest('GET', '/api/admin/users');
         renderUsers();
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444;">${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="cell-center cell-error">${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
 function renderUsers() {
     const tbody = document.getElementById('users-tbody');
     if (adminUsers.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">ยังไม่มีผู้ใช้</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="cell-center">ยังไม่มีผู้ใช้</td></tr>';
         return;
     }
 
@@ -301,7 +301,7 @@ async function loadAuditLogs(append = false) {
     if (!append) {
         auditCursor = null;
         loadAuditActions();
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">Loading...</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="cell-center">Loading...</td></tr>';
     }
 
     const params = new URLSearchParams({ limit: '50' });
@@ -320,10 +320,10 @@ async function loadAuditLogs(append = false) {
 
         const rows = data.items.map(renderAuditRow).join('');
         if (append) tbody.insertAdjacentHTML('beforeend', rows);
-        else tbody.innerHTML = rows || '<tr><td colspan="7" style="text-align: center;">ไม่พบรายการ</td></tr>';
+        else tbody.innerHTML = rows || '<tr><td colspan="7" class="cell-center">ไม่พบรายการ</td></tr>';
         data.items.forEach(item => { auditItems.set(item.id, item); });
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444;">${escapeHtml(err.message)}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="cell-center cell-error">${escapeHtml(err.message)}</td></tr>`;
     }
 }
 
@@ -368,4 +368,156 @@ function showAuditDetail(id) {
 document.addEventListener('DOMContentLoaded', () => {
     const q = document.getElementById('audit-q');
     if (q) q.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadAuditLogs(); });
+});
+
+// ==========================================
+// 🛰️ ACTIVITY LOG — เหตุการณ์ในเซิร์ฟเวอร์ Discord (ตาราง activity_events)
+// ==========================================
+let activityCursor = null;
+let activityTypesLoaded = false;
+const activityItems = new Map(); // id → รายการ (ใช้ตอนกดดูรายละเอียด)
+
+// เปิดแท็บ Audit Logs — โหลดเฉพาะมุมมองที่กำลังแสดงอยู่
+function loadAuditTab() {
+    const discordVisible = !document.getElementById('audit-source-discord').classList.contains('hidden');
+    if (discordVisible) loadActivityLogs();
+    else loadAuditLogs();
+}
+
+function switchAuditSource(source) {
+    const isDiscord = source === 'discord';
+    document.querySelectorAll('#audit-source button').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.source === source);
+    });
+    document.getElementById('audit-source-dashboard').classList.toggle('hidden', isDiscord);
+    document.getElementById('audit-source-discord').classList.toggle('hidden', !isDiscord);
+    if (isDiscord) loadActivityLogs();
+    else loadAuditLogs();
+}
+
+// รายการชนิดเหตุการณ์ + ช่วงข้อมูลที่เก็บไว้ (โหลดครั้งเดียวพอ)
+async function loadActivityMeta() {
+    if (activityTypesLoaded) return;
+    try {
+        const meta = await adminRequest('GET', '/api/admin/activity/meta');
+        activityTypesLoaded = true;
+
+        const groups = new Map();
+        for (const type of meta.eventTypes) {
+            if (!groups.has(type.group)) groups.set(type.group, []);
+            groups.get(type.group).push(type);
+        }
+        document.getElementById('activity-event').innerHTML = '<option value="">ทุกเหตุการณ์</option>'
+            + [...groups.entries()].map(([group, types]) =>
+                `<optgroup label="${escapeHtml(group)}">${types.map(t =>
+                    `<option value="${escapeHtml(t.key)}">${escapeHtml(t.label)}</option>`).join('')}</optgroup>`).join('');
+
+        const status = meta.enabled ? 'กำลังบันทึกอยู่' : '⚠️ ปิดการบันทึกอยู่ (เปิดได้ที่แท็บ Log Management)';
+        const since = meta.since ? `เริ่มเก็บตั้งแต่ ${formatDateTime(meta.since)}` : 'ยังไม่มีข้อมูล';
+        document.getElementById('activity-meta').textContent =
+            `${status} · ${since} · ทั้งหมด ${Number(meta.total).toLocaleString('th-TH')} รายการ · เก็บย้อนหลัง ${meta.retentionDays} วัน`;
+    } catch (err) {
+        document.getElementById('activity-meta').textContent = `โหลดข้อมูลไม่สำเร็จ: ${err.message}`;
+    }
+}
+
+async function loadActivityLogs(append = false) {
+    const tbody = document.getElementById('activity-tbody');
+    const moreBtn = document.getElementById('activity-more');
+    if (!append) {
+        activityCursor = null;
+        loadActivityMeta();
+        tbody.innerHTML = '<tr><td colspan="7" class="cell-center">Loading...</td></tr>';
+    }
+
+    const params = new URLSearchParams({ limit: '50' });
+    const eventKey = document.getElementById('activity-event').value;
+    const hours = Number(document.getElementById('activity-range').value);
+    const q = document.getElementById('activity-q').value.trim();
+    if (eventKey) params.set('eventKey', eventKey);
+    if (hours) params.set('from', new Date(Date.now() - hours * 3600000).toISOString());
+    if (q) params.set('q', q);
+    if (document.getElementById('activity-include-bots').checked) params.set('includeBots', 'true');
+    if (append && activityCursor) params.set('cursor', activityCursor);
+
+    try {
+        const data = await adminRequest('GET', `/api/admin/activity?${params}`);
+        activityCursor = data.nextCursor;
+        moreBtn.classList.toggle('hidden', !data.nextCursor);
+
+        const rows = data.items.map(renderActivityRow).join('');
+        if (append) tbody.insertAdjacentHTML('beforeend', rows);
+        else tbody.innerHTML = rows || '<tr><td colspan="7" class="cell-center">ไม่พบเหตุการณ์ในช่วงเวลานี้</td></tr>';
+        data.items.forEach(item => { activityItems.set(item.id, item); });
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="7" class="cell-center cell-error">${escapeHtml(err.message)}</td></tr>`;
+    }
+}
+
+// สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager
+const ACTIVITY_GROUP_CLASS = {
+    'สมาชิก': 'audit-user',
+    'ข้อความ': 'audit-auth',
+    'ช่อง & เธรด': 'audit-config',
+    'บทบาท & เซิร์ฟเวอร์': 'audit-config',
+    'ห้องเสียง': 'audit-voice',
+    'ความปลอดภัย & AutoMod': 'audit-news',
+};
+
+function renderActivityRow(item) {
+    const groupClass = ACTIVITY_GROUP_CLASS[item.group] || 'audit-user';
+    return `
+        <tr>
+            <td><small>${escapeHtml(formatDateTime(item.createdAt))}</small></td>
+            <td>
+                <span class="audit-action ${groupClass}">${escapeHtml(item.label)}</span>
+                <div class="audit-code">${escapeHtml(item.eventKey)}</div>
+            </td>
+            <td>
+                ${item.userName ? `<strong>${escapeHtml(item.userName)}</strong>` : '<span class="muted">—</span>'}
+                ${item.isBot ? '<span class="status-badge status-self">BOT</span>' : ''}
+                ${item.userId ? `<div class="audit-code">${escapeHtml(item.userId)}</div>` : ''}
+            </td>
+            <td><small>${item.channelName ? `#${escapeHtml(item.channelName)}` : '<span class="muted">—</span>'}</small></td>
+            <td><small>${item.executorName ? escapeHtml(item.executorName) : '<span class="muted">—</span>'}</small></td>
+            <td><small>${escapeHtml(item.summary || '—')}</small></td>
+            <td><button type="button" class="btn-sm" onclick="showActivityDetail(${item.id})">ดู</button></td>
+        </tr>`;
+}
+
+function showActivityDetail(id) {
+    const item = activityItems.get(id);
+    if (!item) return;
+    const fields = item.metadata?.fields || [];
+    const rest = { ...(item.metadata || {}) };
+    delete rest.fields;
+
+    Swal.fire({
+        title: escapeHtml(item.label),
+        html: `
+            <div class="audit-detail">
+                <div><span>เวลา</span>${escapeHtml(formatDateTime(item.createdAt))}</div>
+                <div><span>เหตุการณ์</span><code>${escapeHtml(item.eventKey)}</code></div>
+                <div><span>ผู้ใช้</span>${escapeHtml(item.userName || '—')}${item.userId ? ` (${escapeHtml(item.userId)})` : ''}</div>
+                <div><span>ห้อง</span>${item.channelName ? `#${escapeHtml(item.channelName)}` : '—'}</div>
+                <div><span>ผู้ลงมือ</span>${escapeHtml(item.executorName || '—')}</div>
+                <div><span>รายละเอียด</span>${escapeHtml(item.summary || '—')}</div>
+                ${fields.map(f => `<div><span>${escapeHtml(f.name)}</span>${escapeHtml(f.value)}</div>`).join('')}
+                ${Object.keys(rest).length ? `<pre>${escapeHtml(JSON.stringify(rest, null, 2))}</pre>` : ''}
+            </div>`,
+        width: 640,
+        confirmButtonColor: '#6366f1',
+        confirmButtonText: 'ปิด'
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const q = document.getElementById('activity-q');
+    if (q) q.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadActivityLogs(); });
+    const range = document.getElementById('activity-range');
+    if (range) range.addEventListener('change', () => loadActivityLogs());
+    const eventSelect = document.getElementById('activity-event');
+    if (eventSelect) eventSelect.addEventListener('change', () => loadActivityLogs());
+    const bots = document.getElementById('activity-include-bots');
+    if (bots) bots.addEventListener('change', () => loadActivityLogs());
 });
