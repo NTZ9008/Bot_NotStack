@@ -16,7 +16,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@expo-google-fonts/kanit": "^0.4.1",
+    "@expo-google-fonts/noto-color-emoji": "^0.4.6",
+    "@expo-google-fonts/noto-sans-thai": "^0.4.2",
+    "@expo-google-fonts/prompt": "^0.4.1",
     "@google/generative-ai": "^0.24.1",
+    "@napi-rs/canvas": "^1.0.9",
     "@prisma/adapter-pg": "7.10.0",
     "@prisma/client": "7.10.0",
     "bcryptjs": "^3.0.3",
