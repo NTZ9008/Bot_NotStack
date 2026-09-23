@@ -709,7 +709,7 @@ async function wcRenameAsset(id) {
     });
     if (!isConfirmed) return;
     try {
-        const data = await wcApi('PATCH', `/api/welcome/assets/${id}`, { name: value.trim() });
+        const data = await wcApi('POST', `/api/welcome/assets/${id}/rename`, { name: value.trim() });
         Object.assign(asset, data.asset);
         wcRenderForm();
     } catch (err) {
@@ -725,7 +725,7 @@ async function wcDeleteAsset(id) {
     if (!(await wcConfirm(`ลบรูป "${asset.name}" ออกจากคลัง?`, note, 'ลบรูป'))) return;
 
     try {
-        await wcApi('DELETE', `/api/welcome/assets/${id}`);
+        await wcApi('POST', `/api/welcome/assets/${id}/delete`);
         wc.assets = wc.assets.filter((a) => a.id !== id);
         // ฝั่ง server ตั้ง background ของการ์ดที่ใช้รูปนี้เป็น null ให้แล้ว — ทำให้ข้อมูลในหน้าเว็บตรงกัน
         wc.cards.forEach((card) => { if (card.backgroundId === id) card.backgroundId = null; });
@@ -937,7 +937,7 @@ async function wcDeleteCard() {
     if (!card) return;
     if (!(await wcConfirm(`ลบการ์ด "${card.name}"?`, 'ลบแล้วกู้คืนไม่ได้ (รูปในคลังรูปยังอยู่)', 'ลบการ์ด'))) return;
     try {
-        await wcApi('DELETE', `/api/welcome/cards/${card.id}`);
+        await wcApi('POST', `/api/welcome/cards/${card.id}/delete`);
         wc.cards = wc.cards.filter((c) => c.id !== card.id);
         wc.selectedId = null;
         wc.saved = null;
@@ -958,7 +958,7 @@ async function wcSave() {
     const btn = document.getElementById('wc-save-btn');
     btn.disabled = true;
     try {
-        const data = await wcApi('PATCH', `/api/welcome/cards/${wc.selectedId}`, wcPick(wc.draft));
+        const data = await wcApi('POST', `/api/welcome/cards/${wc.selectedId}/update`, wcPick(wc.draft));
         const index = wc.cards.findIndex((c) => c.id === data.card.id);
         if (index !== -1) wc.cards[index] = data.card;
         // ใช้ค่าที่ server ตรวจแล้ว (อาจถูกบีบให้อยู่ในช่วงที่อนุญาต)
@@ -1002,7 +1002,7 @@ async function wcToggleCard(id, enabled, input) {
         return wcError('ยังเปิดใช้งานไม่ได้', new Error('เลือกห้องที่จะส่งแล้วกด "บันทึก" ก่อนเปิดใช้งาน'));
     }
     try {
-        const data = await wcApi('PATCH', `/api/welcome/cards/${id}`, { enabled });
+        const data = await wcApi('POST', `/api/welcome/cards/${id}/update`, { enabled });
         card.enabled = data.card.enabled;
         if (id === wc.selectedId) {
             wc.saved.enabled = card.enabled;

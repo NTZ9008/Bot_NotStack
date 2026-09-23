@@ -1,7 +1,10 @@
 // ==========================================
 // 🌐 WELCOME API ROUTES — ADMIN เท่านั้น
-// การ์ด:      GET/POST /api/welcome/cards, PATCH/DELETE /api/welcome/cards/:id
-// คลังรูป:    GET/POST /api/welcome/assets, GET /api/welcome/assets/:id/image, PATCH/DELETE /api/welcome/assets/:id
+// ใช้แค่ GET/POST เหมือน API เดิมใน server.js (เช่น /api/whitelist/channel/delete)
+// เพราะชั้นหน้าเว็บจริง (Cloudflare / web server) ตอบ 403 กับ PATCH / DELETE
+// การ์ด:      GET/POST /api/welcome/cards, POST /api/welcome/cards/:id/update, POST /api/welcome/cards/:id/delete
+// คลังรูป:    GET/POST /api/welcome/assets, GET /api/welcome/assets/:id/image,
+//             POST /api/welcome/assets/:id/rename, POST /api/welcome/assets/:id/delete
 // ตัวอย่าง:   POST /api/welcome/preview (วาดรูปจากค่าที่กำลังแก้ ยังไม่บันทึก), POST /api/welcome/test (ส่งเข้าห้องจริง)
 // ==========================================
 const express = require('express');
@@ -27,7 +30,7 @@ const parseId = (value) => {
     return Number.isInteger(id) && id > 0 ? id : null;
 };
 
-// ตั้งชื่อ action ใน audit log (ถ้าไม่ตั้ง จะได้ชื่อแบบ api.patch /api/welcome/cards/3 แยกกันทุก id)
+// ตั้งชื่อ action ใน audit log (ถ้าไม่ตั้ง จะได้ชื่อแบบ api.post /api/welcome/cards/3/update แยกกันทุก id)
 const auditAs = (action) => (req, res, next) => {
     res.locals.auditAction = action;
     if (req.params.id) res.locals.auditTargetId = req.params.id;
@@ -170,7 +173,7 @@ function registerWelcomeRoutes(app, requireAdmin, getClient) {
     });
 
     // แก้เฉพาะฟิลด์ที่ส่งมา (หน้าแก้ไขส่งมาทั้งก้อน ส่วนสวิตช์ในรายการส่งมาแค่ enabled)
-    app.patch('/api/welcome/cards/:id', requireAdmin, auditAs('welcome.card_update'), async (req, res) => {
+    app.post('/api/welcome/cards/:id/update', requireAdmin, auditAs('welcome.card_update'), async (req, res) => {
         try {
             const id = parseId(req.params.id);
             const current = id ? await store.getCard(id) : null;
@@ -188,7 +191,7 @@ function registerWelcomeRoutes(app, requireAdmin, getClient) {
         }
     });
 
-    app.delete('/api/welcome/cards/:id', requireAdmin, auditAs('welcome.card_delete'), async (req, res) => {
+    app.post('/api/welcome/cards/:id/delete', requireAdmin, auditAs('welcome.card_delete'), async (req, res) => {
         try {
             const id = parseId(req.params.id);
             if (!id || !(await store.deleteCard(id))) throw new HttpError(404, 'ไม่พบการ์ดนี้ (อาจถูกลบไปแล้ว)');
@@ -294,7 +297,7 @@ function registerWelcomeRoutes(app, requireAdmin, getClient) {
             }
         });
 
-    app.patch('/api/welcome/assets/:id', requireAdmin, auditAs('welcome.asset_rename'), async (req, res) => {
+    app.post('/api/welcome/assets/:id/rename', requireAdmin, auditAs('welcome.asset_rename'), async (req, res) => {
         try {
             const id = parseId(req.params.id);
             const name = String(req.body?.name || '').trim().slice(0, LIMITS.maxNameLength);
@@ -307,7 +310,7 @@ function registerWelcomeRoutes(app, requireAdmin, getClient) {
         }
     });
 
-    app.delete('/api/welcome/assets/:id', requireAdmin, auditAs('welcome.asset_delete'), async (req, res) => {
+    app.post('/api/welcome/assets/:id/delete', requireAdmin, auditAs('welcome.asset_delete'), async (req, res) => {
         try {
             const id = parseId(req.params.id);
             if (!id || !(await store.deleteAsset(id))) throw new HttpError(404, 'ไม่พบรูปนี้ (อาจถูกลบไปแล้ว)');
