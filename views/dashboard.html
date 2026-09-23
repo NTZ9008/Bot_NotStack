@@ -44,6 +44,10 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8V6Z"/></svg>
                         <span>News</span>
                     </button>
+                    <button type="button" class="nav-item" data-tab="welcome-tab" data-label="Welcome" data-keywords="welcome ต้อนรับ สมาชิกใหม่ การ์ด รูปภาพ announcement ยินดีต้อนรับ card" data-admin-only onclick="switchTab('welcome-tab')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21a8 8 0 0 1 13.29-6"/><circle cx="10" cy="8" r="5"/><path d="M19 16v6M22 19h-6"/></svg>
+                        <span>Welcome</span>
+                    </button>
                     <button type="button" class="nav-item" data-tab="access-tab" data-label="Room Access" data-keywords="room access สิทธิ์เข้าห้อง ตั๋ว ticket permission" data-admin-only onclick="switchTab('access-tab')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                         <span>Room Access</span>
@@ -385,6 +389,101 @@
                                             <span id="preview-footer"></span>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Welcome Announcement Tab — การ์ดต้อนรับแบบรูปภาพ (ระบบใหม่ แยกจาก Welcome ข้อความเดิม) -->
+            <section id="welcome-tab" class="card tab-content hidden" data-admin-only>
+                <div class="card-header">
+                    <h2>Welcome Announcement</h2>
+                    <p>การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง</p>
+                </div>
+
+                <div id="wc-loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>กำลังโหลดข้อมูล...</p>
+                </div>
+
+                <div id="wc-content" class="hidden">
+                    <div class="wc-toolbar">
+                        <div>
+                            <h3 class="section-title">การ์ดต้อนรับ</h3>
+                            <p class="prbot-hint">เปิดได้หลายใบพร้อมกัน — สมาชิกใหม่ 1 คนจะได้ทุกใบที่เปิดอยู่ ส่งเข้าห้องของแต่ละใบ (ทำงานแยกจากข้อความ Welcome เดิม)</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="wcCreateCard()">+ สร้างการ์ดใหม่</button>
+                    </div>
+
+                    <div class="wc-card-list" id="wc-card-list"></div>
+                    <p class="wc-empty-text hidden" id="wc-empty">ยังไม่มีการ์ดต้อนรับ — กด "สร้างการ์ดใหม่" เพื่อเริ่มออกแบบ</p>
+
+                    <div class="wc-editor hidden" id="wc-editor">
+                        <div class="wc-editor-head">
+                            <div class="wc-editor-title">
+                                <h3 id="wc-editor-name"></h3>
+                                <span class="wc-dirty hidden" id="wc-dirty">มีการแก้ไขที่ยังไม่บันทึก</span>
+                            </div>
+                            <label class="ov-toggle" title="เปิด/ปิดการ์ดนี้ (บันทึกทันที)">
+                                <span>เปิดใช้งาน</span>
+                                <span class="switch">
+                                    <input type="checkbox" id="wc-enabled">
+                                    <span class="slider"></span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="wc-layout">
+                            <div class="wc-form-col">
+                                <div class="segmented" id="wc-sections">
+                                    <button type="button" class="active" data-section="general">ทั่วไป</button>
+                                    <button type="button" data-section="background">พื้นหลัง</button>
+                                    <button type="button" data-section="avatar">รูปโปรไฟล์</button>
+                                    <button type="button" data-section="texts">ข้อความบนรูป</button>
+                                </div>
+                                <div id="wc-form"></div>
+                            </div>
+
+                            <!-- ตัวอย่างที่จะไปโผล่ใน Discord — รูปวาดที่ server ด้วยโค้ดเดียวกับตอนส่งจริง -->
+                            <div class="wc-preview-col">
+                                <p class="section-hint">ตัวอย่างใน Discord — ลากรูปโปรไฟล์หรือจุดตัวเลขบนรูปเพื่อย้ายตำแหน่ง</p>
+                                <div class="discord-preview">
+                                    <div class="discord-msg">
+                                        <img class="discord-avatar" id="wc-bot-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="">
+                                        <div class="discord-body">
+                                            <div class="discord-head">
+                                                <span class="discord-name" id="wc-bot-name">Bot_NotStack</span>
+                                                <span class="discord-bot-tag">BOT</span>
+                                                <span class="discord-time" id="wc-preview-time"></span>
+                                            </div>
+                                            <div class="wc-msg-content discord-embed-desc hidden" id="wc-msg-content"></div>
+                                            <div class="wc-stage" id="wc-stage">
+                                                <img id="wc-preview-img" alt="ตัวอย่างการ์ดต้อนรับ">
+                                                <div class="wc-guide wc-guide-v hidden" id="wc-guide-v"></div>
+                                                <div class="wc-guide wc-guide-h hidden" id="wc-guide-h"></div>
+                                                <div class="wc-handles" id="wc-handles"></div>
+                                                <div class="wc-stage-status" id="wc-stage-status">กำลังสร้างรูปตัวอย่าง...</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="field wc-sample">
+                                    <label>ดูตัวอย่างในนาม</label>
+                                    <div data-user-picker="wc-sample" data-picker-manual></div>
+                                    <span class="field-hint">ค่าเริ่มต้นคือบัญชี Discord ของคุณ (หรือตัวบอท ถ้ายังไม่ได้เชื่อม Discord) · <button type="button" class="wc-link-btn" id="wc-sample-reset">กลับไปใช้ค่าเริ่มต้น</button></span>
+                                </div>
+
+                                <div class="wc-actions">
+                                    <button type="button" class="btn btn-primary" id="wc-save-btn" title="Ctrl/⌘ + S">บันทึก</button>
+                                    <button type="button" class="btn btn-secondary" id="wc-revert-btn">ยกเลิกการแก้ไข</button>
+                                    <button type="button" class="btn btn-warning" id="wc-test-btn">ส่งทดสอบ</button>
+                                </div>
+                                <div class="wc-actions">
+                                    <button type="button" class="btn btn-secondary" id="wc-duplicate-btn">คัดลอกการ์ดนี้</button>
+                                    <button type="button" class="btn btn-danger" id="wc-delete-btn">ลบการ์ด</button>
                                 </div>
                             </div>
                         </div>
@@ -785,6 +884,7 @@
     <script src="admin-dashboard.js"></script>
     <script src="overview-dashboard.js"></script>
     <script src="news-editor.js"></script>
+    <script src="welcome-dashboard.js"></script>
     <script src="shell.js"></script>
 </body>
 </html>

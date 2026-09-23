@@ -55,6 +55,9 @@ function switchTab(tabId) {
     if (tabId === 'account-tab') {
         renderAccount();
     }
+    if (tabId === 'welcome-tab') {
+        loadWelcomeTab();
+    }
 
     // อัปเดตชื่อหน้าบนแถบด้านบน + ปิดลิ้นชักเมนูบนจอเล็ก (shell.js)
     if (typeof window.onTabSwitched === 'function') window.onTabSwitched(tabId);

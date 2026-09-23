@@ -261,6 +261,13 @@ const AUDIT_ACTION_LABELS = {
     'config.update': 'แก้ไข Configuration',
     'news.send': 'ส่งประกาศข่าว',
     'room_access.change': 'สิทธิ์เข้าห้อง',
+    'welcome.card_create': 'สร้างการ์ดต้อนรับ',
+    'welcome.card_update': 'แก้ไขการ์ดต้อนรับ',
+    'welcome.card_delete': 'ลบการ์ดต้อนรับ',
+    'welcome.test_send': 'ส่งการ์ดต้อนรับทดสอบ',
+    'welcome.asset_upload': 'อัปโหลดรูปพื้นหลัง',
+    'welcome.asset_rename': 'เปลี่ยนชื่อรูปพื้นหลัง',
+    'welcome.asset_delete': 'ลบรูปพื้นหลัง',
 };
 
 const AUDIT_GROUP_LABELS = {
@@ -271,6 +278,7 @@ const AUDIT_GROUP_LABELS = {
     room_access: 'Room Access',
     voice_guard: 'Voice Guard',
     log_settings: 'Log Management',
+    welcome: 'Welcome Announcement',
 };
 
 let auditCursor = null;
