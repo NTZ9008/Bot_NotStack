@@ -217,3 +217,45 @@ model ActivityEvent {
   @@index([channelId, createdAt])
   @@map("activity_events")
 }
+
+// ==========================================
+// 🎉 WELCOME ANNOUNCEMENT — การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ (พื้นหลัง + avatar + ข้อความ)
+// แยกจากระบบ Welcome เดิม (WELCOME_CHANNEL_ID ในตาราง config) — ทั้งสองระบบทำงานคู่กันได้
+// ==========================================
+
+// การ์ด 1 ใบ = รูปต้อนรับ 1 แบบ ส่งเข้า 1 ห้อง — เปิดหลายใบพร้อมกันได้ (สมาชิกใหม่ 1 คนจะได้ทุกใบที่เปิดอยู่)
+model WelcomeCard {
+  id           Int      @id @default(autoincrement())
+  name         String
+  enabled      Boolean  @default(false)
+  channelId    String   @default("") @map("channel_id")
+  // ข้อความธรรมดาที่ส่งคู่กับรูป (รองรับตัวแปร {mention} {user} {server} ...) — ว่าง = ส่งแค่รูป
+  content      String   @default("")
+  // การจัดวางทั้งหมด: ขนาดภาพ พื้นหลัง avatar และชั้นข้อความ — รูปแบบตรวจใน welcome/design.js
+  design       Json
+  // รูปพื้นหลังจากคลังรูป — ลบรูปออกจากคลังแล้วการ์ดจะกลับไปใช้สีพื้นแทน
+  backgroundId Int?     @map("background_id")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  background WelcomeAsset? @relation(fields: [backgroundId], references: [id], onDelete: SetNull)
+
+  @@index([backgroundId])
+  @@map("welcome_cards")
+}
+
+// คลังรูปพื้นหลังที่อัปโหลดจาก Dashboard — เก็บไฟล์ไว้ในฐานข้อมูล (โฟลเดอร์โปรเจกต์ถูก rsync --delete ทุกครั้งที่ deploy)
+model WelcomeAsset {
+  id        Int      @id @default(autoincrement())
+  name      String
+  mimeType  String   @map("mime_type")
+  width     Int
+  height    Int
+  size      Int
+  data      Bytes
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  cards WelcomeCard[]
+
+  @@map("welcome_assets")
+}

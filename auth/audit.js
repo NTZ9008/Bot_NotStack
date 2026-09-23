@@ -76,6 +76,8 @@ async function audit(req, { action, actor, targetType, targetId, success = true,
 }
 
 // บันทึกทุก request ที่แก้ข้อมูลผ่าน API เดิม — route ใส่รายละเอียดเพิ่มได้ทาง res.locals.audit (เช่นค่าเดิมก่อนแก้)
+// route ที่ path มี id (เช่น /api/welcome/cards/3) ตั้งชื่อเองได้ทาง res.locals.auditAction / auditTargetId
+// และ POST ที่ไม่ได้แก้ข้อมูล (เช่นวาดรูปตัวอย่าง) ตั้ง res.locals.skipAudit = true เพื่อไม่ให้ log ล้น
 // /api/auth และ /api/admin บันทึกเองอยู่แล้ว จึงข้าม
 function auditApiMutations(req, res, next) {
     if (SAFE_METHODS.has(req.method) || !req.path.startsWith('/api/')
@@ -84,11 +86,12 @@ function auditApiMutations(req, res, next) {
     }
     res.on('finish', () => {
         // ไม่ได้ login → โดนปฏิเสธไปแล้ว ไม่มีอะไรเปลี่ยน ไม่ต้องบันทึก (กัน log ล้นจากคนสุ่มยิง)
-        if (!req.user) return;
-        const body = req.body && typeof req.body === 'object' ? req.body : {};
+        if (!req.user || res.locals.skipAudit) return;
+        // body ที่เป็นไฟล์ดิบ (Buffer) ไม่ต้องเก็บลง log
+        const body = req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body) ? req.body : {};
         audit(req, {
-            action: API_ACTIONS[req.path] || `api.${req.method.toLowerCase()} ${req.path}`,
-            targetId: body.key || body.userId || body.channelId || null,
+            action: res.locals.auditAction || API_ACTIONS[req.path] || `api.${req.method.toLowerCase()} ${req.path}`,
+            targetId: res.locals.auditTargetId ?? (body.key || body.userId || body.channelId || null),
             success: res.statusCode < 400,
             metadata: { status: res.statusCode, body, ...res.locals.audit },
         });

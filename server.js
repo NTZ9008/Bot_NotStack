@@ -9,6 +9,7 @@ const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, rem
     getBlacklistChannels, upsertBlacklistChannel, setBlacklistChannelNotify, deleteBlacklistChannel, getBlacklistUsers, addBlacklistUser, removeBlacklistUser
 } = require('./db');
 const { registerLogManagerRoutes } = require('./logmanager/routes');
+const { registerWelcomeRoutes } = require('./welcome/routes');
 const { initAuth, authRouter, adminRouter, authenticate, verifyOrigin, auditApiMutations, requireAuthPage, requireApiAuth, requireAdmin } = require('./auth');
 const schedule = require('node-schedule');
 
@@ -177,6 +178,9 @@ app.get('/api/logs/:filename', requireAdmin, (req, res) => {
 
 // --- Log Manager API (ตั้งค่าว่าจะติดตาม log อะไร ส่งเข้าห้องไหน สีอะไร) ---
 registerLogManagerRoutes(app, requireAdmin, () => discordClient);
+
+// --- Welcome Announcement API (การ์ดต้อนรับแบบรูปภาพ + คลังรูปพื้นหลัง) ---
+registerWelcomeRoutes(app, requireAdmin, () => discordClient);
 
 const startServer = (client) => {
     discordClient = client;

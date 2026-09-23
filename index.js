@@ -8,6 +8,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getConfig, saveAllLevelsToDB, getAllLevels, getWhitelistChannel, getWhitelistUsers, getBlacklistChannel, getBlacklistUsers } = require('./db.js');
 const { startServer } = require('./server.js');
 const { initLogManager, logFilterAction, logInvitePosted, recordActivity } = require('./logmanager');
+const { initWelcome } = require('./welcome');
 
 dotenv.config();
 
@@ -34,6 +35,9 @@ const client = new Client({
 
 // เริ่มทำงาน Dashboard Server
 startServer(client);
+
+// การ์ดต้อนรับแบบรูปภาพ (ระบบใหม่ ตั้งค่าจาก Dashboard แท็บ Welcome) — ทำงานคู่กับ Welcome ข้อความเดิมด้านล่าง
+initWelcome(client);
 
 // ==========================================
 // ⚙️ CONFIG & SETTINGS (ตั้งค่าระบบถูกย้ายไป DB แล้ว)

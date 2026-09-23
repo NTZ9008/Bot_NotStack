@@ -2652,3 +2652,735 @@ textarea.input::placeholder {
 .status-temp { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
 
 .spinner-center { margin: 0 auto; }
+
+/* ==========================================
+   🎉 WELCOME ANNOUNCEMENT — การ์ดต้อนรับแบบรูปภาพ (welcome-dashboard.js)
+   ========================================== */
+.wc-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+}
+
+.wc-toolbar .btn {
+    flex-shrink: 0;
+}
+
+/* --- รายการการ์ด --- */
+.wc-card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-2);
+}
+
+.wc-card-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 0.75rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.wc-card-item:hover {
+    background: var(--surface-hover);
+}
+
+.wc-card-item:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+.wc-card-item.active {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.12);
+}
+
+.wc-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.wc-card-name {
+    font-size: var(--fs-base);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wc-card-meta {
+    font-size: var(--fs-xs);
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wc-card-state {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.wc-card-state.on {
+    color: #34d399;
+}
+
+.wc-warn-text {
+    color: #fbbf24;
+}
+
+.wc-empty-text {
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    border: 1px dashed var(--card-border);
+    border-radius: var(--radius);
+}
+
+/* --- ตัวแก้ไข --- */
+.wc-editor {
+    margin-top: var(--space-5);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--card-border);
+}
+
+.wc-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.wc-editor-title {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.wc-editor-title h3 {
+    font-size: 1.15rem;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.wc-dirty {
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: var(--radius-pill);
+    padding: 2px 10px;
+}
+
+.wc-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: var(--space-5);
+    align-items: start;
+}
+
+.wc-form-col,
+.wc-preview-col {
+    min-width: 0;
+}
+
+.wc-preview-col {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--space-3));
+}
+
+/* slider + ช่องตัวเลข */
+.wc-range {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--space-3);
+    row-gap: var(--space-1);
+    margin-bottom: var(--space-3);
+}
+
+.wc-range > label {
+    grid-column: 1 / -1;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.wc-range input[type="range"] {
+    width: 100%;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.wc-range-num {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.wc-range .wc-num {
+    width: 76px;
+    padding: 0.4rem 0.5rem;
+    text-align: right;
+}
+
+.wc-range .wc-mini-btn {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
+
+.wc-mini-btn {
+    padding: 0.25rem 0.6rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+}
+
+.wc-mini-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.wc-seg {
+    margin-bottom: 0;
+}
+
+.wc-size-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-muted);
+}
+
+.wc-size-row .input {
+    max-width: 130px;
+}
+
+/* ปุ่มแทรกตัวแปร {user} {server} ... */
+.wc-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.wc-chip {
+    padding: 0.2rem 0.55rem;
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.35);
+    border-radius: var(--radius-pill);
+    color: #c7d2fe;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: var(--fs-xs);
+    font-weight: 500;
+}
+
+.wc-chip:hover {
+    background: rgba(99, 102, 241, 0.25);
+}
+
+.wc-help {
+    padding: var(--space-3);
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+}
+
+.wc-help strong {
+    color: var(--text-primary);
+}
+
+.wc-help ul {
+    list-style: none;
+    margin-top: var(--space-2);
+    display: grid;
+    gap: 0.3rem;
+}
+
+.wc-help code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #c7d2fe;
+    margin-right: 0.35rem;
+}
+
+.wc-link-btn {
+    display: inline;
+    padding: 0;
+    background: none;
+    color: #a5b4fc;
+    font-size: inherit;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+.wc-link-btn:hover {
+    background: none;
+    color: var(--text-primary);
+}
+
+/* --- คลังรูปพื้นหลัง --- */
+.wc-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--space-2);
+}
+
+.wc-tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 118px;
+    background: var(--field-bg);
+    border: 2px solid var(--card-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: border-color 0.15s ease;
+}
+
+.wc-tile:hover {
+    border-color: rgba(99, 102, 241, 0.6);
+}
+
+.wc-tile:focus-visible {
+    outline: none;
+    box-shadow: var(--ring);
+}
+
+.wc-tile.selected {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+.wc-tile img {
+    width: 100%;
+    height: 78px;
+    object-fit: cover;
+    display: block;
+    background: #0b1120;
+}
+
+.wc-tile-info {
+    display: flex;
+    flex-direction: column;
+    padding: 0.35rem 0.5rem 0.45rem;
+    min-width: 0;
+}
+
+.wc-tile-info span {
+    font-size: var(--fs-xs);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.wc-tile-info small,
+.wc-tile small {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.wc-tile-none,
+.wc-tile-upload {
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: var(--space-2);
+    text-align: center;
+    font-size: var(--fs-sm);
+    font-weight: 500;
+}
+
+/* ปุ่มเลือก "ไม่ใช้รูป" เป็น <button> — ล้างสไตล์ปุ่มรวม */
+button.wc-tile-none {
+    background: var(--field-bg);
+    color: var(--text-secondary);
+}
+
+button.wc-tile-none:hover {
+    background: var(--field-bg);
+}
+
+.wc-tile-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.wc-tile-upload {
+    border-style: dashed;
+}
+
+.wc-tile-upload svg {
+    width: 22px;
+    height: 22px;
+}
+
+.wc-tile-upload.busy {
+    opacity: 0.55;
+    pointer-events: none;
+}
+
+.wc-tile-actions {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 3px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.wc-tile:hover .wc-tile-actions,
+.wc-tile:focus-within .wc-tile-actions {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .wc-tile-actions {
+        opacity: 1;
+    }
+}
+
+.wc-icon-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid var(--card-border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+}
+
+.wc-icon-btn:hover:not(:disabled) {
+    background: var(--surface-solid);
+    color: var(--text-primary);
+}
+
+.wc-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.wc-icon-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.wc-icon-danger:hover:not(:disabled) {
+    background: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+}
+
+/* --- ชั้นข้อความ (พับ/กางได้) --- */
+.wc-layers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.wc-layer {
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+}
+
+.wc-layer.open {
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.wc-layer-head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.35rem 0.5rem 0.35rem 0.35rem;
+}
+
+.wc-layer-toggle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0.4rem 0.5rem;
+    background: transparent;
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: left;
+}
+
+.wc-layer-toggle:hover {
+    background: var(--surface-hover);
+}
+
+.wc-layer-num {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.wc-layer-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--fs-sm);
+}
+
+.wc-layer-caret {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    transition: transform 0.15s ease;
+}
+
+.wc-layer.open .wc-layer-caret {
+    transform: rotate(180deg);
+}
+
+.wc-layer-actions {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+.wc-layer-body {
+    display: none;
+    padding: var(--space-2) var(--space-3) var(--space-3);
+    border-top: 1px solid var(--card-border);
+}
+
+.wc-layer.open .wc-layer-body {
+    display: block;
+}
+
+.wc-layer-text {
+    min-height: 64px;
+}
+
+/* --- ตัวอย่าง --- */
+.wc-msg-content {
+    color: #dbdee1;
+    line-height: 1.45;
+    margin-bottom: 0.5rem;
+}
+
+.wc-mention {
+    background: rgba(88, 101, 242, 0.3);
+    color: #c9cdfb;
+    border-radius: 3px;
+    padding: 0 2px;
+    font-weight: 500;
+}
+
+.wc-stage {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: repeating-conic-gradient(#2b2d31 0% 25%, #232428 0% 50%) 50% / 20px 20px;
+    user-select: none;
+    touch-action: none;
+}
+
+.wc-stage img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+}
+
+.wc-stage img:not([src]) {
+    visibility: hidden;
+}
+
+.wc-stage.rendering::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    pointer-events: none;
+}
+
+.wc-stage-status {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3);
+    text-align: center;
+    font-size: var(--fs-sm);
+    color: #b5bac1;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.wc-handles {
+    position: absolute;
+    inset: 0;
+}
+
+.wc-handle {
+    position: absolute;
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    touch-action: none;
+}
+
+.wc-stage:hover .wc-handle,
+.wc-stage.dragging .wc-handle {
+    opacity: 1;
+}
+
+@media (hover: none) {
+    .wc-handle {
+        opacity: 0.85;
+    }
+}
+
+.wc-stage.dragging .wc-handle {
+    cursor: grabbing;
+}
+
+.wc-handle-avatar {
+    border: 2px dashed rgba(255, 255, 255, 0.85);
+    border-radius: 12%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+.wc-handle-avatar.round {
+    border-radius: 50%;
+}
+
+.wc-handle-text {
+    width: 22px;
+    height: 22px;
+    margin: -11px 0 0 -11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary);
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* เส้นบอกกึ่งกลางตอนลากเข้าใกล้ */
+.wc-guide {
+    position: absolute;
+    pointer-events: none;
+    background: #f472b6;
+}
+
+.wc-guide-v {
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+}
+
+.wc-guide-h {
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+}
+
+.wc-sample {
+    margin-top: var(--space-4);
+}
+
+.wc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.wc-actions .btn {
+    flex: 1 1 auto;
+}
+
+@media (max-width: 1100px) {
+    /* minmax(0, …) ไม่ใช่ 1fr — ไม่งั้นคอลัมน์จะกว้างตามเนื้อหาข้างในจนล้นจอเล็ก */
+    .wc-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    /* จอแคบ: ตัวอย่างขึ้นก่อนฟอร์ม จะได้เห็นผลทันทีที่แก้ */
+    .wc-preview-col {
+        position: static;
+        order: -1;
+    }
+}
+
+@media (max-width: 640px) {
+    .wc-toolbar {
+        flex-direction: column;
+    }
+
+    /* กฎรวม button { width: 100% } บนจอเล็ก ไม่ควรมีผลกับปุ่มเล็กของคอมโพเนนต์นี้ */
+    .wc-icon-btn,
+    .wc-chip,
+    .wc-mini-btn,
+    .wc-link-btn {
+        width: auto;
+    }
+
+    .wc-layer-toggle {
+        justify-content: flex-start;
+    }
+
+    .wc-gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
