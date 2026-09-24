@@ -58,6 +58,9 @@ function switchTab(tabId) {
     if (tabId === 'welcome-tab') {
         loadWelcomeTab();
     }
+    if (tabId === 'weather-tab') {
+        loadWeatherTab();
+    }
 
     // อัปเดตชื่อหน้าบนแถบด้านบน + ปิดลิ้นชักเมนูบนจอเล็ก (shell.js)
     if (typeof window.onTabSwitched === 'function') window.onTabSwitched(tabId);

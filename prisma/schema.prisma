@@ -259,3 +259,23 @@ model WelcomeAsset {
 
   @@map("welcome_assets")
 }
+
+// ==========================================
+// 🌤️ DAILY WEATHER REPORT — รายงานสภาพอากาศประจำวัน (embed + กราฟพยากรณ์)
+// มีแถวเดียว (id = 1) สร้างให้เองครั้งแรกจากค่าของระบบเดิม (ห้อง GENERAL_CHANNEL_ID, ศาลายา, 07:00)
+// ==========================================
+model WeatherSetting {
+  id        Int       @id @default(1)
+  enabled   Boolean   @default(false)
+  channelId String    @default("") @map("channel_id")
+  // ข้อความธรรมดาที่ส่งคู่กับ embed (รองรับตัวแปร {location} {date} ...) — ว่าง = ส่งแค่ embed
+  content   String    @default("")
+  // เวลาส่ง / สถานที่ / รูปแบบ embed / กราฟ — รูปแบบตรวจใน weather/options.js
+  options   Json
+  // ผลการส่งตามเวลาครั้งล่าสุด (lastError = null คือสำเร็จ)
+  lastRunAt DateTime? @map("last_run_at") @db.Timestamptz(3)
+  lastError String?   @map("last_error")
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("weather_settings")
+}

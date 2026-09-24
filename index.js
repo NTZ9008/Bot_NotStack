@@ -2,13 +2,12 @@ const { Client, GatewayIntentBits, Events, Collection, ChannelType, AuditLogEven
 const dotenv = require('dotenv');
 const fs = require('fs');
 const path = require('path');
-const schedule = require("node-schedule");
-const { getWeatherEmbed } = require("./commands/weather.js");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { getConfig, saveAllLevelsToDB, getAllLevels, getWhitelistChannel, getWhitelistUsers, getBlacklistChannel, getBlacklistUsers } = require('./db.js');
 const { startServer } = require('./server.js');
 const { initLogManager, logFilterAction, logInvitePosted, recordActivity } = require('./logmanager');
 const { initWelcome } = require('./welcome');
+const { initWeather } = require('./weather');
 
 dotenv.config();
 
@@ -116,18 +115,12 @@ client.once(Events.ClientReady, async () => {
         console.error("❌ Error loading levels from DB:", err);
     }
 
-    // ตั้งเวลาส่งพยากรณ์อากาศ 7 โมงเช้า
-    schedule.scheduleJob("0 7 * * *", async () => {
-        const genChannelId = await getConfig('GENERAL_CHANNEL_ID');
-        if (!genChannelId) return console.log("❌ ไม่พบการตั้งค่าช่องทั่วไป");
-        const channel = await client.channels.fetch(genChannelId).catch(() => null);
-        if (!channel) return console.log("❌ ไม่พบช่องทั่วไปสำหรับพยากรณ์อากาศ");
-
-        const embed = await getWeatherEmbed("Salaya,TH", process.env.OPENWEATHER_KEY);
-        if (!embed) return channel.send("❌ ไม่สามารถดึงข้อมูลอากาศได้ตอนนี้");
-
-        channel.send({ content: "☀️ พยากรณ์อากาศวันนี้", embeds: [embed] });
-    });
+    // รายงานสภาพอากาศประจำวัน (ตั้งเวลา/ห้อง/สถานที่/รูปแบบได้จาก Dashboard แท็บ Weather)
+    try {
+        await initWeather(client);
+    } catch (err) {
+        console.error("❌ Error starting weather report:", err);
+    }
 
     // ==========================================
     // 🎙️ VOICE CHANNEL XP SYSTEM

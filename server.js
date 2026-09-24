@@ -10,6 +10,7 @@ const { getAllConfigs, updateConfig, getAllLevels, getConfig, addRoomAccess, rem
 } = require('./db');
 const { registerLogManagerRoutes } = require('./logmanager/routes');
 const { registerWelcomeRoutes } = require('./welcome/routes');
+const { registerWeatherRoutes } = require('./weather/routes');
 const { initAuth, authRouter, adminRouter, authenticate, verifyOrigin, auditApiMutations, requireAuthPage, requireApiAuth, requireAdmin } = require('./auth');
 const schedule = require('node-schedule');
 
@@ -27,7 +28,8 @@ app.use(helmet({
             "script-src-attr": ["'unsafe-inline'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdn.jsdelivr.net"],
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
-            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com"],
+            // openweathermap.org = ไอคอนสภาพอากาศในตัวอย่างรายงานของแท็บ Weather
+            imgSrc: ["'self'", "data:", "https://cdn.discordapp.com", "https://openweathermap.org"],
             connectSrc: ["'self'", "https://notstackutdash.arlifzs.site", "https://cloudflareinsights.com"]
         }
     }
@@ -181,6 +183,9 @@ registerLogManagerRoutes(app, requireAdmin, () => discordClient);
 
 // --- Welcome Announcement API (การ์ดต้อนรับแบบรูปภาพ + คลังรูปพื้นหลัง) ---
 registerWelcomeRoutes(app, requireAdmin, () => discordClient);
+
+// --- Daily Weather Report API (รายงานสภาพอากาศประจำวัน: เวลา / ห้อง / สถานที่ / embed / กราฟ) ---
+registerWeatherRoutes(app, requireAdmin, () => discordClient);
 
 const startServer = (client) => {
     discordClient = client;
