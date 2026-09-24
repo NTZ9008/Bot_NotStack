@@ -3384,3 +3384,310 @@ button.wc-tile-none:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
+
+/* ==========================================
+   🌤️ DAILY WEATHER REPORT — แท็บ Weather
+   ใช้โครงเดียวกับตัวแก้ไขการ์ดต้อนรับ (wc-layout / wc-actions / wc-chips ...) ส่วนนี้เพิ่มเฉพาะที่ต่างออกไป
+   ========================================== */
+.wx-alert {
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: var(--radius);
+    color: #fbbf24;
+    font-size: var(--fs-sm);
+}
+
+.wx-status {
+    display: grid;
+    gap: 0.25rem;
+    font-size: var(--fs-sm);
+    color: var(--text-secondary);
+    min-width: 0;
+}
+
+.wx-status strong {
+    color: var(--text-primary);
+}
+
+.wx-status-last {
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    word-break: break-word;
+}
+
+.wx-pill {
+    display: inline-block;
+    margin-right: 0.35rem;
+    padding: 1px 9px;
+    border-radius: var(--radius-pill);
+    background: var(--surface-hover);
+    color: var(--text-secondary);
+    font-size: var(--fs-xs);
+    font-weight: 600;
+}
+
+.wx-pill.on {
+    background: rgba(16, 185, 129, 0.16);
+    color: #34d399;
+}
+
+.wx-good { color: #34d399; font-weight: 600; }
+.wx-bad { color: #f87171; font-weight: 600; }
+
+.wx-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.wx-inline-row {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.wx-inline-row .input {
+    flex: 1;
+    min-width: 0;
+}
+
+.wx-inline-row .btn {
+    flex-shrink: 0;
+}
+
+.wx-toggle-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.toggle-row + .toggle-row {
+    margin-top: var(--space-2);
+}
+
+/* --- เวลา / วันที่ส่ง --- */
+.wx-time {
+    max-width: 180px;
+}
+
+/* 7 วันอยู่แถวเดียวเสมอ ทั้งจอกว้างและจอมือถือ */
+.wx-days {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 0.3rem;
+    max-width: 420px;
+}
+
+.wx-day {
+    padding: 0.5rem 0;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+}
+
+.wx-day:hover {
+    color: var(--text-primary);
+}
+
+.wx-day.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* --- สถานที่ --- */
+.wx-current-place {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    margin-bottom: var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+}
+
+.wx-current-place strong,
+.wx-place-main strong {
+    display: block;
+    color: var(--text-primary);
+}
+
+.wx-current-place small,
+.wx-place-main small {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.wx-place-icon {
+    font-size: 1.5rem;
+}
+
+.wx-places {
+    display: grid;
+    gap: var(--space-2);
+}
+
+.wx-place {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 0.6rem 0.9rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius);
+}
+
+.wx-place-main {
+    min-width: 0;
+}
+
+/* --- ช่องข้อมูล --- */
+.wx-field-list {
+    display: grid;
+    gap: 0.35rem;
+}
+
+.wx-field-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    padding: 0.5rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-sm);
+    opacity: 0.7;
+}
+
+.wx-field-row.on {
+    opacity: 1;
+    border-color: rgba(99, 102, 241, 0.45);
+}
+
+.wx-field-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.wx-field-check input {
+    margin-top: 0.2rem;
+    accent-color: var(--primary);
+}
+
+.wx-field-check strong {
+    display: block;
+    font-size: var(--fs-sm);
+    color: var(--text-primary);
+}
+
+.wx-field-check small {
+    display: block;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+}
+
+.wx-field-move {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+}
+
+.wx-field-move .wc-icon-btn {
+    font-size: 0.7rem;
+}
+
+.wx-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* --- ตัวอย่าง embed --- */
+.discord-preview.wx-rendering .wx-embed {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.wx-embed:empty {
+    display: none;
+}
+
+.wx-embed-link {
+    display: block;
+    color: #00a8fc;
+    text-decoration: none;
+}
+
+.wx-embed-link:hover {
+    text-decoration: underline;
+}
+
+.wx-embed-thumb {
+    float: right;
+    width: 80px;
+    height: 80px;
+    margin: 0.35rem 0 0.5rem 1rem;
+    border-radius: 4px;
+    object-fit: contain;
+}
+
+/* Discord เรียงช่อง inline แถวละ 3 (หรือ 2 เมื่อมีรูปมุมขวาบน) */
+.wx-embed-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
+    margin-top: 0.5rem;
+    clear: none;
+}
+
+.wx-has-thumb .wx-embed-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wx-embed-field {
+    min-width: 0;
+    font-size: 0.875rem;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+.wx-embed-field-name {
+    font-weight: 600;
+    color: #f2f3f5;
+    margin-bottom: 2px;
+}
+
+.wx-embed-field-value {
+    color: #dbdee1;
+}
+
+.wx-embed .discord-embed-image {
+    clear: both;
+}
+
+.wx-preview-status {
+    margin-top: 0.5rem;
+    color: #949ba4;
+    font-size: var(--fs-sm);
+}
+
+@media (max-width: 640px) {
+    .wx-embed-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* กฎรวม button { width: 100% } บนจอเล็ก ไม่ควรมีผลกับปุ่มเล็กของแท็บนี้ */
+    .wx-inline-row .btn,
+    .wx-place .btn {
+        width: auto;
+    }
+}
