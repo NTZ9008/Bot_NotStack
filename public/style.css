@@ -3479,7 +3479,9 @@ button.wc-tile-none:hover {
     max-width: 420px;
 }
 
+/* กฎรวม button เป็น flex ชิดซ้าย + hover เป็นสีม่วง — ต้องจัดกึ่งกลางเอง และไม่ให้วันที่ไม่ได้เลือกดูเหมือนถูกเลือกตอนชี้ */
 .wx-day {
+    justify-content: center;
     padding: 0.5rem 0;
     background: var(--surface);
     border: 1px solid var(--card-border);
@@ -3487,13 +3489,16 @@ button.wc-tile-none:hover {
     color: var(--text-secondary);
     font-size: var(--fs-sm);
     font-weight: 600;
+    line-height: 1.2;
 }
 
 .wx-day:hover {
+    background: var(--surface-hover);
     color: var(--text-primary);
 }
 
-.wx-day.active {
+.wx-day.active,
+.wx-day.active:hover {
     background: var(--primary);
     border-color: var(--primary);
     color: #fff;
