@@ -1,11 +1,12 @@
 // ==========================================
-// 📰 REPORT — ประกอบข้อความรายงานสภาพอากาศ: ข้อความธรรมดา + embed (ช่องข้อมูลแถวละ 3) + รูปกราฟ
+// 📰 REPORT — ประกอบข้อความรายงานสภาพอากาศ: ข้อความธรรมดา + embed (ช่องข้อมูลแถวละ 3) + รูปกราฟ / แผนที่เรดาร์
 // ใช้ทั้งตอนส่งจริง ส่งทดสอบ และตัวอย่างใน Dashboard
 // ==========================================
 const { EmbedBuilder, AttachmentBuilder } = require('discord.js');
 const { FIELDS, fillPlaceholders } = require('./options');
 const fmt = require('./format');
 const { renderForecastChart } = require('./chart');
+const { renderRadarMap } = require('./radar');
 
 const CHART_FILE = 'weather-chart.png';
 const FIELD_LABELS = new Map(FIELDS.map((field) => [field.key, field.label]));
@@ -73,18 +74,23 @@ function buildVars(options, weather, summary) {
 }
 
 // embed ที่ไม่มีอะไรเลย Discord ไม่ยอมส่ง — ใช้เช็คก่อนบันทึก/ส่งทดสอบ
-const hasEmbedBody = ({ embed, chart }) =>
-    Boolean(embed.title.trim() || embed.description.trim() || embed.fields.length || chart.enabled);
+const hasEmbedBody = ({ embed, chart, radar }) =>
+    Boolean(embed.title.trim() || embed.description.trim() || embed.fields.length || chart.enabled || radar.enabled);
+
+// มีรูปแนบ = บอทต้องมีสิทธิ์แนบไฟล์ในห้องนั้นด้วย
+const attachesFiles = ({ chart, radar }) => chart.enabled || radar.enabled;
 
 /**
  * @param {{content: string, options: object}} settings options ต้องผ่าน normalizeOptions มาแล้ว
  * @param {object} weather ผลจาก fetchWeather
- * @returns {Promise<{content: string, embed: EmbedBuilder, image: Buffer|null}>}
+ * @returns {Promise<{content: string, embeds: EmbedBuilder[], files: {name: string, contentType: string, buffer: Buffer, key?: string}[], warnings: string[]}>}
+ *   warnings = ส่วนเสริมที่สร้างไม่สำเร็จ (เช่นเรดาร์) แต่ยังส่งรายงานส่วนที่เหลือได้
  */
 async function buildWeatherReport({ content, options }, weather) {
     const summary = summarize(weather);
     const vars = buildVars(options, weather, summary);
-    const { embed: style, chart } = options;
+    const { embed: style, chart, radar } = options;
+    const warnings = [];
 
     const embed = new EmbedBuilder().setColor(style.color);
     const title = fillPlaceholders(style.title, vars).trim().slice(0, 256);
@@ -104,24 +110,50 @@ async function buildWeatherReport({ content, options }, weather) {
     if (style.thumbnail && weather.current.icon) {
         embed.setThumbnail(`https://openweathermap.org/img/wn/${weather.current.icon}@2x.png`);
     }
+
+    const [chartImage, radarMap] = await Promise.all([
+        chart.enabled ? renderForecastChart(weather, chart) : null,
+        // เรดาร์เป็นส่วนเสริม — RainViewer / แผนที่ล่ม ก็ยังส่งรายงานส่วนที่เหลือได้
+        radar.enabled
+            ? renderRadarMap(options.location, radar, weather.timezone).catch((err) => {
+                console.warn('[Weather] สร้างแผนที่เรดาร์ไม่สำเร็จ:', err.message);
+                warnings.push(`แผนที่เรดาร์: ${err.message}`);
+                return null;
+            })
+            : null,
+    ]);
+
+    const embeds = [embed];
+    const files = [];
+    if (chartImage) {
+        embed.setImage(`attachment://${CHART_FILE}`);
+        files.push({ name: CHART_FILE, contentType: 'image/png', buffer: chartImage });
+    }
+    if (radarMap) {
+        // embed หนึ่งมีรูปใหญ่ได้รูปเดียว — มีกราฟอยู่แล้วให้เรดาร์ไปอยู่ embed ที่ 2 (สีแถบเดียวกัน)
+        const target = chartImage ? new EmbedBuilder().setColor(style.color) : embed;
+        target.setImage(`attachment://${radarMap.name}`);
+        if (target !== embed) embeds.push(target);
+        files.push(radarMap);
+    }
+
+    // ข้อความท้าย + เวลา อยู่ท้ายสุดของรายงาน (embed สุดท้าย)
+    const last = embeds[embeds.length - 1];
     const footer = fillPlaceholders(style.footer, vars).trim().slice(0, 2048);
-    if (footer) embed.setFooter({ text: footer });
-    if (style.timestamp) embed.setTimestamp(weather.fetchedAt);
+    if (footer) last.setFooter({ text: footer });
+    if (style.timestamp) last.setTimestamp(weather.fetchedAt);
 
-    const image = chart.enabled ? await renderForecastChart(weather, chart) : null;
-    if (image) embed.setImage(`attachment://${CHART_FILE}`);
-
-    return { content: fillPlaceholders(content, vars).trim().slice(0, 2000), embed, image };
+    return { content: fillPlaceholders(content, vars).trim().slice(0, 2000), embeds, files, warnings };
 }
 
 // แท็กได้เฉพาะยศที่พิมพ์ไว้ในข้อความเอง (<@&id>) — ไม่ให้ @everyone / @here ทำงาน
-function toMessagePayload({ content, embed, image }) {
+function toMessagePayload({ content, embeds, files }) {
     return {
         content: content || undefined,
-        embeds: [embed],
-        files: image ? [new AttachmentBuilder(image, { name: CHART_FILE })] : [],
+        embeds,
+        files: files.map((file) => new AttachmentBuilder(file.buffer, { name: file.name })),
         allowedMentions: { parse: [], roles: [...content.matchAll(/<@&(\d+)>/g)].map((m) => m[1]) },
     };
 }
 
-module.exports = { buildWeatherReport, toMessagePayload, hasEmbedBody };
+module.exports = { buildWeatherReport, toMessagePayload, hasEmbedBody, attachesFiles };

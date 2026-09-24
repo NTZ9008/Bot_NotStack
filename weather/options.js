@@ -2,6 +2,7 @@
 // ⚙️ OPTIONS — การตั้งค่ารายงานสภาพอากาศ (เก็บเป็น JSON ในคอลัมน์ weather_settings.options)
 // ทุกค่าที่มาจากหน้าเว็บผ่าน normalizeOptions ก่อนเสมอ: ตัดฟิลด์แปลกปลอม, บีบค่าให้อยู่ในช่วง, สีต้องเป็น #RRGGBB
 // ข้อความ (หัวข้อ / รายละเอียด / ท้าย embed / ข้อความคู่ embed) ใช้ตัวแปร {location} {date} ... แทนค่าตอนส่ง
+// รูปที่แนบมี 2 แบบ เปิด/ปิดแยกกัน: กราฟพยากรณ์ (chart) และแผนที่เรดาร์ฝน (radar) — เปิดทั้งคู่ = ส่ง 2 embed
 // ==========================================
 
 // รายงานส่งตามเวลาไทยเสมอ ไม่ว่าเซิร์ฟเวอร์จะตั้ง timezone ไว้เป็นอะไร
@@ -17,6 +18,8 @@ const LIMITS = {
 
 const CHART_HOURS = [12, 24, 36, 48];
 const CHART_THEMES = ['light', 'dark'];
+// ระดับซูมของแผนที่เรดาร์ (ภาพกว้าง 1200px): 8 ≈ 700 กม. / 9 ≈ 350 กม. / 10 ≈ 180 กม. — ยิ่งใกล้ ฝนยิ่งเบลอ
+const RADAR_ZOOMS = [8, 9, 10];
 
 // ช่องข้อมูลใน embed — เลือกได้ว่าจะแสดงช่องไหน และเรียงลำดับเองได้ (วิธีคำนวณค่าอยู่ใน weather/report.js)
 const FIELDS = [
@@ -85,6 +88,13 @@ function defaultOptions() {
             theme: 'light',
             color: '#F97316',
         },
+        radar: {
+            enabled: true,
+            // GIF ย้อนหลัง 1 ชม. — ปิด = ภาพนิ่ง (PNG) ของภาพล่าสุด
+            animated: true,
+            zoom: 9,
+            theme: 'light',
+        },
     };
 }
 
@@ -149,6 +159,16 @@ function normalizeChart(src, base) {
     };
 }
 
+function normalizeRadar(src, base) {
+    const r = isObject(src) ? src : {};
+    return {
+        enabled: bool(r.enabled, base.enabled),
+        animated: bool(r.animated, base.animated),
+        zoom: oneOf(RADAR_ZOOMS, Number(r.zoom), base.zoom),
+        theme: oneOf(CHART_THEMES, r.theme, base.theme),
+    };
+}
+
 // options ในฐานข้อมูลอาจมาจากโค้ดเวอร์ชันเก่า — ผ่านตัวนี้ทุกครั้งที่อ่าน จะได้มีฟิลด์ครบเสมอ
 function normalizeOptions(input) {
     const src = isObject(input) ? input : {};
@@ -158,6 +178,7 @@ function normalizeOptions(input) {
         location: normalizeLocation(src.location, base.location),
         embed: normalizeEmbed(src.embed, base.embed),
         chart: normalizeChart(src.chart, base.chart),
+        radar: normalizeRadar(src.radar, base.radar),
     };
 }
 
@@ -172,6 +193,7 @@ module.exports = {
     LIMITS,
     CHART_HOURS,
     CHART_THEMES,
+    RADAR_ZOOMS,
     FIELDS,
     PLACEHOLDERS,
     defaultOptions,

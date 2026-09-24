@@ -499,7 +499,7 @@
             <section id="weather-tab" class="card tab-content hidden" data-admin-only>
                 <div class="card-header">
                     <h2>Daily Weather Report</h2>
-                    <p>รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์ — ตั้งเวลา ห้อง สถานที่ และข้อมูลที่จะแสดงได้ที่นี่</p>
+                    <p>รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝน — ตั้งเวลา ห้อง สถานที่ และข้อมูลที่จะแสดงได้ที่นี่</p>
                 </div>
 
                 <div id="wx-loading" class="loading-state">
@@ -531,11 +531,12 @@
                                 <button type="button" data-section="location">สถานที่</button>
                                 <button type="button" data-section="embed">ข้อความ &amp; ข้อมูล</button>
                                 <button type="button" data-section="chart">กราฟ</button>
+                                <button type="button" data-section="radar">เรดาร์</button>
                             </div>
                             <div id="wx-form"></div>
                         </div>
 
-                        <!-- ตัวอย่างที่จะไปโผล่ใน Discord — embed และรูปกราฟสร้างที่ server ด้วยโค้ดเดียวกับตอนส่งจริง -->
+                        <!-- ตัวอย่างที่จะไปโผล่ใน Discord — embed รูปกราฟ และแผนที่เรดาร์สร้างที่ server ด้วยโค้ดเดียวกับตอนส่งจริง -->
                         <div class="wc-preview-col">
                             <p class="section-hint">ตัวอย่างใน Discord — ใช้ข้อมูลอากาศจริงของสถานที่ที่เลือก <span id="wx-fetched"></span></p>
                             <div class="discord-preview">
@@ -548,7 +549,7 @@
                                             <span class="discord-time" id="wx-preview-time"></span>
                                         </div>
                                         <div class="wc-msg-content discord-embed-desc hidden" id="wx-msg-content"></div>
-                                        <div class="discord-embed wx-embed" id="wx-embed"></div>
+                                        <div class="wx-embeds" id="wx-embeds"></div>
                                         <p class="wx-preview-status" id="wx-preview-status">กำลังโหลดข้อมูลอากาศ...</p>
                                     </div>
                                 </div>

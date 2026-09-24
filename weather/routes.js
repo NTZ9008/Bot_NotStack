@@ -6,12 +6,14 @@
 // POST /api/weather/settings    บันทึก (ส่งมาเฉพาะฟิลด์ที่แก้ก็ได้ เช่นสวิตช์เปิด/ปิดส่งมาแค่ enabled)
 // GET  /api/weather/locations   ค้นหาสถานที่ (?q=ชื่อ หรือพิกัด)
 // POST /api/weather/preview     สร้างตัวอย่างจากค่าที่กำลังแก้ (ยังไม่บันทึก)
+// GET  /api/weather/radar/:key  รูปแผนที่เรดาร์ของตัวอย่างล่าสุด (GIF ใหญ่เกินจะยัดลง JSON)
 // POST /api/weather/test        ส่งรายงานจากค่าที่กำลังแก้เข้าห้องจริงทันที
 // ==========================================
 const store = require('./store');
-const { LIMITS, FIELDS, PLACEHOLDERS, CHART_HOURS, SCHEDULE_TIMEZONE, defaultOptions, normalizeOptions } = require('./options');
+const { LIMITS, FIELDS, PLACEHOLDERS, CHART_HOURS, RADAR_ZOOMS, SCHEDULE_TIMEZONE, defaultOptions, normalizeOptions } = require('./options');
 const { searchLocations, fetchWeather } = require('./api');
-const { buildWeatherReport, hasEmbedBody } = require('./report');
+const { buildWeatherReport, hasEmbedBody, attachesFiles } = require('./report');
+const { getRenderedRadar } = require('./radar');
 const { scheduleReport, sendWeatherReport, resolveReportChannel, nextRunAt } = require('./index');
 
 const SNOWFLAKE = /^\d{5,25}$/;
@@ -67,7 +69,7 @@ function parseSettingsInput(body) {
 
 function assertValid(settings) {
     if (!hasEmbedBody(settings.options)) {
-        throw new HttpError(400, 'รายงานว่างเปล่า — ต้องมีหัวข้อ รายละเอียด ช่องข้อมูล หรือกราฟ อย่างน้อย 1 อย่าง');
+        throw new HttpError(400, 'รายงานว่างเปล่า — ต้องมีหัวข้อ รายละเอียด ช่องข้อมูล กราฟ หรือเรดาร์ อย่างน้อย 1 อย่าง');
     }
     if (!settings.enabled) return;
     if (!settings.channelId) throw new HttpError(400, 'ต้องเลือกห้องที่จะส่งก่อนเปิดใช้งาน');
@@ -92,6 +94,7 @@ function registerWeatherRoutes(app, requireAdmin, getClient) {
             fields: FIELDS,
             placeholders: PLACEHOLDERS,
             chartHours: CHART_HOURS,
+            radarZooms: RADAR_ZOOMS,
             limits: LIMITS,
             defaultOptions: defaultOptions(),
         });
@@ -118,7 +121,7 @@ function registerWeatherRoutes(app, requireAdmin, getClient) {
             let warning = null;
             const client = getClient();
             if (settings.enabled && client?.isReady()) {
-                warning = await resolveReportChannel(client, settings.channelId, settings.options.chart.enabled)
+                warning = await resolveReportChannel(client, settings.channelId, attachesFiles(settings.options))
                     .then(() => null, (err) => err.message);
             }
             res.json({ success: true, settings: view(settings), warning });
@@ -140,15 +143,27 @@ function registerWeatherRoutes(app, requireAdmin, getClient) {
             const { content = '', options } = parseSettingsInput({ content: req.body?.content ?? '', options: req.body?.options });
             const weather = await fetchWeather(options.location);
             const report = await buildWeatherReport({ content, options }, weather);
+            // รูปกราฟเล็กพอส่งเป็น data URL ได้ แต่ภาพเรดาร์ (GIF หลาย MB) ให้หน้าเว็บโหลดผ่าน URL แยก เบราว์เซอร์จะได้ cache ไว้
+            const files = Object.fromEntries(report.files.map((file) => [
+                file.name,
+                file.key ? `/api/weather/radar/${file.key}` : `data:${file.contentType};base64,${file.buffer.toString('base64')}`,
+            ]));
             res.set('Cache-Control', 'no-store').json({
                 content: report.content,
-                embed: report.embed.toJSON(),
-                image: report.image ? `data:image/png;base64,${report.image.toString('base64')}` : null,
+                embeds: report.embeds.map((embed) => embed.toJSON()),
+                files,
+                warnings: report.warnings,
                 fetchedAt: weather.fetchedAt,
             });
         } catch (err) {
             sendError(res, err, 'สร้างตัวอย่างรายงานไม่สำเร็จ');
         }
+    });
+
+    app.get('/api/weather/radar/:key', requireAdmin, async (req, res) => {
+        const map = /^[0-9a-f]{16}$/.test(req.params.key) ? await getRenderedRadar(req.params.key) : null;
+        if (!map) return res.status(404).json({ error: 'ไม่พบภาพเรดาร์นี้ (หมดอายุแล้ว) — แก้ค่าใดๆ เพื่อสร้างตัวอย่างใหม่' });
+        res.set('Cache-Control', 'private, max-age=600').type(map.contentType).send(map.buffer);
     });
 
     app.post('/api/weather/test', requireAdmin, auditAs('weather.test_send'), async (req, res) => {

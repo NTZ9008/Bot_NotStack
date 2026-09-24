@@ -3616,14 +3616,19 @@ button.wc-tile-none:hover {
     pointer-events: none;
 }
 
-/* --- ตัวอย่าง embed --- */
-.discord-preview.wx-rendering .wx-embed {
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
+/* --- ตัวอย่าง embed (กราฟ + เรดาร์ = 2 embed ต่อกันแบบใน Discord) --- */
+.wx-embeds {
+    display: grid;
+    gap: 0.25rem;
 }
 
-.wx-embed:empty {
+.wx-embeds:empty {
     display: none;
+}
+
+.discord-preview.wx-rendering .wx-embeds {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
 }
 
 .wx-embed-link {

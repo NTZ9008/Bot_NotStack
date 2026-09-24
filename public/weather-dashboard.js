@@ -1,6 +1,6 @@
 // ==========================================
 // 🌤️ DAILY WEATHER REPORT — หน้าตั้งค่ารายงานสภาพอากาศประจำวัน (ADMIN)
-// - 4 หมวด: เวลา & ห้อง / สถานที่ / ข้อความ & ข้อมูล / กราฟ — แก้แล้วกด "บันทึก" (Ctrl/⌘ + S)
+// - 5 หมวด: เวลา & ห้อง / สถานที่ / ข้อความ & ข้อมูล / กราฟ / เรดาร์ — แก้แล้วกด "บันทึก" (Ctrl/⌘ + S)
 // - สวิตช์เปิด/ปิดบันทึกทันที
 // - ตัวอย่างสร้างที่ server ด้วยโค้ดเดียวกับตอนส่งจริง (ใช้ข้อมูลอากาศจริง cache 10 นาที)
 // ==========================================
@@ -19,6 +19,7 @@ const WX_DAYS = [
     { value: 0, label: 'อา' },
 ];
 const WX_THEME_LABELS = { light: 'สว่าง', dark: 'มืด' };
+const WX_RADAR_ZOOM_LABELS = { 8: 'ภูมิภาค', 9: 'กลาง', 10: 'ใกล้' };
 
 const wx = {
     loaded: false,
@@ -223,7 +224,7 @@ function wxChannelOptions(selectedId) {
 // ฟอร์มแต่ละหมวด
 // ==========================================
 function wxRenderForm() {
-    const builders = { schedule: wxFormSchedule, location: wxFormLocation, embed: wxFormEmbed, chart: wxFormChart };
+    const builders = { schedule: wxFormSchedule, location: wxFormLocation, embed: wxFormEmbed, chart: wxFormChart, radar: wxFormRadar };
     document.getElementById('wx-form').innerHTML = (builders[wx.section] || wxFormSchedule)();
 }
 
@@ -393,6 +394,33 @@ function wxFormChart() {
         </div>`;
 }
 
+function wxFormRadar() {
+    const { radar } = wx.draft.options;
+    const zooms = Object.fromEntries(wx.meta.radarZooms.map((z) => [z, WX_RADAR_ZOOM_LABELS[z] || `ซูม ${z}`]));
+    return `
+        ${wxSwitch('แนบแผนที่เรดาร์ฝน', 'options.radar.enabled', 'ฝนที่กำลังตกรอบสถานที่ — ถ้าเปิดกราฟด้วย เรดาร์จะอยู่ embed ที่ 2 ต่อจากกราฟ')}
+        <div class="wx-radar-options ${radar.enabled ? '' : 'wx-disabled'}">
+            ${wxSwitch('ภาพเคลื่อนไหวย้อนหลัง 1 ชั่วโมง (GIF)', 'options.radar.animated', 'เห็นทิศทางที่ฝนเคลื่อน · ปิด = ภาพนิ่งของภาพล่าสุด (PNG)')}
+            <div class="field stack-top">
+                <label>ระยะที่แสดง</label>
+                ${wxSegmented('options.radar.zoom', zooms, 'int')}
+                <span class="field-hint">ความกว้างของภาพ: ภูมิภาค ~700 กม. · กลาง ~350 กม. · ใกล้ ~180 กม. — ยิ่งใกล้ขอบฝนยิ่งเบลอ (ข้อมูลเรดาร์ละเอียดราว 600 ม. ต่อจุด)</span>
+            </div>
+            <div class="field">
+                <label>ธีมของแผนที่</label>
+                ${wxSegmented('options.radar.theme', WX_THEME_LABELS)}
+            </div>
+        </div>
+        <div class="wc-help stack-top">
+            <strong>เกี่ยวกับเรดาร์</strong>
+            <ul>
+                <li>แสดงฝนที่ตก ณ ตอนส่งและย้อนหลัง ไม่ใช่พยากรณ์ — วันที่ฟ้าโปร่งภาพจะเป็นแผนที่เปล่า</li>
+                <li>ภาพเรดาร์อัปเดตทุก 10 นาที จาก RainViewer · แผนที่ © OpenStreetMap contributors</li>
+                <li>ถ้าดึงเรดาร์ไม่ได้ รายงานยังส่งได้ตามปกติ แค่ไม่มีภาพเรดาร์</li>
+            </ul>
+        </div>`;
+}
+
 // ==========================================
 // รับค่าจากฟอร์ม
 // ==========================================
@@ -430,6 +458,8 @@ function wxAfterChange(path) {
         if (counter) counter.textContent = wx.draft.content.length;
     } else if (path === 'options.chart.enabled') {
         document.querySelector('.wx-chart-options')?.classList.toggle('wx-disabled', !wx.draft.options.chart.enabled);
+    } else if (path === 'options.radar.enabled') {
+        document.querySelector('.wx-radar-options')?.classList.toggle('wx-disabled', !wx.draft.options.radar.enabled);
     }
     // ห้อง / เวลา / วัน ไม่มีผลกับหน้าตารายงาน — ไม่ต้องขอตัวอย่างใหม่
     if (path !== 'channelId' && !path.startsWith('options.schedule')) wxSchedulePreview();
@@ -525,7 +555,9 @@ async function wxRequestPreview() {
         // ผู้ใช้แก้ค่าต่อระหว่างรอ → ทิ้งผลลัพธ์เก่า
         if (seq !== wx.previewSeq) return;
         wxRenderPreview(data);
-        status.classList.add('hidden');
+        // ส่วนเสริมที่สร้างไม่สำเร็จ (เช่นเรดาร์) — รายงานยังส่งได้ แค่บอกให้รู้
+        status.textContent = data.warnings.length ? `⚠️ ${data.warnings.join(' · ')}` : '';
+        status.classList.toggle('hidden', !data.warnings.length);
         document.getElementById('wx-fetched').textContent = `(ข้อมูล ณ ${new Date(data.fetchedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.)`;
     } catch (err) {
         if (seq !== wx.previewSeq) return;
@@ -546,16 +578,9 @@ function wxMarkdown(text) {
         .replace(/&lt;@!?(\d+)&gt;/g, () => mention('@ผู้ใช้'));
 }
 
-function wxRenderPreview({ content, embed, image }) {
-    document.getElementById('wx-preview-time').textContent =
-        `วันนี้ ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
-
-    const msg = document.getElementById('wx-msg-content');
-    msg.classList.toggle('hidden', !content);
-    msg.innerHTML = content ? wxMarkdown(content) : '';
-
-    const el = document.getElementById('wx-embed');
-    el.style.borderLeftColor = `#${(embed.color ?? 0).toString(16).padStart(6, '0')}`;
+// embed 1 อัน แบบที่ Discord แสดง — รูปที่อ้างเป็น attachment://ชื่อไฟล์ แทนด้วย URL/data URL จาก server
+function wxEmbedHtml(embed, files) {
+    const color = `#${(embed.color ?? 0).toString(16).padStart(6, '0')}`;
     const title = embed.title
         ? (embed.url
             ? `<a class="discord-embed-title wx-embed-link" href="${escapeHtml(embed.url)}" target="_blank" rel="noopener">${escapeHtml(embed.title)}</a>`
@@ -566,19 +591,32 @@ function wxRenderPreview({ content, embed, image }) {
             <div class="wx-embed-field-name">${wxMarkdown(f.name)}</div>
             <div class="wx-embed-field-value">${wxMarkdown(f.value)}</div>
         </div>`).join('');
+    const image = embed.image?.url ? files[embed.image.url.replace('attachment://', '')] : null;
     const footerParts = [
         embed.footer?.text ? escapeHtml(embed.footer.text) : '',
         embed.timestamp ? `วันนี้ เวลา ${new Date(embed.timestamp).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}` : '',
     ].filter(Boolean);
 
-    el.classList.toggle('wx-has-thumb', Boolean(embed.thumbnail));
-    el.innerHTML = `
-        ${embed.thumbnail ? `<img class="wx-embed-thumb" src="${escapeHtml(embed.thumbnail.url)}" alt="">` : ''}
-        ${title}
-        ${embed.description ? `<div class="discord-embed-desc">${wxMarkdown(embed.description)}</div>` : ''}
-        ${fields ? `<div class="wx-embed-fields">${fields}</div>` : ''}
-        ${image ? `<img class="discord-embed-image" src="${image}" alt="กราฟพยากรณ์อากาศ">` : ''}
-        ${footerParts.length ? `<div class="discord-embed-footer"><span>${footerParts.join(' • ')}</span></div>` : ''}`;
+    return `
+        <div class="discord-embed wx-embed ${embed.thumbnail ? 'wx-has-thumb' : ''}" style="border-left-color: ${color}">
+            ${embed.thumbnail ? `<img class="wx-embed-thumb" src="${escapeHtml(embed.thumbnail.url)}" alt="">` : ''}
+            ${title}
+            ${embed.description ? `<div class="discord-embed-desc">${wxMarkdown(embed.description)}</div>` : ''}
+            ${fields ? `<div class="wx-embed-fields">${fields}</div>` : ''}
+            ${image ? `<img class="discord-embed-image" src="${escapeHtml(image)}" alt="">` : ''}
+            ${footerParts.length ? `<div class="discord-embed-footer"><span>${footerParts.join(' • ')}</span></div>` : ''}
+        </div>`;
+}
+
+function wxRenderPreview({ content, embeds, files }) {
+    document.getElementById('wx-preview-time').textContent =
+        `วันนี้ ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+
+    const msg = document.getElementById('wx-msg-content');
+    msg.classList.toggle('hidden', !content);
+    msg.innerHTML = content ? wxMarkdown(content) : '';
+
+    document.getElementById('wx-embeds').innerHTML = embeds.map((embed) => wxEmbedHtml(embed, files)).join('');
 }
 
 // ==========================================

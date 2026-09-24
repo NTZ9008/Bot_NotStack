@@ -7,7 +7,7 @@ const schedule = require('node-schedule');
 const { PermissionFlagsBits } = require('discord.js');
 const store = require('./store');
 const { fetchWeather } = require('./api');
-const { buildWeatherReport, toMessagePayload } = require('./report');
+const { buildWeatherReport, toMessagePayload, attachesFiles } = require('./report');
 const { SCHEDULE_TIMEZONE } = require('./options');
 
 // ส่งไม่สำเร็จ (API ล่ม / เน็ตหลุด) → ลองใหม่อีก 2 ครั้ง หลัง 1 และ 5 นาที
@@ -33,7 +33,7 @@ class ReportError extends Error {
     }
 }
 
-async function resolveReportChannel(client, channelId, withChart) {
+async function resolveReportChannel(client, channelId, withFiles) {
     if (!client?.isReady()) {
         const err = new ReportError('บอทยังไม่ออนไลน์');
         err.status = 503;
@@ -49,7 +49,7 @@ async function resolveReportChannel(client, channelId, withChart) {
     }
 
     const me = channel.guild.members.me || await channel.guild.members.fetchMe().catch(() => null);
-    const required = ['ViewChannel', 'SendMessages', 'EmbedLinks', ...(withChart ? ['AttachFiles'] : [])];
+    const required = ['ViewChannel', 'SendMessages', 'EmbedLinks', ...(withFiles ? ['AttachFiles'] : [])];
     const permissions = me ? channel.permissionsFor(me) : null;
     const missing = permissions ? required.filter((name) => !permissions.has(PermissionFlagsBits[name])) : required;
     if (missing.length) {
@@ -65,7 +65,7 @@ async function resolveReportChannel(client, channelId, withChart) {
  * @param {{fresh?: boolean}} [opts] fresh = ดึงข้อมูลอากาศใหม่ ไม่ใช้ cache
  */
 async function sendWeatherReport(client, settings, { fresh = true } = {}) {
-    const channel = await resolveReportChannel(client, settings.channelId, settings.options.chart.enabled);
+    const channel = await resolveReportChannel(client, settings.channelId, attachesFiles(settings.options));
     const weather = await fetchWeather(settings.options.location, { fresh });
     const report = await buildWeatherReport(settings, weather);
     await channel.send(toMessagePayload(report));
