@@ -30,7 +30,9 @@ app.use(helmet({
             fontSrc: ["'self'", "https://fonts.gstatic.com"],
             // openweathermap.org = ไอคอนสภาพอากาศในตัวอย่างรายงานของแท็บ Weather
             imgSrc: ["'self'", "data:", "https://cdn.discordapp.com", "https://openweathermap.org"],
-            connectSrc: ["'self'", "https://notstackutdash.arlifzs.site", "https://cloudflareinsights.com"]
+            // cdn.jsdelivr.net — อนุญาตให้ browser DevTools โหลด source map ของ Chart.js ได้
+            // (chart.umd.min.js มี sourceMappingURL ฝังอยู่ ทำให้ browser connect ไปหา .map file อัตโนมัติ)
+            connectSrc: ["'self'", "https://notstackutdash.arlifzs.site", "https://cloudflareinsights.com", "https://cdn.jsdelivr.net"]
         }
     }
 }));

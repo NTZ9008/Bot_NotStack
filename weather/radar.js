@@ -15,7 +15,12 @@ const { version } = require('../package.json');
 
 const MAPS_URL = 'https://api.rainviewer.com/public/weather-maps.json';
 const USER_AGENT = `Bot_NotStack/${version} (Discord weather report; +https://github.com/NTZ9008/Bot_NotStack)`;
-const TIMEOUT_MS = 8000;
+// RainViewer เป็น free API ไม่มี SLA — ช่วง peak อาจช้ากว่า 8 วินาที จึงเพิ่ม timeout ให้กว้างขึ้น
+const TIMEOUT_MS = 12000;
+// จำนวนครั้งที่ retry สูงสุด (เฉพาะ network/timeout error — HTTP 4xx/5xx ไม่ retry)
+const MAX_RETRIES = 2;
+// delay เริ่มต้น (ms) ก่อน retry ครั้งแรก, ครั้งถัดไปคูณ 2 (exponential backoff)
+const RETRY_BASE_MS = 1000;
 
 const TILE = 256;
 const RADAR_ZOOM = 7;
@@ -83,7 +88,28 @@ async function fetchBuffer(url) {
     return Buffer.from(await res.arrayBuffer());
 }
 
-const loadRemoteImage = async (url) => loadImage(await fetchBuffer(url));
+// retry เฉพาะ network/timeout error — HTTP error ที่ได้ response มาแล้ว (เช่น 404, 500) ไม่ retry
+function isRetryable(err) {
+    return err instanceof TypeError || err.name === 'TimeoutError';
+}
+
+async function fetchWithRetry(url, retries = MAX_RETRIES) {
+    for (let attempt = 0; ; attempt++) {
+        try {
+            return await fetchBuffer(url);
+        } catch (err) {
+            if (attempt >= retries || !isRetryable(err)) throw err;
+            // exponential backoff + jitter เล็กน้อย กันหลาย request ยิงพร้อมกัน
+            const delay = RETRY_BASE_MS * 2 ** attempt + Math.random() * 200;
+            console.warn(`[Weather] fetch "${url}" ล้มเหลว (${err.name}) — retry ${attempt + 1}/${retries} ใน ${Math.round(delay)}ms`);
+            await new Promise((r) => setTimeout(r, delay));
+        }
+    }
+}
+
+
+// loadRemoteImage ใช้ fetchWithRetry — retry อัตโนมัติถ้า network/timeout error
+const loadRemoteImage = async (url) => loadImage(await fetchWithRetry(url));
 
 // ==========================================
 // รายการภาพเรดาร์ (อัปเดตทุก 10 นาที) + ไทล์เรดาร์ (ไฟล์ของแต่ละภาพไม่เปลี่ยนแล้ว เก็บตาม URL ได้เลย)
@@ -95,7 +121,8 @@ function radarFrames() {
     return cached(framesCache, 'frames', FRAMES_CACHE_MS, async () => {
         let data;
         try {
-            data = JSON.parse(await fetchBuffer(MAPS_URL));
+            // ใช้ fetchWithRetry — retry อัตโนมัติถ้า network/timeout error
+            data = JSON.parse(await fetchWithRetry(MAPS_URL));
         } catch (err) {
             throw new Error(`ติดต่อ RainViewer ไม่ได้ (${err.name === 'TimeoutError' ? 'หมดเวลา' : err.message})`);
         }
@@ -106,6 +133,7 @@ function radarFrames() {
 }
 
 const loadRadarTile = (url) => cached(radarTiles, url, Infinity, () => loadRemoteImage(url));
+
 
 // ==========================================
 // ตำแหน่งบนแผนที่ (Web Mercator) — พิกัดเป็นพิกเซลของแผนที่ทั้งโลกที่ซูมนั้น
