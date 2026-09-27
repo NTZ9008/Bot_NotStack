@@ -1,6 +1,6 @@
 // ==========================================
 // 🐘 PRISMA SCHEMA (PostgreSQL)
-// ย้ายมาจาก database.sqlite + prbot/data/messages.sqlite
+// เดิมย้ายมาจาก SQLite ของบอทรุ่นก่อน (database.sqlite + prbot/data/messages.sqlite)
 // ชื่อ field ฝั่ง JS คงเดิม (userId, channelId ...) ส่วนชื่อคอลัมน์ใน Postgres เป็น snake_case ผ่าน @map
 // URL ของฐานข้อมูลตั้งใน apps/backend/prisma.config.ts (อ่านจาก DATABASE_URL ใน .env)
 //
