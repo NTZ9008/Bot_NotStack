@@ -15,20 +15,20 @@
 
 ระบบทั้งหมดทำงานแบบ **Real-time** (โค้ดอยู่ใน `apps/backend/src/chat`) — เปิด/ปิดแยกต่อเซิร์ฟเวอร์ได้ที่หน้า Configuration
 
-#### Bitrate Monitor
+#### Bitrate Monitor1
 
--   แจ้งเตือนเมื่อมีการแอบปรับ Bitrate ห้องเสียง\
-    (ช่วยป้องกันการก่อกวนหรือทำให้เซิร์ฟเวอร์แลค)
+- แจ้งเตือนเมื่อมีการแอบปรับ Bitrate ห้องเสียง\
+  (ช่วยป้องกันการก่อกวนหรือทำให้เซิร์ฟเวอร์แลค)
 
 #### Region Monitor
 
--   แจ้งเตือนเมื่อมีการเปลี่ยน **Server Region**
--   แจ้งเตือนเมื่อมีการเปลี่ยน **Voice Channel Region Override**
+- แจ้งเตือนเมื่อมีการเปลี่ยน **Server Region**
+- แจ้งเตือนเมื่อมีการเปลี่ยน **Voice Channel Region Override**
 
 #### Anti-Spam System
 
--   จำกัดการส่งข้อความ: **6 ข้อความ / 5 วินาที**
--   ลบข้อความสแปมอัตโนมัติ พร้อมแจ้งเตือน
+- จำกัดการส่งข้อความ: **6 ข้อความ / 5 วินาที**
+- ลบข้อความสแปมอัตโนมัติ พร้อมแจ้งเตือน
 
 #### Bad Word Filter
 
@@ -39,16 +39,19 @@
 ### ระบบบันทึกข้อมูล (Logging Systems)
 
 #### วิธีใช้งาน
+
 เพียง **แท็กบอทในข้อความ** เช่น  
 @Bot_NotStack อธิบายเรื่อง Black Hole แบบสั้นๆ
 
 #### ความสามารถ
+
 - ตอบคำถามทั่วไป
 - โทนเป็นกันเอง กวนเล็กน้อย
 - จำกัดเนื้อหาผิดกฎหมายและ 18+ อัตโนมัติ
 - แสดงสถานะ "กำลังพิมพ์..." ก่อนตอบ
 
 #### ระบบจำกัดโควตา
+
 - ใช้ได้ประมาณ **250 ครั้ง / วัน**
 - รีเซ็ตอัตโนมัติทุกวัน
 - หากเกินโควตา บอทจะแจ้งเตือนว่าหมดสิทธิ์ใช้งาน AI ชั่วคราว
@@ -59,13 +62,15 @@
 
 #### หมวด Admin / System
 
-  คำสั่ง          ความสามารถ
-  --------------- ----------------------------------------------------
-  `/botinfo`      แสดงสถานะบอท (Uptime, RAM, CPU, OS)
-  `/serverinfo`   แสดงข้อมูลเซิร์ฟเวอร์
-  `/userinfo`     ข้อมูลผู้ใช้ (วันที่สมัคร, วันที่เข้าเซิร์ฟ, Role)
-  `/ping`         ทดสอบ Latency
-  `/admininfo`    ข้อมูลผู้พัฒนา
+คำสั่ง ความสามารถ
+
+---
+
+`/botinfo` แสดงสถานะบอท (Uptime, RAM, CPU, OS)
+`/serverinfo` แสดงข้อมูลเซิร์ฟเวอร์
+`/userinfo` ข้อมูลผู้ใช้ (วันที่สมัคร, วันที่เข้าเซิร์ฟ, Role)
+`/ping` ทดสอบ Latency
+`/admininfo` ข้อมูลผู้พัฒนา
 
 #### หมวด Utility
 
@@ -84,16 +89,16 @@
 
 ### ระบบอัตโนมัติอื่น ๆ
 
--   **Auto Reply** --- ตอบข้อความอัตโนมัติ เช่น "สวัสดีบอท",
-    "หิวข้าว"
--   **Daily Weather Report** --- รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝน
-    ตั้งเวลา ห้อง สถานที่ และข้อมูลที่แสดงได้จาก Dashboard (ดูหัวข้อ **หน้า Weather** ด้านล่าง)
--   **Welcome / Goodbye System** --- ต้อนรับสมาชิกใหม่
-    และแจ้งเตือนเมื่อมีคนออก
--   **Welcome Announcement (การ์ดรูปภาพ)** --- ส่งรูปต้อนรับที่มีพื้นหลัง รูปโปรไฟล์ และชื่อสมาชิก
-    ตั้งค่าทั้งหมดจาก Dashboard (ดูหัวข้อ **หน้า Welcome** ด้านล่าง)
+- **Auto Reply** --- ตอบข้อความอัตโนมัติ เช่น "สวัสดีบอท",
+  "หิวข้าว"
+- **Daily Weather Report** --- รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝน
+  ตั้งเวลา ห้อง สถานที่ และข้อมูลที่แสดงได้จาก Dashboard (ดูหัวข้อ **หน้า Weather** ด้านล่าง)
+- **Welcome / Goodbye System** --- ต้อนรับสมาชิกใหม่
+  และแจ้งเตือนเมื่อมีคนออก
+- **Welcome Announcement (การ์ดรูปภาพ)** --- ส่งรูปต้อนรับที่มีพื้นหลัง รูปโปรไฟล์ และชื่อสมาชิก
+  ตั้งค่าทั้งหมดจาก Dashboard (ดูหัวข้อ **หน้า Welcome** ด้านล่าง)
 
-------------------------------------------------------------------------
+---
 
 ## 🏗️ สถาปัตยกรรม (Architecture)
 
@@ -162,44 +167,56 @@ BOT_NOTSTACK/
 ต้องใช้ **Node.js 20.19+ / 22.12+** และ **pnpm 10** (`corepack enable pnpm` หรือ `npm i -g pnpm`)
 
 ### 1️⃣ ติดตั้งแพ็กเกจ
+
 ```bash
 pnpm install
 ```
+
 (รัน `prisma generate` ให้อัตโนมัติ — client ถูกสร้างที่ `apps/backend/src/generated`)
 
 ### 2️⃣ ตั้งค่าไฟล์ `.env` ที่ root ของ repo
+
 ดูตัวอย่างทั้งหมดใน `.env.example` — ค่าหลักคือ `TOKEN`, `DATABASE_URL`, `JWT_SECRET`, `DASHBOARD_URL`, `OPENWEATHER_KEY`, `GEMINI_KEY`
 และ `DISCORD_CLIENT_SECRET` / `DISCORD_REDIRECT_URI` (ต้องมีถ้าจะให้คนอื่นเพิ่มเซิร์ฟเวอร์ของตัวเอง)
 
 > ถ้ารหัสผ่านใน `DATABASE_URL` มีอักขระพิเศษ (เช่น `@ # / : ?`) ต้อง URL-encode ก่อน เช่น `#` → `%23`, `@` → `%40`
 
 ### 3️⃣ สร้างตารางใน PostgreSQL
+
 ```bash
 pnpm db:migrate
 ```
 
 ### 4️⃣ (ครั้งเดียว) ย้ายข้อมูลเก่าจาก SQLite
+
 ถ้าเคยรันบอทเวอร์ชัน SQLite มาก่อน ให้ย้ายข้อมูลจาก `database.sqlite` และ `prbot/data/messages.sqlite` **ก่อนเปิดบอทครั้งแรก** (ต้อง `pnpm build` ก่อน)
+
 ```bash
 pnpm db:import-sqlite -- --dry-run
 ```
+
 ดูก่อนว่าจะย้ายอะไรบ้าง (ไม่เขียนลง Postgres) แล้วค่อยรัน `pnpm db:import-sqlite` เพื่อย้ายจริงใน transaction เดียว + ตรวจเทียบข้อมูลทุกแถว
 (ข้อมูลเข้าเป็นของเซิร์ฟเวอร์หลัก — `--force` ลบแล้วแทนที่เฉพาะข้อมูลของเซิร์ฟเวอร์หลัก ไม่แตะเซิร์ฟเวอร์อื่น)
 
 ### 5️⃣ Build และลงทะเบียนคำสั่ง `/`
+
 ```bash
 pnpm build
 ```
+
 ```bash
 pnpm discord:deploy-commands
 ```
+
 คำสั่งทั่วไปลงทะเบียนแบบ global (ขึ้นในทุกเซิร์ฟเวอร์ — Discord อาจใช้เวลาสักพัก) ส่วนคำสั่งเฉพาะ NotStack ลงทะเบียนที่เซิร์ฟเวอร์หลัก
 (guild command เดิมของเซิร์ฟเวอร์หลักถูกแทนที่ คำสั่งจึงไม่ขึ้นซ้ำ 2 อัน)
 
 ### 6️⃣ รันบอท + API (production)
+
 ```bash
 pnpm start
 ```
+
 หรือใช้ PM2: `pm2 start ecosystem.config.cjs` — API อยู่ที่ `http://localhost:3035/api`
 (หน้า Dashboard deploy แยก — หรือตั้ง `FRONTEND_DIST=../frontend/dist` ให้ backend เสิร์ฟหน้าเว็บเองที่พอร์ตเดียวกัน)
 
@@ -208,6 +225,7 @@ pnpm start
 ```bash
 pnpm dev
 ```
+
 รัน 3 อย่างพร้อมกันผ่าน Turborepo: `packages/shared` (tsc --watch), backend (`nest start --watch`, พอร์ต 3035)
 และหน้าเว็บ (Vite, `http://localhost:5173` — แก้แล้วเห็นผลทันที)
 
@@ -225,11 +243,13 @@ pnpm dev
 GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จาก branch `main` / `release/*`) เลือกได้ว่าจะ deploy `all` / `backend` / `frontend`
 
 **backend** → เซิร์ฟเวอร์ของบอท
+
 1. build `@notstack/backend` + `@notstack/shared` ใน CI แล้วรวมเฉพาะไฟล์ที่ต้องใช้ (ไม่มีหน้าเว็บ)
 2. `rsync --delete` ขึ้นเซิร์ฟเวอร์ (ไม่แตะ `.env`, `node_modules`, `logs/`, `database.sqlite`, `prbot/` ฝั่งเซิร์ฟเวอร์)
 3. บนเซิร์ฟเวอร์: `pnpm --filter '@notstack/backend...' install --prod` → `pnpm db:migrate` → PM2 เริ่มใหม่จาก `ecosystem.config.cjs`
 
 **frontend** → Cloudflare Workers (`apps/frontend/wrangler.jsonc`, ไฟล์ static + SPA fallback)
+
 - ต้องตั้ง GitHub secrets `CLOUDFLARE_API_TOKEN` (สิทธิ์ Workers Scripts: Edit) และ `CLOUDFLARE_ACCOUNT_ID`
 - routing ตั้งเองที่ Cloudflare: ให้ `/api/*` และ `/webhook/*` ของโดเมน Dashboard ไปที่ backend
   (หรือวาง API ไว้คนละ subdomain แล้วตั้ง Actions variable `VITE_API_URL` + `CORS_ORIGINS` ใน `.env` ของ backend — ต้องเป็นโดเมนเดียวกัน เพราะ cookie เป็น SameSite)
@@ -259,7 +279,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
 
 ### 📢 หน้า News — เขียน embed พร้อมดูตัวอย่าง
 
-- แถบปุ่มจัดรูปแบบตาม Markdown ของ Discord: **ตัวหนา** / *เอียง* / <u>ขีดเส้นใต้</u> / ~~ขีดฆ่า~~,
+- แถบปุ่มจัดรูปแบบตาม Markdown ของ Discord: **ตัวหนา** / _เอียง_ / <u>ขีดเส้นใต้</u> / ~~ขีดฆ่า~~,
   หัวข้อ `#` `##` `###`, อ้างอิง, รายการ, โค้ด, บล็อกโค้ด, สปอยเลอร์ และลิงก์
   (ลากคลุมข้อความแล้วกดปุ่ม หรือใช้ `Ctrl/⌘ + B / I / U`)
 - **ตัวอย่าง embed แบบสด** ข้างช่องแก้ไข — เห็นหน้าตาจริงก่อนกดส่ง
@@ -316,7 +336,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
 - ใช้ `OPENWEATHER_KEY` แบบฟรีได้ (เรียก `weather`, `forecast`, `air_pollution`, `geo` — ไม่ต้องสมัคร One Call)
 - บอทต้องมีสิทธิ์ **View Channel / Send Messages / Embed Links / Attach Files** ในห้องที่เลือก (หน้าเว็บเตือนถ้าขาด)
 
-------------------------------------------------------------------------
+---
 
 ## 📊 Dashboard — Overview & Activity Log
 
@@ -325,6 +345,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
 พร้อมกับการส่งข้อความและการใช้คำสั่งของบอท (เก็บแค่ว่าใครส่งที่ห้องไหนเมื่อไหร่ — ไม่เก็บเนื้อหาข้อความ)
 
 ### แท็บ Overview
+
 - กราฟ **การเข้า / ออกเซิร์ฟเวอร์** และ **การเข้า / ออกห้องเสียง** ตามช่วงเวลา
 - อันดับ **ผู้ใช้ที่เคลื่อนไหวมากที่สุด** (จำนวนเหตุการณ์ / ข้อความ / เข้าห้องเสียง / คำสั่ง)
 - **เวลาอยู่ในห้องเสียง** รายคนและรายห้อง (คำนวณจากการจับคู่ "เข้า" กับ "ออก" ในช่วงที่เลือก)
@@ -332,6 +353,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
   เลือกความละเอียดรายชั่วโมง/รายวัน และเลือกว่าจะรวมบอทด้วยไหม
 
 ### แท็บ Audit & Activity (ของแต่ละเซิร์ฟเวอร์)
+
 - **การตั้งค่าบน Dashboard** — ทุกการแก้ไขค่าของเซิร์ฟเวอร์นั้นผ่านหน้าเว็บ (เก็บ 180 วัน) — ADMIN ดูของทั้งระบบ
   (รวม login/logout และการจัดการผู้ใช้) ได้ที่หน้า **System Audit**
 - **เหตุการณ์ในเซิร์ฟเวอร์ Discord** — ค้นหาย้อนหลังได้ตามชนิดเหตุการณ์ / ช่วงเวลา / ชื่อ / ห้อง / User ID
@@ -340,7 +362,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
 > ปิดการบันทึกได้ที่แท็บ **Log Management → บันทึกทุกเหตุการณ์ลงฐานข้อมูล**
 > (ตัวกรอง "ยกเว้นไม่ต้องบันทึก" ห้อง/คน/ยศ ใช้กับ Activity Log ด้วย)
 
-------------------------------------------------------------------------
+---
 
 ## 🔐 ระบบ Login ของ Dashboard
 
@@ -355,6 +377,7 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
   ส่วนเหตุการณ์ฝั่ง Discord ดูได้ในแท็บเดียวกัน (ดูหัวข้อ **Dashboard — Overview & Activity Log**)
 
 ### ตั้งค่า
+
 1. `pnpm db:migrate` — สร้าง/อัปเดตตารางทั้งหมด (รวม `guilds` และคอลัมน์ `guild_id` ของทุกตารางที่แยกตามเซิร์ฟเวอร์)
 2. ตั้ง `JWT_SECRET` ใน `.env` (ยาว 32 ตัวขึ้นไป)
 3. เปิดบอท — ถ้ายังไม่มี ADMIN ในระบบ จะสร้างให้จาก `ADMIN_USERNAME` / `ADMIN_PASSWORD` เดิมใน `.env` (login ด้วยรหัสเดิมได้เลย)
@@ -365,22 +388,24 @@ GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จ�
    - คนที่ login ด้วย Discord ครั้งแรกจะได้ role `USER` (จัดการเซิร์ฟเวอร์ของตัวเองได้) — ปรับเป็น `ADMIN` ในแท็บ Users หรือใส่ Discord ID ไว้ใน `ADMIN_DISCORD_IDS`
 
 ## ⚠️ Permissions ที่ต้องเปิดให้บอท
+
 ลิงก์เชิญจากหน้า **เซิร์ฟเวอร์ทั้งหมด** ขอสิทธิ์เหล่านี้ให้ครบแล้ว (+ Manage Channels สำหรับ Room Access และ Manage Server สำหรับดูคำเชิญใน Log Manager)
-- View Audit Log  
-- Move Members  
-- Manage Roles  
-- Manage Messages  
-- Attach Files (ห้องที่ส่งการ์ดต้อนรับ และห้องรายงานสภาพอากาศ — รูปกราฟ)  
-- Embed Links (ห้องรายงานสภาพอากาศ)  
-- Message Content Intent  
-- Server Members Intent (event สมาชิกเข้าเซิร์ฟเวอร์)  
+
+- View Audit Log
+- Move Members
+- Manage Roles
+- Manage Messages
+- Attach Files (ห้องที่ส่งการ์ดต้อนรับ และห้องรายงานสภาพอากาศ — รูปกราฟ)
+- Embed Links (ห้องรายงานสภาพอากาศ)
+- Message Content Intent
+- Server Members Intent (event สมาชิกเข้าเซิร์ฟเวอร์)
 
 ## Dependencies หลัก
 
 **Backend** — `@nestjs/*` (core / config / schedule / passport / jwt / serve-static), passport (local / jwt / custom), discord.js,
 prisma / @prisma/client / @prisma/adapter-pg, @google/generative-ai, @napi-rs/canvas (วาดการ์ดต้อนรับ กราฟ และแผนที่เรดาร์ —
 มี binary สำเร็จรูป ไม่ต้องติดตั้งโปรแกรมเพิ่มในเซิร์ฟเวอร์), gifenc (GIF ของแผนที่เรดาร์), cron (ตั้งเวลารายงานอากาศต่อเซิร์ฟเวอร์),
-@expo-google-fonts/* (ฟอนต์ไทย Kanit / Prompt / Noto Sans Thai และ Noto Color Emoji), bcryptjs, helmet, express-rate-limit, zod
+@expo-google-fonts/\* (ฟอนต์ไทย Kanit / Prompt / Noto Sans Thai และ Noto Color Emoji), bcryptjs, helmet, express-rate-limit, zod
 
 **Frontend** — react, @tanstack/react-router, @tanstack/react-query, @tanstack/react-table, @tanstack/react-form,
 shadcn/ui (radix-ui + tailwindcss v4), recharts (กราฟหน้า Overview), sonner (แจ้งเตือน), lucide-react (ไอคอน)
@@ -388,5 +413,6 @@ shadcn/ui (radix-ui + tailwindcss v4), recharts (กราฟหน้า Overvi
 ---
 
 ## 👨‍💻 ผู้พัฒนา
+
 **Arlif Thongrakjan**  
 AT Tech
