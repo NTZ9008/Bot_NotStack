@@ -54,6 +54,7 @@ export const envSchema = z.object({
     // URL หน้า Dashboard (ใช้กัน CSRF และเป็นปลายทาง redirect หลัง login ด้วย Discord)
     DASHBOARD_URL: optionalString,
     // origin ของหน้าเว็บที่อยู่คนละ origin กับ API (คั่นด้วย ,) — ว่าง = หน้าเว็บกับ API อยู่ origin เดียวกัน
+    // ใส่ https://*.example.com = ทุก subdomain (รูปแบบดูที่ config/allowed-origins.ts)
     CORS_ORIGINS: stringList,
     ADMIN_USERNAME: optionalString,
     ADMIN_PASSWORD: optionalString,

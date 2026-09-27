@@ -252,7 +252,7 @@ GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ man
 
 - ต้องตั้ง GitHub secrets `CLOUDFLARE_API_TOKEN` (สิทธิ์ Workers Scripts: Edit) และ `CLOUDFLARE_ACCOUNT_ID`
 - routing ตั้งเองที่ Cloudflare: ให้ `/api/*` และ `/webhook/*` ของโดเมน Dashboard ไปที่ backend
-  (หรือวาง API ไว้คนละ subdomain แล้วตั้ง Actions variable `VITE_API_URL` + `CORS_ORIGINS` ใน `.env` ของ backend — ต้องเป็นโดเมนเดียวกัน เพราะ cookie เป็น SameSite)
+  (หรือวาง API ไว้คนละ subdomain แล้วตั้ง Actions variable `VITE_API_URL` + `CORS_ORIGINS` ใน `.env` ของ backend — ต้องเป็นโดเมนเดียวกัน เพราะ cookie เป็น SameSite · เปิดทุก subdomain ได้ด้วย `CORS_ORIGINS=https://*.example.com`)
 - header ความปลอดภัย / cache ของหน้าเว็บอยู่ใน `apps/frontend/public/_headers`
 
 > อัปเกรดจากรุ่นก่อน (v3.6 แบบไฟล์เดียว): ไฟล์ `.env` บนเซิร์ฟเวอร์ใช้ต่อได้เลย — workflow ลบไฟล์ของรุ่นเก่าและโปรเซส PM2 เดิมให้เอง

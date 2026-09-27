@@ -32,7 +32,7 @@ export class CsrfGuard implements CanActivate {
         if (SAFE_METHODS.has(req.method) || !req.originalUrl.startsWith('/api/')) return true;
 
         const host = originHost(req);
-        if (!host || (host !== req.get('host') && !this.cfg.allowedHosts.has(host))) {
+        if (!host || (host !== req.get('host') && !this.cfg.allowsHost(host))) {
             throw new ApiException(HttpStatus.FORBIDDEN, 'คำขอไม่ได้มาจากหน้า Dashboard (ป้องกัน CSRF)', AUTH_ERROR_CODES.badOrigin);
         }
         return true;
