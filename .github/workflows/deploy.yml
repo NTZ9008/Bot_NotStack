@@ -1,8 +1,7 @@
 name: Deploy BotNotStack
 
-# กด Deploy เองจากแท็บ Actions — เลือกได้ว่าจะ deploy ส่วนไหน
-# - backend  → เซิร์ฟเวอร์ของบอท (API + บอท Discord ผ่าน Tailscale + rsync + PM2)
-# - frontend → Cloudflare Workers (ไฟล์ static ของหน้า Dashboard — การ route /api ไป backend ตั้งเองที่ Cloudflare)
+# กด Deploy backend เองจากแท็บ Actions
+# frontend deploy แยกผ่าน Cloudflare Workers ตาม apps/frontend/wrangler.jsonc
 on:
   workflow_dispatch:
 
@@ -16,7 +15,7 @@ concurrency:
 jobs:
   backend:
     # อนุญาตให้กด Deploy ได้เฉพาะ branch main และ branch ที่ขึ้นต้นด้วย release/ เท่านั้น
-    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && inputs.target != 'frontend'
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     environment: prod
 
@@ -43,7 +42,7 @@ jobs:
         run: |
           mkdir -p bundle/apps/backend bundle/apps/frontend bundle/packages/shared
           cp package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs bundle/
-          cp -r apps/backend/dist apps/backend/prisma apps/backend/package.json apps/backend/prisma.config.ts bundle/apps/backend/
+          cp -r apps/backend/dist apps/backend/prisma apps/backend/scripts apps/backend/package.json apps/backend/prisma.config.ts bundle/apps/backend/
           cp apps/frontend/package.json bundle/apps/frontend/
           cp -r packages/shared/dist packages/shared/package.json bundle/packages/shared/
 

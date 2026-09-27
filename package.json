@@ -23,6 +23,10 @@
     "turbo": "^2.11.4"
   },
   "pnpm": {
+    "overrides": {
+      "deepmerge-ts": "8.0.2",
+      "mysql2": "3.24.4"
+    },
     "onlyBuiltDependencies": [
       "@prisma/engines",
       "prisma",
