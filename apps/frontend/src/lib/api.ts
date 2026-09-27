@@ -1,0 +1,126 @@
+import { AUTH_ERROR_CODES, type ApiErrorBody } from '@notstack/shared';
+
+// ==========================================
+// 🌐 API CLIENT — เรียก /api/* แบบมี cookie session
+// API อยู่ origin เดียวกับหน้าเว็บเป็นค่าเริ่มต้น (Cloudflare Worker / Vite dev proxy ส่ง /api ต่อให้ backend)
+// ถ้า API อยู่คนละ origin ให้ build ด้วย VITE_API_URL=https://api.example.com (ต้องเป็น domain เดียวกัน เพราะ cookie เป็น SameSite)
+// access token (JWT) อายุ 15 นาที อยู่ใน httpOnly cookie — เมื่อ API ตอบ 401 จะเรียก /api/auth/refresh ให้เอง
+// แล้วส่ง request เดิมซ้ำ 1 ครั้ง ถ้ายังไม่ผ่านถือว่า session หมด → พาไปหน้า login
+// ==========================================
+
+export class ApiError extends Error {
+    constructor(
+        readonly status: number,
+        message: string,
+        readonly body: Partial<ApiErrorBody> = {},
+    ) {
+        super(message);
+        this.name = 'ApiError';
+    }
+
+    get code(): string | undefined {
+        return this.body.code;
+    }
+}
+
+export const API_BASE = String(import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
+
+// URL เต็มของ path ใน API (ใช้กับ <img src> / ลิงก์ที่เปิดตรงๆ เช่น login ด้วย Discord)
+export const apiUrl = (path: string): string => (path.startsWith('/api') ? `${API_BASE}${path}` : `${API_BASE}/api${path}`);
+
+// request เหล่านี้จัดการ 401 เอง ไม่ต้อง refresh ซ้ำ
+const NO_RETRY = ['/auth/login', '/auth/refresh', '/auth/logout'];
+
+let refreshing: Promise<boolean> | null = null;
+let onUnauthorized: () => void = () => {
+    window.location.href = '/login';
+};
+
+// router ตั้ง callback นี้ให้พาไปหน้า login แบบไม่ต้องโหลดหน้าใหม่
+export function setUnauthorizedHandler(handler: () => void): void {
+    onUnauthorized = handler;
+}
+
+// หลาย request เจอ 401 พร้อมกัน → refresh แค่ครั้งเดียว แล้วทุกตัวรอผลเดียวกัน
+export function refreshSession(): Promise<boolean> {
+    refreshing ??= fetch(apiUrl('/auth/refresh'), { method: 'POST', credentials: 'include' })
+        .then(async (res) => {
+            if (res.ok) return true;
+            const data = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+            // อีกแท็บเพิ่ง refresh ไป — รอให้เบราว์เซอร์รับ cookie ใบใหม่แล้วใช้ต่อได้เลย
+            if (data.code === AUTH_ERROR_CODES.tokenRotated) {
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                return true;
+            }
+            return false;
+        })
+        .catch(() => false)
+        .finally(() => {
+            refreshing = null;
+        });
+    return refreshing;
+}
+
+export interface ApiOptions {
+    method?: 'GET' | 'POST';
+    // body แบบ JSON
+    body?: unknown;
+    // body ดิบ (เช่นไฟล์รูป) — ใช้คู่กับ contentType
+    raw?: BodyInit;
+    contentType?: string;
+    query?: Record<string, string | number | boolean | null | undefined>;
+    responseType?: 'json' | 'text';
+    // ไม่พาไปหน้า login เมื่อ session หมด (เช่นตอนเช็คว่า login อยู่ไหม)
+    allowUnauthenticated?: boolean;
+    signal?: AbortSignal;
+}
+
+function buildUrl(path: string, query?: ApiOptions['query']): string {
+    const url = apiUrl(path);
+    if (!query) return url;
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(query)) {
+        if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    }
+    const qs = params.toString();
+    return qs ? `${url}?${qs}` : url;
+}
+
+async function send(path: string, options: ApiOptions): Promise<Response> {
+    const headers: Record<string, string> = {};
+    let body: BodyInit | undefined;
+    if (options.raw !== undefined) {
+        body = options.raw;
+        if (options.contentType) headers['Content-Type'] = options.contentType;
+    } else if (options.body !== undefined) {
+        body = JSON.stringify(options.body);
+        headers['Content-Type'] = 'application/json';
+    }
+    return fetch(buildUrl(path, options.query), {
+        method: options.method ?? (body !== undefined ? 'POST' : 'GET'),
+        headers,
+        body,
+        credentials: 'include',
+        signal: options.signal,
+    });
+}
+
+export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+    let res = await send(path, options);
+
+    if (res.status === 401 && !NO_RETRY.includes(path)) {
+        if (await refreshSession()) res = await send(path, options);
+        if (res.status === 401 && !options.allowUnauthenticated) onUnauthorized();
+    }
+
+    if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
+        const message = res.status === 413 ? 'ไฟล์ใหญ่เกินกำหนด' : data.error || `HTTP ${res.status}`;
+        throw new ApiError(res.status, message, data);
+    }
+
+    if (options.responseType === 'text') return (await res.text()) as T;
+    return (await res.json()) as T;
+}
+
+export const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));

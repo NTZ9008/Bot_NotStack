@@ -1,0 +1,16 @@
+// ==========================================
+// ☁️ Cloudflare Workers — เสิร์ฟหน้า Dashboard (ไฟล์ static จาก dist/) ไม่มีโค้ดฝั่ง Worker
+//   pnpm --filter @notstack/frontend build แล้ว npx wrangler deploy (GitHub Actions ทำให้เอง)
+// ทุก path ที่ไม่ใช่ไฟล์จริงได้ index.html (SPA)
+// การส่ง /api/* และ /webhook/* ต่อให้ backend ตั้งเองที่ Cloudflare (route / Worker อีกตัว)
+// หรือ build ด้วย VITE_API_URL=https://api.<โดเมน> ถ้า API อยู่คนละ subdomain
+// ==========================================
+{
+    "$schema": "https://unpkg.com/wrangler/config-schema.json",
+    "name": "notstack-dashboard",
+    "compatibility_date": "2026-09-01",
+    "assets": {
+        "directory": "./dist",
+        "not_found_handling": "single-page-application"
+    }
+}

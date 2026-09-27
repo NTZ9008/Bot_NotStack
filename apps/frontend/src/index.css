@@ -1,0 +1,167 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/noto-sans-thai";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ==========================================
+   🎨 THEME — โทนเดียวกับ Dashboard เดิม (พื้น slate เข้ม + สีหลัก indigo) ใช้แบบ dark อย่างเดียว
+   ========================================== */
+:root,
+.dark {
+    color-scheme: dark;
+
+    --background: oklch(0.208 0.042 265.755); /* #0f172a */
+    --foreground: oklch(0.984 0.003 247.858);
+    --card: oklch(0.243 0.041 263.5);
+    --card-foreground: oklch(0.984 0.003 247.858);
+    --popover: oklch(0.279 0.041 260.031); /* #1e293b */
+    --popover-foreground: oklch(0.984 0.003 247.858);
+    --primary: oklch(0.585 0.233 277.117); /* indigo-500 */
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.3 0.04 262);
+    --secondary-foreground: oklch(0.984 0.003 247.858);
+    --muted: oklch(0.279 0.041 260.031);
+    --muted-foreground: oklch(0.704 0.04 256.788); /* slate-400 */
+    --accent: oklch(0.32 0.045 262);
+    --accent-foreground: oklch(0.984 0.003 247.858);
+    --destructive: oklch(0.637 0.237 25.331); /* red-500 */
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.585 0.233 277.117);
+
+    /* สีสถานะที่ใช้ซ้ำทั้งระบบ */
+    --success: oklch(0.696 0.17 162.48); /* emerald-500 */
+    --warning: oklch(0.769 0.188 70.08); /* amber-500 */
+    --info: oklch(0.746 0.16 232.661); /* sky-400 */
+    --discord: oklch(0.585 0.2 277); /* #5865F2 */
+
+    /* กราฟ: indigo / sky / emerald / amber / rose */
+    --chart-1: oklch(0.585 0.233 277.117);
+    --chart-2: oklch(0.746 0.16 232.661);
+    --chart-3: oklch(0.696 0.17 162.48);
+    --chart-4: oklch(0.769 0.188 70.08);
+    --chart-5: oklch(0.645 0.246 16.439);
+
+    --radius: 0.625rem;
+
+    --sidebar: oklch(0.19 0.035 265);
+    --sidebar-foreground: oklch(0.929 0.013 255.508);
+    --sidebar-primary: oklch(0.585 0.233 277.117);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.585 0.233 277.117 / 16%);
+    --sidebar-accent-foreground: oklch(0.87 0.065 274.039); /* indigo-200 */
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: oklch(0.585 0.233 277.117);
+}
+
+@theme inline {
+    --font-sans: 'Inter Variable', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-heading: var(--font-sans);
+
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+    --color-info: var(--info);
+    --color-discord: var(--discord);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    html {
+        @apply font-sans antialiased;
+    }
+    body {
+        @apply bg-background text-foreground;
+        /* แสงสีจางๆ มุมซ้ายบนแบบหน้าเดิม */
+        background-image: radial-gradient(circle at 10% 10%, oklch(0.585 0.233 277.117 / 8%) 0%, transparent 50%);
+        background-attachment: fixed;
+    }
+    button:not(:disabled),
+    [role='button']:not(:disabled) {
+        cursor: pointer;
+    }
+}
+
+/* ==========================================
+   💬 ตัวอย่างข้อความแบบ Discord (หน้า News / Welcome)
+   ========================================== */
+@layer components {
+    .discord-md {
+        @apply text-[0.9375rem] leading-[1.375rem] break-words text-[#dbdee1];
+    }
+    .discord-md strong {
+        @apply font-bold;
+    }
+    .discord-md .dc-h1 {
+        @apply my-1 text-2xl font-bold;
+    }
+    .discord-md .dc-h2 {
+        @apply my-1 text-xl font-bold;
+    }
+    .discord-md .dc-h3 {
+        @apply my-1 text-base font-bold;
+    }
+    .discord-md .dc-quote {
+        @apply border-l-4 border-[#4e5058] pl-3;
+    }
+    .discord-md .dc-li {
+        @apply relative pl-5 before:absolute before:left-1.5 before:content-['•'];
+    }
+    .discord-md .dc-code {
+        @apply rounded bg-[#1e1f22] px-1 py-0.5 font-mono text-[0.85em];
+    }
+    .discord-md .dc-codeblock {
+        @apply my-1 rounded border border-[#1e1f22] bg-[#2b2d31] p-2 font-mono text-[0.85em] whitespace-pre-wrap;
+    }
+    .discord-md .dc-spoiler {
+        @apply rounded bg-[#1e1f22] px-0.5 text-transparent transition-colors hover:text-inherit;
+    }
+    .discord-md .dc-link {
+        @apply text-[#00a8fc] hover:underline;
+    }
+    .discord-md .dc-mention {
+        @apply rounded bg-[#5865f2]/30 px-0.5 font-medium text-[#c9cdfb];
+    }
+}

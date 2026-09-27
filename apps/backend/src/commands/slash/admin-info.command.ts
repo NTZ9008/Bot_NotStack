@@ -1,0 +1,32 @@
+import { Injectable } from '@nestjs/common';
+import { EmbedBuilder, SlashCommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommand } from '../../discord/decorators/slash-command.decorator';
+import type { SlashCommandHandler } from '../../discord/interfaces/slash-command.interface';
+
+// /admininfo — ข้อมูลผู้สร้างบอท
+@SlashCommand()
+@Injectable()
+export class AdminInfoCommand implements SlashCommandHandler {
+    static readonly data = new SlashCommandBuilder().setName('admininfo').setDescription('คำสั่งใช้เพื่อดูข้อมูลของแอดมิน');
+    // คำสั่งเฉพาะของเซิร์ฟเวอร์หลัก — ลงทะเบียนแบบ guild command ที่เซิร์ฟเวอร์หลักที่เดียว
+    static readonly homeGuildOnly = true;
+
+    async execute(interaction: ChatInputCommandInteraction) {
+        const embed = new EmbedBuilder()
+            .setColor('#5865F2')
+            .setTitle('📌 Admin Info')
+            .setDescription('นี่คือข้อมูลของผู้สร้าง')
+            .setThumbnail('https://drive.google.com/file/d/1VGBJGA4pjOxvZnsJP6zZW9-0lJ-yAsVy/view?usp=sharing')
+            .addFields(
+                { name: '👤 Name', value: 'Arlif Thongrakjan', inline: true },
+                { name: '🎓 Education', value: 'Faculty of ICT, Mahidol University', inline: true },
+                { name: '💻 Interests', value: 'Technology, Android Custom ROMs, TikTok Creator' },
+                { name: '🗓️ Birth-Date', value: '24-March-2006', inline: true },
+                { name: '🔵 Color', value: 'Blue', inline: true },
+                { name: '🌐 Contacts', value: 'IG: arlifzs2006 Tel: 0826313749' },
+            )
+            .setFooter({ text: `Requested by ${interaction.user.username}` })
+            .setTimestamp();
+        await interaction.reply({ embeds: [embed] });
+    }
+}

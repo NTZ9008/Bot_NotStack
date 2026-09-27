@@ -1,6 +1,21 @@
+# secrets
 .env
+.env.*
+!.env.example
+
+# dependencies / build output
 node_modules
+dist
+.turbo
+.wrangler
+*.tsbuildinfo
+
+# Prisma client ที่ generate จาก schema (สร้างใหม่ตอน pnpm install / pnpm db:generate)
+apps/backend/src/generated
+
+# ข้อมูลที่บอทเขียนตอนรัน
 logs
 levels_migrated.json
 database.sqlite
 notstackutdash-le-ssl.conf
+.DS_Store
