@@ -5,15 +5,6 @@ name: Deploy BotNotStack
 # - frontend → Cloudflare Workers (ไฟล์ static ของหน้า Dashboard — การ route /api ไป backend ตั้งเองที่ Cloudflare)
 on:
   workflow_dispatch:
-    inputs:
-      target:
-        description: ส่วนที่จะ deploy
-        type: choice
-        default: all
-        options:
-          - all
-          - backend
-          - frontend
 
 permissions:
   contents: read
@@ -106,37 +97,3 @@ jobs:
             pm2 save
           "
           echo "Deploy backend สำเร็จแล้ว! 🚀"
-
-  frontend:
-    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')) && inputs.target != 'backend'
-    runs-on: ubuntu-latest
-    environment: prod
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-
-      # VITE_API_URL (Actions → Variables) = origin ของ API ถ้า API อยู่คนละ subdomain — ว่าง = /api บนโดเมนเดียวกับหน้าเว็บ
-      - name: Build frontend
-        env:
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm turbo run build --filter=@notstack/frontend...
-
-      # ต้องตั้ง secrets: CLOUDFLARE_API_TOKEN (สิทธิ์ Workers Scripts: Edit) และ CLOUDFLARE_ACCOUNT_ID
-      - name: Deploy to Cloudflare Workers
-        working-directory: apps/frontend
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: pnpm dlx wrangler@4 deploy
