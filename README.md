@@ -398,7 +398,7 @@ GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ man
 - Attach Files (ห้องที่ส่งการ์ดต้อนรับ และห้องรายงานสภาพอากาศ — รูปกราฟ)
 - Embed Links (ห้องรายงานสภาพอากาศ)
 - Message Content Intent
-- Server Members Intent (event สมาชิกเข้าเซิร์ฟเวอร์)
+- Server Members Intent (event สมาชิกเข้าเซิร์ฟเวอร์)11
 
 ## Dependencies หลัก
 
