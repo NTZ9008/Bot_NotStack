@@ -1,16 +1,8 @@
 import crypto from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { allowedOrigins } from '../config/allowed-origins';
 import type { Env } from '../config/env.validation';
-
-const hostOf = (url: string | undefined): string | null => {
-    if (!url) return null;
-    try {
-        return new URL(url).host;
-    } catch {
-        return null;
-    }
-};
 
 // ==========================================
 // ⚙️ AUTH CONFIG — ค่าจาก .env ที่ระบบ login ใช้ (อ่านครั้งเดียวตอนเปิดเซิร์ฟเวอร์)
@@ -23,8 +15,8 @@ export class AuthConfig {
     readonly jwtSecret: string;
     // URL หน้า Dashboard — ปลายทาง redirect หลัง login ด้วย Discord (ไม่ตั้ง = path เฉยๆ บน origin เดียวกับ API)
     readonly dashboardUrl: string | null;
-    // host ที่อนุญาตให้ยิง POST เข้ามา (กัน CSRF) — นอกเหนือจาก Host header ของ request เอง
-    readonly allowedHosts: Set<string>;
+    // host ที่อนุญาตให้ยิง POST เข้ามา (กัน CSRF) — นอกเหนือจาก Host header ของ request เอง (รองรับ *.example.com)
+    readonly allowsHost: (host: string) => boolean;
     readonly adminSeed: { username?: string; password?: string };
     readonly discord: {
         enabled: boolean;
@@ -41,11 +33,7 @@ export class AuthConfig {
         this.isProduction = config.get('NODE_ENV', { infer: true }) === 'production';
         this.jwtSecret = this.resolveJwtSecret(config.get('JWT_SECRET', { infer: true }) ?? config.get('SESSION_SECRET', { infer: true }));
         this.dashboardUrl = config.get('DASHBOARD_URL', { infer: true }) ?? null;
-        this.allowedHosts = new Set(
-            [this.dashboardUrl ?? 'https://notstackutdash.arlifzs.site', ...config.get('CORS_ORIGINS', { infer: true })]
-                .map(hostOf)
-                .filter((host): host is string => Boolean(host)),
-        );
+        this.allowsHost = allowedOrigins([this.dashboardUrl ?? 'https://notstackutdash.arlifzs.site', ...config.get('CORS_ORIGINS', { infer: true })]).allowsHost;
         this.adminSeed = {
             username: config.get('ADMIN_USERNAME', { infer: true }),
             password: config.get('ADMIN_PASSWORD', { infer: true }),
