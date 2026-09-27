@@ -138,9 +138,10 @@ export class MessageListener {
             for (const [id, entry] of this.spam) if (now - entry.lastMsg > SPAM_TIME) this.spam.delete(id);
         }
 
-        if (data.count < SPAM_LIMIT) return false;
+        // อนุญาตครบ SPAM_LIMIT ข้อความ และเริ่มลบตั้งแต่ข้อความถัดไป
+        if (data.count <= SPAM_LIMIT) return false;
         msg.delete().catch(() => {});
-        if (data.count === SPAM_LIMIT) {
+        if (data.count === SPAM_LIMIT + 1) {
             this.logs.logFilterAction(msg.guild, { user: msg.author, channelId: msg.channel.id, reason: 'Anti-Spam (ส่งข้อความถี่เกินกำหนด)', content: msg.content });
             await this.send(msg, `⚠️ <@${msg.author.id}> ใจเย็นๆ ครับ! อย่าส่งข้อความรัวเกินไป`);
             const alertChannelId = msg.guildId ? await this.config.get(msg.guildId, 'ALERT_CHANNEL_ID') : null;

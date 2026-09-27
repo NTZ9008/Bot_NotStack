@@ -16,6 +16,9 @@ const CACHE_TTL_MS = 60 * 1000;
 @Injectable()
 export class BotConfigService {
     private readonly cache = new Map<string, { values: Map<string, string | null>; at: number }>();
+    // หลาย event อาจอ่าน config ของเซิร์ฟเวอร์เดียวกันพร้อมกันตอน cache หมดอายุ
+    // ให้ทุก caller รอ query เดียวกัน แทนการยิง findMany ซ้ำ
+    private readonly loading = new Map<string, Promise<Map<string, string | null>>>();
 
     constructor(
         private readonly prisma: PrismaService,
@@ -25,10 +28,20 @@ export class BotConfigService {
     private async values(guildId: string): Promise<Map<string, string | null>> {
         const hit = this.cache.get(guildId);
         if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.values;
-        const rows = await this.prisma.config.findMany({ where: { guildId }, select: { key: true, value: true } });
-        const values = new Map(rows.map((row) => [row.key, row.value]));
-        this.cache.set(guildId, { values, at: Date.now() });
-        return values;
+
+        let pending = this.loading.get(guildId);
+        if (!pending) {
+            pending = this.prisma.config
+                .findMany({ where: { guildId }, select: { key: true, value: true } })
+                .then((rows) => {
+                    const values = new Map(rows.map((row) => [row.key, row.value]));
+                    this.cache.set(guildId, { values, at: Date.now() });
+                    return values;
+                })
+                .finally(() => this.loading.delete(guildId));
+            this.loading.set(guildId, pending);
+        }
+        return pending;
     }
 
     private defaultOf(guildId: string, key: string): string | null {
