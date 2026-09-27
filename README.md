@@ -240,7 +240,7 @@ pnpm dev
 
 ## 📦 Deploy
 
-GitHub Actions → **Deploy BotNotStack** (กดรันเองได้จาก branch `main` / `release/*`) เลือกได้ว่าจะ deploy `all` / `backend` / `frontend`
+GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ manual จาก branch `main` / `release/*` ส่วน frontend deploy แยกผ่าน Cloudflare Workers
 
 **backend** → เซิร์ฟเวอร์ของบอท
 

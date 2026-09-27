@@ -4,12 +4,14 @@
   "private": true,
   "description": "NestJS API + Discord bot (discord.js) for NotStackOverflow",
   "scripts": {
-    "postinstall": "prisma generate",
+    "postinstall": "pnpm run db:generate",
+    "prebuild": "pnpm run db:generate",
     "build": "nest build",
     "dev": "nest start --watch --preserveWatchOutput",
     "start": "node dist/main.js",
+    "pretypecheck": "pnpm run db:generate",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "db:generate": "prisma generate",
+    "db:generate": "node scripts/generate-prisma.mjs",
     "db:migrate": "prisma migrate deploy",
     "db:import-sqlite": "node dist/scripts/import-sqlite.js",
     "discord:deploy-commands": "node dist/scripts/deploy-commands.js"

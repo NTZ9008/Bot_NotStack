@@ -70,16 +70,14 @@ export class PrBotService {
 
     private async handlePullRequest(guildId: string, { action, pull_request: pr, repository: repo }: PullRequestEvent): Promise<void> {
         if (!pr || !repo) return;
-
-        const channelId = await this.resolveChannelId(guildId, repo);
-        if (!channelId) return void this.logger.error(`ยังไม่ได้ตั้งค่า channel สำหรับ PR นี้ในหน้า Dashboard (${guildId})`);
         if (!this.discord.ready) return void this.logger.error('Discord client ยังไม่พร้อม');
-
-        const channel = await this.discord.fetchGuildChannel(guildId, channelId);
-        if (!channel || !channel.isSendable() || !('messages' in channel)) return void this.logger.error(`ไม่พบ channel: ${channelId} (${guildId})`);
         const key = { guildId_repoFullName_prNumber: { guildId, repoFullName: repo.full_name, prNumber: pr.number } };
 
         if (action && ['opened', 'reopened', 'ready_for_review'].includes(action)) {
+            const channelId = await this.resolveChannelId(guildId, repo);
+            if (!channelId) return void this.logger.error(`ยังไม่ได้ตั้งค่า channel สำหรับ PR นี้ในหน้า Dashboard (${guildId})`);
+            const channel = await this.discord.fetchGuildChannel(guildId, channelId);
+            if (!channel || !channel.isSendable() || !('messages' in channel)) return void this.logger.error(`ไม่พบ channel: ${channelId} (${guildId})`);
             const mention = await this.resolveMention(guildId, repo, 'guild' in channel ? channel.guild : null);
             const message = await channel.send({ ...prOpenedPayload(pr, repo), ...(mention ? { content: mention } : {}) });
             await this.prisma.prMessage.upsert({
@@ -93,6 +91,11 @@ export class PrBotService {
         if (action === 'closed') {
             const existing = await this.prisma.prMessage.findUnique({ where: key, select: { channelId: true, messageId: true } });
             if (!existing) return; // ไม่เคยเห็น "opened" มาก่อน (เช่น bot เพิ่งเปิดใช้งาน) → ข้าม
+            // ใช้ห้องที่เคยส่งข้อความจริง ไม่ใช่ค่าห้องปัจจุบันซึ่งอาจถูกแอดมินเปลี่ยนหลังเปิด PR
+            const channel = await this.discord.fetchGuildChannel(guildId, existing.channelId);
+            if (!channel || !channel.isSendable() || !('messages' in channel)) {
+                return void this.logger.error(`ไม่พบ channel เดิม: ${existing.channelId} (${guildId})`);
+            }
             const msg = await channel.messages.fetch(existing.messageId).catch(() => null);
             if (!msg) return;
             await msg.edit(prClosedPayload(pr, repo));

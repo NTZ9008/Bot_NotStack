@@ -1,6 +1,7 @@
 {
   "name": "bot-notstack",
   "compatibility_date": "2026-08-01",
+  "previews": {},
   // build หน้าเว็บก่อน deploy ทุกครั้ง (dist/ ไม่อยู่ใน git) — ใช้เมื่อ Root directory ของ Cloudflare = apps/frontend
   "build": {
     "command": "pnpm build",
