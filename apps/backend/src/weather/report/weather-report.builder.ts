@@ -112,11 +112,20 @@ export async function buildWeatherReport({ content, options }: { content: string
         embed.setThumbnail(`https://openweathermap.org/img/wn/${weather.current.icon}@2x.png`);
     }
 
+    // เรดาร์กรมอุตุฯ ดึงไม่ได้ / สถานที่อยู่นอกพื้นที่ → ใช้ RainViewer แทน
+    const renderRadar = () =>
+        renderRadarMap(options.location, radar, weather.timezone).catch((err: Error) => {
+            if (radar.source === 'rainviewer') throw err;
+            logger.warn(`สร้างแผนที่เรดาร์กรมอุตุฯ ไม่สำเร็จ ใช้ RainViewer แทน: ${err.message}`);
+            warnings.push(`แผนที่เรดาร์: ${err.message} — ใช้ภาพจาก RainViewer แทน`);
+            return renderRadarMap(options.location, { ...radar, source: 'rainviewer' }, weather.timezone);
+        });
+
     const [chartImage, radarMap] = await Promise.all([
         chart.enabled ? renderForecastChart(weather, chart) : null,
-        // เรดาร์เป็นส่วนเสริม — RainViewer / แผนที่ล่ม ก็ยังส่งรายงานส่วนที่เหลือได้
+        // เรดาร์เป็นส่วนเสริม — แหล่งเรดาร์ / แผนที่ล่ม ก็ยังส่งรายงานส่วนที่เหลือได้
         radar.enabled
-            ? renderRadarMap(options.location, radar, weather.timezone).catch((err: Error) => {
+            ? renderRadar().catch((err: Error) => {
                   logger.warn(`สร้างแผนที่เรดาร์ไม่สำเร็จ: ${err.message}`);
                   warnings.push(`แผนที่เรดาร์: ${err.message}`);
                   return null;
