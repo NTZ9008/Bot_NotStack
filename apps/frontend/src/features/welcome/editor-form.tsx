@@ -113,6 +113,23 @@ function SizeField({ meta, draft, patch }: FormProps) {
     useEffect(() => setSize({ w: String(design.width), h: String(design.height) }), [design.width, design.height]);
     const preset = SIZE_PRESETS.find((p) => p.w === design.width && p.h === design.height);
     const commit = () => patch((d) => resizeCanvas(d.design, Number(size.w), Number(size.h), meta));
+    const updateSize = (axis: 'w' | 'h', value: string) => {
+        const next = { ...size, [axis]: value };
+        setSize(next);
+
+        const width = Number(next.w);
+        const height = Number(next.h);
+        if (
+            Number.isFinite(width) &&
+            Number.isFinite(height) &&
+            width >= meta.limits.minWidth &&
+            width <= meta.limits.maxWidth &&
+            height >= meta.limits.minHeight &&
+            height <= meta.limits.maxHeight
+        ) {
+            patch((d) => resizeCanvas(d.design, width, height, meta));
+        }
+    };
 
     return (
         <Field label="ขนาดรูป (กว้าง × สูง พิกเซล)" hint="เปลี่ยนขนาดแล้วตำแหน่งรูปโปรไฟล์และข้อความจะถูกย่อ/ขยายตามให้เอง">
@@ -143,7 +160,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
                     min={meta.limits.minWidth}
                     max={meta.limits.maxWidth}
                     value={size.w}
-                    onChange={(e) => setSize((s) => ({ ...s, w: e.target.value }))}
+                    onChange={(e) => updateSize('w', e.target.value)}
                     onBlur={commit}
                     onKeyDown={(e) => e.key === 'Enter' && commit()}
                 />
@@ -154,7 +171,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
                     min={meta.limits.minHeight}
                     max={meta.limits.maxHeight}
                     value={size.h}
-                    onChange={(e) => setSize((s) => ({ ...s, h: e.target.value }))}
+                    onChange={(e) => updateSize('h', e.target.value)}
                     onBlur={commit}
                     onKeyDown={(e) => e.key === 'Enter' && commit()}
                 />

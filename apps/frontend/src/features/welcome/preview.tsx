@@ -1,10 +1,9 @@
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { welcomeApi, type PreviewInput } from '@/api/welcome';
 import { DiscordMessage } from '@/components/discord-message';
-import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { errorMessage } from '@/lib/api';
 import { escapeHtml, renderDiscordMarkdown } from '@/lib/discord-markdown';
 import { cn } from '@/lib/utils';
@@ -17,6 +16,23 @@ const MENTION_TOKEN = 'WCMENTIONTOKEN';
 const FALLBACK_VARS: WelcomeVars = { user: 'สมาชิกใหม่', username: 'new_member', id: '0', server: 'NotStack', memberCount: '0' };
 
 export type Handle = 'avatar' | number;
+
+function usePreviewPayload(value: PreviewInput, sizeKey: string): PreviewInput {
+    const [payload, setPayload] = useState(value);
+    const previousSize = useRef(sizeKey);
+
+    useEffect(() => {
+        if (previousSize.current !== sizeKey) {
+            previousSize.current = sizeKey;
+            setPayload(value);
+            return;
+        }
+        const timer = setTimeout(() => setPayload(value), PREVIEW_DELAY);
+        return () => clearTimeout(timer);
+    }, [value, sizeKey]);
+
+    return payload;
+}
 
 // ข้อความที่ส่งคู่กับรูป — แทนค่าตัวแปรฝั่งหน้าเว็บเลย (ไม่ต้องรอ server) แล้วแสดงแบบ Markdown ของ Discord
 function renderMessage(content: string, vars: WelcomeVars, roles: GuildRole[], channels: GuildChannel[]): string {
@@ -59,7 +75,11 @@ export function WelcomePreview({
 }) {
     const guildId = useGuildId();
     const { design } = draft;
-    const payload = useDebouncedValue<PreviewInput>({ design, backgroundId: draft.backgroundId, userId: sampleUserId }, PREVIEW_DELAY);
+    const nextPayload = useMemo<PreviewInput>(() => ({ design, backgroundId: draft.backgroundId, userId: sampleUserId }), [design, draft.backgroundId, sampleUserId]);
+    // การเปลี่ยนสัดส่วนการ์ดต้องเริ่ม render ใหม่ทันที ส่วน slider/ข้อความยัง debounce
+    // เพื่อไม่ให้ยิงคำขอจำนวนมากระหว่างที่ผู้ใช้ลากหรือพิมพ์ต่อเนื่อง
+    const sizeKey = `${design.width}x${design.height}`;
+    const payload = usePreviewPayload(nextPayload, sizeKey);
     const preview = useQuery({
         queryKey: ['guild', guildId, 'welcome', 'preview', payload],
         queryFn: ({ signal }) => welcomeApi.preview(guildId, payload, signal),
