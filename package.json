@@ -1,44 +1,33 @@
 {
-  "name": "NotStack-Bot",
+  "name": "notstack-bot",
   "version": "3.6.0",
-  "description": "Bot for Discord NotStackOverflow Server",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "postinstall": "prisma generate",
-    "db:migrate": "prisma migrate deploy",
-    "db:import-sqlite": "node scripts/migrate-sqlite-to-postgres.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
+  "private": true,
+  "description": "Multi-server Discord bot (NotStackOverflow) — monorepo: NestJS backend + React dashboard",
   "author": "AT Tech",
   "license": "ISC",
-  "type": "commonjs",
-  "dependencies": {
-    "@expo-google-fonts/kanit": "^0.4.1",
-    "@expo-google-fonts/noto-color-emoji": "^0.4.6",
-    "@expo-google-fonts/noto-sans-thai": "^0.4.2",
-    "@expo-google-fonts/prompt": "^0.4.1",
-    "@google/generative-ai": "^0.24.1",
-    "@napi-rs/canvas": "^1.0.9",
-    "@prisma/adapter-pg": "7.10.0",
-    "@prisma/client": "7.10.0",
-    "bcryptjs": "^3.0.3",
-    "cookie-parser": "^1.4.7",
-    "cors": "^2.8.6",
-    "discord.js": "^14.25.1",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1",
-    "express-rate-limit": "^8.6.2",
-    "gifenc": "^1.0.3",
-    "helmet": "^8.3.0",
-    "jsonwebtoken": "^9.0.3",
-    "node-schedule": "^2.1.1",
-    "prisma": "7.10.0",
-    "sqlite3": "^6.0.1"
+  "packageManager": "pnpm@10.6.5",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "start": "pnpm --filter @notstack/backend start",
+    "db:generate": "pnpm --filter @notstack/backend db:generate",
+    "db:migrate": "pnpm --filter @notstack/backend db:migrate",
+    "db:import-sqlite": "pnpm --filter @notstack/backend db:import-sqlite",
+    "discord:deploy-commands": "pnpm --filter @notstack/backend discord:deploy-commands"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "turbo": "^2.11.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/engines",
+      "prisma",
+      "sqlite3",
+      "esbuild"
+    ]
   }
 }
