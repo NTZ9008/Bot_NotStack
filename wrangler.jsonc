@@ -1,0 +1,23 @@
+{
+  "name": "bot-notstack",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./apps/frontend/dist",
+    "not_found_handling": "single-page-application",
+  },
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true,
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1,
+    },
+  },
+}
