@@ -32,3 +32,12 @@ export function EmptyState({ children, className }: { children: ReactNode; class
         </div>
     );
 }
+
+// ระหว่างเช็ค session กับ backend (หน้าแรก / หน้า login) — ถ้า backend ยังไม่พร้อมจะรอลองใหม่สักพัก แทนที่จะเป็นหน้าว่าง
+export function ConnectingScreen() {
+    return (
+        <div className="flex min-h-svh items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="size-4 animate-spin" /> กำลังเชื่อมต่อ...
+        </div>
+    );
+}

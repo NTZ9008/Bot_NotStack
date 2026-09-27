@@ -9,6 +9,7 @@ import { ProfileMenu } from '@/components/layout/profile-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ChevronRight } from 'lucide-react';
+import { ConnectingScreen } from '@/components/states';
 
 // ==========================================
 // 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ค้นหาหน้า / เมนูโปรไฟล์)
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_app')({
         return { me };
     },
     component: AppLayout,
+    pendingComponent: ConnectingScreen,
 });
 
 function AppLayout() {

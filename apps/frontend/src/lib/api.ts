@@ -28,6 +28,14 @@ export const API_BASE = String(import.meta.env.VITE_API_URL ?? '').replace(/\/+$
 // URL เต็มของ path ใน API (ใช้กับ <img src> / ลิงก์ที่เปิดตรงๆ เช่น login ด้วย Discord)
 export const apiUrl = (path: string): string => (path.startsWith('/api') ? `${API_BASE}${path}` : `${API_BASE}/api${path}`);
 
+// เรียกไม่ถึง backend เลย — backend ยังไม่เปิด / กำลังเริ่มทำงาน (pnpm dev) / proxy ต่อไม่ได้
+// (Vite dev proxy และ Cloudflare ตอบ 502/503/504 ที่ไม่ใช่ JSON ของ API เรา)
+export const API_UNREACHABLE = 'API_UNREACHABLE';
+const UNREACHABLE_MESSAGE = 'เชื่อมต่อ API ไม่ได้ — backend ยังไม่เปิด หรือกำลังเริ่มทำงาน';
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+
+export const isApiUnreachable = (err: unknown): boolean => err instanceof ApiError && err.code === API_UNREACHABLE;
+
 // request เหล่านี้จัดการ 401 เอง ไม่ต้อง refresh ซ้ำ
 const NO_RETRY = ['/auth/login', '/auth/refresh', '/auth/logout'];
 
@@ -96,13 +104,19 @@ async function send(path: string, options: ApiOptions): Promise<Response> {
         body = JSON.stringify(options.body);
         headers['Content-Type'] = 'application/json';
     }
-    return fetch(buildUrl(path, options.query), {
-        method: options.method ?? (body !== undefined ? 'POST' : 'GET'),
-        headers,
-        body,
-        credentials: 'include',
-        signal: options.signal,
-    });
+    try {
+        return await fetch(buildUrl(path, options.query), {
+            method: options.method ?? (body !== undefined ? 'POST' : 'GET'),
+            headers,
+            body,
+            credentials: 'include',
+            signal: options.signal,
+        });
+    } catch (err) {
+        // ยกเลิกเอง (เช่น TanStack Query ยกเลิก request เก่า) — ส่งต่อตามเดิม
+        if (options.signal?.aborted) throw err;
+        throw new ApiError(0, UNREACHABLE_MESSAGE, { code: API_UNREACHABLE });
+    }
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
@@ -114,9 +128,10 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
 
     if (!res.ok) {
-        const data = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
-        const message = res.status === 413 ? 'ไฟล์ใหญ่เกินกำหนด' : data.error || `HTTP ${res.status}`;
-        throw new ApiError(res.status, message, data);
+        const data = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
+        if (!data && GATEWAY_STATUSES.has(res.status)) throw new ApiError(res.status, UNREACHABLE_MESSAGE, { code: API_UNREACHABLE });
+        const message = res.status === 413 ? 'ไฟล์ใหญ่เกินกำหนด' : data?.error || `HTTP ${res.status}`;
+        throw new ApiError(res.status, message, data ?? {});
     }
 
     if (options.responseType === 'text') return (await res.text()) as T;
