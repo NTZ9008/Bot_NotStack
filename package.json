@@ -16,7 +16,6 @@
     "start": "pnpm --filter @notstack/backend start",
     "db:generate": "pnpm --filter @notstack/backend db:generate",
     "db:migrate": "pnpm --filter @notstack/backend db:migrate",
-    "db:import-sqlite": "pnpm --filter @notstack/backend db:import-sqlite",
     "discord:deploy-commands": "pnpm --filter @notstack/backend discord:deploy-commands"
   },
   "devDependencies": {
@@ -30,7 +29,6 @@
     "onlyBuiltDependencies": [
       "@prisma/engines",
       "prisma",
-      "sqlite3",
       "esbuild"
     ]
   }

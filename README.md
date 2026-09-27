@@ -123,7 +123,7 @@ BOT_NOTSTACK/
 │   │       │                    ← แต่ละโมดูล: *.controller / *.service + dto/ listeners/ tasks/ (ตามที่มี)
 │   │       ├── chat/            ← listeners ของข้อความ: Anti-Spam, กรองคำหยาบ (Gemini), AI Chat, ตอบกลับอัตโนมัติ, reaction roles
 │   │       ├── commands/        ← คำสั่ง / (slash/ คลาสละไฟล์) + interaction listener
-│   │       └── scripts/         ← deploy-commands.ts, import-sqlite.ts
+│   │       └── scripts/         ← deploy-commands.ts
 │   └── frontend/                ← React 19 + Vite + TanStack Router / Query / Table / Form + shadcn/ui (Tailwind v4)
 │       ├── wrangler.jsonc       ← deploy ไป Cloudflare Workers (static assets)
 │       └── src/
@@ -187,18 +187,7 @@ pnpm install
 pnpm db:migrate
 ```
 
-### 4️⃣ (ครั้งเดียว) ย้ายข้อมูลเก่าจาก SQLite
-
-ถ้าเคยรันบอทเวอร์ชัน SQLite มาก่อน ให้ย้ายข้อมูลจาก `database.sqlite` และ `prbot/data/messages.sqlite` **ก่อนเปิดบอทครั้งแรก** (ต้อง `pnpm build` ก่อน)
-
-```bash
-pnpm db:import-sqlite -- --dry-run
-```
-
-ดูก่อนว่าจะย้ายอะไรบ้าง (ไม่เขียนลง Postgres) แล้วค่อยรัน `pnpm db:import-sqlite` เพื่อย้ายจริงใน transaction เดียว + ตรวจเทียบข้อมูลทุกแถว
-(ข้อมูลเข้าเป็นของเซิร์ฟเวอร์หลัก — `--force` ลบแล้วแทนที่เฉพาะข้อมูลของเซิร์ฟเวอร์หลัก ไม่แตะเซิร์ฟเวอร์อื่น)
-
-### 5️⃣ Build และลงทะเบียนคำสั่ง `/`
+### 4️⃣ Build และลงทะเบียนคำสั่ง `/`
 
 ```bash
 pnpm build
@@ -211,7 +200,7 @@ pnpm discord:deploy-commands
 คำสั่งทั่วไปลงทะเบียนแบบ global (ขึ้นในทุกเซิร์ฟเวอร์ — Discord อาจใช้เวลาสักพัก) ส่วนคำสั่งเฉพาะ NotStack ลงทะเบียนที่เซิร์ฟเวอร์หลัก
 (guild command เดิมของเซิร์ฟเวอร์หลักถูกแทนที่ คำสั่งจึงไม่ขึ้นซ้ำ 2 อัน)
 
-### 6️⃣ รันบอท + API (production)
+### 5️⃣ รันบอท + API (production)
 
 ```bash
 pnpm start
