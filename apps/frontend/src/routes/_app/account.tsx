@@ -1,3 +1,4 @@
+import { replaceSession } from '@/lib/session';
 import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -133,7 +134,7 @@ function AccountPage() {
         });
         if (!ok) return;
         await authApi.logoutAll().catch(() => {});
-        queryClient.setQueryData(meQuery.queryKey, null);
+        replaceSession(queryClient, null);
         void navigate({ to: '/login' });
     };
 

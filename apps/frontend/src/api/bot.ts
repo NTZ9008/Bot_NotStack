@@ -3,7 +3,8 @@ import type {
     ConfigRow,
     GrantAccessInput,
     GrantAccessResponse,
-    LevelRow,
+    LevelPage,
+    LevelQuery,
     LogEventSetting,
     LogOptions,
     LogSettingsResponse,
@@ -34,7 +35,7 @@ const g = (guildId: string, path = '') => `/guilds/${guildId}${path}`;
 export const configQuery = (guildId: string) => queryOptions({ queryKey: [...guildKey(guildId), 'config'], queryFn: () => api<ConfigRow[]>(g(guildId, '/config')) });
 export const updateConfig = (guildId: string, input: UpdateConfigInput) => api<SuccessResponse>(g(guildId, '/config'), { body: input });
 
-export const levelsQuery = (guildId: string) => queryOptions({ queryKey: [...guildKey(guildId), 'levels'], queryFn: () => api<LevelRow[]>(g(guildId, '/levels')) });
+export const levelsQuery = (guildId: string, query: Partial<LevelQuery> = {}) => queryOptions({ queryKey: [...guildKey(guildId), 'levels', 'list', query], queryFn: ({ signal }) => api<LevelPage>(g(guildId, '/levels'), { query, signal }) });
 
 // ==========================================
 // 🗒️ ไฟล์ log ของบอท (ส่วนกลาง — ADMIN)

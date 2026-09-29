@@ -9,6 +9,7 @@ import { LogFilesService } from '../../log-files/log-files.service';
 import { LogDispatcher } from '../../log-manager/services/log-dispatcher.service';
 import badWords from '../data/bad-words.json';
 import { AI_DAILY_LIMIT, GeminiService } from '../gemini.service';
+import { SpamWindow } from '../spam-window';
 
 // 🛡️ Anti-Spam: ส่งได้ไม่เกิน 6 ข้อความ ภายใน 5 วินาที
 const SPAM_LIMIT = 6;
@@ -44,7 +45,7 @@ const NO_FEATURES: ChatFeatures = { antiSpam: false, badWordFilter: false, aiCha
 @Injectable()
 export class MessageListener {
     private readonly logger = new Logger('Chat');
-    private readonly spam = new Map<string, { count: number; lastMsg: number }>();
+    private readonly spam = new SpamWindow(SPAM_LIMIT, SPAM_TIME);
 
     constructor(
         private readonly discord: DiscordService,
@@ -68,7 +69,7 @@ export class MessageListener {
         // ตรวจลิงก์เชิญเซิร์ฟเวอร์อื่น (เฉพาะบันทึก log ไม่ได้ลบข้อความ)
         this.logs.logInvitePosted(msg);
         if (features.badWordFilter && (await this.filterBadWords(msg))) return;
-        this.levels.awardMessageXp(msg);
+        await this.levels.awardMessageXp(msg);
 
         // AI Chat: ต้องแท็กบอท (@Bot) และไม่ใช่การแท็กทุกคน
         const me = this.discord.client.user;
@@ -126,22 +127,10 @@ export class MessageListener {
 
     // --- 2) Anti-Spam — คืน true ถ้าเป็นสแปม (ลบข้อความแล้ว) ---
     private async checkSpam(msg: Message): Promise<boolean> {
-        const now = Date.now();
-        const key = `${msg.guildId}:${msg.author.id}`;
-        const data = this.spam.get(key) ?? { count: 0, lastMsg: 0 };
-        if (now - data.lastMsg > SPAM_TIME) data.count = 0;
-        data.count++;
-        data.lastMsg = now;
-        this.spam.set(key, data);
-        // ล้างคนที่เงียบไปนานแล้วออกจาก memory
-        if (this.spam.size > 1000) {
-            for (const [id, entry] of this.spam) if (now - entry.lastMsg > SPAM_TIME) this.spam.delete(id);
-        }
-
-        // อนุญาตครบ SPAM_LIMIT ข้อความ และเริ่มลบตั้งแต่ข้อความถัดไป
-        if (data.count <= SPAM_LIMIT) return false;
+        const { blocked, warn } = this.spam.check(`${msg.guildId}:${msg.author.id}`);
+        if (!blocked) return false;
         msg.delete().catch(() => {});
-        if (data.count === SPAM_LIMIT + 1) {
+        if (warn) {
             this.logs.logFilterAction(msg.guild, { user: msg.author, channelId: msg.channel.id, reason: 'Anti-Spam (ส่งข้อความถี่เกินกำหนด)', content: msg.content });
             await this.send(msg, `⚠️ <@${msg.author.id}> ใจเย็นๆ ครับ! อย่าส่งข้อความรัวเกินไป`);
             const alertChannelId = msg.guildId ? await this.config.get(msg.guildId, 'ALERT_CHANNEL_ID') : null;
