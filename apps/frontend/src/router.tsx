@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
-import { meQuery } from '@/api/auth';
+import { replaceSession } from '@/lib/session';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { routeTree } from './routeTree.gen';
 
@@ -29,7 +29,7 @@ export const router = createRouter({
 
 // session หมดอายุ (refresh ไม่ผ่าน) → ล้างข้อมูลผู้ใช้แล้วพาไปหน้า login
 setUnauthorizedHandler(() => {
-    queryClient.setQueryData(meQuery.queryKey, null);
+    replaceSession(queryClient, null);
     if (router.state.location.pathname !== '/login') void router.navigate({ to: '/login' });
 });
 

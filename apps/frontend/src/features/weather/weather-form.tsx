@@ -17,7 +17,7 @@ import { insertAtCursor, PlaceholderChips, Segmented } from '@/features/welcome/
 import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { DAY_BUTTONS, DAY_PRESETS, THEME_LABELS, ZOOM_LABELS, type PatchWeather, type WeatherDraft } from './types';
+import { DAY_BUTTONS, DAY_PRESETS, RADAR_SOURCE_LABELS, THEME_LABELS, ZOOM_LABELS, type PatchWeather, type WeatherDraft } from './types';
 
 export type WeatherSection = 'schedule' | 'location' | 'embed' | 'chart' | 'radar';
 
@@ -396,6 +396,7 @@ function ChartSection({ meta, draft, patch }: FormProps) {
 function RadarSection({ meta, draft, patch }: FormProps) {
     const { radar } = draft.options;
     const zooms = Object.fromEntries(meta.radarZooms.map((z) => [String(z), ZOOM_LABELS[z] ?? `ซูม ${z}`])) as Record<string, string>;
+    const tmd = radar.source === 'tmd';
     return (
         <div className="space-y-4">
             <SwitchRow
@@ -405,13 +406,26 @@ function RadarSection({ meta, draft, patch }: FormProps) {
                 onChange={(enabled) => patch((d) => void (d.options.radar.enabled = enabled))}
             />
             <fieldset disabled={!radar.enabled} className={cn('space-y-4', !radar.enabled && 'pointer-events-none opacity-50')}>
+                <Field
+                    label="แหล่งข้อมูลเรดาร์"
+                    hint={
+                        tmd
+                            ? 'เครือข่ายเรดาร์ของกรมอุตุฯ ทั่วไทย ภาพใหม่ทุก 15 นาที (ช้ากว่าเวลาจริงราว 15-30 นาที) · ครอบคลุมเฉพาะไทยและประเทศใกล้เคียง'
+                            : 'ภาพเรดาร์รวมจากหลายประเทศ ภาพใหม่ทุก 10 นาที · ใช้ได้ทั่วโลก'
+                    }
+                >
+                    <Segmented value={radar.source} options={RADAR_SOURCE_LABELS} onChange={(source) => patch((d) => void (d.options.radar.source = source))} />
+                </Field>
                 <SwitchRow
                     label="ภาพเคลื่อนไหวย้อนหลัง 1 ชั่วโมง (GIF)"
                     hint="เห็นทิศทางที่ฝนเคลื่อน · ปิด = ภาพนิ่งของภาพล่าสุด (PNG)"
                     checked={radar.animated}
                     onChange={(animated) => patch((d) => void (d.options.radar.animated = animated))}
                 />
-                <Field label="ระยะที่แสดง" hint="ความกว้างของภาพ: ภูมิภาค ~700 กม. · กลาง ~350 กม. · ใกล้ ~180 กม. — ยิ่งใกล้ขอบฝนยิ่งเบลอ (ข้อมูลเรดาร์ละเอียดราว 600 ม. ต่อจุด)">
+                <Field
+                    label="ระยะที่แสดง"
+                    hint={`ความกว้างของภาพ: ภูมิภาค ~700 กม. · กลาง ~350 กม. · ใกล้ ~180 กม. — ยิ่งใกล้ขอบฝนยิ่งเบลอ (ข้อมูลเรดาร์ละเอียดราว ${tmd ? '800' : '600'} ม. ต่อจุด)`}
+                >
                     <Segmented value={String(radar.zoom)} options={zooms} onChange={(value) => patch((d) => void (d.options.radar.zoom = Number(value)))} />
                 </Field>
                 <Field label="ธีมของแผนที่">
@@ -422,7 +436,14 @@ function RadarSection({ meta, draft, patch }: FormProps) {
                 <p className="mb-1 font-medium">เกี่ยวกับเรดาร์</p>
                 <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
                     <li>แสดงฝนที่ตก ณ ตอนส่งและย้อนหลัง ไม่ใช่พยากรณ์ — วันที่ฟ้าโปร่งภาพจะเป็นแผนที่เปล่า</li>
-                    <li>ภาพเรดาร์อัปเดตทุก 10 นาที จาก RainViewer · แผนที่ © OpenStreetMap contributors</li>
+                    {tmd ? (
+                        <>
+                            <li>ภาพเรดาร์อัปเดตทุก 15 นาที จากระบบ RADARGIS ของกรมอุตุนิยมวิทยา · แผนที่ © OpenStreetMap contributors</li>
+                            <li>ถ้าดึงเรดาร์ของกรมอุตุฯ ไม่ได้ หรือสถานที่อยู่นอกประเทศไทย จะใช้ภาพจาก RainViewer แทนอัตโนมัติ</li>
+                        </>
+                    ) : (
+                        <li>ภาพเรดาร์อัปเดตทุก 10 นาที จาก RainViewer · แผนที่ © OpenStreetMap contributors</li>
+                    )}
                     <li>ถ้าดึงเรดาร์ไม่ได้ รายงานยังส่งได้ตามปกติ แค่ไม่มีภาพเรดาร์</li>
                 </ul>
             </div>

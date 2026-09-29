@@ -123,7 +123,7 @@ BOT_NOTSTACK/
 │   │       │                    ← แต่ละโมดูล: *.controller / *.service + dto/ listeners/ tasks/ (ตามที่มี)
 │   │       ├── chat/            ← listeners ของข้อความ: Anti-Spam, กรองคำหยาบ (Gemini), AI Chat, ตอบกลับอัตโนมัติ, reaction roles
 │   │       ├── commands/        ← คำสั่ง / (slash/ คลาสละไฟล์) + interaction listener
-│   │       └── scripts/         ← deploy-commands.ts, import-sqlite.ts
+│   │       └── scripts/         ← deploy-commands.ts
 │   └── frontend/                ← React 19 + Vite + TanStack Router / Query / Table / Form + shadcn/ui (Tailwind v4)
 │       ├── wrangler.jsonc       ← deploy ไป Cloudflare Workers (static assets)
 │       └── src/
@@ -187,18 +187,7 @@ pnpm install
 pnpm db:migrate
 ```
 
-### 4️⃣ (ครั้งเดียว) ย้ายข้อมูลเก่าจาก SQLite
-
-ถ้าเคยรันบอทเวอร์ชัน SQLite มาก่อน ให้ย้ายข้อมูลจาก `database.sqlite` และ `prbot/data/messages.sqlite` **ก่อนเปิดบอทครั้งแรก** (ต้อง `pnpm build` ก่อน)
-
-```bash
-pnpm db:import-sqlite -- --dry-run
-```
-
-ดูก่อนว่าจะย้ายอะไรบ้าง (ไม่เขียนลง Postgres) แล้วค่อยรัน `pnpm db:import-sqlite` เพื่อย้ายจริงใน transaction เดียว + ตรวจเทียบข้อมูลทุกแถว
-(ข้อมูลเข้าเป็นของเซิร์ฟเวอร์หลัก — `--force` ลบแล้วแทนที่เฉพาะข้อมูลของเซิร์ฟเวอร์หลัก ไม่แตะเซิร์ฟเวอร์อื่น)
-
-### 5️⃣ Build และลงทะเบียนคำสั่ง `/`
+### 4️⃣ Build และลงทะเบียนคำสั่ง `/`
 
 ```bash
 pnpm build
@@ -211,7 +200,7 @@ pnpm discord:deploy-commands
 คำสั่งทั่วไปลงทะเบียนแบบ global (ขึ้นในทุกเซิร์ฟเวอร์ — Discord อาจใช้เวลาสักพัก) ส่วนคำสั่งเฉพาะ NotStack ลงทะเบียนที่เซิร์ฟเวอร์หลัก
 (guild command เดิมของเซิร์ฟเวอร์หลักถูกแทนที่ คำสั่งจึงไม่ขึ้นซ้ำ 2 อัน)
 
-### 6️⃣ รันบอท + API (production)
+### 5️⃣ รันบอท + API (production)
 
 ```bash
 pnpm start
@@ -238,6 +227,49 @@ pnpm dev
 - แก้ `schema.prisma` แล้วสร้าง migration: `cd apps/backend && pnpm exec prisma migrate dev --name <ชื่อ>`
   (**ห้ามรันกับฐานข้อมูลจริง** — ใช้ Postgres สำหรับทดสอบ)
 
+## 🏆 Levels & XP ที่ตั้งค่าได้ต่อเซิร์ฟเวอร์
+
+คู่มือฉบับเต็ม: [รายละเอียดระบบ XP ทั้งหมด](docs/xp-system.md) — การตั้งค่า สูตร ตัวอย่าง CRUD, API, โครงสร้างข้อมูล และข้อจำกัด
+
+หน้า **Levels** มี 4 แท็บ: อันดับสมาชิก, กฎและอัตรา XP, จัดการสมาชิก, ประวัติ
+สมาชิกทั่วไปดูอันดับได้ ส่วนการตั้งค่า/แก้ XP/ดูประวัติต้องมี **Manage Server** หรือเป็น ADMIN ของระบบ
+
+- **กฎกิจกรรม:** เพิ่ม/อ่าน/แก้/คัดลอก/ลบ/เรียงลำดับ/เปิด–ปิดกฎ สำหรับข้อความ ห้องเสียง และคำสั่งบอท ได้สูงสุด 50 กฎต่อเซิร์ฟเวอร์
+- **อัตรา XP:** กำหนดช่วง XP ต่อครั้ง, ตัวคูณรายกฎและทั้งเซิร์ฟเวอร์ (100% = ปกติ, 150% = 1.5 เท่า), โอกาสได้รับ 0–100%, cooldown และเพดานรายวัน
+- **กลุ่มเป้าหมาย:** ให้เฉพาะห้อง/หมวด/ยศที่เลือก, ยกเว้นห้อง/ยศ, จำกัดชื่อคำสั่ง และตั้งความยาวข้อความขั้นต่ำได้
+- **ห้องเสียง:** ตั้งจำนวนคนขั้นต่ำ และเลือกไม่ให้ XP เมื่อปิดไมค์/ปิดหูฟัง/อยู่ AFK ได้ ตรวจทุก 15 วินาทีแล้วใช้ cooldown ของกฎตัดสินว่าให้ XP ได้หรือยัง
+- **สูตรเลเวล:** XP สะสมขั้นต่ำ = `ceil(curveBase × level^curveExponent)` ค่าเดิมคือ `100 × level²` เปลี่ยนสูตรแล้ว XP เดิมยังอยู่ และคำนวณเลเวลใหม่ทั้ง Dashboard และ `/rank`
+- **สมาชิก:** เพิ่ม/ลด/กำหนด XP, รีเซ็ตเป็นศูนย์, ลบออกจากอันดับ หรือรีเซ็ตทั้งเซิร์ฟเวอร์ พร้อมเหตุผลและกล่องยืนยัน การลบไม่ห้ามรับ XP ใหม่
+- **ประวัติ:** เก็บกิจกรรมและการแก้ไขโดยผู้ดูแล 90 วัน มีตัวกรองสมาชิกและแบ่งหน้า อันดับแบ่งหน้าฝั่ง API ไม่โหลดรายชื่อทั้งหมดพร้อมกัน
+
+**วิธีคิด:** สุ่มจำนวนเต็มในช่วง XP แล้วคูณตัวคูณรายกฎและทั้งเซิร์ฟเวอร์ จากนั้นปัดลง เช่น 20 XP × 150% × 200% = 60 XP
+กฎที่ตรงเงื่อนไข **รวมกันตามลำดับที่แสดง** จนถึงเพดาน; ไม่เลือกห้อง/ยศ = ทุกห้อง/ทุกคน; ยศหลายรายการใช้เงื่อนไขมียศใดยศหนึ่ง
+เพดาน `0` = ไม่ตั้งเพดานเอง (ระบบจำกัดยอด/โควตาที่ 2,000,000,000 XP); โควตาวันใหม่เริ่มเวลา **00:00 Asia/Bangkok**
+Cooldown เริ่มทุกครั้งที่มีสิทธิ์สุ่ม แม้สุ่มไม่ได้ XP เพื่อป้องกันการยิงคำขอซ้ำจนผ่านโอกาสสุ่ม
+
+ค่าเริ่มต้นคงอัตราเดิม: ข้อความ 15–25 XP/60 วินาที และเสียง 5–10 XP/60 วินาที; กฎคำสั่งต้องเพิ่มเอง
+บอทและ webhook ไม่ได้ XP ข้อความ ส่วนคำสั่งนับเมื่อ handler ทำงานจบโดยไม่ throw (ไม่ใช่การตรวจผลสำเร็จเชิงธุรกิจของแต่ละคำสั่ง)
+การเพิ่ม XP โดยผู้ดูแลไม่กินโควตากิจกรรม และการรีเซ็ต/ลบสมาชิกคงโควตาที่ใช้แล้วกับ cooldown ของวันนี้ไว้
+
+XP, cooldown, โควตา และประวัติเขียนใน transaction เดียว โดยใช้ PostgreSQL advisory lock ต่อเซิร์ฟเวอร์
+ไม่ค้างยอดใน memory จึงไม่มีการ save ยอดเก่าทับยอดใหม่ ข้อมูลยังอยู่หลังรีสตาร์ต และการแก้กฎตรวจ revision เพื่อกันผู้ดูแลสองคนเขียนทับกัน
+
+**API:** `GET /api/guilds/:guildId/levels?page=1&pageSize=25[&userId=...][&q=...]` คืน `{items,total,page,pageSize,settings,searchLimited}`
+ค้นหาด้วย Discord ID หรือต้นชื่อผ่าน `q` ได้ โดยการค้นหาชื่อใช้ผลจาก Discord สูงสุด 100 คนและแจ้งเมื่อถึงขีดจำกัด; อันดับยังเป็นอันดับรวมของเซิร์ฟเวอร์
+รูปแบบใหม่นี้แทน array เดิม ต้องอัปเดต backend และ frontend รุ่นนี้คู่กัน
+เส้นทางจัดการอยู่ใต้ `/levels/settings` (GET/POST), `/levels/members` (POST), `/levels/reset` (POST), `/levels/history` (GET)
+การแก้สมาชิกรับ `userId`, `action` (`add|subtract|set|reset|delete`), `amount`, `reason`; รีเซ็ตทั้งเซิร์ฟเวอร์ต้องส่ง `confirmation: "RESET XP"`
+
+**Migration:** รัน `pnpm db:migrate` ก่อนเริ่ม backend รุ่นใหม่ เพื่อเพิ่ม `xp_settings`, `xp_progress`, `xp_daily`, `xp_history` และ index อันดับ
+migration ไม่ลบ XP เดิม หน้าอันดับคำนวณเลเวลจาก XP เพื่อแก้ข้อมูลเลเวลเก่าที่คลาดเคลื่อนด้วย
+
+### การทดสอบ
+
+- `pnpm test` — build และทดสอบ Anti-Spam, การถอนสิทธิ์หมดอายุ, การล้าง session และสูตร/กฎ XP
+- `pnpm test:integration` — ต้องมี PostgreSQL binaries (`initdb`, `pg_ctl`, `createdb`) ใน PATH; สร้าง cluster ชั่วคราวบน loopback,
+  รัน migration ทุกตัว และทดสอบ concurrency, caps, CRUD, rollback และสิทธิ์ HTTP API แล้วปิด/ลบ cluster ให้เอง ไม่ใช้ `DATABASE_URL` ของแอป
+- CI ใช้ PostgreSQL service แยกสำหรับชุดทดสอบเดียวกัน ทั้งสองชุดไม่ login บอทหรือส่งข้อความไป Discord
+
 ## 📦 Deploy
 
 GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ manual จาก branch `main` / `release/*` ส่วน frontend deploy แยกผ่าน Cloudflare Workers
@@ -252,7 +284,7 @@ GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ man
 
 - ต้องตั้ง GitHub secrets `CLOUDFLARE_API_TOKEN` (สิทธิ์ Workers Scripts: Edit) และ `CLOUDFLARE_ACCOUNT_ID`
 - routing ตั้งเองที่ Cloudflare: ให้ `/api/*` และ `/webhook/*` ของโดเมน Dashboard ไปที่ backend
-  (หรือวาง API ไว้คนละ subdomain แล้วตั้ง Actions variable `VITE_API_URL` + `CORS_ORIGINS` ใน `.env` ของ backend — ต้องเป็นโดเมนเดียวกัน เพราะ cookie เป็น SameSite)
+  (หรือวาง API ไว้คนละ subdomain แล้วตั้ง Actions variable `VITE_API_URL` + `CORS_ORIGINS` ใน `.env` ของ backend — ต้องเป็นโดเมนเดียวกัน เพราะ cookie เป็น SameSite · เปิดทุก subdomain ได้ด้วย `CORS_ORIGINS=https://*.example.com`)
 - header ความปลอดภัย / cache ของหน้าเว็บอยู่ใน `apps/frontend/public/_headers`
 
 > อัปเกรดจากรุ่นก่อน (v3.6 แบบไฟล์เดียว): ไฟล์ `.env` บนเซิร์ฟเวอร์ใช้ต่อได้เลย — workflow ลบไฟล์ของรุ่นเก่าและโปรเซส PM2 เดิมให้เอง

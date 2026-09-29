@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { allowedOrigins } from './config/allowed-origins';
 import type { Env } from './config/env.validation';
 
 // ==========================================
@@ -42,9 +43,9 @@ async function bootstrap(): Promise<void> {
     );
 
     // หน้าเว็บอยู่คนละ origin กับ API (เช่น dashboard.example.com → api.example.com) — ต้องอยู่ domain เดียวกัน (same-site)
-    // เพราะ cookie ของ session เป็น SameSite=Lax/Strict
+    // เพราะ cookie ของ session เป็น SameSite=Lax/Strict — ใส่ https://*.example.com เพื่อเปิดให้ทุก subdomain ได้
     const corsOrigins = config.get('CORS_ORIGINS', { infer: true });
-    if (corsOrigins.length) app.enableCors({ origin: corsOrigins, credentials: true, methods: ['GET', 'POST'] });
+    if (corsOrigins.length) app.enableCors({ origin: allowedOrigins(corsOrigins).cors, credentials: true, methods: ['GET', 'POST'] });
 
     app.use(cookieParser());
 

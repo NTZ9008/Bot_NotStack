@@ -24,10 +24,13 @@ export const WEATHER_CHART_HOURS = [12, 24, 36, 48] as const;
 export const WEATHER_THEMES = ['light', 'dark'] as const;
 // ระดับซูมของแผนที่เรดาร์ (ภาพกว้าง 1200px): 8 ≈ 700 กม. / 9 ≈ 350 กม. / 10 ≈ 180 กม. — ยิ่งใกล้ ฝนยิ่งเบลอ
 export const WEATHER_RADAR_ZOOMS = [8, 9, 10] as const;
+// แหล่งภาพเรดาร์: RainViewer (ทั่วโลก ทุก 10 นาที) หรือกรมอุตุนิยมวิทยา (ไทย + ประเทศใกล้เคียง ทุก 15 นาที)
+export const WEATHER_RADAR_SOURCES = ['rainviewer', 'tmd'] as const;
 // 0 = อาทิตย์ ... 6 = เสาร์ (ตรงกับ Date#getDay และ cron)
 export const WEATHER_DAYS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 export type WeatherTheme = (typeof WEATHER_THEMES)[number];
+export type WeatherRadarSource = (typeof WEATHER_RADAR_SOURCES)[number];
 
 // ช่องข้อมูลใน embed — เลือกได้ว่าจะแสดงช่องไหน และเรียงลำดับเองได้ (วิธีคำนวณค่าอยู่ที่ backend weather/report)
 export const WEATHER_FIELDS = [
@@ -83,7 +86,8 @@ export interface WeatherOptions {
     };
     chart: { enabled: boolean; hours: number; showRain: boolean; theme: WeatherTheme; color: string };
     // animated = GIF ย้อนหลัง 1 ชม. — ปิด = ภาพนิ่ง (PNG) ของภาพล่าสุด
-    radar: { enabled: boolean; animated: boolean; zoom: number; theme: WeatherTheme };
+    // source = tmd แต่ดึงไม่ได้ / สถานที่อยู่นอกพื้นที่ → ใช้ RainViewer แทน
+    radar: { enabled: boolean; source: WeatherRadarSource; animated: boolean; zoom: number; theme: WeatherTheme };
 }
 
 export const WEATHER_DEFAULT_CONTENT = '☀️ พยากรณ์อากาศวันนี้';
@@ -104,7 +108,7 @@ export function defaultWeatherOptions(): WeatherOptions {
             fields: ['temp', 'feelsLike', 'range', 'rain', 'humidity', 'wind', 'pm25', 'sun', 'clouds'],
         },
         chart: { enabled: true, hours: 24, showRain: true, theme: 'light', color: '#F97316' },
-        radar: { enabled: true, animated: true, zoom: 9, theme: 'light' },
+        radar: { enabled: true, source: 'rainviewer', animated: true, zoom: 9, theme: 'light' },
     };
 }
 
@@ -172,6 +176,7 @@ function normalizeRadar(src: unknown, base: WeatherOptions['radar']): WeatherOpt
     const r = isObject(src) ? src : {};
     return {
         enabled: bool(r.enabled, base.enabled),
+        source: oneOf(WEATHER_RADAR_SOURCES, r.source, base.source),
         animated: bool(r.animated, base.animated),
         zoom: oneOf<number>(WEATHER_RADAR_ZOOMS, Number(r.zoom), base.zoom),
         theme: oneOf(WEATHER_THEMES, r.theme, base.theme),

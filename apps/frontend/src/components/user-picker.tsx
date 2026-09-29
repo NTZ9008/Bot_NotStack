@@ -109,7 +109,7 @@ export function UserPicker({
                         <p className="truncate font-mono text-xs text-muted-foreground">{value.userId}</p>
                     </div>
                     {onClear && (
-                        <Button variant="ghost" size="icon-sm" onClick={onClear} aria-label="ล้างที่เลือกไว้">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} aria-label="ล้างที่เลือกไว้">
                             <X />
                         </Button>
                     )}

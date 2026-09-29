@@ -1,3 +1,4 @@
+import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,7 +54,7 @@ function LoginPage() {
             try {
                 const result = await authApi.login(value);
                 const me: MeResponse = { user: result.user, discordEnabled: Boolean(providers?.discord) };
-                queryClient.setQueryData(meQuery.queryKey, me);
+                replaceSession(queryClient, me);
                 await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
                 toast.success('เข้าสู่ระบบสำเร็จ!');
                 await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/' });

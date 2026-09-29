@@ -1,6 +1,6 @@
 // ==========================================
 // 🐘 PRISMA SCHEMA (PostgreSQL)
-// ย้ายมาจาก database.sqlite + prbot/data/messages.sqlite
+// เดิมย้ายมาจาก SQLite ของบอทรุ่นก่อน (database.sqlite + prbot/data/messages.sqlite)
 // ชื่อ field ฝั่ง JS คงเดิม (userId, channelId ...) ส่วนชื่อคอลัมน์ใน Postgres เป็น snake_case ผ่าน @map
 // URL ของฐานข้อมูลตั้งใน apps/backend/prisma.config.ts (อ่านจาก DATABASE_URL ใน .env)
 //
@@ -55,6 +55,7 @@ model Level {
 
   @@id([guildId, userId])
   @@map("levels")
+  @@index([guildId, xp(sort: Desc), userId])
 }
 
 // ห้องที่เปิดให้ใช้ระบบตั๋วเข้าห้อง (Room Access) ของแต่ละเซิร์ฟเวอร์
@@ -335,4 +336,50 @@ model WeatherSetting {
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("weather_settings")
+}
+
+// Configurable XP rules, isolated by guild. Level XP remains cumulative.
+model XpSetting {
+  guildId String @id @map("guild_id")
+  revision Int @default(1)
+  settings Json
+  @@map("xp_settings")
+}
+
+// Persistent attempt cooldown and rule cap (including unsuccessful chance rolls).
+model XpProgress {
+  guildId String @map("guild_id")
+  userId String @map("user_id")
+  ruleId String @map("rule_id")
+  lastAttemptAt DateTime @map("last_attempt_at") @db.Timestamptz(3)
+  day String
+  earned Int @default(0)
+  @@id([guildId, userId, ruleId])
+  @@map("xp_progress")
+}
+
+model XpDaily {
+  guildId String @map("guild_id")
+  userId String @map("user_id")
+  day String
+  earned Int @default(0)
+  @@id([guildId, userId, day])
+  @@index([day])
+  @@map("xp_daily")
+}
+
+model XpHistory {
+  id Int @id @default(autoincrement())
+  guildId String @map("guild_id")
+  userId String @map("user_id")
+  source String
+  delta Int
+  balance Int
+  reason String
+  actorId Int? @map("actor_id")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  @@index([guildId, id])
+  @@index([guildId, userId, id])
+  @@index([createdAt])
+  @@map("xp_history")
 }
