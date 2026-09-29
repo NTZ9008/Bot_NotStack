@@ -69,11 +69,15 @@ function IdChoices({
     options,
     values,
     onChange,
+    voiceIds,
+    emptyHint,
 }: {
     title: string;
     options: { id: string; name: string }[];
     values: string[];
     onChange: (v: string[]) => void;
+    voiceIds?: string[];
+    emptyHint?: string;
 }) {
     const [search, setSearch] = useState('');
     const all = [...options, ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: `${id} (ไม่พบใน Discord)` }))];
@@ -82,6 +86,32 @@ function IdChoices({
             <summary className="cursor-pointer text-sm">
                 {title} · เลือก {values.length}
             </summary>
+            <div className="my-2 flex flex-wrap gap-2">
+                {voiceIds && (
+                    <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={!voiceIds.length || voiceIds.every((id) => values.includes(id))}
+                        onClick={() => {
+                            const next = [...new Set([...values, ...voiceIds])];
+                            if (next.length > 100) {
+                                toast.error('เลือกได้สูงสุด 100 รายการ', {
+                                    description: 'หากต้องการให้กฎเสียงใช้ได้ทุกห้อง ให้ล้างการเลือกห้องของกฎนี้',
+                                });
+                                return;
+                            }
+                            onChange(next);
+                        }}
+                    >
+                        เลือกห้องเสียงทั้งหมด
+                    </Button>
+                )}
+                <Button type="button" size="sm" variant="ghost" disabled={!values.length} onClick={() => onChange([])}>
+                    ล้างการเลือก
+                </Button>
+            </div>
+            {emptyHint && <p className="mb-2 text-xs text-muted-foreground">{emptyHint}</p>}
             <Input
                 aria-label={`ค้นหา${title}`}
                 placeholder="ค้นหาชื่อหรือ ID"
@@ -97,6 +127,7 @@ function IdChoices({
                             <input
                                 type="checkbox"
                                 checked={values.includes(o.id)}
+                                disabled={!values.includes(o.id) && values.length >= 100}
                                 onChange={(e) => onChange(e.target.checked ? [...values, o.id] : values.filter((id) => id !== o.id))}
                             />
                             {o.name}
@@ -144,6 +175,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
         onError: (err) => toast.error('บันทึกไม่สำเร็จ', { description: errorMessage(err) }),
     });
     const channelOptions = (channels.data ?? []).map((c) => ({ id: c.id, name: `${c.isCategory ? 'หมวด' : '#'} ${c.name}` }));
+    const voiceIds = (channels.data ?? []).filter((c) => c.isVoice).map((c) => c.id);
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -395,6 +427,12 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                 <IdChoices
                                     title="ให้เฉพาะห้อง/หมวด"
                                     options={channelOptions}
+                                    voiceIds={voiceIds}
+                                    emptyHint={
+                                        rule.source === 'voice'
+                                            ? 'ไม่เลือกห้อง = ทุกห้องเสียง รวมถึงห้องที่สร้างใหม่ · ปุ่มเลือกทั้งหมดเลือกเฉพาะห้องเสียงและ Stage ที่มีตอนนี้'
+                                            : 'ไม่เลือกห้อง = ทุกห้อง · ปุ่มเลือกห้องเสียงทั้งหมดรวม Stage และคงรายการอื่นที่เลือกไว้'
+                                    }
                                     values={rule.channelIds}
                                     onChange={(channelIds) => patchRule(rule.id, { channelIds })}
                                 />

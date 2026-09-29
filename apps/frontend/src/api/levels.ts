@@ -1,4 +1,4 @@
-import type { SuccessResponse, XpHistoryPage, XpMemberMutation, XpSettingsResponse } from '@notstack/shared';
+import type { XpHistoryPage, XpMemberMutation, XpMemberMutationResult, XpResetGuildResult, XpSettingsResponse } from '@notstack/shared';
 import { queryOptions } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { guildKey } from './guilds';
@@ -13,6 +13,6 @@ export const xpHistoryQuery = (guild: string, userId?: string, cursor?: number) 
     });
 export const xpApi = {
     save: (guild: string, input: XpSettingsResponse) => api<XpSettingsResponse>(path(guild, 'settings'), { body: input }),
-    member: (guild: string, input: XpMemberMutation) => api<SuccessResponse>(path(guild, 'members'), { body: input }),
-    reset: (guild: string, reason: string, confirmation: string) => api<SuccessResponse>(path(guild, 'reset'), { body: { reason, confirmation } }),
+    member: (guild: string, input: XpMemberMutation) => api<XpMemberMutationResult>(path(guild, 'members'), { body: input }),
+    reset: (guild: string, reason: string, confirmation: string) => api<XpResetGuildResult>(path(guild, 'reset'), { body: { reason, confirmation } }),
 };
