@@ -135,6 +135,21 @@ export class DiscordService implements OnApplicationBootstrap, OnApplicationShut
         return channel && 'guildId' in channel && channel.guildId === guildId ? channel : null;
     }
 
+    // Expiry must distinguish a deleted channel from transient API/permission errors.
+    async fetchGuildChannelStrict(guildId: string, channelId: string): Promise<Channel | null> {
+        let channel: Channel | null;
+        try {
+            channel = await this.client.channels.fetch(channelId, { force: true });
+        } catch (err) {
+            if ((err as { code?: number }).code === 10003) return null; // Unknown Channel
+            throw err;
+        }
+        if (channel && (!('guildId' in channel) || channel.guildId !== guildId)) {
+            throw new Error('Channel does not belong to the ticket guild');
+        }
+        return channel;
+    }
+
     async fetchUser(userId: string): Promise<User | null> {
         return this.client.users.cache.get(userId) ?? (await this.client.users.fetch(userId).catch(() => null));
     }

@@ -1,3 +1,4 @@
+import { LevelsService } from '../../levels/levels.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { Events, MessageFlags, type Interaction } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
@@ -18,6 +19,7 @@ export class InteractionListener {
         private readonly explorer: DiscordExplorer,
         private readonly discord: DiscordService,
         private readonly logs: LogDispatcher,
+        private readonly levels: LevelsService,
     ) {}
 
     @OnDiscord(Events.InteractionCreate)
@@ -48,6 +50,20 @@ export class InteractionListener {
                     description: `${interaction.user.username} ใช้คำสั่ง /${interaction.commandName}`,
                 });
                 await command.handler.execute(interaction);
+                if (interaction.inCachedGuild() && !interaction.user.bot) {
+                    try {
+                        await this.levels.award(interaction.guildId, interaction.user.id, {
+                            source: 'command',
+                            channelId: interaction.channelId,
+                            command: interaction.commandName,
+                            parentId: interaction.channel && 'parentId' in interaction.channel ? interaction.channel.parentId : null,
+                            categoryId: interaction.channel && 'parent' in interaction.channel ? interaction.channel.parent?.parentId : null,
+                            roleIds: [...interaction.member.roles.cache.keys()],
+                        });
+                    } catch (err) {
+                        this.logger.error(`Command XP failed: ${(err as Error).message}`);
+                    }
+                }
                 return;
             }
 

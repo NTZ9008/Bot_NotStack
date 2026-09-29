@@ -29,22 +29,22 @@ export class RoomAccessExpiryTask {
                 const expireAt = record.expireAt.getTime();
                 if (now >= expireAt) {
                     try {
-                        const channel = await this.discord.fetchGuildChannel(record.guildId, record.roomId);
+                        const channel = await this.discord.fetchGuildChannelStrict(record.guildId, record.roomId);
                         if (isGuildChannel(channel)) {
-                            await channel.permissionOverwrites.delete(record.userId).catch(() => {});
+                            await channel.permissionOverwrites.delete(record.userId);
                             const user = await this.discord.fetchUser(record.userId);
                             user?.send(`❌ ตั๋วเข้าห้อง **${channel.name}** ของคุณหมดเวลาแล้ว`).catch(() => {});
                         }
                         await this.prisma.roomAccess.deleteMany({ where: { id: record.id } });
                     } catch (err) {
-                        this.logger.error(`Error expiring room access: ${(err as Error).message}`);
+                        this.logger.error(`Retry pending for ticket ${record.id} (${record.guildId}/${record.roomId}/${record.userId}): ${(err as Error).message}`);
                     }
                 } else if (!record.notified) {
                     try {
-                        const channel = await this.discord.fetchGuildChannel(record.guildId, record.roomId);
+                        const channel = await this.discord.fetchGuildChannelStrict(record.guildId, record.roomId);
                         const user = await this.discord.fetchUser(record.userId);
                         if (user && isGuildChannel(channel)) {
-                            user.send(`⚠️ ตั๋วเข้าห้อง **${channel.name}** ของคุณกำลังจะหมดเวลา!`).catch(() => {});
+                            await user.send(`⚠️ ตั๋วเข้าห้อง **${channel.name}** ของคุณกำลังจะหมดเวลา!`);
                             await this.prisma.roomAccess.updateMany({ where: { id: record.id }, data: { notified: true } });
                         }
                     } catch (err) {

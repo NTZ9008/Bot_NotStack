@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { xpForNextLevel } from '@notstack/shared';
+import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import { SlashCommand } from '../../discord/decorators/slash-command.decorator';
 import type { SlashCommandHandler } from '../../discord/interfaces/slash-command.interface';
@@ -26,19 +26,13 @@ export class RankCommand implements SlashCommandHandler {
         if (!this.levels.isLoaded()) {
             return interaction.reply({ content: '❌ ไม่สามารถโหลดข้อมูล Level ได้ในขณะนี้', flags: MessageFlags.Ephemeral });
         }
-        // อันดับแยกตามเซิร์ฟเวอร์
-        const levels = this.levels.forGuild(interaction.guildId);
-        const sorted = [...levels.keys()].sort((a, b) => levels.get(b)!.xp - levels.get(a)!.xp);
-
-        // ตารางจัดอันดับ (Top 10)
+        await interaction.deferReply();
         if (interaction.options.getBoolean('leaderboard')) {
-            const top = sorted.slice(0, 10);
-            if (top.length === 0) return interaction.reply({ content: '📉 ยังไม่มีใครมี XP ในเซิร์ฟเวอร์เลยครับ', flags: MessageFlags.Ephemeral });
-
-            const lines = top.map((userId, i) => {
-                const stats = levels.get(userId)!;
+            const { items: top } = await this.levels.list(interaction.guildId, { page: 1, pageSize: 10 });
+            if (top.length === 0) return interaction.editReply({ content: '📉 ยังไม่มีใครมี XP ในเซิร์ฟเวอร์เลยครับ' });
+            const lines = top.map((stats, i) => {
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `\`#${i + 1}\``;
-                return `${medal} <@${userId}> — **Lvl ${stats.level}** (${stats.xp} XP)`;
+                return `${medal} <@${stats.userId}> — **Lvl ${stats.level}** (${stats.xp} XP)`;
             });
             const embed = new EmbedBuilder()
                 .setColor(0xffd700)
@@ -47,23 +41,23 @@ export class RankCommand implements SlashCommandHandler {
                 .setDescription(lines.join('\n'))
                 .setFooter({ text: 'พิมพ์แชทหรือเข้าห้องเสียงบ่อยๆ เพื่อไต่อันดับนะ!' })
                 .setTimestamp();
-            return interaction.reply({ embeds: [embed] });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         // รายบุคคล
-        const userData = levels.get(target.id);
+        const result = await this.levels.list(interaction.guildId, { page: 1, pageSize: 1, userId: target.id });
+        const userData = result.items[0];
         if (!userData) {
-            return interaction.reply({
+            return interaction.editReply({
                 content: `🤷‍♂️ ${target.username} ยังไม่มีประวัติการแชทเลยครับ พิมพ์อะไรสักหน่อยเพื่อให้ได้ XP สิ!`,
-                flags: MessageFlags.Ephemeral,
             });
         }
 
         const { xp, level } = userData;
-        const nextLevelXp = xpForNextLevel(level);
-        const rank = sorted.indexOf(target.id) + 1;
+        const nextLevelXp = xpForNextLevel(level, result.settings);
+        const rank = userData.rank;
         // ฐานของเลเวลปัจจุบันคือ XP ที่ใช้อัปเลเวลที่แล้ว (เลเวล 0 คือ 0)
-        const prevLevelXp = level === 0 ? 0 : 100 * Math.pow(level, 2);
+        const prevLevelXp = xpAtLevel(level, result.settings);
         const percent = Math.max(0, Math.min(100, Math.floor(((xp - prevLevelXp) / (nextLevelXp - prevLevelXp)) * 100)));
         const barLength = 15;
         const filled = Math.floor((percent / 100) * barLength);
@@ -81,6 +75,6 @@ export class RankCommand implements SlashCommandHandler {
             )
             .setFooter({ text: 'พิมพ์แชทบ่อยๆ เพื่อให้ Level ขึ้นนะ!' })
             .setTimestamp();
-        await interaction.reply({ embeds: [embed] });
+        await interaction.editReply({ embeds: [embed] });
     }
 }

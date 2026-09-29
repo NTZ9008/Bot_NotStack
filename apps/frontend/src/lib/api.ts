@@ -1,3 +1,4 @@
+import { sessionRequests } from './session-state';
 import { AUTH_ERROR_CODES, type ApiErrorBody } from '@notstack/shared';
 
 // ==========================================
@@ -39,7 +40,7 @@ export const isApiUnreachable = (err: unknown): boolean => err instanceof ApiErr
 // request เหล่านี้จัดการ 401 เอง ไม่ต้อง refresh ซ้ำ
 const NO_RETRY = ['/auth/login', '/auth/refresh', '/auth/logout'];
 
-let refreshing: Promise<boolean> | null = null;
+let refreshing: { signal: AbortSignal; promise: Promise<boolean> } | null = null;
 let onUnauthorized: () => void = () => {
     window.location.href = '/login';
 };
@@ -50,23 +51,28 @@ export function setUnauthorizedHandler(handler: () => void): void {
 }
 
 // หลาย request เจอ 401 พร้อมกัน → refresh แค่ครั้งเดียว แล้วทุกตัวรอผลเดียวกัน
-export function refreshSession(): Promise<boolean> {
-    refreshing ??= fetch(apiUrl('/auth/refresh'), { method: 'POST', credentials: 'include' })
+export function refreshSession(signal = sessionRequests.capture()): Promise<boolean> {
+    if (refreshing?.signal === signal) return refreshing.promise;
+    const promise = fetch(apiUrl('/auth/refresh'), { method: 'POST', credentials: 'include', signal })
         .then(async (res) => {
             if (res.ok) return true;
             const data = (await res.json().catch(() => ({}))) as Partial<ApiErrorBody>;
-            // อีกแท็บเพิ่ง refresh ไป — รอให้เบราว์เซอร์รับ cookie ใบใหม่แล้วใช้ต่อได้เลย
             if (data.code === AUTH_ERROR_CODES.tokenRotated) {
                 await new Promise((resolve) => setTimeout(resolve, 500));
+                signal.throwIfAborted();
                 return true;
             }
             return false;
         })
-        .catch(() => false)
+        .catch((err: unknown) => {
+            if (signal.aborted) throw err;
+            return false;
+        })
         .finally(() => {
-            refreshing = null;
+            if (refreshing?.signal === signal) refreshing = null;
         });
-    return refreshing;
+    refreshing = { signal, promise };
+    return promise;
 }
 
 export interface ApiOptions {
@@ -120,10 +126,14 @@ async function send(path: string, options: ApiOptions): Promise<Response> {
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
+    const sessionSignal = sessionRequests.capture();
+    options = { ...options, signal: options.signal ? AbortSignal.any([options.signal, sessionSignal]) : sessionSignal };
     let res = await send(path, options);
+    sessionSignal.throwIfAborted();
 
     if (res.status === 401 && !NO_RETRY.includes(path)) {
-        if (await refreshSession()) res = await send(path, options);
+        if (await refreshSession(sessionSignal)) res = await send(path, options);
+        sessionSignal.throwIfAborted();
         if (res.status === 401 && !options.allowUnauthenticated) onUnauthorized();
     }
 
@@ -134,8 +144,9 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
         throw new ApiError(res.status, message, data ?? {});
     }
 
-    if (options.responseType === 'text') return (await res.text()) as T;
-    return (await res.json()) as T;
+    const result: unknown = options.responseType === 'text' ? await res.text() : await res.json();
+    sessionSignal.throwIfAborted();
+    return result as T;
 }
 
 export const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
