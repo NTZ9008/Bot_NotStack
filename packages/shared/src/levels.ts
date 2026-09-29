@@ -123,6 +123,19 @@ export const xpMemberMutationSchema = z.object({
     reason: z.string().trim().min(1, 'กรุณาระบุเหตุผล').max(300),
 });
 export type XpMemberMutation = z.infer<typeof xpMemberMutationSchema>;
+export interface XpChangeResult {
+    success: true;
+    beforeXp: number;
+    afterXp: number;
+    delta: number;
+}
+export interface XpMemberMutationResult extends XpChangeResult {
+    userId: string;
+    action: XpMemberMutation['action'];
+}
+export interface XpResetGuildResult extends XpChangeResult {
+    affectedMembers: number;
+}
 export const xpResetGuildSchema = z.object({ confirmation: z.literal('RESET XP'), reason: z.string().trim().min(1).max(300) });
 export const xpHistoryQuerySchema = z.object({
     userId: z.string().regex(SNOWFLAKE_RE).optional(),

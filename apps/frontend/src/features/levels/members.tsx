@@ -1,4 +1,4 @@
-import { xpMemberMutationSchema, type XpMemberMutation } from '@notstack/shared';
+import { xpMemberMutationSchema, type XpMemberMutation, type XpMemberMutationResult, type XpResetGuildResult } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { NumberField } from './settings';
@@ -20,7 +21,10 @@ const ACTIONS: Record<XpMemberMutation['action'], string> = {
     reset: 'รีเซ็ตเป็น 0',
     delete: 'ลบสมาชิกจากอันดับ',
 };
+type CompletedChange = { kind: 'member'; data: XpMemberMutationResult; username: string } | { kind: 'guild'; data: XpResetGuildResult };
+
 export function XpMembersPanel({ guildId }: { guildId: string }) {
+    const [completed, setCompleted] = useState<CompletedChange | null>(null);
     const [user, setUser] = useState<PickedUser | null>(null);
     const [action, setAction] = useState<XpMemberMutation['action']>('add');
     const [amount, setAmount] = useState(100);
@@ -31,21 +35,21 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
         client = useQueryClient();
     const input = { userId: user?.userId ?? '', action, amount: ['reset', 'delete'].includes(action) ? 0 : amount, reason };
     const mutation = useMutation({
-        mutationFn: () => xpApi.member(guildId, xpMemberMutationSchema.parse(input)),
-        onSuccess: () => {
+        mutationFn: (request: { input: XpMemberMutation; username: string }) => xpApi.member(guildId, request.input),
+        onSuccess: (data, request) => {
             void client.invalidateQueries({ queryKey: xpKey(guildId) });
             setReason('');
-            toast.success('อัปเดต XP แล้ว');
+            setCompleted({ kind: 'member', data, username: request.username });
         },
         onError: (err) => toast.error(errorMessage(err)),
     });
     const reset = useMutation({
-        mutationFn: () => xpApi.reset(guildId, resetReason, resetText),
-        onSuccess: () => {
+        mutationFn: (request: { reason: string; confirmation: string }) => xpApi.reset(guildId, request.reason, request.confirmation),
+        onSuccess: (data) => {
             void client.invalidateQueries({ queryKey: xpKey(guildId) });
             setResetText('');
             setResetReason('');
-            toast.success('รีเซ็ต XP ทั้งเซิร์ฟเวอร์แล้ว');
+            setCompleted({ kind: 'guild', data });
         },
         onError: (err) => toast.error(errorMessage(err)),
     });
@@ -61,14 +65,17 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                         className="space-y-4"
                         onSubmit={async (e) => {
                             e.preventDefault();
+                            const parsed = xpMemberMutationSchema.safeParse(input);
+                            if (!parsed.success || !user || mutation.isPending || reset.isPending) return;
+                            const request = { input: parsed.data, username: user.username };
                             if (
                                 await confirm({
-                                    title: `${ACTIONS[action]}: ${user?.username}?`,
-                                    description: `เหตุผล: ${reason}`,
-                                    destructive: action !== 'add',
+                                    title: `${ACTIONS[request.input.action]}: ${request.username}?`,
+                                    description: `เหตุผล: ${request.input.reason}`,
+                                    destructive: request.input.action !== 'add',
                                 })
                             )
-                                mutation.mutate();
+                                mutation.mutate(request);
                         }}
                     >
                         <fieldset disabled={mutation.isPending || reset.isPending} className="space-y-4">
@@ -120,6 +127,8 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                         className="space-y-4"
                         onSubmit={async (e) => {
                             e.preventDefault();
+                            if (resetText !== 'RESET XP' || !resetReason.trim() || mutation.isPending || reset.isPending) return;
+                            const request = { reason: resetReason, confirmation: resetText };
                             if (
                                 await confirm({
                                     title: 'รีเซ็ต XP ของสมาชิกทุกคน?',
@@ -128,7 +137,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                     destructive: true,
                                 })
                             )
-                                reset.mutate();
+                                reset.mutate(request);
                         }}
                     >
                         <fieldset disabled={reset.isPending || mutation.isPending} className="space-y-4">
@@ -147,6 +156,58 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                     </form>
                 </CardContent>
             </Card>
+            <Dialog
+                open={completed !== null}
+                onOpenChange={(open) => {
+                    if (!open) setCompleted(null);
+                }}
+            >
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>ดำเนินการสำเร็จ</DialogTitle>
+                        <DialogDescription>
+                            {completed?.kind === 'member'
+                                ? `${ACTIONS[completed.data.action]} · ${completed.username}`
+                                : `รีเซ็ต XP ทั้งเซิร์ฟเวอร์ · ${completed?.data.affectedMembers.toLocaleString() ?? 0} คน`}
+                        </DialogDescription>
+                    </DialogHeader>
+                    {completed && (
+                        <>
+                            {completed.kind === 'member' && (
+                                <p className="break-all text-xs text-muted-foreground">Discord ID: {completed.data.userId}</p>
+                            )}
+                            <dl className="space-y-3 rounded-lg border p-4 text-sm">
+                                <div className="flex flex-wrap justify-between gap-2">
+                                    <dt>{completed.kind === 'guild' ? 'XP รวมเดิม' : 'XP เดิม'}</dt>
+                                    <dd className="font-semibold tabular-nums">{completed.data.beforeXp.toLocaleString()} XP</dd>
+                                </div>
+                                <div className="flex flex-wrap justify-between gap-2">
+                                    <dt>เปลี่ยนแปลง</dt>
+                                    <dd
+                                        className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}
+                                    >
+                                        {completed.data.delta > 0 ? '+' : ''}
+                                        {completed.data.delta.toLocaleString()} XP
+                                    </dd>
+                                </div>
+                                <div className="flex flex-wrap justify-between gap-2 border-t pt-3">
+                                    <dt>{completed.kind === 'guild' ? 'XP รวมหลังทำรายการ' : 'XP หลังทำรายการ'}</dt>
+                                    <dd className="text-lg font-bold tabular-nums">{completed.data.afterXp.toLocaleString()} XP</dd>
+                                </div>
+                            </dl>
+                            {completed.kind === 'member' && completed.data.action === 'delete' && (
+                                <p className="text-sm text-muted-foreground">ลบสมาชิกออกจากอันดับแล้ว สมาชิกจะกลับมาเมื่อได้รับ XP ครั้งใหม่</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">ยอด ณ เวลาที่ทำรายการสำเร็จ กิจกรรมหลังจากนี้อาจเปลี่ยนยอดได้</p>
+                        </>
+                    )}
+                    <DialogFooter>
+                        <Button type="button" onClick={() => setCompleted(null)}>
+                            ปิด
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

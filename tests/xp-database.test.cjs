@@ -50,7 +50,7 @@ test('concurrent awards for the same rule respect a single persisted cooldown', 
 });
 test('concurrent admin additions and awards never overwrite newer balances', async () => {
     await configure(fixedSettings());
-    await Promise.all([
+    const results = await Promise.all([
         service.award('11111', '22222', context),
         ...Array.from({ length: 8 }, () => service.mutateMember('11111', mutation('22222', 'add', 100), 1)),
     ]);
@@ -58,6 +58,48 @@ test('concurrent admin additions and awards never overwrite newer balances', asy
     const history = await service.history('11111', {});
     assert.equal(history.items.length, 9);
     assert.equal(history.items[0].balance, 900);
+    for (const result of results.slice(1)) {
+        assert.equal(result.afterXp - result.beforeXp, 100);
+        assert.equal(result.delta, 100);
+        assert(history.items.some((row) => row.source === 'admin.add' && row.balance === result.afterXp));
+    }
+    assert.equal(new Set(results.slice(1).map((r) => r.afterXp)).size, 8);
+});
+test('member mutation receipts report committed before/after values for every action', async () => {
+    const check = async (action, amount, beforeXp, afterXp) => {
+        const result = await service.mutateMember('11111', mutation('22222', action, amount), 1);
+        assert.deepEqual(result, { success: true, userId: '22222', action, beforeXp, afterXp, delta: afterXp - beforeXp });
+        const latest = (await service.history('11111', {})).items[0];
+        assert.equal(latest.balance, result.afterXp);
+        assert.equal(latest.delta, result.delta);
+    };
+    await check('add', 100, 0, 100);
+    await check('add', 50, 100, 150);
+    await check('subtract', 1000, 150, 0);
+    await check('set', 250, 0, 250);
+    await check('reset', 0, 250, 0);
+    await check('set', 300, 0, 300);
+    await check('delete', 0, 300, 0);
+    assert.equal(await prisma.level.count(), 0);
+    await check('delete', 0, 0, 0);
+});
+test('guild reset receipt reports only the affected guild and handles an empty guild', async () => {
+    await service.mutateMember('11111', mutation('22222', 'set', 100), 1);
+    await service.mutateMember('11111', mutation('33333', 'set', 250), 1);
+    await service.mutateMember('99999', mutation('22222', 'set', 500), 1);
+    assert.deepEqual(await service.resetGuild('11111', 'new season', 1), {
+        success: true,
+        affectedMembers: 2,
+        beforeXp: 350,
+        afterXp: 0,
+        delta: -350,
+    });
+    const empty = await service.resetGuild('11111', 'already empty', 1);
+    assert.equal(empty.affectedMembers, 0);
+    assert.equal(empty.beforeXp, 0);
+    assert.equal(empty.afterXp, 0);
+    assert.equal(empty.delta, 0);
+    assert.equal((await service.list('99999')).items[0].xp, 500);
 });
 test('rule stacking obeys both rule and shared daily caps across restarts', async () => {
     const settings = fixedSettings();
@@ -268,7 +310,16 @@ test('HTTP API enforces manage permission, guild boundary and Zod validation', a
         assert.equal((await request('99999/levels/members', 'manager', mutation('22222', 'add', 10))).status, 403);
         assert.equal((await request('11111/levels/members', 'manager', { ...mutation('22222', 'add', 10), amount: -1 })).status, 400);
         assert.equal((await request('11111/levels/reset', 'manager', { confirmation: 'wrong', reason: 'test' })).status, 400);
-        assert.equal((await request('11111/levels/members', 'manager', mutation('22222', 'add', 100))).status, 200);
+        const updated = await request('11111/levels/members', 'manager', mutation('22222', 'add', 100));
+        assert.equal(updated.status, 200);
+        assert.deepEqual(await updated.json(), {
+            success: true,
+            userId: '22222',
+            action: 'add',
+            beforeXp: 0,
+            afterXp: 100,
+            delta: 100,
+        });
         assert.equal((await service.list('11111')).items[0].xp, 100);
         assert.equal((await service.list('99999')).total, 0);
     } finally {

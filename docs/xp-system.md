@@ -68,6 +68,11 @@ API ตรวจสิทธิ์ด้วย `GuildAccessGuard` ทุก endp
 ปุ่ม **โหลดใหม่** ดึงค่าล่าสุดจาก API; หากมีร่างจะถามก่อนทิ้งการแก้ไข
 การคืนค่าเริ่มต้นแทนที่การตั้งค่าและกฎทั้งชุด แต่ไม่ลบ XP สมาชิก
 
+ในตัวเลือก **ให้เฉพาะห้อง/หมวด** กด **เลือกห้องเสียงทั้งหมด** เพื่อเลือก Voice และ Stage ที่มีตอนนี้ในครั้งเดียว
+ปุ่มนี้คงห้องอื่นที่เลือกไว้และไม่ขึ้นกับข้อความค้นหา; **ล้างการเลือก** ล้างรายการห้องของกฎ
+ถ้ากฎเสียงไม่เลือกห้องเลย จะครอบคลุมทุกห้องเสียงรวมถึงห้องที่สร้างใหม่อัตโนมัติ (ยังอยู่ภายใต้ exclusion)
+การเลือกเป็นรายการจำกัดสูงสุด 100 ID; หากเลือกทั้งหมดแล้วเกิน จะไม่เปลี่ยนรายการและแจ้งให้ทราบ
+
 หากมีผู้ดูแลอีกคนบันทึกก่อน จะพบ HTTP 409 ให้โหลดค่าล่าสุดแล้วนำการแก้ไขของตนไปใส่อีกครั้ง
 ระบบไม่รวมร่างของผู้ดูแลสองคนให้อัตโนมัติ
 
@@ -316,6 +321,8 @@ Dashboard และ `/rank` ใช้ XP และสูตรชุดเดี
 ## 9. CRUD สมาชิกและประวัติ
 
 ใช้แท็บจัดการสมาชิก เลือกผู้ใช้ การดำเนินการ จำนวน และเหตุผล จากนั้นยืนยัน
+เมื่อสำเร็จจะมีป๊อปอัปแสดง XP เดิม, ผลต่างที่เกิดขึ้นจริง และ XP หลังทำรายการ สำหรับทุก action
+ยอดในป๊อปอัปมาจาก transaction ที่บันทึกจริง ไม่ใช่ยอดจาก cache หรือการคำนวณล่วงหน้า; กิจกรรมภายหลังอาจเปลี่ยนยอดอีกได้
 ไม่มี field แก้เลเวลโดยตรง เลเวลคำนวณจาก XP ตามสูตรปัจจุบันเสมอ
 
 | Action | ผลต่อ XP/อันดับ | ถ้ายังไม่มีแถว |
@@ -335,6 +342,7 @@ API ตรวจรูปแบบ ID แต่ไม่ได้ตรวจว
 
 ต้องระบุเหตุผลและพิมพ์ **RESET XP** ให้ตรง ระบบบันทึก `admin.reset_all` ให้แต่ละแถวเดิมแล้วลบอันดับทั้งหมดในเซิร์ฟเวอร์นั้น
 คงกฎ ประวัติ cooldown และโควตาที่ใช้แล้วไว้ ไม่มีปุ่ม undo หรือระบบสำรองฤดูกาลในหน้า XP
+หลังรีเซ็ตสำเร็จ ป๊อปอัปแสดงจำนวนสมาชิกที่ถูกลบจากอันดับและ XP รวมก่อน/หลังรีเซ็ต
 การ reset/delete ไม่ห้ามสมาชิกได้รับ XP ใหม่ และไม่เปิดโควตาใหม่ให้คนที่ชนเพดานวันนี้แล้ว
 
 ### ประวัติ
@@ -365,8 +373,8 @@ frontend ใช้ `credentials: 'include'` และ API client เดิมจ
 | GET | ว่าง | view | 200 `LevelPage` |
 | GET | `/settings` | manage | 200 `{revision, settings}` |
 | POST | `/settings` | manage | 200 `{revision, settings}` ล่าสุด |
-| POST | `/members` | manage | 200 `{"success":true}` |
-| POST | `/reset` | manage | 200 `{"success":true}` |
+| POST | `/members` | manage | 200 `XpMemberMutationResult` พร้อมยอดก่อน/หลัง |
+| POST | `/reset` | manage | 200 `XpResetGuildResult` พร้อมยอดรวมและจำนวนสมาชิก |
 | GET | `/history` | manage | 200 `{items, nextCursor}` |
 
 ### 10.1 ดูอันดับ
@@ -455,7 +463,14 @@ POST `/members`:
 }
 ```
 
-ผล: `{"success":true}`; อ่านอันดับ/ประวัติอีกครั้งเพื่อดูยอดใหม่
+ตัวอย่างผล เมื่อยอดก่อนทำรายการเป็น 1,250 XP:
+
+```json
+{"success":true,"userId":"223456789012345678","action":"add","beforeXp":1250,"afterXp":1750,"delta":500}
+```
+
+`delta = afterXp - beforeXp` เป็นผลต่างจริง เช่น ลด 1,000 จากยอด 150 จะคืน `beforeXp: 150`, `afterXp: 0`, `delta: -150`
+reset/delete คืน `afterXp: 0`; delete หมายถึงไม่มีแถวในอันดับแล้ว ไม่ใช่ยังเก็บแถว 0 XP
 API ไม่มี idempotency key: หาก client ไม่แน่ใจว่าคำขอบวกสำเร็จหรือไม่ ควรตรวจยอดและประวัติก่อนส่งซ้ำ เพราะอาจบวกสองครั้ง
 แม้ set/reset ได้ยอดสุดท้ายเดิม การส่งซ้ำยังสร้างประวัติอีกแถว
 
@@ -467,7 +482,14 @@ POST `/reset`:
 {"confirmation":"RESET XP","reason":"เริ่มการแข่งขันรอบใหม่"}
 ```
 
-ผล: `{"success":true}` ไม่คืนจำนวนสมาชิกที่ลบ และไม่รีเซ็ตโควตา/cooldown
+ตัวอย่างผลสำหรับสมาชิกสองคนที่มี XP รวม 350:
+
+```json
+{"success":true,"affectedMembers":2,"beforeXp":350,"afterXp":0,"delta":-350}
+```
+
+ยอดนี้เป็น XP **รวมทั้งเซิร์ฟเวอร์** ณ transaction ที่รีเซ็ต; `affectedMembers` รวมแถว 0 XP ด้วย
+ไม่มีแถวเดิมจะคืนจำนวนและยอดเป็น 0 ทั้งหมด ไม่รีเซ็ตโควตา/cooldown
 
 ### 10.5 อ่านประวัติ
 
@@ -578,12 +600,13 @@ pnpm test:integration
 ```
 
 `pnpm test` build แล้วทดสอบ 13 เคสใน safety/session/xp-rules
-`pnpm test:integration` build และสร้าง PostgreSQL cluster ชั่วคราวบน loopback เพื่อรัน migration, schema diff และ DB/API tests 13 เคส
+`pnpm test:integration` build และสร้าง PostgreSQL cluster ชั่วคราวบน loopback เพื่อรัน migration, schema diff และ DB/API tests 15 เคส
 ต้องมี `initdb`, `pg_ctl`, `createdb` ใน PATH; script ไม่ใช้ DATABASE_URL ของแอปและหยุด/ลบ cluster ทดสอบหลังจบ
 
 ครอบคลุมสูตรและขอบเขตเลเวล ตัวคูณ โอกาส เงื่อนไขกฎ การเขียนพร้อมกัน cooldown/เพดานข้าม restart/day rollover,
 CRUD/pagination/guild isolation, ค้นหา, revision conflict, rollback และสิทธิ์/validation ของ HTTP API
-รวม 26 เคสในชุดนี้; HTTP test ใช้ controller/guard จริงกับตัวจำลอง Discord ไม่ได้ login บอท
+ตรวจผลตอบกลับยอดก่อน/หลังของทุก action รวมการลดเกินยอดและรีเซ็ต guild ว่างด้วย
+รวม 28 เคสในชุดนี้; HTTP test ใช้ controller/guard จริงกับตัวจำลอง Discord ไม่ได้ login บอท
 CI workflow ใช้ PostgreSQL 18 service แยกเพื่อรัน migration/schema diff และชุดทดสอบเดียวกัน
 ผลทดสอบอัตโนมัติไม่ทดแทนการตรวจสิทธิ์/intents และ event delivery บน Discord จริงของ deployment
 

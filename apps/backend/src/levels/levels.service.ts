@@ -16,6 +16,8 @@ import {
     type XpContext,
     type XpHistoryPage,
     type XpMemberMutation,
+    type XpMemberMutationResult,
+    type XpResetGuildResult,
     type XpSettingsResponse,
 } from '@notstack/shared';
 import type { Message } from 'discord.js';
@@ -226,7 +228,7 @@ export class LevelsService implements OnModuleInit {
         }
     }
 
-    mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<{ success: true }> {
+    mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<XpMemberMutationResult> {
         return this.locked(guildId, async (tx) => {
             const { settings } = await this.readSettings(tx, guildId);
             const where = { guildId_userId: { guildId, userId: input.userId } };
@@ -260,16 +262,18 @@ export class LevelsService implements OnModuleInit {
                     actorId,
                 },
             });
-            return { success: true };
+            return { success: true, userId: input.userId, action: input.action, beforeXp: before, afterXp: after, delta: after - before };
         });
     }
 
-    resetGuild(guildId: string, reason: string, actorId: number): Promise<{ success: true }> {
+    resetGuild(guildId: string, reason: string, actorId: number): Promise<XpResetGuildResult> {
         return this.locked(guildId, async (tx) => {
+            const totals = await tx.level.aggregate({ where: { guildId }, _sum: { xp: true }, _count: true });
+            const beforeXp = totals._sum.xp ?? 0;
             await tx.$executeRaw`INSERT INTO xp_history (guild_id, user_id, source, delta, balance, reason, actor_id)
                 SELECT guild_id, user_id, 'admin.reset_all', -xp, 0, ${reason}, ${actorId} FROM levels WHERE guild_id = ${guildId}`;
             await tx.level.deleteMany({ where: { guildId } });
-            return { success: true };
+            return { success: true, affectedMembers: totals._count, beforeXp, afterXp: 0, delta: 0 - beforeXp };
         });
     }
 
