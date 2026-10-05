@@ -1,8 +1,9 @@
+import { DEFAULT_LOG_APPEARANCE } from '@notstack/shared';
 import type { GuildChannel, GuildRole, LogEventSetting, LogOptions, LogSettingsResponse, UpdateLogOptionsInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Plus, X } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { Plus, X, Search } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { logSettingsApi, logSettingsQuery } from '@/api/bot';
@@ -15,6 +16,9 @@ import { UserPicker } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AppearanceEditor } from '@/features/log-manager/appearance-editor';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -46,10 +50,8 @@ function EventCard({ event, channels }: { event: LogEventSetting; channels: Guil
     const guildId = useGuildId();
     const cache = useSettingsCache();
     const [color, setColor] = useState(event.color);
-    const lastSaved = useRef(event.color);
     useEffect(() => {
         setColor(event.color);
-        lastSaved.current = event.color;
     }, [event.color]);
 
     const mutation = useMutation({
@@ -61,21 +63,20 @@ function EventCard({ event, channels }: { event: LogEventSetting; channels: Guil
         onError: (err) => {
             failed(err);
             // ย้อนค่ากลับตามที่บันทึกจริง ไม่ให้หน้าจอโกหกว่าบันทึกแล้ว
-            setColor(lastSaved.current);
+            setColor(event.color);
             void cache.refresh();
         },
     });
 
     // ช่องเลือกสียิง onChange ถี่ระหว่างลาก → บันทึกเมื่อหยุดเลือกแล้ว
     useEffect(() => {
-        if (color === lastSaved.current) return;
+        if (color === event.color) return;
         const timer = setTimeout(() => {
-            lastSaved.current = color;
             mutation.mutate({ color });
         }, 600);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [color]);
+    }, [color, event.color]);
 
     return (
         <div className="space-y-2 rounded-lg border bg-card p-3" style={{ borderLeft: `3px solid ${color}` }}>
@@ -83,19 +84,35 @@ function EventCard({ event, channels }: { event: LogEventSetting; channels: Guil
                 <span className="truncate text-sm font-medium" title={event.label}>
                     {event.label}
                 </span>
-                <Switch checked={event.enabled} onCheckedChange={(enabled) => mutation.mutate({ enabled })} />
+                <Switch
+                    aria-label={`เปิด log ${event.label}`}
+                    disabled={mutation.isPending}
+                    checked={event.enabled}
+                    onCheckedChange={(enabled) => mutation.mutate({ enabled })}
+                />
             </div>
             <ChannelSelect
                 channels={channels.filter((ch) => ch.sendable)}
+                disabled={mutation.isPending}
                 value={event.channelId}
-                noneLabel="เลือก .."
-                placeholder="เลือก .."
+                noneLabel="ยังไม่เลือกห้อง"
+                placeholder="เลือกห้องปลายทาง"
                 onChange={(channelId) => mutation.mutate({ channelId })}
             />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 สี
-                <input type="color" className="h-6 w-10 cursor-pointer rounded border border-input bg-transparent" value={color} onChange={(e) => setColor(e.target.value)} />
+                <input
+                    aria-label={`สีของ ${event.label}`}
+                    disabled={mutation.isPending}
+                    type="color"
+                    className="h-6 w-10 cursor-pointer rounded border border-input bg-transparent"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                />
                 <span className="font-mono">{color.toUpperCase()}</span>
+                <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                    {mutation.isPending ? 'กำลังบันทึก…' : !event.enabled ? 'ปิดอยู่' : !event.channelId ? 'รอเลือกห้อง' : 'เปิดใช้งาน'}
+                </span>
             </div>
         </div>
     );
@@ -120,7 +137,17 @@ function Chips({ items, empty, onRemove }: { items: { id: string; label: string 
     );
 }
 
-function IgnorePanel({ options, userNames, channels, roles }: { options: LogOptions; userNames: Record<string, string>; channels: GuildChannel[]; roles: GuildRole[] }) {
+function IgnorePanel({
+    options,
+    userNames,
+    channels,
+    roles,
+}: {
+    options: LogOptions;
+    userNames: Record<string, string>;
+    channels: GuildChannel[];
+    roles: GuildRole[];
+}) {
     const guildId = useGuildId();
     const cache = useSettingsCache();
     const [channelToAdd, setChannelToAdd] = useState('');
@@ -143,7 +170,8 @@ function IgnorePanel({ options, userNames, channels, roles }: { options: LogOpti
         if (options[key].includes(id)) return toast.info('มีอยู่ในรายการแล้ว');
         mutation.mutate({ [key]: [...options[key], id] });
     };
-    const removeFrom = (key: 'ignoredChannels' | 'ignoredRoles' | 'ignoredUsers', id: string) => mutation.mutate({ [key]: options[key].filter((x) => x !== id) });
+    const removeFrom = (key: 'ignoredChannels' | 'ignoredRoles' | 'ignoredUsers', id: string) =>
+        mutation.mutate({ [key]: options[key].filter((x) => x !== id) });
 
     return (
         <Card>
@@ -165,7 +193,13 @@ function IgnorePanel({ options, userNames, channels, roles }: { options: LogOpti
                 <div className="grid gap-6 lg:grid-cols-3">
                     <Field label="ห้อง / หมวดหมู่ที่ยกเว้น">
                         <div className="flex gap-2">
-                            <ChannelSelect channels={channels} showCategories value={channelToAdd} onChange={setChannelToAdd} placeholder="เลือกห้องหรือหมวดหมู่ .." />
+                            <ChannelSelect
+                                channels={channels}
+                                showCategories
+                                value={channelToAdd}
+                                onChange={setChannelToAdd}
+                                placeholder="เลือกห้องหรือหมวดหมู่ .."
+                            />
                             <Button
                                 variant="outline"
                                 size="icon"
@@ -243,6 +277,8 @@ function LogManagerPage() {
     const cache = useSettingsCache();
     const confirm = useConfirm();
     const [bulkChannel, setBulkChannel] = useState('');
+    const [search, setSearch] = useState('');
+    const [status, setStatus] = useState('all');
 
     const toggleSystem = useMutation({
         mutationFn: (enabled: boolean) => logSettingsApi.toggleSystem(guildId, enabled),
@@ -274,16 +310,31 @@ function LogManagerPage() {
 
     const groups = data ? [...data.groups, ...new Set(data.events.map((e) => e.group).filter((g) => !data.groups.includes(g)))] : [];
 
+    const visibleEvents =
+        data?.events.filter((event) => {
+            const term = search.trim().toLowerCase();
+            return (
+                `${event.label} ${event.key} ${event.group}`.toLowerCase().includes(term) &&
+                (status === 'all' || (status === 'enabled' && event.enabled) || (status === 'unconfigured' && event.enabled && !event.channelId))
+            );
+        }) ?? [];
+    const ready = data?.events.filter((event) => event.enabled && event.channelId).length ?? 0;
+    const unconfigured = data?.events.filter((event) => event.enabled && !event.channelId).length ?? 0;
+
     return (
         <>
             <PageHeader
-                title="Log Management — หมวดหมู่"
-                description="เลือกว่าจะติดตาม log อะไร ส่งเข้าห้องไหน และใช้สีอะไรในการแจ้งเตือน"
+                title="จัดการ Log"
+                description="ติดตามเหตุการณ์สำคัญ ออกแบบข้อความให้อ่านง่าย และเลือกห้องรับแจ้งเตือน"
                 actions={
                     data && (
                         <Label className="flex items-center gap-3 rounded-lg border px-3 py-2">
                             ระบบ Log ทั้งหมด
-                            <Switch checked={data.systemEnabled} onCheckedChange={(enabled) => toggleSystem.mutate(enabled)} />
+                            <Switch
+                                disabled={toggleSystem.isPending}
+                                checked={data.systemEnabled}
+                                onCheckedChange={(enabled) => toggleSystem.mutate(enabled)}
+                            />
                         </Label>
                     )
                 }
@@ -295,35 +346,105 @@ function LogManagerPage() {
             ) : (
                 data && (
                     <>
-                        <Card>
-                            <CardContent>
-                                <Field label="ตั้งห้องเดียวกันให้ทุกรายการ">
-                                    <div className="flex flex-wrap gap-2 md:max-w-xl md:flex-nowrap">
-                                        <ChannelSelect channels={channels.filter((ch) => ch.sendable)} value={bulkChannel} onChange={setBulkChannel} />
-                                        <Button variant="secondary" onClick={() => void applyToAll()} disabled={applyAll.isPending}>
-                                            ใช้ห้องนี้กับทุกรายการ
-                                        </Button>
-                                    </div>
-                                </Field>
-                            </CardContent>
-                        </Card>
+                        <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <Badge variant={data.systemEnabled ? 'secondary' : 'outline'}>{data.systemEnabled ? 'ระบบเปิดอยู่' : 'หยุดส่ง Log ชั่วคราว'}</Badge>
+                            <span className="text-muted-foreground">
+                                พร้อมส่ง {ready} / {data.events.length} ประเภท
+                            </span>
+                            {unconfigured > 0 && (
+                                <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+                                    รอเลือกห้อง {unconfigured} ประเภท
+                                </Badge>
+                            )}
+                        </div>
+                        {!data.systemEnabled && (
+                            <p role="status" className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
+                                ระบบหยุดส่ง embed เข้า Discord อยู่ คุณยังแก้ไขการตั้งค่าได้ ส่วนการบันทึก Activity ขึ้นอยู่กับค่าที่เลือกในแท็บตัวกรอง
+                            </p>
+                        )}
+                        <Tabs defaultValue="appearance" className="gap-5">
+                            <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit">
+                                <TabsTrigger value="appearance" className="px-4 py-2">
+                                    รูปแบบข้อความ
+                                </TabsTrigger>
+                                <TabsTrigger value="events" className="px-4 py-2">
+                                    เหตุการณ์และห้อง
+                                </TabsTrigger>
+                                <TabsTrigger value="filters" className="px-4 py-2">
+                                    ตัวกรอง
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="appearance" forceMount className="data-[state=inactive]:hidden">
+                                <AppearanceEditor
+                                    key={guildId}
+                                    guildId={guildId}
+                                    appearance={data.options.appearance ?? DEFAULT_LOG_APPEARANCE}
+                                    events={data.events}
+                                    onSaved={(appearance) => cache.patch((current) => ({ ...current, options: { ...current.options, appearance } }))}
+                                />
+                            </TabsContent>
+                            <TabsContent value="filters">
+                                <IgnorePanel options={data.options} userNames={data.ignoredUserNames} channels={channels} roles={roles} />
+                            </TabsContent>
+                            <TabsContent value="events" className="space-y-5">
+                                <Card>
+                                    <CardContent>
+                                        <Field label="ตั้งห้องเดียวกันให้ทุกรายการ">
+                                            <div className="flex flex-wrap gap-2 md:max-w-xl md:flex-nowrap">
+                                                <ChannelSelect channels={channels.filter((ch) => ch.sendable)} value={bulkChannel} onChange={setBulkChannel} />
+                                                <Button variant="secondary" onClick={() => void applyToAll()} disabled={applyAll.isPending}>
+                                                    ใช้ห้องนี้กับทุกรายการ
+                                                </Button>
+                                            </div>
+                                        </Field>
+                                    </CardContent>
+                                </Card>
 
-                        <IgnorePanel options={data.options} userNames={data.ignoredUserNames} channels={channels} roles={roles} />
-
-                        {groups.map((group) => {
-                            const events = data.events.filter((e) => e.group === group);
-                            if (!events.length) return null;
-                            return (
-                                <section key={group} className="space-y-3">
-                                    <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{group}</h3>
-                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                                        {events.map((event) => (
-                                            <EventCard key={event.key} event={event} channels={channels} />
-                                        ))}
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="relative min-w-48 flex-1">
+                                        <Search className="absolute top-2 left-3 size-4 text-muted-foreground" />
+                                        <Input
+                                            aria-label="ค้นหาเหตุการณ์"
+                                            className="pl-9"
+                                            placeholder="ค้นหาเหตุการณ์ เช่น ข้อความ สมาชิก ห้องเสียง…"
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                        />
                                     </div>
-                                </section>
-                            );
-                        })}
+                                    <Select value={status} onValueChange={setStatus}>
+                                        <SelectTrigger aria-label="กรองสถานะ" className="w-44">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">ทุกสถานะ</SelectItem>
+                                            <SelectItem value="enabled">เปิดใช้งาน</SelectItem>
+                                            <SelectItem value="unconfigured">รอเลือกห้อง</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <span className="text-xs text-muted-foreground">{visibleEvents.length} รายการ • บันทึกอัตโนมัติ</span>
+                                </div>
+                                {visibleEvents.length === 0 && (
+                                    <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
+                                        ไม่พบเหตุการณ์ ลองเปลี่ยนคำค้นหาหรือตัวกรอง
+                                    </p>
+                                )}
+
+                                {groups.map((group) => {
+                                    const events = visibleEvents.filter((e) => e.group === group);
+                                    if (!events.length) return null;
+                                    return (
+                                        <section key={group} className="space-y-3">
+                                            <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{group}</h3>
+                                            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                                {events.map((event) => (
+                                                    <EventCard key={event.key} event={event} channels={channels} />
+                                                ))}
+                                            </div>
+                                        </section>
+                                    );
+                                })}
+                            </TabsContent>
+                        </Tabs>
                     </>
                 )
             )}
