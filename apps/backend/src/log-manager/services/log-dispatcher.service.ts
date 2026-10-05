@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { LOG_EVENT_MAP } from '@notstack/shared';
+import { formatLogEmbed } from '@notstack/shared';
 import {
     AuditLogEvent,
     EmbedBuilder,
@@ -201,7 +201,7 @@ export class LogDispatcher {
 
         try {
             const channel = await this.resolveChannel(guildId, channelId);
-            if (channel) await channel.send({ embeds: batch });
+            if (channel) await channel.send({ embeds: batch, allowedMentions: { parse: [] } });
         } catch (err) {
             this.logger.error(`ส่งเข้าห้อง ${channelId} ไม่สำเร็จ: ${(err as Error).message}`);
         }
@@ -231,22 +231,12 @@ export class LogDispatcher {
             const setting = this.settings.getSetting(guildId, eventKey);
             if (!setting || !setting.enabled || !setting.channelId) return;
 
-            const meta = LOG_EVENT_MAP.get(eventKey);
-            const embed = new EmbedBuilder()
-                .setColor((setting.color || meta?.color || '#5865F2') as `#${string}`)
-                .setTitle(payload.title || meta?.label || 'Log')
-                .setTimestamp();
-
-            if (payload.description) embed.setDescription(payload.description.length > 4000 ? `${payload.description.slice(0, 3997)}...` : payload.description);
-            const fields = (payload.fields ?? []).filter((f): f is NonNullable<typeof f> => Boolean(f));
-            if (fields.length) embed.addFields(fields);
-            if (payload.thumbnail) embed.setThumbnail(payload.thumbnail);
-            embed.setFooter({ text: payload.footer || `Log Manager • ${meta?.label || eventKey}` });
+            const embed = new EmbedBuilder(formatLogEmbed(eventKey, payload, this.settings.getOptions(guildId).appearance, setting.color));
 
             // ข้อความที่มีไฟล์แนบรวมกับอันอื่นไม่ได้ ส่งแยกทันที
             if (payload.files?.length) {
                 const channel = await this.resolveChannel(guildId, setting.channelId);
-                if (channel) await channel.send({ embeds: [embed], files: payload.files });
+                if (channel) await channel.send({ embeds: [embed], files: payload.files, allowedMentions: { parse: [] } });
                 return;
             }
 

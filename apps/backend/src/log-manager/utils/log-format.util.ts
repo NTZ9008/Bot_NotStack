@@ -15,7 +15,7 @@ export function field(name: string, value: unknown, inline = true): LogField | n
 
 export function userLine(user: UserLike | null | undefined): string {
     if (!user) return 'ไม่ทราบ';
-    return `<@${user.id}>\n\`${user.tag || user.username || user.id}\``;
+    return `<@${user.id}>`;
 }
 
 export function executorLine(info: { executor?: { id: string } | null; entry?: { executorId?: string | null } } | null | undefined): string {

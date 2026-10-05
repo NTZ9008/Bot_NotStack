@@ -112,7 +112,7 @@ export class LogEventsListener {
                 thumbnail: member.user.displayAvatarURL({ size: 128 }),
                 fields: [
                     field('👤 สมาชิก', `<@${member.id}>`),
-                    field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(kickInfo)),
+                    field('🛡️ ผู้ดำเนินการ', executorLine(kickInfo)),
                     field('📝 เหตุผล', kickInfo.reason || 'ไม่ได้ระบุ', false),
                 ],
             });
@@ -150,7 +150,7 @@ export class LogEventsListener {
             thumbnail: ban.user.displayAvatarURL({ size: 128 }),
             fields: [
                 field('👤 สมาชิก', `<@${ban.user.id}>`),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                 field('📝 เหตุผล', info?.reason || ban.reason || 'ไม่ได้ระบุ', false),
             ],
         });
@@ -166,7 +166,7 @@ export class LogEventsListener {
             context: { userId: ban.user.id, isBot: ban.user.bot },
             description: `${userLine(ban.user)} ถูกปลดแบนแล้ว`,
             thumbnail: ban.user.displayAvatarURL({ size: 128 }),
-            fields: [field('👤 สมาชิก', `<@${ban.user.id}>`), field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info))],
+            fields: [field('👤 สมาชิก', `<@${ban.user.id}>`), field('🛡️ ผู้ดำเนินการ', executorLine(info))],
         });
     }
 
@@ -187,7 +187,7 @@ export class LogEventsListener {
                 thumbnail: avatar,
                 fields: [
                     field('👤 สมาชิก', `<@${newMember.id}>`),
-                    field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                    field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                     field('❌ ชื่อเดิม', oldMember.nickname || oldMember.user?.username),
                     field('✅ ชื่อใหม่', newMember.nickname || newMember.user.username),
                 ],
@@ -210,7 +210,7 @@ export class LogEventsListener {
                 thumbnail: avatar,
                 fields: [
                     field('👤 สมาชิก', `<@${newMember.id}>`),
-                    field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                    field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                     field('✅ บทบาทที่ได้รับ', added.map((r) => `<@&${r.id}>`).join(' '), false),
                 ],
             });
@@ -226,7 +226,7 @@ export class LogEventsListener {
                 thumbnail: avatar,
                 fields: [
                     field('👤 สมาชิก', `<@${newMember.id}>`),
-                    field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                    field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                     field('❌ บทบาทที่ถูกถอด', removed.map((r) => `<@&${r.id}>`).join(' '), false),
                 ],
             });
@@ -240,13 +240,13 @@ export class LogEventsListener {
             const isGiven = newTimeout > Date.now();
             void this.logs.sendLog(newMember.guild, 'memberTimeout', {
                 record: record(info),
-                title: isGiven ? '⏳ ให้หมดเวลา (Timeout)' : '⌛ ปลดหมดเวลา (Timeout)',
+                title: isGiven ? '⏳ จำกัดการสื่อสาร (Timeout)' : '⌛ ยกเลิก Timeout',
                 context,
                 description: `${userLine(newMember.user)} ${isGiven ? 'ถูกสั่งหมดเวลาพูดคุย' : 'ถูกปลดสถานะหมดเวลา'}`,
                 thumbnail: avatar,
                 fields: [
                     field('👤 สมาชิก', `<@${newMember.id}>`),
-                    field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                    field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                     isGiven ? field('⏰ หมดเวลาเมื่อ', `<t:${unixSeconds(newTimeout)}:F>\n(<t:${unixSeconds(newTimeout)}:R>)`, false) : null,
                     field('📝 เหตุผล', info?.reason || 'ไม่ได้ระบุ', false),
                 ],
@@ -284,7 +284,7 @@ export class LogEventsListener {
         const info = await this.logs.fetchExecutor(message.guild, AuditLogEvent.MessageDelete, message.author?.id ?? null, 6000);
         void this.logs.sendLog(message.guild, 'messageDelete', {
             record: record(info),
-            title: '🗑️ ข้อความที่ลบไปแล้ว',
+            title: '🗑️ ลบข้อความ',
             context: {
                 userId: message.author?.id,
                 isBot: message.author?.bot,
@@ -310,7 +310,7 @@ export class LogEventsListener {
         if (oldMessage.content === newMessage.content) return;
 
         void this.logs.sendLog(newMessage.guild, 'messageUpdate', {
-            title: '📝 ข้อความที่แก้ไขแล้ว',
+            title: '📝 แก้ไขข้อความ',
             context: {
                 userId: newMessage.author?.id,
                 isBot: newMessage.author?.bot,
@@ -322,8 +322,8 @@ export class LogEventsListener {
             fields: [
                 field('👤 ผู้เขียน', newMessage.author ? `<@${newMessage.author.id}>` : 'ไม่ทราบ'),
                 field('📺 ช่อง', `<#${newMessage.channelId}>`),
-                field('❌ ข้อความเดิม', oldMessage.content || '*(ไม่ทราบ — ข้อความเก่าเกินแคช)*', false),
-                field('✅ ข้อความใหม่', newMessage.content || '*(ว่าง)*', false),
+                field('ก่อนแก้ไข', oldMessage.content || '*(ไม่ทราบ — ข้อความเก่าเกินแคช)*', false),
+                field('หลังแก้ไข', newMessage.content || '*(ว่าง)*', false),
             ],
         });
     }
@@ -357,7 +357,7 @@ export class LogEventsListener {
             fields: [
                 field('📺 ช่อง', `<#${channel.id}>`),
                 field('🔢 จำนวนที่ถูกลบ', `${messages.size} ข้อความ`),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                 field('💾 ข้อความที่กู้จากแคชได้', `${cached.length} ข้อความ`),
             ],
         });
@@ -375,7 +375,7 @@ export class LogEventsListener {
             fields: [
                 field('📺 ช่อง', `<#${channel.id}>`),
                 field('🏷️ ชื่อ', channel.name),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                 field('📂 หมวดหมู่', channel.parent?.name || 'ไม่มี'),
             ],
         });
@@ -392,7 +392,7 @@ export class LogEventsListener {
             fields: [
                 field('🏷️ ชื่อช่อง', channel.name),
                 field('🆔 Channel ID', channel.id),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                 field('📂 หมวดหมู่', channel.parent?.name || 'ไม่มี'),
             ],
         });
@@ -418,7 +418,7 @@ export class LogEventsListener {
                     description: `สิทธิ์ในช่อง <#${newChannel.id}> ถูกแก้ไข`,
                     fields: [
                         field('📺 ช่อง', `<#${newChannel.id}>`),
-                        field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                        field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                         field('👥 จำนวนกฎสิทธิ์', `${oldPerms.size} → ${newPerms.size}`),
                     ],
                 });
@@ -445,7 +445,7 @@ export class LogEventsListener {
             record: record(info, { channelId: newChannel.id, channelName: newChannel.name }),
             title: '🏠 อัปเดตช่องแล้ว',
             description: `ช่อง <#${newChannel.id}> ถูกแก้ไข`,
-            fields: [field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info), false), ...changes],
+            fields: [field('🛡️ ผู้ดำเนินการ', executorLine(info), false), ...changes],
         });
     }
 
@@ -479,7 +479,7 @@ export class LogEventsListener {
             fields: [
                 field('🏷️ ชื่อเธรด', thread.name),
                 field('📺 อยู่ในช่อง', thread.parentId ? `<#${thread.parentId}>` : 'ไม่ทราบ'),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
             ],
         });
     }
@@ -502,7 +502,7 @@ export class LogEventsListener {
             title: '🧵 อัปเดตเธรดแล้ว',
             context: { channelId: newThread.parentId },
             description: `เธรด <#${newThread.id}> ถูกแก้ไข`,
-            fields: [field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info), false), ...changes],
+            fields: [field('🛡️ ผู้ดำเนินการ', executorLine(info), false), ...changes],
         });
     }
 
@@ -518,7 +518,7 @@ export class LogEventsListener {
             fields: [
                 field('🎭 บทบาท', `<@&${role.id}>`),
                 field('🏷️ ชื่อ', role.name),
-                field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)),
+                field('🛡️ ผู้ดำเนินการ', executorLine(info)),
                 field('🎨 สี', role.hexColor),
             ],
         });
@@ -532,7 +532,7 @@ export class LogEventsListener {
             record: record(info),
             title: '🗑️ ลบบทบาทแล้ว',
             description: `บทบาท **${role.name}** ถูกลบ`,
-            fields: [field('🏷️ ชื่อบทบาท', role.name), field('🆔 Role ID', role.id), field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info))],
+            fields: [field('🏷️ ชื่อบทบาท', role.name), field('🆔 Role ID', role.id), field('🛡️ ผู้ดำเนินการ', executorLine(info))],
         });
     }
 
@@ -557,7 +557,7 @@ export class LogEventsListener {
             record: record(info),
             title: '🎭 อัพเดทบทบาทแล้ว',
             description: `บทบาท <@&${newRole.id}> ถูกแก้ไข`,
-            fields: [field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info), false), ...changes],
+            fields: [field('🛡️ ผู้ดำเนินการ', executorLine(info), false), ...changes],
         });
     }
 
@@ -582,7 +582,7 @@ export class LogEventsListener {
             record: record(info),
             title: '🏰 อัปเดตเซิร์ฟเวอร์',
             description: `ตั้งค่าเซิร์ฟเวอร์ **${newGuild.name}** ถูกแก้ไข`,
-            fields: [field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info), false), ...changes],
+            fields: [field('🛡️ ผู้ดำเนินการ', executorLine(info), false), ...changes],
         });
     }
 
@@ -631,7 +631,7 @@ export class LogEventsListener {
             title: `${icon} ${action} ${typeLabel}`,
             description: `${typeLabel} **${target.name}**`,
             thumbnail: 'imageURL' in target ? target.imageURL() : target.url,
-            fields: [field('🏷️ ชื่อ', target.name), field('🆔 ID', target.id), field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(info)), ...changes],
+            fields: [field('🏷️ ชื่อ', target.name), field('🆔 ID', target.id), field('🛡️ ผู้ดำเนินการ', executorLine(info)), ...changes],
         });
     }
 
@@ -808,7 +808,7 @@ export class LogEventsListener {
                     fields: [
                         field('👤 สมาชิก', `<@${member.id}>`),
                         field('🔊 ห้อง', `<#${oldState.channelId}>`),
-                        field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(kickInfo)),
+                        field('🛡️ ผู้ดำเนินการ', executorLine(kickInfo)),
                     ],
                 });
                 return;
@@ -840,7 +840,7 @@ export class LogEventsListener {
                     description: `${userLine(member.user)} ถูกย้ายห้องเสียง`,
                     fields: [
                         field('👤 สมาชิก', `<@${member.id}>`),
-                        field('🛡️ ผู้ดูแลรับผิดชอบ', executorLine(moveInfo)),
+                        field('🛡️ ผู้ดำเนินการ', executorLine(moveInfo)),
                         field('❌ จาก', `<#${oldState.channelId}>`),
                         field('✅ ไป', `<#${newState.channelId}>`),
                     ],
@@ -903,7 +903,7 @@ export class LogEventsListener {
                     title: '🧹 ล้างสมาชิกที่ไม่เคลื่อนไหว (Prune)',
                     description: 'มีการล้างสมาชิกที่ไม่เคลื่อนไหวออกจากเซิร์ฟเวอร์',
                     fields: [
-                        field('🛡️ ผู้ดูแลรับผิดชอบ', executor),
+                        field('🛡️ ผู้ดำเนินการ', executor),
                         field('🔢 จำนวนที่ถูกล้าง', `${extra.removed ?? 'ไม่ทราบ'} คน`),
                         field('📅 ไม่เคลื่อนไหวเกิน', `${extra.days ?? 'ไม่ทราบ'} วัน`),
                     ],
