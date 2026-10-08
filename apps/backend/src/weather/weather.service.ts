@@ -13,7 +13,7 @@ import type { Prisma, WeatherSetting } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenWeatherClient } from './clients/openweather.client';
 import { WeatherException } from './exceptions/weather.exception';
-import { buildWeatherReport, toMessagePayload } from './report/weather-report.builder';
+import { buildWeatherReport, toMessagePayload, type WeatherReport } from './report/weather-report.builder';
 
 export interface StoredWeatherSettings {
     enabled: boolean;
@@ -144,5 +144,25 @@ export class WeatherService {
         const report = await buildWeatherReport(settings, weather);
         await channel.send(toMessagePayload(report));
         return channel;
+    }
+
+    /**
+     * รายงานของคำสั่ง /weather — embed / กราฟ / เรดาร์ แบบเดียวกับรายงานประจำวันของเซิร์ฟเวอร์
+     * ไม่รวมข้อความคู่ embed (เป็นคำทักของรายงานตามเวลา และอาจแท็กยศไว้)
+     * อ่านการตั้งค่าอย่างเดียว ไม่สร้างแถวเริ่มต้นแบบ getSettings (แถวเริ่มต้นของเซิร์ฟเวอร์หลักเปิดรายงานตามเวลาไว้เลย)
+     * @param query ชื่อสถานที่หรือพิกัด — ว่าง = สถานที่ที่ตั้งไว้ในรายงาน (ใช้ใน DM = ค่าเริ่มต้น)
+     * @returns null ถ้าหาสถานที่ไม่เจอ
+     */
+    async commandReport(guildId: string | null, query: string | null): Promise<WeatherReport | null> {
+        const row = guildId ? await this.prisma.weatherSetting.findUnique({ where: { guildId }, select: { options: true } }) : null;
+        let options = normalizeWeatherOptions(row?.options);
+        if (query) {
+            const [place] = await this.owm.searchLocations(query);
+            if (!place) return null;
+            options = normalizeWeatherOptions({ ...options, location: place });
+        }
+        // ใช้ข้อมูลใน cache 10 นาที — คนพิมพ์คำสั่งรัวๆ จะได้ไม่ยิง API ซ้ำ
+        const weather = await this.owm.fetchWeather(options.location);
+        return buildWeatherReport({ content: '', options }, weather);
     }
 }
