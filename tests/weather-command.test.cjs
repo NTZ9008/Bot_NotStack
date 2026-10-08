@@ -4,6 +4,7 @@ const { defaultWeatherOptions } = require('../packages/shared/dist');
 const { WeatherCommand } = require('../apps/backend/dist/commands/slash/weather.command');
 const { WeatherService } = require('../apps/backend/dist/weather/weather.service');
 const { weatherApiError } = require('../apps/backend/dist/weather/exceptions/weather.exception');
+const { MessageFlags } = require('../apps/backend/node_modules/discord.js');
 
 // ภาพเรดาร์ดึงจากเน็ต — ในเทสต์ให้ต้นทางตอบ 503 ทุกครั้ง (รายงานยังต้องส่งได้ แค่ไม่มีเรดาร์)
 globalThis.fetch = async () => new Response('', { status: 503 });
@@ -61,12 +62,18 @@ function fixture({ stored, places = [], fetchError } = {}) {
     return { calls, command: new WeatherCommand(service) };
 }
 
-function interaction({ guildId = 'g1', city = null } = {}) {
-    const state = { deferred: false, replies: [] };
+// ผู้ใช้คนละคนทุกครั้ง (ถ้าไม่ระบุ) — ไม่ติด cooldown ของกันและกัน
+let nextUser = 0;
+function interaction({ guildId = 'g1', city = null, userId = `u${++nextUser}` } = {}) {
+    const state = { deferred: false, replies: [], ephemeral: [] };
     return {
         state,
         guildId,
+        user: { id: userId },
         options: { getString: (name) => (name === 'city' ? city : null) },
+        reply: async (payload) => {
+            state.ephemeral.push(payload);
+        },
         deferReply: async () => {
             state.deferred = true;
         },
@@ -160,4 +167,33 @@ test('/weather reports unknown places and OpenWeatherMap errors without mentions
     await down.command.execute(err);
     assert.equal(err.state.replies[0].content, '❌ เรียก OpenWeatherMap บ่อยเกินโควตา กรุณารอสักครู่');
     assert.deepEqual(err.state.replies[0].embeds, []);
+});
+
+test('/weather has a 30-second per-user cooldown that does not block other users', async (t) => {
+    let now = 1_800_000_000_000;
+    t.mock.method(Date, 'now', () => now);
+    const { calls, command } = fixture({ stored: serverOptions() });
+
+    await command.execute(interaction({ userId: 'alice' }));
+    assert.equal(calls.fetch.length, 1);
+
+    now += 29_000;
+    const spam = interaction({ userId: 'alice', city: 'เชียงใหม่' });
+    await command.execute(spam);
+    assert.equal(spam.state.deferred, false);
+    assert.deepEqual(spam.state.replies, []);
+    assert.equal(spam.state.ephemeral[0].content, `⏳ ใช้ /weather ได้อีกครั้ง <t:${(1_800_000_000_000 + 30_000) / 1000}:R>`);
+    assert.equal(spam.state.ephemeral[0].flags, MessageFlags.Ephemeral);
+    assert.deepEqual(calls.search, []);
+    assert.equal(calls.fetch.length, 1);
+
+    const other = interaction({ userId: 'bob' });
+    await command.execute(other);
+    assert.equal(other.state.replies[0].embeds.length, 1);
+
+    now += 1_000;
+    const later = interaction({ userId: 'alice' });
+    await command.execute(later);
+    assert.equal(later.state.replies[0].embeds.length, 1);
+    assert.equal(calls.fetch.length, 3);
 });
