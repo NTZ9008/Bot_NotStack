@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { WeatherPlace } from '@notstack/shared';
-import { EmbedBuilder } from 'discord.js';
 import type { Env } from '../../config/env.validation';
 import { weatherApiError } from '../exceptions/weather.exception';
 import type { WeatherData } from '../interfaces/weather-data.interface';
@@ -190,29 +189,5 @@ export class OpenWeatherClient {
             if (this.cache.get(key)?.promise === promise) this.cache.delete(key);
         });
         return promise;
-    }
-
-    // embed แบบย่อของคำสั่ง /weather (ค้นหาจากชื่อเมือง) — null ถ้าหาเมืองไม่เจอหรือเรียก API ไม่สำเร็จ
-    async cityEmbed(city: string): Promise<EmbedBuilder | null> {
-        try {
-            const data = await this.request<OwmCurrent>('/data/2.5/weather', { q: city, units: 'metric', lang: 'th' });
-            const weather = data.weather?.[0];
-            if (!weather) return null;
-            return new EmbedBuilder()
-                .setColor('#00A2E8')
-                .setTitle(`🌤️ อากาศที่ ${data.name}, ${data.sys?.country ?? ''}`)
-                .setDescription((weather.description ?? '').replace(/^\w/, (c) => c.toUpperCase()) || null)
-                .addFields(
-                    { name: '🌡️ อุณหภูมิ', value: `${data.main.temp} °C`, inline: true },
-                    { name: '💨 ลม', value: `${data.wind?.speed ?? 0} m/s`, inline: true },
-                    { name: '💧 ความชื้น', value: `${data.main.humidity}%`, inline: true },
-                )
-                .setThumbnail(`https://openweathermap.org/img/wn/${weather.icon}@2x.png`)
-                .setFooter({ text: 'ข้อมูลจาก OpenWeatherMap' })
-                .setTimestamp();
-        } catch (err) {
-            this.logger.warn(`/weather ${city}: ${(err as Error).message}`);
-            return null;
-        }
     }
 }

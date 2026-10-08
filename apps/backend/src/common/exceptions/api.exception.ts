@@ -9,6 +9,8 @@ export class ApiException extends HttpException {
     constructor(status: HttpStatus | number, message: string, code?: string, extra: Record<string, unknown> = {}) {
         const body: ApiErrorBody = { error: message, ...(code ? { code } : {}), ...extra };
         super(body, status);
+        // HttpException ตั้ง message จาก body.message เท่านั้น (ไม่มีก็ได้ชื่อคลาส "Api Exception") — โค้ดที่ log / บันทึก err.message จะได้ข้อความจริง
+        this.message = message;
     }
 }
 
