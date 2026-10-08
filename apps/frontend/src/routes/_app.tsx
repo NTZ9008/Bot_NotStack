@@ -33,7 +33,7 @@ function AppLayout() {
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset className="bg-transparent">
+            <SidebarInset className="min-w-0 bg-transparent">
                 <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
                     <SidebarTrigger />
                     <Separator orientation="vertical" className="mx-1 h-5" />

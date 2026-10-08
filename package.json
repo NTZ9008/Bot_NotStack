@@ -17,7 +17,7 @@
     "db:generate": "pnpm --filter @notstack/backend db:generate",
     "db:migrate": "pnpm --filter @notstack/backend db:migrate",
     "discord:deploy-commands": "pnpm --filter @notstack/backend discord:deploy-commands",
-    "test": "pnpm build && node --test tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs",
+    "test": "pnpm build && node --test tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs tests/log-manager.test.cjs",
     "test:integration": "pnpm build && node scripts/test-xp-postgres.mjs"
   },
   "devDependencies": {
