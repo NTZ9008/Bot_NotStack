@@ -549,17 +549,25 @@ index อันดับคือ `(guild_id, xp DESC, user_id)`; ประว�
 
 ### ความถูกต้องของการเขียน
 
-การ award, แก้ settings, แก้สมาชิก และ reset ใช้ Prisma transaction พร้อม PostgreSQL advisory transaction lock ต่อ guild
-จึงเรียงการแก้ไขของเซิร์ฟเวอร์เดียวกัน ลดปัญหายอดเก่าทับยอดใหม่เมื่อกิจกรรม/แอดมินทำงานพร้อมกัน
+การ award, แก้ settings, แก้สมาชิก และ reset ใช้ Prisma transaction พร้อม PostgreSQL advisory transaction lock สองระดับ:
+- award และแก้สมาชิก: lock ของ guild แบบ shared + lock ของสมาชิกคนนั้นแบบ exclusive — สมาชิกต่างคนได้ XP พร้อมกันได้
+  ส่วนการแก้ยอดของคนเดียวกัน (กิจกรรม/แอดมิน) ยังเรียงกันทีละรายการ จึงไม่มียอดเก่าทับยอดใหม่
+- แก้ settings และ reset ทั้ง guild: lock ของ guild แบบ exclusive — รอรายการที่ค้างอยู่เสร็จก่อน และกันรายการใหม่ระหว่างคำนวณเลเวลใหม่
+
+ลำดับการขอ lock เป็น guild → สมาชิก เสมอ จึงไม่เกิด deadlock
 XP, progress, daily และประวัติที่เกี่ยวข้อง rollback พร้อมกันหากเกิด error
 ไม่มี buffer ยอดใน memory ที่รอ flush; transaction มี timeout 15 วินาที
+
+ก่อนเปิด transaction จะเช็คจาก memory ก่อน: settings ของ guild (cache 5 นาที และอัปเดตทันทีเมื่อบันทึกจาก Dashboard)
+และเวลาที่ลองครั้งล่าสุดของแต่ละกฎ (บันทึกหลัง transaction commit เท่านั้น) — ถ้าปิด XP / ไม่มีกฎที่ตรง / ทุกกฎยังติด cooldown จะไม่เปิด transaction เลย
+ค่าใน memory ใช้แค่ข้ามงานที่ไม่มีทางได้ XP แน่นอน การตัดสินจริงยังอ่านจากฐานข้อมูลใน transaction เสมอ
 
 การเปลี่ยนสูตร recalculate level โดยอ่านเป็นชุดละ 500 แถวและใช้ฟังก์ชัน shared เดียวกับการแสดงผลใน transaction นั้น
 การอ่านอันดับคำนวณเลเวลจาก XP อีกครั้ง จึงไม่อาศัยค่า level เก่าที่อาจคลาดเคลื่อน
 การ resolve ชื่ออ่านเฉพาะหน้าที่ขอและทำครั้งละไม่เกิน 5 คนพร้อมกัน
 
 Lock ช่วยป้องกันการเขียนทับ ไม่ใช่ event deduplication: ไม่มีการเก็บ message/interaction ID เพื่อตรวจเหตุการณ์ซ้ำ
-โหลดสูงใน guild เดียวอาจรอ lock และ timeout ได้ จึงไม่ควรตีความว่าโครงสร้างนี้รับปริมาณไม่จำกัด
+การแก้ settings / reset ทั้ง guild ต้องรอทุก award ที่ค้างอยู่ จึงอาจช้าลงในช่วงที่กิจกรรมเยอะ (timeout 15 วินาที)
 
 ### การล้างข้อมูล
 
@@ -587,9 +595,7 @@ Migration: `20260929000000_configurable_xp` เพิ่มสี่ตารา
 API list เปลี่ยนจาก array เป็น object ที่มี `items` และ pagination จึงไม่เข้ากันกับ frontend เก่าที่คาดว่าเป็น array
 โควตาและ cooldown ก่อนมีตารางใหม่นี้ไม่ได้ถูกสร้างย้อนหลัง และไม่มีการสร้างประวัติย้อนหลังจากยอดเก่า
 
-หากมี `levels.json` แบบเดิมที่ repository root จะนำเข้าใน home guild ตอนเริ่ม module
-ตรวจ XP เป็น integer 0–2,000,000,000, ข้ามแถวที่มี key อยู่แล้ว แล้ว rename เป็น `levels_migrated.json`
-ข้อมูล JSON/XP ที่ผิดทำให้ init ไม่สำเร็จ; การนำเข้านี้ใช้สูตรเริ่มต้น ส่วนหน้าอันดับคำนวณจากสูตรปัจจุบันเมื่ออ่าน
+การนำเข้า `levels.json` แบบเดิมตอนเริ่ม module ถูกถอดออกแล้ว (ข้อมูลย้ายเข้า PostgreSQL ไปตั้งแต่รุ่นก่อน — ไฟล์บนเซิร์ฟเวอร์ถูก rename เป็น `levels_migrated.json` แล้ว)
 
 ### คำสั่งตรวจสอบ
 

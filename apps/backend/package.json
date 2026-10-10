@@ -1,6 +1,6 @@
 {
   "name": "@notstack/backend",
-  "version": "3.6.0",
+  "version": "4.0.0",
   "private": true,
   "description": "NestJS API + Discord bot (discord.js) for NotStackOverflow",
   "scripts": {

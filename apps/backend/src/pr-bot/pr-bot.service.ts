@@ -79,7 +79,12 @@ export class PrBotService {
             const channel = await this.discord.fetchGuildChannel(guildId, channelId);
             if (!channel || !channel.isSendable() || !('messages' in channel)) return void this.logger.error(`ไม่พบ channel: ${channelId} (${guildId})`);
             const mention = await this.resolveMention(guildId, repo, 'guild' in channel ? channel.guild : null);
-            const message = await channel.send({ ...prOpenedPayload(pr, repo), ...(mention ? { content: mention } : {}) });
+            // mention มาจากการตั้งค่าของแอดมิน (ผู้ใช้หรือยศ) — แท็กได้ทั้งสองแบบ
+            const message = await channel.send({
+                ...prOpenedPayload(pr, repo),
+                ...(mention ? { content: mention } : {}),
+                allowedMentions: { parse: ['users', 'roles'] },
+            });
             await this.prisma.prMessage.upsert({
                 where: key,
                 create: { guildId, repoFullName: repo.full_name, prNumber: pr.number, channelId: channel.id, messageId: message.id },

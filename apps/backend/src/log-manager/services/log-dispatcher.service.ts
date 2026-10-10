@@ -147,6 +147,17 @@ export class LogDispatcher {
 
     // เช็คก่อนว่าต้องประมวลผล event นี้ต่อไหม เพื่อไม่ต้องเสียเวลาดึง audit log ทิ้งเปล่า
     // ถ้าเปิดบันทึกกิจกรรมลงฐานข้อมูลอยู่ ต้องทำต่อทุก event แม้ยังไม่ได้ตั้งห้องส่ง log ใน Discord
+    // Log Manager ตั้งให้ส่ง event ใด event หนึ่งในนี้เข้าห้อง Discord อยู่หรือไม่ (ไม่นับการบันทึก Activity Log)
+    // ระบบเก่าที่ส่งข้อความแบบเดียวกัน (log ห้องเสียงเข้า LOG_CHANNEL_ID) ใช้เช็คเพื่อไม่ส่งซ้ำ
+    async sendsToDiscord(guildId: string, eventKeys: string[]): Promise<boolean> {
+        await this.settings.ensure(guildId);
+        if (!this.settings.isSystemEnabled(guildId)) return false;
+        return eventKeys.some((key) => {
+            const setting = this.settings.getSetting(guildId, key);
+            return Boolean(setting && setting.enabled && setting.channelId);
+        });
+    }
+
     isActive(guild: GuildRef, eventKey: string): boolean {
         const guildId = guildIdOf(guild);
         if (!guildId || !this.settings.isLoaded(guildId)) {

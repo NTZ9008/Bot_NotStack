@@ -2,11 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Events, type MessageReaction, type PartialMessageReaction, type PartialUser, type User } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import { DiscordService } from '../../discord/discord.service';
-import { REACTION_ROLES } from '../reaction-roles.constants';
+import { REACTION_ROLES, REACTION_ROLES_TITLE } from '../reaction-roles.constants';
 
 // ==========================================
 // 🎭 REACTION ROLES (Carl-bot Style) — กด reaction บนข้อความของบอทเพื่อรับ/เอาออกยศ
-// ยศเป็นของเซิร์ฟเวอร์หลัก (DST04 ...) จึงทำงานเฉพาะเซิร์ฟเวอร์หลัก
+// ยศเป็นของเซิร์ฟเวอร์หลัก (DST04 ...) จึงทำงานเฉพาะเซิร์ฟเวอร์หลัก และเฉพาะข้อความรับยศจาก /setuproles
 // ==========================================
 @Injectable()
 export class ReactionRolesListener {
@@ -25,6 +25,7 @@ export class ReactionRolesListener {
 
         const message = reaction.message;
         if (!message.guild || !this.discord.isHome(message.guild.id) || message.author?.id !== this.discord.client.user?.id) return;
+        if (message.embeds[0]?.title !== REACTION_ROLES_TITLE) return;
 
         const roleName = REACTION_ROLES[reaction.emoji.name ?? ''];
         if (!roleName) return;

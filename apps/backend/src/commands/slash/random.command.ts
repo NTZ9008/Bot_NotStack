@@ -9,8 +9,10 @@ import type { SlashCommandHandler } from '../../discord/interfaces/slash-command
 export class RandomCommand implements SlashCommandHandler {
     static readonly data = new SlashCommandBuilder()
         .setName('random')
-        .setDescription('สุ่มจากวงล้อแบบข้อความ (ไม่แสดงชื่อคนโหวต)')
-        .addStringOption((option) => option.setName('items').setDescription('พิมพ์สิ่งที่ต้องการสุ่ม คั่นด้วยจุลภาค เช่น A,B,C').setRequired(true));
+        .setDescription('สุ่มเลือก 1 อย่างจากรายการที่พิมพ์มา')
+        .addStringOption((option) =>
+            option.setName('items').setDescription('พิมพ์สิ่งที่ต้องการสุ่ม คั่นด้วยจุลภาค เช่น A,B,C').setRequired(true).setMaxLength(1500),
+        );
 
     async execute(interaction: ChatInputCommandInteraction) {
         const items = interaction.options
@@ -24,6 +26,7 @@ export class RandomCommand implements SlashCommandHandler {
         await interaction.reply('🎡 กำลังหมุนวงล้อ...');
         await new Promise((resolve) => setTimeout(resolve, 2500));
         const winner = items[Math.floor(Math.random() * items.length)];
-        await interaction.editReply(`🎯 ผลลัพธ์คือ... **${winner}!** 🎉`);
+        // ตัวเลือกมาจากผู้ใช้ — ห้ามแท็กใคร
+        await interaction.editReply({ content: `🎯 ผลลัพธ์คือ... **${winner}!** 🎉`, allowedMentions: { parse: [] } });
     }
 }
