@@ -1,7 +1,8 @@
+import { replaceSession } from '@/lib/session';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronDown, CircleUser, LogOut } from 'lucide-react';
-import { authApi, meQuery } from '@/api/auth';
+import { authApi } from '@/api/auth';
 import { useConfirm } from '@/components/confirm-dialog';
 import { RoleBadge } from '@/components/role-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -32,8 +33,7 @@ export function ProfileMenu() {
         });
         if (!ok) return;
         await authApi.logout().catch(() => {});
-        queryClient.setQueryData(meQuery.queryKey, null);
-        queryClient.removeQueries({ predicate: (query) => query.queryKey[0] !== 'auth' });
+        replaceSession(queryClient, null);
         void navigate({ to: '/login' });
     };
 

@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+    DEFAULT_LOG_APPEARANCE,
+    logAppearanceSchema,
+    type LogAppearance,
     GROUP_ORDER,
     HEX_COLOR_RE,
     LOG_EVENT_MAP,
@@ -36,6 +39,7 @@ export interface RuntimeLogOptions {
     ignoredRoles: Set<string>;
     ignoreBots: boolean;
     activityRecording: boolean;
+    appearance: LogAppearance;
 }
 
 interface GuildLogState {
@@ -49,6 +53,7 @@ const defaultOptions = (): RuntimeLogOptions => ({
     ignoredRoles: new Set(),
     ignoreBots: true,
     activityRecording: true,
+    appearance: { ...DEFAULT_LOG_APPEARANCE },
 });
 
 // ==========================================
@@ -124,7 +129,14 @@ export class LogSettingsService {
         for (const row of optionRows) {
             if (row.key === 'IGNORE_BOTS') state.options.ignoreBots = row.value === '1';
             else if (row.key === 'ACTIVITY_RECORDING') state.options.activityRecording = row.value !== '0';
-            else {
+            else if (row.key === 'APPEARANCE') {
+                try {
+                    const parsed = logAppearanceSchema.safeParse(JSON.parse(row.value || '{}'));
+                    if (parsed.success) state.options.appearance = parsed.data;
+                } catch {
+                    // Fall back to defaults for malformed legacy values.
+                }
+            } else {
                 const field = OPTION_KEYS[row.key as keyof typeof OPTION_KEYS];
                 if (!field) continue;
                 try {
@@ -232,10 +244,12 @@ export class LogSettingsService {
             ignoredRoles: [...options.ignoredRoles],
             ignoreBots: options.ignoreBots,
             activityRecording: options.activityRecording,
+            appearance: { ...options.appearance },
         };
     }
 
     async updateOptions(guildId: string, input: UpdateLogOptionsInput): Promise<LogOptions> {
+        const appearance = input.appearance === undefined ? undefined : logAppearanceSchema.parse(input.appearance);
         await this.ensure(guildId);
         const saveList = async (dbKey: keyof typeof OPTION_KEYS, list: unknown[] | undefined) => {
             if (!Array.isArray(list)) return;
@@ -255,6 +269,14 @@ export class LogSettingsService {
             await this.prisma.logOption.updateMany({ where: { guildId, key: 'ACTIVITY_RECORDING' }, data: { value: input.activityRecording ? '1' : '0' } });
         }
 
+        if (appearance) {
+            const value = JSON.stringify(appearance);
+            await this.prisma.logOption.upsert({
+                where: { guildId_key: { guildId, key: 'APPEARANCE' } },
+                create: { guildId, key: 'APPEARANCE', value },
+                update: { value },
+            });
+        }
         await this.reload(guildId);
         return this.listOptions(guildId);
     }

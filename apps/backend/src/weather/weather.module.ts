@@ -4,10 +4,10 @@ import { WeatherReportTask } from './tasks/weather-report.task';
 import { WeatherController } from './weather.controller';
 import { WeatherService } from './weather.service';
 
-// รายงานสภาพอากาศประจำวัน (embed + กราฟ + เรดาร์) และข้อมูลอากาศของคำสั่ง /weather
+// รายงานสภาพอากาศประจำวัน (embed + กราฟ + เรดาร์) — คำสั่ง /weather ใช้รายงานแบบเดียวกัน
 @Module({
     controllers: [WeatherController],
     providers: [OpenWeatherClient, WeatherService, WeatherReportTask],
-    exports: [OpenWeatherClient],
+    exports: [WeatherService],
 })
 export class WeatherModule {}

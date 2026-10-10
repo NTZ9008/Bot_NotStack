@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logAppearanceSchema, type LogAppearance } from './log-appearance';
 
 // ==========================================
 // 📚 LOG EVENT CATALOG
@@ -40,39 +41,39 @@ const C = LOG_COLOR;
 
 export const LOG_EVENTS = [
     // --- สมาชิก ---
-    { key: 'memberJoin', label: 'สมาชิกเข้า', group: G.MEMBER, color: C.CREATE },
+    { key: 'memberJoin', label: 'สมาชิกเข้าร่วม', group: G.MEMBER, color: C.CREATE },
     { key: 'memberLeave', label: 'สมาชิกออก', group: G.MEMBER, color: C.DELETE },
     { key: 'memberBan', label: 'แบนสมาชิก', group: G.MEMBER, color: C.DANGER },
     { key: 'memberUnban', label: 'ปลดแบนสมาชิก', group: G.MEMBER, color: C.SAFE },
-    { key: 'memberKick', label: 'เตะสมาชิกแล้ว', group: G.MEMBER, color: C.DANGER },
-    { key: 'memberTimeout', label: 'หมดเวลา (ให้ / ลบ)', group: G.MEMBER, color: C.DANGER },
-    { key: 'nicknameUpdate', label: 'เปลี่ยนชื่อเล่นแล้ว', group: G.MEMBER, color: C.UPDATE },
+    { key: 'memberKick', label: 'เตะสมาชิก', group: G.MEMBER, color: C.DANGER },
+    { key: 'memberTimeout', label: 'จำกัดการสื่อสาร / ยกเลิก Timeout', group: G.MEMBER, color: C.DANGER },
+    { key: 'nicknameUpdate', label: 'เปลี่ยนชื่อเล่น', group: G.MEMBER, color: C.UPDATE },
     { key: 'roleGiven', label: 'ให้บทบาท', group: G.MEMBER, color: C.CREATE },
     { key: 'roleRemoved', label: 'ลบบทบาท', group: G.MEMBER, color: C.DELETE },
     { key: 'userProfileUpdate', label: 'เปลี่ยนชื่อผู้ใช้ / รูปโปรไฟล์', group: G.MEMBER, color: C.UPDATE },
     { key: 'memberPrune', label: 'ล้างสมาชิกที่ไม่เคลื่อนไหว (Prune)', group: G.MEMBER, color: C.DANGER },
 
     // --- ข้อความ ---
-    { key: 'messageDelete', label: 'ข้อความที่ลบไปแล้ว', group: G.MESSAGE, color: C.DELETE },
-    { key: 'messageUpdate', label: 'ข้อความที่แก้ไขแล้ว', group: G.MESSAGE, color: C.UPDATE },
+    { key: 'messageDelete', label: 'ลบข้อความ', group: G.MESSAGE, color: C.DELETE },
+    { key: 'messageUpdate', label: 'แก้ไขข้อความ', group: G.MESSAGE, color: C.UPDATE },
     { key: 'messageBulkDelete', label: 'ลบข้อความจำนวนมาก (Purge)', group: G.MESSAGE, color: C.DELETE },
     { key: 'messagePin', label: 'ปักหมุด / เลิกปักหมุดข้อความ', group: G.MESSAGE, color: C.UPDATE },
     { key: 'invitePosted', label: 'มีคนโพสต์ลิงก์เชิญ', group: G.MESSAGE, color: C.SECURITY },
     { key: 'filterUsed', label: 'ใช้คำสั่งการคัดกรอง', group: G.MESSAGE, color: C.DANGER },
 
     // --- ช่อง & เธรด ---
-    { key: 'channelCreate', label: 'สร้างช่องแล้ว', group: G.CHANNEL, color: C.CREATE },
-    { key: 'channelDelete', label: 'ลบช่องแล้ว', group: G.CHANNEL, color: C.DELETE },
-    { key: 'channelUpdate', label: 'อัพเดตช่องแล้ว', group: G.CHANNEL, color: C.UPDATE },
-    { key: 'channelPermissionUpdate', label: 'สิทธิของช่องอัพเดทแล้ว', group: G.CHANNEL, color: C.UPDATE },
+    { key: 'channelCreate', label: 'สร้างช่อง', group: G.CHANNEL, color: C.CREATE },
+    { key: 'channelDelete', label: 'ลบช่อง', group: G.CHANNEL, color: C.DELETE },
+    { key: 'channelUpdate', label: 'แก้ไขช่อง', group: G.CHANNEL, color: C.UPDATE },
+    { key: 'channelPermissionUpdate', label: 'แก้ไขสิทธิ์ของช่อง', group: G.CHANNEL, color: C.UPDATE },
     { key: 'threadCreate', label: 'สร้างเธรด', group: G.CHANNEL, color: C.CREATE },
     { key: 'threadDelete', label: 'ลบเธรด', group: G.CHANNEL, color: C.DELETE },
-    { key: 'threadUpdate', label: 'อัพเดตเธรดแล้ว', group: G.CHANNEL, color: C.UPDATE },
+    { key: 'threadUpdate', label: 'แก้ไขเธรด', group: G.CHANNEL, color: C.UPDATE },
 
     // --- บทบาท & เซิร์ฟเวอร์ ---
-    { key: 'roleCreate', label: 'สร้างบทบาทแล้ว', group: G.SERVER, color: C.CREATE },
-    { key: 'roleDelete', label: 'ลบบทบาทแล้ว', group: G.SERVER, color: C.DELETE },
-    { key: 'roleUpdate', label: 'อัพเดทบทบาทแล้ว', group: G.SERVER, color: C.UPDATE },
+    { key: 'roleCreate', label: 'สร้างบทบาท', group: G.SERVER, color: C.CREATE },
+    { key: 'roleDelete', label: 'ลบบทบาท', group: G.SERVER, color: C.DELETE },
+    { key: 'roleUpdate', label: 'แก้ไขบทบาท', group: G.SERVER, color: C.UPDATE },
     { key: 'guildUpdate', label: 'อัปเดตเซิร์ฟเวอร์', group: G.SERVER, color: C.UPDATE },
     { key: 'inviteCreate', label: 'คำเชิญของเซิร์ฟเวอร์', group: G.SERVER, color: C.MEMBER },
     { key: 'emojiUpdate', label: 'อีโมจิ (เพิ่ม / แก้ไข / ลบ)', group: G.SERVER, color: C.UPDATE },
@@ -129,6 +130,7 @@ export interface LogOptions {
     ignoreBots: boolean;
     // บันทึกทุกเหตุการณ์ลงฐานข้อมูลไหม (ใช้ทำกราฟหน้า Overview + ตาราง Activity Log)
     activityRecording: boolean;
+    appearance: LogAppearance;
 }
 
 export interface LogSettingsResponse {
@@ -162,5 +164,6 @@ export const updateLogOptionsSchema = z.object({
     ignoredRoles: z.array(z.unknown()).optional(),
     ignoreBots: z.boolean().optional(),
     activityRecording: z.boolean().optional(),
+    appearance: logAppearanceSchema.optional(),
 });
 export type UpdateLogOptionsInput = z.input<typeof updateLogOptionsSchema>;

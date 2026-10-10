@@ -1,4 +1,4 @@
-import type { WeatherOptions, WeatherSettings } from '@notstack/shared';
+import type { WeatherOptions, WeatherRadarSource, WeatherSettings } from '@notstack/shared';
 
 // ค่าที่ต้องกดบันทึก (สวิตช์เปิด/ปิดบันทึกทันที แยกจากนี้)
 export interface WeatherDraft {
@@ -36,3 +36,4 @@ export const DAY_PRESETS = [
 
 export const THEME_LABELS = { light: 'สว่าง', dark: 'มืด' } as const;
 export const ZOOM_LABELS: Record<number, string> = { 8: 'ภูมิภาค', 9: 'กลาง', 10: 'ใกล้' };
+export const RADAR_SOURCE_LABELS: Record<WeatherRadarSource, string> = { rainviewer: 'RainViewer', tmd: 'กรมอุตุนิยมวิทยา' };
