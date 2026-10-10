@@ -13,3 +13,4 @@ export * from './room-access';
 export * from './voice-guard';
 export * from './weather';
 export * from './welcome';
+export * from './rank-card';

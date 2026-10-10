@@ -24,6 +24,7 @@ import { LogManagerModule } from './log-manager/log-manager.module';
 import { NewsModule } from './news/news.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RankModule } from './rank/rank.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
@@ -76,6 +77,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         LogManagerModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,
+        RankModule,
         NewsModule,
         RoomAccessModule,
         VoiceGuardModule,

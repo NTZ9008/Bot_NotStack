@@ -301,6 +301,29 @@ test('awards for different members do not wait on each other, settings changes w
         service.lockedMember = original;
     }
 });
+test('level changes are published after commit for awards and admin edits only when the level moves', async () => {
+    await configure(fixedSettings());
+    const changes = [];
+    const subscription = service.levelChanges.subscribe((change) => changes.push(change));
+    try {
+        // สูตรเริ่มต้น 100 × level² → 100 XP = เลเวล 1, 400 XP = เลเวล 2
+        assert.equal(await service.award('11111', '22222', context), 100);
+        await service.mutateMember('11111', mutation('22222', 'add', 300), 1);
+        await service.mutateMember('11111', mutation('22222', 'add', 1), 1);
+        await service.mutateMember('11111', mutation('22222', 'set', 0), 1);
+        await assert.rejects(service.mutateMember('11111', mutation('22222', 'set', MAX_XP + 1), 1));
+    } finally {
+        subscription.unsubscribe();
+    }
+    assert.deepEqual(
+        changes.map((c) => [c.source, c.previousLevel, c.level, c.xp, c.channelId]),
+        [
+            ['message', 0, 1, 100, '12345'],
+            ['admin.add', 1, 2, 400, null],
+            ['admin.set', 2, 0, 0, null],
+        ],
+    );
+});
 test('XP management endpoints default to manage; only leaderboard is view', () => {
     const { LevelsController } = require('../apps/backend/dist/levels/levels.controller');
     const { GUILD_ACCESS_KEY } = require('../apps/backend/dist/guilds/decorators/guild-route.decorator');

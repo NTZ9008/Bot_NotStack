@@ -20,7 +20,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"apps/*/src/**/*.{ts,tsx}\" \"packages/*/src/**/*.ts\" \"tests/**/*.cjs\" \"scripts/**/*.mjs\"",
     "test": "turbo run build --filter=@notstack/backend... && pnpm test:unit",
-    "test:unit": "node --test tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs tests/log-manager.test.cjs tests/weather-command.test.cjs tests/frontend-lib.test.cjs tests/chat.test.cjs",
+    "test:unit": "node --test tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs tests/log-manager.test.cjs tests/weather-command.test.cjs tests/frontend-lib.test.cjs tests/chat.test.cjs tests/rank-card.test.cjs",
     "test:integration": "turbo run build --filter=@notstack/backend... && node scripts/test-xp-postgres.mjs"
   },
   "devDependencies": {

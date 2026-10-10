@@ -396,3 +396,36 @@ model AiUsage {
   @@id([day, guildId])
   @@map("ai_usage")
 }
+
+// ==========================================
+// 🏆 RANK CARD — รูปการ์ด /rank /leaderboard และการ์ดเลเวลอัป (รูปแบบตรวจใน packages/shared/src/rank-card.ts)
+// ==========================================
+
+// ธีมของเซิร์ฟเวอร์ (แอดมินตั้ง) + สิทธิ์ที่ให้สมาชิกแต่งการ์ดตัวเอง — ไม่มีแถว = ธีมเริ่มต้น
+model RankCardSetting {
+  guildId   String   @id @map("guild_id")
+  theme     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("rank_card_settings")
+}
+
+// การ์ดที่สมาชิกแต่งเอง (เก็บเฉพาะค่าที่แต่งทับธีม)
+model RankCardMember {
+  guildId   String   @map("guild_id")
+  userId    String   @map("user_id")
+  style     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([guildId, userId])
+  @@map("rank_card_members")
+}
+
+// ประกาศเลเวลอัป + ยศรางวัลตามเลเวล — ไม่มีแถว = ปิดประกาศ ไม่มียศรางวัล
+model LevelUpSetting {
+  guildId   String   @id @map("guild_id")
+  settings  Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("level_up_settings")
+}
