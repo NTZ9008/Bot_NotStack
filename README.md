@@ -9,7 +9,7 @@
 
 ---
 
-## ความสามารถหลัก (Key Features)
+## ความสามารถหลัก (Key Features)1
 
 ### ระบบรักษาความปลอดภัย (Security Systems)
 
