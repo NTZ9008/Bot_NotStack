@@ -311,7 +311,9 @@ export function normalizeLevelUpSettings(input: unknown): LevelUpSettings {
     const rewards: LevelReward[] = [];
     for (const item of Array.isArray(src.rewards) ? src.rewards : []) {
         const reward = plain(item);
-        const level = int(reward.level, 1, RANK_LIMITS.maxLevel, 0);
+        // เลเวลต่ำกว่า 1 / ไม่ใช่ตัวเลข (ช่องว่างในหน้าเว็บ) = ตัดแถวนั้นทิ้ง ไม่ปัดขึ้นเป็นเลเวล 1
+        const raw = Number(reward.level);
+        const level = Number.isInteger(raw) && raw >= 1 ? Math.min(raw, RANK_LIMITS.maxLevel) : 0;
         const roleId = typeof reward.roleId === 'string' && SNOWFLAKE_RE.test(reward.roleId) ? reward.roleId : '';
         // ยศเดียวผูกได้กับเลเวลเดียว
         if (!level || !roleId || seen.has(roleId)) continue;

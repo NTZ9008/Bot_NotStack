@@ -103,6 +103,11 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'welcome.asset_upload': 'อัปโหลดรูปพื้นหลัง',
     'welcome.asset_rename': 'เปลี่ยนชื่อรูปพื้นหลัง',
     'welcome.asset_delete': 'ลบรูปพื้นหลัง',
+    'rank.theme_update': 'แก้ไขธีมการ์ด Rank',
+    'rank.my_card_update': 'แต่งการ์ด Rank ของตัวเอง',
+    'rank.my_card_reset': 'รีเซ็ตการ์ด Rank ของตัวเอง',
+    'rank.level_up_update': 'ตั้งค่าประกาศเลเวลอัป / ยศรางวัล',
+    'rank.rewards_sync': 'ปรับยศรางวัลให้สมาชิกเดิม',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -116,6 +121,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     pr_bot: 'PR Bot',
     welcome: 'Welcome Announcement',
     weather: 'Weather',
+    rank: 'การ์ด Rank & เลเวลอัป',
 };
 
 export function auditLabel(action: string): string {

@@ -569,6 +569,13 @@ XP, progress, daily และประวัติที่เกี่ยวข
 Lock ช่วยป้องกันการเขียนทับ ไม่ใช่ event deduplication: ไม่มีการเก็บ message/interaction ID เพื่อตรวจเหตุการณ์ซ้ำ
 การแก้ settings / reset ทั้ง guild ต้องรอทุก award ที่ค้างอยู่ จึงอาจช้าลงในช่วงที่กิจกรรมเยอะ (timeout 15 วินาที)
 
+### เมื่อเลเวลเปลี่ยน
+
+หลัง transaction commit แล้ว `LevelsService.levelChanges` (RxJS Subject) ส่งเหตุการณ์ `{ guildId, userId, previousLevel, level, xp, source, channelId }`
+เมื่อเลเวลที่คำนวณจาก XP ก่อน/หลังต่างกัน — จากการได้ XP (`message` / `voice` / `command`) และจากแอดมินแก้สมาชิก (`admin.*`)
+รีเซ็ตทั้งเซิร์ฟเวอร์และการเปลี่ยนสูตรเลเวลไม่ส่งเหตุการณ์ (คนละจำนวนมากพร้อมกัน) — transaction ที่ rollback ไม่ส่งเหตุการณ์
+`LevelUpService` (โมดูล rank) ฟังเหตุการณ์นี้เพื่อปรับยศรางวัลและประกาศเลเวลอัป ดูรายละเอียดที่ README หัวข้อการ์ด /rank
+
 ### การล้างข้อมูล
 
 ทุก 6 ชั่วโมงลบประวัติที่เก่ากว่า 90 วัน, daily ที่ day เก่ากว่าวันปัจจุบันลบสองวัน และ progress ที่ไม่มีความพยายามเกิน 90 วัน
