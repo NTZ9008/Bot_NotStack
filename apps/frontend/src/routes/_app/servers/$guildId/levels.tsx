@@ -10,7 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LevelUpPanel } from '@/features/levels/level-up-settings';
 import { XpHistoryPanel, XpMembersPanel } from '@/features/levels/members';
+import { MyRankCardPanel } from '@/features/levels/my-rank-card';
+import { RankThemePanel } from '@/features/levels/rank-theme-editor';
 import { XpSettingsPanel } from '@/features/levels/settings';
 import { useAuth } from '@/hooks/use-auth';
 import { useGuild } from '@/hooks/use-guild';
@@ -157,12 +160,15 @@ function LevelsPage() {
     const manage = guild.access === 'manage';
     return (
         <>
-            <PageHeader title="Levels & XP" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ กฎกิจกรรม และประวัติ XP`} />
+            <PageHeader title="Levels & XP" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList className="mb-4 flex h-auto flex-wrap">
                     <TabsTrigger value="leaderboard">อันดับสมาชิก</TabsTrigger>
+                    <TabsTrigger value="my-card">การ์ดของฉัน</TabsTrigger>
                     {manage && (
                         <>
+                            <TabsTrigger value="card-theme">ธีมการ์ด</TabsTrigger>
+                            <TabsTrigger value="level-up">เลเวลอัป & ยศรางวัล</TabsTrigger>
                             <TabsTrigger value="settings">กฎและอัตรา XP</TabsTrigger>
                             <TabsTrigger value="members">จัดการสมาชิก</TabsTrigger>
                             <TabsTrigger value="history">ประวัติ</TabsTrigger>
@@ -172,8 +178,17 @@ function LevelsPage() {
                 <TabsContent value="leaderboard">
                     <Leaderboard key={guild.id} guildId={guild.id} />
                 </TabsContent>
+                <TabsContent value="my-card">
+                    <MyRankCardPanel guildId={guild.id} />
+                </TabsContent>
                 {manage && (
                     <>
+                        <TabsContent value="card-theme">
+                            <RankThemePanel guildId={guild.id} />
+                        </TabsContent>
+                        <TabsContent value="level-up">
+                            <LevelUpPanel guildId={guild.id} />
+                        </TabsContent>
                         <TabsContent value="settings" forceMount className="data-[state=inactive]:hidden">
                             <XpSettingsPanel guildId={guild.id} />
                         </TabsContent>
