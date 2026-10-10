@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Res, UseGuards } from '@nestjs/common';
 import {
     allowedMemberStyle,
     defaultLevelUpSettings,
@@ -26,6 +26,7 @@ import {
     type RewardSyncResponse,
 } from '@notstack/shared';
 import type { Response } from 'express';
+import { RenderRateLimitGuard } from '../auth/guards/rate-limit.guard';
 import { Audit, SkipAudit } from '../common/decorators/audit.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { createZodDto } from '../common/dto/create-zod-dto';
@@ -119,6 +120,7 @@ export class RankCardController {
 
     // วาดตัวอย่างจากค่าที่กำลังแก้ (ยังไม่บันทึก) — ถูกเรียกบ่อยตอนขยับ slider จึงไม่ลง audit log
     @SkipAudit()
+    @UseGuards(RenderRateLimitGuard)
     @Post('preview')
     @HttpCode(HttpStatus.OK)
     async preview(@GuildId() guildId: string, @Body() body: PreviewDto, @CurrentUser() user: User, @Res({ passthrough: true }) res: Response): Promise<RankPreviewResponse> {
@@ -200,6 +202,7 @@ export class RankCardController {
 
     @GuildAccess('view')
     @SkipAudit()
+    @UseGuards(RenderRateLimitGuard)
     @Post('me/preview')
     @HttpCode(HttpStatus.OK)
     async previewMine(@GuildId() guildId: string, @Body() body: MyPreviewDto, @CurrentUser() user: User, @Res({ passthrough: true }) res: Response): Promise<RankPreviewResponse> {
