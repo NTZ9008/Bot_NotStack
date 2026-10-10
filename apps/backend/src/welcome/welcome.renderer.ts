@@ -9,7 +9,8 @@ const AVATAR_TIMEOUT_MS = 5000;
 // รูปที่ใหญ่กว่านี้จะถูกย่อก่อนเก็บลงฐานข้อมูล (การ์ดกว้างได้สูงสุด 2000px อยู่แล้ว)
 const MAX_ASSET_SIDE = 2400;
 const ASSET_CACHE_SIZE = 8;
-const AVATAR_CACHE_SIZE = 32;
+// /leaderboard โหลดทีละ 10 คน + ไอคอนเซิร์ฟเวอร์
+const AVATAR_CACHE_SIZE = 64;
 
 // เช็คชนิดไฟล์จาก byte แรกของไฟล์จริง (ไม่เชื่อ Content-Type ที่ส่งมา)
 function sniffImageType(buffer: Buffer): string | null {
@@ -64,10 +65,15 @@ export class WelcomeRenderer {
     }
 
     // ดึงรูปโปรไฟล์จาก Discord CDN — ถ้าช้า/ล้ม ให้วาดสี่เหลี่ยมสีแทน ไม่ให้การ์ดทั้งใบส่งไม่ออก
-    async loadAvatarImage(user: User | null | undefined): Promise<Image | null> {
+    async loadAvatarImage(user: User | null | undefined, size: 128 | 256 | 512 = 512): Promise<Image | null> {
         if (!user) return null;
+        return this.loadImageUrl(user.displayAvatarURL({ extension: 'png', size, forceStatic: true }), `avatar ของ ${user.id}`);
+    }
+
+    // รูปจาก Discord CDN (avatar / ไอคอนเซิร์ฟเวอร์) — URL มี hash ของรูปอยู่แล้วจึง cache ตาม URL ได้
+    async loadImageUrl(url: string | null | undefined, label: string): Promise<Image | null> {
+        if (!url) return null;
         try {
-            const url = user.displayAvatarURL({ extension: 'png', size: 512, forceStatic: true });
             const cached = this.avatarCache.get(url);
             if (cached) return cached;
 
@@ -77,7 +83,7 @@ export class WelcomeRenderer {
             remember(this.avatarCache, url, image, AVATAR_CACHE_SIZE);
             return image;
         } catch (err) {
-            this.logger.warn(`โหลด avatar ของ ${user.id} ไม่สำเร็จ: ${(err as Error).message}`);
+            this.logger.warn(`โหลด ${label} ไม่สำเร็จ: ${(err as Error).message}`);
             return null;
         }
     }

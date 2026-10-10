@@ -21,6 +21,7 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import type { Message } from 'discord.js';
+import { Subject } from 'rxjs';
 import { badRequest, conflict } from '../common/exceptions/api.exception';
 import { bangkokDay } from '../common/utils/parse.util';
 import { DiscordService } from '../discord/discord.service';
@@ -28,6 +29,19 @@ import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Tx = Prisma.TransactionClient;
+
+// เลเวลของสมาชิกเปลี่ยน (หลัง transaction commit แล้ว) — ระบบประกาศเลเวลอัป / ยศรางวัลฟังจากตรงนี้
+export interface LevelChange {
+    guildId: string;
+    userId: string;
+    previousLevel: number;
+    level: number;
+    xp: number;
+    // message / voice / command = ได้จากกิจกรรม, admin.* = แอดมินแก้จาก Dashboard
+    source: string;
+    // ห้องที่เกิดกิจกรรม (ห้องข้อความ / ห้องเสียง) — null เมื่อแอดมินแก้
+    channelId: string | null;
+}
 
 // Settings are read on every message/voice tick; edits through this service refresh the cache at once.
 const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -40,6 +54,8 @@ export class LevelsService {
     // Last attempt per guild/user/rule, mirrored from xp_progress after each committed award.
     // Only used to skip transactions that would certainly be in cooldown; the database stays authoritative.
     private readonly cooldowns = new Map<string, number>();
+    // แจ้งเมื่อเลเวลเปลี่ยนจากการได้ XP หรือแอดมินแก้ XP (ไม่รวมรีเซ็ตทั้งเซิร์ฟเวอร์ / เปลี่ยนสูตรเลเวล)
+    readonly levelChanges = new Subject<LevelChange>();
     constructor(
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
@@ -188,6 +204,7 @@ export class LevelsService {
         if (!candidates.length || candidates.every((rule) => this.inCooldown(guildId, userId, rule, startedAt))) return 0;
 
         const attempts: [string, number][] = [];
+        let change = null as LevelChange | null;
         const total = await this.lockedMember(guildId, userId, async (tx) => {
             const { settings } = await this.readSettings(tx, guildId);
             const rules = matchingXpRules(settings, context);
@@ -231,6 +248,11 @@ export class LevelsService {
                 await tx.xpHistory.create({ data: { guildId, userId, source: context.source, delta: amount, balance, reason: rule.name } });
             }
             if (total) {
+                const previousLevel = levelForXp(current?.xp ?? 0, settings);
+                const level = levelForXp(balance, settings);
+                if (level !== previousLevel) {
+                    change = { guildId, userId, previousLevel, level, xp: balance, source: context.source, channelId: context.channelId ?? null };
+                }
                 await tx.level.upsert({
                     where: levelKey,
                     create: { guildId, userId, xp: balance, level: levelForXp(balance, settings) },
@@ -242,6 +264,7 @@ export class LevelsService {
         });
         // Only after commit: a rolled-back attempt must not block the next one.
         this.rememberAttempts(attempts);
+        if (change) this.levelChanges.next(change);
         return total;
     }
 
@@ -261,8 +284,9 @@ export class LevelsService {
         }
     }
 
-    mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<XpMemberMutationResult> {
-        return this.lockedMember(guildId, input.userId, async (tx) => {
+    async mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<XpMemberMutationResult> {
+        let change = null as LevelChange | null;
+        const result = await this.lockedMember(guildId, input.userId, async (tx) => {
             const { settings } = await this.readSettings(tx, guildId);
             const where = { guildId_userId: { guildId, userId: input.userId } };
             const old = await tx.level.findUnique({ where });
@@ -295,8 +319,15 @@ export class LevelsService {
                     actorId,
                 },
             });
-            return { success: true, userId: input.userId, action: input.action, beforeXp: before, afterXp: after, delta: after - before };
+            const previousLevel = levelForXp(before, settings);
+            const level = levelForXp(after, settings);
+            if (level !== previousLevel) {
+                change = { guildId, userId: input.userId, previousLevel, level, xp: after, source: `admin.${input.action}`, channelId: null };
+            }
+            return { success: true as const, userId: input.userId, action: input.action, beforeXp: before, afterXp: after, delta: after - before };
         });
+        if (change) this.levelChanges.next(change);
+        return result;
     }
 
     resetGuild(guildId: string, reason: string, actorId: number): Promise<XpResetGuildResult> {
@@ -308,6 +339,15 @@ export class LevelsService {
             await tx.level.deleteMany({ where: { guildId } });
             return { success: true, affectedMembers: totals._count, beforeXp, afterXp: 0, delta: 0 - beforeXp };
         });
+    }
+
+    // XP ที่ได้วันนี้ (ตัดวันตามเวลาไทย) เทียบกับเพดานต่อวันของเซิร์ฟเวอร์ (0 = ไม่จำกัด)
+    async today(guildId: string, userId: string): Promise<{ earned: number; dailyCap: number }> {
+        const [daily, { settings }] = await Promise.all([
+            this.prisma.xpDaily.findUnique({ where: { guildId_userId_day: { guildId, userId, day: bangkokDay() } } }),
+            this.settings(guildId),
+        ]);
+        return { earned: daily?.earned ?? 0, dailyCap: settings.dailyCap };
     }
 
     async history(guildId: string, query: { userId?: string; cursor?: number }): Promise<XpHistoryPage> {
