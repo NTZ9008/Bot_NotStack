@@ -23,9 +23,6 @@ export class RankCommand implements SlashCommandHandler {
         if (target.bot) return interaction.reply({ content: '🤖 บอทไม่มีเลเวลนะคร้าบ!', flags: MessageFlags.Ephemeral });
 
         if (!interaction.guildId) return interaction.reply({ content: 'ใช้คำสั่งนี้ได้ในเซิร์ฟเวอร์เท่านั้น', flags: MessageFlags.Ephemeral });
-        if (!this.levels.isLoaded()) {
-            return interaction.reply({ content: '❌ ไม่สามารถโหลดข้อมูล Level ได้ในขณะนี้', flags: MessageFlags.Ephemeral });
-        }
         await interaction.deferReply();
         if (interaction.options.getBoolean('leaderboard')) {
             const { items: top } = await this.levels.list(interaction.guildId, { page: 1, pageSize: 10 });

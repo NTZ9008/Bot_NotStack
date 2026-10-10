@@ -8,7 +8,6 @@ if (!url || new URL(url).pathname !== '/notstack_xp_test') throw Error('Use the 
 const prisma = new PrismaService({ get: () => url });
 const discord = { ready: null, guild: () => null, homeGuildId: '11111' };
 const service = new LevelsService(prisma, discord);
-service.loaded = true;
 const context = { source: 'message', channelId: '12345', roleIds: [], messageLength: 30 };
 const mutation = (userId, action, amount) => ({ userId, action, amount, reason: 'test' });
 const fixedSettings = () => ({ ...defaultXpSettings(), rules: [{ ...defaultXpRule(), minXp: 100, maxXp: 100, cooldownSeconds: 1 }] });
@@ -16,14 +15,18 @@ async function configure(settings, guild = '11111') {
     const current = await service.settings(guild);
     return service.updateSettings(guild, { revision: current.revision, settings });
 }
-async function clearCooldown() {
+// The service mirrors committed cooldowns in memory; editing xp_progress directly must clear that mirror too.
+async function clearCooldown(target = service) {
     await prisma.xpProgress.updateMany({ data: { lastAttemptAt: new Date(0) } });
+    target.cooldowns.clear();
 }
 before(async () => {
     await prisma.$connect();
 });
 beforeEach(async () => {
     await prisma.$executeRawUnsafe('TRUNCATE levels, xp_settings, xp_progress, xp_daily, xp_history RESTART IDENTITY');
+    service.settingsCache.clear();
+    service.cooldowns.clear();
 });
 after(async () => {
     await prisma.$disconnect();
@@ -109,7 +112,6 @@ test('rule stacking obeys both rule and shared daily caps across restarts', asyn
     await configure(settings);
     assert.equal(await service.award('11111', '22222', context), 150);
     const restarted = new LevelsService(prisma, discord);
-    restarted.loaded = true;
     await clearCooldown();
     assert.equal(await restarted.award('11111', '22222', context), 0);
     assert.equal((await restarted.list('11111')).items[0].xp, 150);
@@ -135,6 +137,7 @@ test('day rollover resets caps while member resets do not reset daily earnings',
     assert.equal(await service.award('11111', '22222', context), 0);
     await prisma.xpDaily.updateMany({ data: { day: '2000-01-01' } });
     await prisma.xpProgress.updateMany({ data: { day: '2000-01-01', lastAttemptAt: new Date(0) } });
+    service.cooldowns.clear();
     assert.equal(await service.award('11111', '22222', context), 100);
 });
 test('full member CRUD, clamp-to-zero, overflow guard, pagination and guild isolation', async () => {
@@ -219,9 +222,9 @@ test('curve updates persist the same levels as the shared formula at exact bound
 });
 test('transaction rolls back cooldown, balance and daily cap when history write fails', async () => {
     await configure(fixedSettings());
-    const original = service.locked.bind(service);
-    service.locked = (guild, work) =>
-        original(guild, (tx) =>
+    const original = service.lockedMember.bind(service);
+    service.lockedMember = (guild, user, work) =>
+        original(guild, user, (tx) =>
             work(
                 new Proxy(tx, {
                     get(target, key) {
@@ -239,12 +242,64 @@ test('transaction rolls back cooldown, balance and daily cap when history write 
     try {
         await assert.rejects(service.award('11111', '22222', context));
     } finally {
-        service.locked = original;
+        service.lockedMember = original;
     }
     assert.equal(await prisma.xpProgress.count(), 0);
     assert.equal(await prisma.level.count(), 0);
     assert.equal(await prisma.xpDaily.count(), 0);
     assert.equal(await service.award('11111', '22222', context), 100);
+});
+test('awards skip the transaction when XP is off or every matching rule is cooling down', async () => {
+    let transactions = 0;
+    const original = service.lockedMember.bind(service);
+    service.lockedMember = (...args) => {
+        transactions++;
+        return original(...args);
+    };
+    try {
+        await configure({ ...fixedSettings(), enabled: false });
+        assert.equal(await service.award('11111', '22222', context), 0);
+        assert.equal(transactions, 0);
+        await configure({ ...fixedSettings(), rules: [{ ...fixedSettings().rules[0], cooldownSeconds: 60 }] });
+        assert.equal(await service.award('11111', '22222', context), 100);
+        assert.equal(await service.award('11111', '22222', context), 0);
+        assert.equal(transactions, 1);
+        // Another member is not affected by the first member's cooldown.
+        assert.equal(await service.award('11111', '33333', context), 100);
+        assert.equal(transactions, 2);
+    } finally {
+        service.lockedMember = original;
+    }
+});
+test('awards for different members do not wait on each other, settings changes wait for awards', async () => {
+    await configure(fixedSettings());
+    const order = [];
+    const original = service.lockedMember.bind(service);
+    let release;
+    const held = new Promise((resolve) => (release = resolve));
+    // Hold member A's transaction open; member B must still complete.
+    service.lockedMember = (guild, user, work) =>
+        original(guild, user, async (tx) => {
+            const result = await work(tx);
+            if (user === '22222') await held;
+            order.push(user);
+            return result;
+        });
+    try {
+        const slow = service.award('11111', '22222', context);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        assert.equal(await service.award('11111', '33333', context), 100);
+        const settings = service.updateSettings('11111', { ...(await service.settings('11111')), settings: { ...fixedSettings(), multiplierPercent: 200 } }).then(() =>
+            order.push('settings'),
+        );
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        assert.deepEqual(order, ['33333']);
+        release();
+        await Promise.all([slow, settings]);
+        assert.deepEqual(order, ['33333', '22222', 'settings']);
+    } finally {
+        service.lockedMember = original;
+    }
 });
 test('XP management endpoints default to manage; only leaderboard is view', () => {
     const { LevelsController } = require('../apps/backend/dist/levels/levels.controller');
