@@ -12,6 +12,20 @@ interface GuardChannelRow {
     notify: boolean;
 }
 
+// กติกาของห้องเสียง 1 ห้อง (null = ห้องนี้ไม่ได้อยู่ในรายการนั้น)
+export interface GuardRule {
+    enabled: boolean;
+    notify: boolean;
+    userIds: Set<string>;
+}
+export interface ChannelGuardRules {
+    whitelist: GuardRule | null;
+    blacklist: GuardRule | null;
+}
+
+// กติกาที่ใช้ตอนมีคนเข้าห้องเสียง cache ไว้ (แก้จากหน้าเว็บแล้วล้างทันที — TTL กันกรณีแก้ฐานข้อมูลตรงๆ)
+const RULE_CACHE_TTL_MS = 5 * 60 * 1000;
+
 const fallbackAvatar = (userId: string) => {
     const index = /^\d+$/.test(userId) ? Number(BigInt(userId) % 5n) : 0;
     return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
@@ -24,6 +38,8 @@ const fallbackAvatar = (userId: string) => {
 // ==========================================
 @Injectable()
 export class VoiceGuardService {
+    private readonly ruleCache = new Map<string, { rules: ChannelGuardRules; at: number }>();
+
     constructor(
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
@@ -40,6 +56,21 @@ export class VoiceGuardService {
         return mode === 'whitelist'
             ? this.prisma.voiceWhitelistChannel.findUnique({ where: { channelId } })
             : this.prisma.voiceBlacklistChannel.findUnique({ where: { channelId } });
+    }
+
+    // กติกา whitelist + blacklist ของห้องเสียงที่มีคนเข้า (channel id ไม่ซ้ำข้ามเซิร์ฟเวอร์)
+    async rules(channelId: string): Promise<ChannelGuardRules> {
+        const hit = this.ruleCache.get(channelId);
+        if (hit && Date.now() - hit.at < RULE_CACHE_TTL_MS) return hit.rules;
+        const load = async (mode: VoiceGuardMode): Promise<GuardRule | null> => {
+            const row = await this.getChannel(mode, channelId);
+            return row ? { enabled: row.enabled, notify: row.notify, userIds: new Set(await this.getUsers(mode, channelId)) } : null;
+        };
+        const [whitelist, blacklist] = await Promise.all([load('whitelist'), load('blacklist')]);
+        const rules = { whitelist, blacklist };
+        this.ruleCache.set(channelId, { rules, at: Date.now() });
+        if (this.ruleCache.size > 5000) this.ruleCache.clear();
+        return rules;
     }
 
     // ห้องที่มีอยู่แล้วต้องเป็นของเซิร์ฟเวอร์นี้ / ห้องใหม่ต้องเป็นห้องเสียงของเซิร์ฟเวอร์นี้ใน Discord
@@ -61,6 +92,7 @@ export class VoiceGuardService {
         const args = { where: { channelId }, create: { channelId, guildId, enabled }, update: { enabled } };
         if (mode === 'whitelist') await this.prisma.voiceWhitelistChannel.upsert(args);
         else await this.prisma.voiceBlacklistChannel.upsert(args);
+        this.ruleCache.delete(channelId);
     }
 
     // สวิตช์ "ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออก" — อัปเดตเฉพาะ notify โดยไม่แตะ enabled
@@ -69,6 +101,7 @@ export class VoiceGuardService {
         const args = { where: { channelId }, create: { channelId, guildId, notify }, update: { notify } };
         if (mode === 'whitelist') await this.prisma.voiceWhitelistChannel.upsert(args);
         else await this.prisma.voiceBlacklistChannel.upsert(args);
+        this.ruleCache.delete(channelId);
     }
 
     async deleteChannel(mode: VoiceGuardMode, guildId: string, channelId: string): Promise<void> {
@@ -79,6 +112,7 @@ export class VoiceGuardService {
         } else {
             await this.prisma.$transaction([this.prisma.voiceBlacklistUser.deleteMany(where), this.prisma.voiceBlacklistChannel.deleteMany(where)]);
         }
+        this.ruleCache.delete(channelId);
     }
 
     async getUsers(mode: VoiceGuardMode, channelId: string): Promise<string[]> {
@@ -92,6 +126,7 @@ export class VoiceGuardService {
         const args = { data: [{ channelId, userId }], skipDuplicates: true };
         if (mode === 'whitelist') await this.prisma.voiceWhitelistUser.createMany(args);
         else await this.prisma.voiceBlacklistUser.createMany(args);
+        this.ruleCache.delete(channelId);
     }
 
     async removeUser(mode: VoiceGuardMode, guildId: string, channelId: string, userId: string): Promise<void> {
@@ -99,6 +134,7 @@ export class VoiceGuardService {
         const args = { where: { channelId, userId } };
         if (mode === 'whitelist') await this.prisma.voiceWhitelistUser.deleteMany(args);
         else await this.prisma.voiceBlacklistUser.deleteMany(args);
+        this.ruleCache.delete(channelId);
     }
 
     // รายการห้องพร้อมชื่อห้อง + ชื่อ/รูปของสมาชิกแต่ละคน สำหรับหน้าเว็บ

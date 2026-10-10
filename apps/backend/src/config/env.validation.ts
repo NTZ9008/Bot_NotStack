@@ -79,6 +79,8 @@ export const envSchema = z.object({
 
     // ที่เก็บไฟล์ log (ค่าเริ่มต้น: <repo>/logs เหมือนเดิม)
     LOG_DIR: optionalString,
+    // เก็บไฟล์ log (แชท / ประวัติห้องเสียง / การขอยศพิเศษ) ย้อนหลังกี่วัน (ค่าเริ่มต้น 30)
+    LOG_RETENTION_DAYS: positiveInt(30),
     // (ไม่บังคับ) ให้ backend เสิร์ฟหน้าเว็บที่ build แล้วเองด้วย เช่น apps/frontend/dist — ไม่ตั้ง = API อย่างเดียว
     FRONTEND_DIST: optionalString,
 });

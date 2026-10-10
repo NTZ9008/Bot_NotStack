@@ -383,3 +383,16 @@ model XpHistory {
   @@index([createdAt])
   @@map("xp_history")
 }
+
+// ==========================================
+// 🧠 AI USAGE — จำนวนครั้งที่เรียก Gemini ต่อวัน (เวลาไทย) แยกตามเซิร์ฟเวอร์
+// นับทั้ง AI Chat และตัวกรองคำหยาบ ใช้คุมโควตาให้ตรงแม้บอทรีสตาร์ท (เก็บย้อนหลังแค่ไม่กี่วัน)
+// ==========================================
+model AiUsage {
+  day     String
+  guildId String @map("guild_id")
+  count   Int    @default(0)
+
+  @@id([day, guildId])
+  @@map("ai_usage")
+}
