@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EmbedBuilder, MessageFlags, SlashCommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
-import { REACTION_ROLES } from '../../chat/reaction-roles.constants';
+import { REACTION_ROLES, REACTION_ROLES_TITLE } from '../../chat/reaction-roles.constants';
 import { SlashCommand } from '../../discord/decorators/slash-command.decorator';
 import type { SlashCommandHandler } from '../../discord/interfaces/slash-command.interface';
 
@@ -22,7 +22,7 @@ export class SetupRolesCommand implements SlashCommandHandler {
         if (!interaction.channel?.isSendable()) return interaction.editReply({ content: '❌ ส่งข้อความในห้องนี้ไม่ได้' });
 
         const embed = new EmbedBuilder()
-            .setTitle('🎭 ระบบเลือกรับยศทั่วไป (Reaction Roles)')
+            .setTitle(REACTION_ROLES_TITLE)
             .setDescription(
                 'โปรดกด Reaction ที่ด้านล่างเพื่อรับ หรือ เอาออก ยศที่คุณต้องการ:\n\n' +
                     '4️⃣ **DST04** - รุ่นที่ 4\n' +

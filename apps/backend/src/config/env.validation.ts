@@ -64,8 +64,15 @@ export const envSchema = z.object({
     AUDIT_LOG_RETENTION_DAYS: positiveInt(180),
     ACTIVITY_LOG_RETENTION_DAYS: positiveInt(90),
 
+    // รหัสผ่านรับยศของเซิร์ฟเวอร์หลัก — ไม่ตั้ง = ปิดการรับยศด้วยรหัสผ่าน (/verify รุ่น DST, /addroles บัตร VIP)
+    VERIFY_PASSWORD: optionalString,
+    VIP_ROLE_PASSWORD: optionalString,
+
     // บริการภายนอก
     GEMINI_KEY: optionalString,
+    // โควตา Gemini ต่อวัน (เวลาไทย) รวมทุกเซิร์ฟเวอร์ / ต่อเซิร์ฟเวอร์อื่นที่ไม่ใช่เซิร์ฟเวอร์หลัก — นับทั้ง AI Chat และตัวกรองคำหยาบ
+    AI_DAILY_LIMIT: positiveInt(250),
+    AI_GUILD_DAILY_LIMIT: positiveInt(50),
     OPENWEATHER_KEY: optionalString,
     // secret ของ webhook เดิม /webhook/github (เซิร์ฟเวอร์หลัก) — เซิร์ฟเวอร์อื่นสร้าง secret ของตัวเองที่หน้า PR Bot
     GITHUB_WEBHOOK_SECRET: optionalString,
