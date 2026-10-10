@@ -1,6 +1,6 @@
 {
   "name": "@notstack/shared",
-  "version": "3.6.0",
+  "version": "4.0.0",
   "private": true,
   "description": "Types, zod schemas and constants shared by the backend and the dashboard",
   "main": "./dist/index.js",

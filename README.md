@@ -32,11 +32,13 @@
 
 #### Bad Word Filter
 
+- คำหยาบชัดเจนลบทันที ส่วนคำที่ต้องสงสัยให้ AI ตัดสินตามบริบท (กติกาอยู่ใน system instruction และ AI ตอบได้แค่ `BAD` / `PASS`)
+- AI ใช้ไม่ได้ (ไม่มี `GEMINI_KEY` / โควตาหมด / error) = **ปล่อยผ่าน** เพราะรายการคำต้องสงสัยจับแบบ "มีคำนี้อยู่ในข้อความ"
+  ซึ่งภาษาไทยไม่มีเว้นวรรค ข้อความปกติจึงติดได้ง่าย (เช่น สีแสด / ขยะ)
+
 ---
 
 ### 🧠 AI Chat System (Gemini AI)
-
-### ระบบบันทึกข้อมูล (Logging Systems)
 
 #### วิธีใช้งาน
 
@@ -52,9 +54,18 @@
 
 #### ระบบจำกัดโควตา
 
-- ใช้ได้ประมาณ **250 ครั้ง / วัน**
-- รีเซ็ตอัตโนมัติทุกวัน
+- นับทุกครั้งที่เรียก Gemini ทั้ง AI Chat และตัวกรองคำหยาบ — รวมทุกเซิร์ฟเวอร์ `AI_DAILY_LIMIT` (ค่าเริ่มต้น **250 ครั้ง / วัน**)
+- เซิร์ฟเวอร์อื่นที่ไม่ใช่เซิร์ฟเวอร์หลักใช้ได้ไม่เกิน `AI_GUILD_DAILY_LIMIT` ต่อวัน (ค่าเริ่มต้น 50) กันเซิร์ฟเวอร์เดียวใช้จนหมด
+- รีเซ็ตเวลา 00:00 Asia/Bangkok และเก็บยอดในตาราง `ai_usage` — รีสตาร์ทบอทแล้วยอดไม่หาย
 - หากเกินโควตา บอทจะแจ้งเตือนว่าหมดสิทธิ์ใช้งาน AI ชั่วคราว
+- คำตอบของ AI แท็กใครหรือยศไหนไม่ได้ (ข้อความทั้งหมดของบอทแท็กได้แค่ผู้ใช้ ยกเว้นข้อความที่แอดมินตั้งใจแท็กยศเอง เช่นการ์ดต้อนรับ / รายงานอากาศ / PR Bot)
+
+### ระบบบันทึกข้อมูล (Logging Systems)
+
+- ไฟล์ log รายวันใน `logs/` (ตั้งชื่อตามวันที่เวลาไทย): แชท + เข้า/ออกห้องเสียงของเซิร์ฟเวอร์หลัก และการขอยศพิเศษ — ดูได้ที่หน้า Logs (ADMIN)
+- เก็บย้อนหลัง `LOG_RETENTION_DAYS` วัน (ค่าเริ่มต้น 30) ไฟล์ที่เก่ากว่าถูกลบเองตอนเปิดบอทและทุก 6 ชั่วโมง · ไฟล์ใหญ่เกิน 2 MB หน้า Logs แสดงเฉพาะส่วนท้าย
+- เซิร์ฟเวอร์อื่นไม่เก็บเนื้อหาแชทลงไฟล์ — ดูความเคลื่อนไหวได้จาก Activity Log / Log Manager ของเซิร์ฟเวอร์นั้น
+- ถ้าเปิด log ห้องเสียงใน Log Manager ไว้ ห้อง `LOG_CHANNEL_ID` จะไม่ได้รับข้อความเข้า/ออกห้องเสียงแบบเดิมซ้ำ
 
 ---
 
@@ -84,6 +95,9 @@
 
 > `/verify` `/addroles` `/setuproles` `/admininfo` เป็นคำสั่งเฉพาะของเซิร์ฟเวอร์ NotStack (`DISCORD_GUILD_ID`) — ลงทะเบียนเป็น guild command
 > ที่เซิร์ฟเวอร์หลักที่เดียว ส่วนคำสั่งอื่นเป็น global command ใช้ได้ทุกเซิร์ฟเวอร์ที่เชิญบอท
+>
+> รหัสผ่านของ `/verify` และ `/addroles` (บัตร VIP) ตั้งใน `.env` (`VERIFY_PASSWORD` / `VIP_ROLE_PASSWORD`) — ไม่ได้ตั้ง = ปิดการรับยศนั้น
+> ใส่รหัสผิด 5 ครั้งใน 15 นาทีต้องรอ · Reaction roles ทำงานเฉพาะบนข้อความที่สร้างจาก `/setuproles` · `/poll` นับ 1 คน 1 โหวต (กดใหม่ = เปลี่ยนโหวต)
 
 ---
 
@@ -251,8 +265,10 @@ Cooldown เริ่มทุกครั้งที่มีสิทธิ�
 บอทและ webhook ไม่ได้ XP ข้อความ ส่วนคำสั่งนับเมื่อ handler ทำงานจบโดยไม่ throw (ไม่ใช่การตรวจผลสำเร็จเชิงธุรกิจของแต่ละคำสั่ง)
 การเพิ่ม XP โดยผู้ดูแลไม่กินโควตากิจกรรม และการรีเซ็ต/ลบสมาชิกคงโควตาที่ใช้แล้วกับ cooldown ของวันนี้ไว้
 
-XP, cooldown, โควตา และประวัติเขียนใน transaction เดียว โดยใช้ PostgreSQL advisory lock ต่อเซิร์ฟเวอร์
+XP, cooldown, โควตา และประวัติเขียนใน transaction เดียว โดยใช้ PostgreSQL advisory lock — การให้ XP / แก้ XP ของสมาชิกล็อกแค่สมาชิกคนนั้น
+(สมาชิกต่างคนได้ XP พร้อมกันได้) ส่วนการแก้กฎและรีเซ็ตทั้งเซิร์ฟเวอร์ล็อกทั้งเซิร์ฟเวอร์และรอให้ทุกรายการที่ค้างอยู่เสร็จก่อน
 ไม่ค้างยอดใน memory จึงไม่มีการ save ยอดเก่าทับยอดใหม่ ข้อมูลยังอยู่หลังรีสตาร์ต และการแก้กฎตรวจ revision เพื่อกันผู้ดูแลสองคนเขียนทับกัน
+กฎ XP และเวลาที่ลองครั้งล่าสุด cache ไว้ใน memory เพื่อข้ามข้อความที่ยังติด cooldown โดยไม่ต้องเปิด transaction (ฐานข้อมูลยังเป็นตัวตัดสินจริง)
 
 **API:** `GET /api/guilds/:guildId/levels?page=1&pageSize=25[&userId=...][&q=...]` คืน `{items,total,page,pageSize,settings,searchLimited}`
 ค้นหาด้วย Discord ID หรือต้นชื่อผ่าน `q` ได้ โดยการค้นหาชื่อใช้ผลจาก Discord สูงสุด 100 คนและแจ้งเมื่อถึงขีดจำกัด; อันดับยังเป็นอันดับรวมของเซิร์ฟเวอร์
@@ -263,9 +279,12 @@ XP, cooldown, โควตา และประวัติเขียนใ�
 **Migration:** รัน `pnpm db:migrate` ก่อนเริ่ม backend รุ่นใหม่ เพื่อเพิ่ม `xp_settings`, `xp_progress`, `xp_daily`, `xp_history` และ index อันดับ
 migration ไม่ลบ XP เดิม หน้าอันดับคำนวณเลเวลจาก XP เพื่อแก้ข้อมูลเลเวลเก่าที่คลาดเคลื่อนด้วย
 
-### การทดสอบ
+### การทดสอบ / ตรวจโค้ด
 
-- `pnpm test` — build และทดสอบ Anti-Spam, การถอนสิทธิ์หมดอายุ, การล้าง session และสูตร/กฎ XP
+- `pnpm lint` — ESLint (หาบั๊กที่ typecheck จับไม่ได้ เช่นตัวแปรไม่ได้ใช้ / กฎของ React hooks)
+- `pnpm format` — จัดรูปแบบโค้ดด้วย Prettier ตาม `.prettierrc.json` (ยังไม่ได้รันกับทั้ง repo — editor ที่ตั้ง format on save จะใช้ค่านี้)
+- `pnpm test` — build backend แล้วทดสอบ Anti-Spam, Room Access, การล้าง session, สูตร/กฎ XP, โควตา AI / ตัวกรองคำหยาบ,
+  `/verify` `/poll` `/gethelp`, reaction roles, ไฟล์ log, log ห้องเสียง, health check และตัวช่วยของหน้าเว็บ (`pnpm test:unit` = รันเทสต์อย่างเดียวไม่ build)
 - `pnpm test:integration` — ต้องมี PostgreSQL binaries (`initdb`, `pg_ctl`, `createdb`) ใน PATH; สร้าง cluster ชั่วคราวบน loopback,
   รัน migration ทุกตัว และทดสอบ concurrency, caps, CRUD, rollback และสิทธิ์ HTTP API แล้วปิด/ลบ cluster ให้เอง ไม่ใช้ `DATABASE_URL` ของแอป
 - CI ใช้ PostgreSQL service แยกสำหรับชุดทดสอบเดียวกัน ทั้งสองชุดไม่ login บอทหรือส่งข้อความไป Discord
@@ -278,7 +297,13 @@ GitHub Actions → **Deploy BotNotStack** ใช้ deploy backend แบบ man
 
 1. build `@notstack/backend` + `@notstack/shared` ใน CI แล้วรวมเฉพาะไฟล์ที่ต้องใช้ (ไม่มีหน้าเว็บ)
 2. `rsync --delete` ขึ้นเซิร์ฟเวอร์ (ไม่แตะ `.env`, `node_modules`, `logs/`, `database.sqlite`, `prbot/` ฝั่งเซิร์ฟเวอร์)
-3. บนเซิร์ฟเวอร์: `pnpm --filter '@notstack/backend...' install --prod` → `pnpm db:migrate` → PM2 เริ่มใหม่จาก `ecosystem.config.cjs`
+   ก่อนอัปโหลดสำรองเวอร์ชันที่รันอยู่ไว้ที่ `BotNotStack-prev` (วิธีย้อนกลับเขียนไว้ใน `.github/workflows/deploy.yml`)
+3. บนเซิร์ฟเวอร์: `pnpm --filter '@notstack/backend...' install --prod` → `pnpm db:migrate` → `pnpm discord:deploy-commands`
+   (ลงทะเบียนคำสั่ง `/` ให้ตรงกับโค้ด) → `pm2 startOrReload ecosystem.config.cjs`
+4. เช็ค `GET /api/health` (ไม่ต้อง login — ตอบ 200 เมื่อ API + ฐานข้อมูลใช้ได้, 503 เมื่อต่อฐานข้อมูลไม่ได้) ไม่ผ่านใน 60 วินาที = job ล้ม พร้อมแสดง log ของ PM2
+   ใช้ URL เดียวกันกับระบบเฝ้าดู uptime ได้
+
+- ใส่ GitHub secret `SERVER_SSH_KNOWN_HOSTS` (ผลของ `ssh-keyscan <host>` ที่ตรวจแล้ว) เพื่อให้ตรวจ host key ของเซิร์ฟเวอร์ — ไม่ใส่ก็ deploy ได้แต่ขึ้นคำเตือน
 
 **frontend** → Cloudflare Workers (`apps/frontend/wrangler.jsonc`, ไฟล์ static + SPA fallback)
 
