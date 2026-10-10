@@ -9,7 +9,7 @@ import type { SlashCommandHandler } from '../../discord/interfaces/slash-command
 export class RandomCommand implements SlashCommandHandler {
     static readonly data = new SlashCommandBuilder()
         .setName('random')
-        .setDescription('สุ่มจากวงล้อแบบข้อความ (ไม่แสดงชื่อคนโหวต)')
+        .setDescription('สุ่มเลือก 1 อย่างจากรายการที่พิมพ์มา')
         .addStringOption((option) =>
             option.setName('items').setDescription('พิมพ์สิ่งที่ต้องการสุ่ม คั่นด้วยจุลภาค เช่น A,B,C').setRequired(true).setMaxLength(1500),
         );

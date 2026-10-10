@@ -9,7 +9,7 @@ import type { SlashCommandHandler } from '../../discord/interfaces/slash-command
 @SlashCommand()
 @Injectable()
 export class ServerInfoCommand implements SlashCommandHandler {
-    static readonly data = new SlashCommandBuilder().setName('serverinfo').setDescription('คำสั่งใช้เพื่อดูข้อมูลserver');
+    static readonly data = new SlashCommandBuilder().setName('serverinfo').setDescription('ดูข้อมูลของเซิร์ฟเวอร์นี้');
 
     constructor(private readonly discord: DiscordService) {}
 

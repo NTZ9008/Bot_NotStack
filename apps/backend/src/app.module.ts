@@ -17,6 +17,7 @@ import { validateEnv, type Env } from './config/env.validation';
 import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
 import { GuildsModule } from './guilds/guilds.module';
+import { HealthController } from './health/health.controller';
 import { LevelsModule } from './levels/levels.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
@@ -84,7 +85,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         ChatModule,
         CommandsModule,
     ],
-    controllers: [AppController],
+    controllers: [AppController, HealthController],
     providers: [
         { provide: APP_FILTER, useClass: HttpExceptionFilter },
         { provide: APP_PIPE, useClass: ZodValidationPipe },

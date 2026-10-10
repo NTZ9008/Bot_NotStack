@@ -51,18 +51,44 @@ jobs:
         with:
           authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
 
+      # ใส่ secret SERVER_SSH_KNOWN_HOSTS (ผลของ `ssh-keyscan <host>` ที่ตรวจแล้วว่าเป็นเครื่องจริง) เพื่อให้เช็ค host key เต็มรูปแบบ
+      # ยังไม่ได้ใส่ = ยอมรับ host key ที่เจอครั้งแรกของรอบนั้น (accept-new) เหมือนเดิม แต่จะขึ้นคำเตือน
       - name: Setup SSH Key
+        env:
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SERVER_SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
+          if [ -n "$KNOWN_HOSTS" ]; then
+            printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+            echo "SSH_OPTS=-o StrictHostKeyChecking=yes" >> "$GITHUB_ENV"
+          else
+            echo "::warning::ยังไม่ได้ตั้ง secret SERVER_SSH_KNOWN_HOSTS — ไม่ได้ตรวจ host key ของเซิร์ฟเวอร์"
+            echo "SSH_OPTS=-o StrictHostKeyChecking=accept-new" >> "$GITHUB_ENV"
+          fi
+
+      # สำรองเวอร์ชันที่รันอยู่ไว้ที่ BotNotStack-prev ก่อนอัปโหลด (ไม่รวม node_modules / log / .env)
+      # ย้อนกลับเอง: rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' ../BotNotStack-prev/ ./
+      #   แล้ว pnpm --filter '@notstack/backend...' install --frozen-lockfile --prod && pm2 restart BotNotStack
+      #   (migration ที่รันไปแล้วไม่ถูกย้อน — migration ของ repo นี้เป็นแบบเพิ่มอย่างเดียว เวอร์ชันเก่าจึงยังรันได้)
+      - name: Backup current release
+        run: |
+          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            set -e
+            cd /home/arlifzs
+            if [ -d BotNotStack ]; then
+              rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' BotNotStack/ BotNotStack-prev/
+            fi
+          "
 
       - name: Upload (rsync)
         run: |
           echo "กำลังอัปโหลดไฟล์ไปยัง Server..."
           # --delete ลบไฟล์ของเวอร์ชันก่อนที่ไม่ได้ใช้แล้ว — ยกเว้นไฟล์บนเซิร์ฟเวอร์ที่ต้องเก็บไว้
           # (.env, log, node_modules, ข้อมูล SQLite เดิม, Prisma client ที่ generate ตอนติดตั้ง)
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" \
+          rsync -avz -e "ssh $SSH_OPTS" \
             --exclude '.env*' \
             --exclude 'node_modules' \
             --exclude '/logs' \
@@ -72,9 +98,9 @@ jobs:
             --exclude 'apps/backend/src/generated' \
             --delete bundle/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/arlifzs/BotNotStack/
 
-      - name: Install Dependencies, Migrate & Restart PM2
+      - name: Install, Migrate, Register Commands & Restart
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
             set -e
             source ~/.bashrc
             export NVM_DIR=\"\$HOME/.nvm\"
@@ -90,9 +116,32 @@ jobs:
             echo 'Applying Prisma migrations...'
             pnpm db:migrate
 
+            # ลงทะเบียนคำสั่ง / ให้ตรงกับโค้ดเวอร์ชันนี้ (ใช้ TOKEN จาก .env บนเซิร์ฟเวอร์) — ไม่สำเร็จก็ deploy ต่อ แค่คำสั่งยังเป็นแบบเดิม
+            echo 'Registering slash commands...'
+            pnpm discord:deploy-commands || echo 'WARNING: ลงทะเบียนคำสั่ง / ไม่สำเร็จ — คำสั่งใน Discord ยังเป็นเวอร์ชันก่อน'
+
+            # บอท Discord รันได้ทีละโปรเซสเดียว (ถ้ารัน 2 ตัวพร้อมกัน ทุก event จะถูกทำซ้ำ) จึงเป็นการรีสตาร์ท ไม่ใช่ zero-downtime
             echo 'Restarting PM2 process...'
-            pm2 delete BotNotStack || true
-            pm2 start ecosystem.config.cjs
+            pm2 startOrReload ecosystem.config.cjs --update-env
             pm2 save
+          "
+
+      - name: Health check
+        run: |
+          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+            source ~/.bashrc
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
+            cd /home/arlifzs/BotNotStack
+            PORT=\$(grep -E '^PORT=[0-9]+' .env 2>/dev/null | tail -1 | cut -d= -f2)
+            URL=\"http://127.0.0.1:\${PORT:-3035}/api/health\"
+            for i in \$(seq 1 30); do
+              if curl -fsS --max-time 5 \"\$URL\"; then echo; echo 'Health check ผ่าน'; exit 0; fi
+              sleep 2
+            done
+            echo 'Health check ไม่ผ่านภายใน 60 วินาที — log ล่าสุด:'
+            pm2 logs BotNotStack --lines 80 --nostream || true
+            echo 'ย้อนกลับเวอร์ชันก่อนได้จาก /home/arlifzs/BotNotStack-prev (ดูวิธีในไฟล์ deploy.yml)'
+            exit 1
           "
           echo "Deploy backend สำเร็จแล้ว! 🚀"
