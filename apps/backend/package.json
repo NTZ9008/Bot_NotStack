@@ -2,6 +2,7 @@
   "name": "@notstack/backend",
   "version": "4.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "NestJS API + Discord bot (discord.js) for NotStackOverflow",
   "scripts": {
     "postinstall": "pnpm run db:generate",

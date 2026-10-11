@@ -4,7 +4,7 @@
   "private": true,
   "description": "Multi-server Discord bot (NotStackOverflow) — monorepo: NestJS backend + React dashboard",
   "author": "AT Tech",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "packageManager": "pnpm@10.6.5",
   "engines": {
     "node": ">=20.19.0"
