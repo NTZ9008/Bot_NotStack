@@ -2,6 +2,7 @@
   "name": "@notstack/shared",
   "version": "4.0.0",
   "private": true,
+  "license": "Apache-2.0",
   "description": "Types, zod schemas and constants shared by the backend and the dashboard",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
