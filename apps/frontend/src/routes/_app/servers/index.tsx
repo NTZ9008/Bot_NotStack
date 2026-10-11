@@ -62,6 +62,7 @@ function ServersPage() {
     return (
         <>
             <PageHeader
+                help="servers"
                 title="เซิร์ฟเวอร์ของคุณ"
                 description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — เห็นเฉพาะเซิร์ฟเวอร์ที่บอทอยู่และคุณเป็นสมาชิก (ต้องมีสิทธิ์ Manage Server ถึงจะตั้งค่าได้)"
                 actions={
@@ -111,7 +112,9 @@ function ServersPage() {
                 <ErrorState error={error} />
             ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                    {data?.guilds.map((guild) => <GuildCard key={guild.id} guild={guild} />)}
+                    {data?.guilds.map((guild) => (
+                        <GuildCard key={guild.id} guild={guild} />
+                    ))}
 
                     {/* เชิญบอทเข้าเซิร์ฟเวอร์ใหม่ — Discord ให้เลือกได้เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้มีสิทธิ์ Manage Server */}
                     <div className="flex items-center gap-4 rounded-xl border border-dashed p-4">

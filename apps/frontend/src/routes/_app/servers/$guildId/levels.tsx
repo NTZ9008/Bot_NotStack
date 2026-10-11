@@ -160,7 +160,7 @@ function LevelsPage() {
     const manage = guild.access === 'manage';
     return (
         <>
-            <PageHeader title="Levels & XP" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
+            <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList className="mb-4 flex h-auto flex-wrap">
                     <TabsTrigger value="leaderboard">อันดับสมาชิก</TabsTrigger>

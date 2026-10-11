@@ -235,7 +235,11 @@ function RoomAccessPage() {
 
     return (
         <>
-            <PageHeader title="Grant Room Access" description="ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)" />
+            <PageHeader
+                help="roomAccess"
+                title="ให้สิทธิ์เข้าห้อง"
+                description="ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)"
+            />
             <RoomsCard rooms={rooms} />
             <Card>
                 <CardContent className="grid gap-4 md:max-w-xl">

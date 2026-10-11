@@ -1,6 +1,6 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, Send } from 'lucide-react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -70,7 +70,11 @@ function NewsPage() {
         if (content.length > NEWS_LIMITS.content) {
             return toast.warning('เนื้อหายาวเกินไป', { description: `Discord รับได้ไม่เกิน ${NEWS_LIMITS.content} ตัวอักษร (ตอนนี้ ${content.length} ตัว)` });
         }
-        const ok = await confirm({ title: 'ยืนยันการส่งประกาศ?', description: 'ข้อความนี้จะถูกส่งไปยังห้องดิสคอร์ดที่คุณตั้งค่าไว้ทันที', confirmText: 'ส่งเลย!' });
+        const ok = await confirm({
+            title: 'ยืนยันการส่งประกาศ?',
+            description: 'ข้อความนี้จะถูกส่งไปยังห้องดิสคอร์ดที่คุณตั้งค่าไว้ทันที',
+            confirmText: 'ส่งเลย!',
+        });
         if (!ok) return;
         mutation.mutate({
             type,
@@ -87,11 +91,17 @@ function NewsPage() {
 
     return (
         <>
-            <PageHeader title="Send News to Discord" description="เขียนประกาศเป็น embed พร้อมจัดรูปแบบข้อความ และดูตัวอย่างก่อนส่งจริง" />
+            <PageHeader help="news" title="ส่งประกาศ" description="เขียนประกาศเป็น embed พร้อมจัดรูปแบบข้อความ และดูตัวอย่างก่อนส่งจริง" />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
                     <CardContent className="space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <p className="text-sm text-muted-foreground">
+                            ก่อนส่งครั้งแรก เลือกห้องประกาศใน{' '}
+                            <Link to="/servers/$guildId/config" params={{ guildId }} className="text-indigo-300 underline underline-offset-4">
+                                ตั้งค่าบอท
+                            </Link>
+                        </p>
+                        <div>
                             <Field label="ประเภทข่าวสาร">
                                 <Select
                                     value={type}
@@ -113,9 +123,6 @@ function NewsPage() {
                                     </SelectContent>
                                 </Select>
                             </Field>
-                            <Field label="สีแถบด้านซ้ายของ embed">
-                                <ColorField value={color} onChange={setColor} />
-                            </Field>
                         </div>
                         <Field
                             label="หัวข้อประกาศ"
@@ -126,6 +133,7 @@ function NewsPage() {
                         </Field>
                         <Field
                             label="รายละเอียด"
+                            htmlFor="news-content"
                             hint={
                                 <span className={cn(form.content.length > NEWS_LIMITS.content && 'text-destructive')}>
                                     รองรับ Markdown ของ Discord · {form.content.length}/{NEWS_LIMITS.content}
@@ -135,6 +143,7 @@ function NewsPage() {
                             <div>
                                 <MarkdownToolbar textareaRef={textarea} onApply={apply} />
                                 <Textarea
+                                    id="news-content"
                                     ref={textarea}
                                     rows={11}
                                     className="rounded-t-none"
@@ -151,14 +160,40 @@ function NewsPage() {
                                 />
                             </div>
                         </Field>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="ข้อความท้าย embed">
-                                <Input maxLength={NEWS_LIMITS.footer} placeholder={NEWS_DEFAULT_FOOTER} value={form.footer} onChange={set('footer')} />
-                            </Field>
-                            <Field label="ลิงก์รูปภาพประกอบ" error={form.imageUrl.trim() && !imageOk ? 'ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://' : undefined}>
-                                <Input placeholder="https://... (ไม่บังคับ)" spellCheck={false} value={form.imageUrl} onChange={set('imageUrl')} />
-                            </Field>
-                        </div>
+                        <details className="rounded-lg border">
+                            <summary className="cursor-pointer rounded-lg p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
+                                ปรับแต่งเพิ่มเติม · สี รูปภาพ ข้อความท้าย
+                            </summary>
+                            <div className="space-y-4 border-t p-3">
+                                <Field label="สีแถบด้านซ้ายของ embed">
+                                    <ColorField value={color} onChange={setColor} />
+                                </Field>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <Field label="ข้อความท้ายประกาศ" htmlFor="news-footer">
+                                        <Input
+                                            id="news-footer"
+                                            maxLength={NEWS_LIMITS.footer}
+                                            placeholder={NEWS_DEFAULT_FOOTER}
+                                            value={form.footer}
+                                            onChange={set('footer')}
+                                        />
+                                    </Field>
+                                    <Field
+                                        label="ลิงก์รูปภาพประกอบ"
+                                        htmlFor="news-image"
+                                        error={form.imageUrl.trim() && !imageOk ? 'ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://' : undefined}
+                                    >
+                                        <Input
+                                            id="news-image"
+                                            placeholder="https://... (ไม่บังคับ)"
+                                            spellCheck={false}
+                                            value={form.imageUrl}
+                                            onChange={set('imageUrl')}
+                                        />
+                                    </Field>
+                                </div>
+                            </div>
+                        </details>
                         <Button className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400" onClick={() => void send()} disabled={mutation.isPending}>
                             {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} ส่งประกาศเข้า Discord
                         </Button>

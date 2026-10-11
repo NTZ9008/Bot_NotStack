@@ -56,7 +56,7 @@ export function ProfileMenu() {
                 <DropdownMenuItem asChild>
                     <Link to="/account">
                         <CircleUser />
-                        My Account
+                        บัญชีของฉัน
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>

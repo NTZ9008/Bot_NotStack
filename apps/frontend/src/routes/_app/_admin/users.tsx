@@ -346,7 +346,7 @@ function UsersPage() {
 
     return (
         <>
-            <PageHeader title="User Management" description="จัดการผู้ใช้ Dashboard — กำหนด role, ปิดบัญชี, รีเซ็ตรหัสผ่าน และบังคับออกจากระบบ" />
+            <PageHeader help="users" title="จัดการผู้ใช้" description="จัดการผู้ใช้ Dashboard — กำหนด role, ปิดบัญชี, รีเซ็ตรหัสผ่าน และบังคับออกจากระบบ" />
             <Card>
                 <CardHeader>
                     <CardTitle>เพิ่มผู้ใช้ (username / password)</CardTitle>

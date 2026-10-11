@@ -168,7 +168,8 @@ function WeatherPage() {
     return (
         <>
             <PageHeader
-                title="Daily Weather Report"
+                help="weather"
+                title="รายงานสภาพอากาศ"
                 description="รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝน — ตั้งเวลา ห้อง สถานที่ และข้อมูลที่จะแสดงได้ที่นี่"
             />
 

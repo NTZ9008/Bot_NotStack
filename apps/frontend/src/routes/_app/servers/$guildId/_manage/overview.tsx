@@ -8,6 +8,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAx
 import { activityStatsQuery, type StatsParams } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
+import { GettingStarted } from '@/components/getting-started';
 import { RankBadge } from '@/components/rank-badge';
 import { ErrorState, LoadingState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
@@ -259,11 +260,15 @@ function OverviewPage() {
 
     return (
         <>
-            <PageHeader title="Overview" description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด" />
+            <PageHeader
+                help="overview"
+                title="ภาพรวมเซิร์ฟเวอร์" description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด" />
+            <GettingStarted />
             <Card>
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <ToggleGroup
+                            className="flex-wrap justify-start"
                             type="single"
                             variant="outline"
                             value={preset}

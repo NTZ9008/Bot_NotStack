@@ -235,7 +235,8 @@ function WelcomePage() {
     return (
         <>
             <PageHeader
-                title="Welcome Announcement"
+                help="welcome"
+                title="ต้อนรับสมาชิกใหม่"
                 description="การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง"
                 actions={
                     <Button onClick={() => void create()}>

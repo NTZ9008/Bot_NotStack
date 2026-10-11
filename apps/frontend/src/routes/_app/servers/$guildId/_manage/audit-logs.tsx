@@ -21,7 +21,11 @@ function AuditLogsPage() {
     const navigate = useNavigate();
     return (
         <>
-            <PageHeader title="Audit & Activity" description="ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord" />
+            <PageHeader
+                help="audit"
+                title="ประวัติเซิร์ฟเวอร์"
+                description="ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord"
+            />
             <Card>
                 <CardContent>
                     <Tabs

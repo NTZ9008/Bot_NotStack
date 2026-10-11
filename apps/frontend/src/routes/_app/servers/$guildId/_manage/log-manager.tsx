@@ -324,7 +324,8 @@ function LogManagerPage() {
     return (
         <>
             <PageHeader
-                title="จัดการ Log"
+                help="logManager"
+                title="ตั้งค่าบันทึกเหตุการณ์"
                 description="ติดตามเหตุการณ์สำคัญ ออกแบบข้อความให้อ่านง่าย และเลือกห้องรับแจ้งเตือน"
                 actions={
                     data && (
@@ -362,13 +363,13 @@ function LogManagerPage() {
                                 ระบบหยุดส่ง embed เข้า Discord อยู่ คุณยังแก้ไขการตั้งค่าได้ ส่วนการบันทึก Activity ขึ้นอยู่กับค่าที่เลือกในแท็บตัวกรอง
                             </p>
                         )}
-                        <Tabs defaultValue="appearance" className="gap-5">
+                        <Tabs defaultValue="events" className="gap-5">
                             <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit">
-                                <TabsTrigger value="appearance" className="px-4 py-2">
-                                    รูปแบบข้อความ
-                                </TabsTrigger>
                                 <TabsTrigger value="events" className="px-4 py-2">
                                     เหตุการณ์และห้อง
+                                </TabsTrigger>
+                                <TabsTrigger value="appearance" className="px-4 py-2">
+                                    รูปแบบข้อความ
                                 </TabsTrigger>
                                 <TabsTrigger value="filters" className="px-4 py-2">
                                     ตัวกรอง
