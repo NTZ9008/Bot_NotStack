@@ -16,7 +16,7 @@ server and configure every feature separately through the dashboard.
 > **Language:** the bot's Discord messages and the dashboard UI are written in Thai. This README is in English. The detailed
 > [XP system guide](docs/xp-system.md) is in Thai.
 
-## Contents
+## Contents 1
 
 - [Features](#features)
 - [Slash commands](#slash-commands)
