@@ -1,11 +1,28 @@
-# Bot_NotStack
+<p align="center">
+  <br/>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?color=3F51B5&style=for-the-badge&label=License&labelColor=ececec" alt="License: Apache 2.0"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/NTZ9008/Bot_NotStack/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=000000&labelColor=ececec" alt="CI status"></a>
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A520.19-339933?style=for-the-badge&logo=nodedotjs&logoColor=000000&labelColor=ececec" alt="Node.js 20.19 or later">
+  <img src="https://img.shields.io/badge/discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=000000&labelColor=ececec" alt="discord.js v14">
+  <br/>
+  <br/>
+</p>
 
-**A multi-server Discord bot for voice-channel security, detailed logging, levels with image rank cards and a Gemini-powered chat assistant, managed from a web dashboard.**
+<p align="center">
+  <img src="apps/frontend/public/favicon.svg" width="96" alt="Bot_NotStack logo">
+</p>
+<h1 align="center">Bot_NotStack</h1>
+<h3 align="center">Multi-server Discord bot for voice security, detailed logging, levels with image rank cards<br/>and an AI chat assistant, managed from a web dashboard</h3>
 
-[![CI](https://github.com/NTZ9008/Bot_NotStack/actions/workflows/ci.yml/badge.svg)](https://github.com/NTZ9008/Bot_NotStack/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-![Node.js >= 20.19](https://img.shields.io/badge/node-%3E%3D20.19-339933?logo=node.js&logoColor=white)
-![discord.js v14](https://img.shields.io/badge/discord.js-v14-5865F2?logo=discord&logoColor=white)
+<p align="center">
+  <a href="#getting-started">Getting started</a> ·
+  <a href="#slash-commands">Commands</a> ·
+  <a href="#dashboard-guide">Dashboard guide</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="LICENSE">License</a>
+</p>
+
+<br/>
 
 Bot_NotStack started as the house bot of the **NotStackOverflow** Discord community. Anyone can now invite it to their own
 server and configure every feature separately through the dashboard.
@@ -13,10 +30,11 @@ server and configure every feature separately through the dashboard.
 - **Backend:** NestJS, discord.js 14, Prisma 7 (PostgreSQL) and Google Gemini, in a single process that runs both the bot and the API.
 - **Dashboard:** React 19, Vite, TanStack Router, Query, Table and Form, and shadcn/ui (Tailwind CSS v4).
 
-> **Language:** the bot's Discord messages and the dashboard UI are written in Thai. This README is in English. The detailed
+> [!NOTE]
+> The bot's Discord messages and the dashboard UI are written in Thai. This README is in English. The detailed
 > [XP system guide](docs/xp-system.md) is in Thai.
 
-## Contents 1
+## Contents
 
 - [Features](#features)
 - [Slash commands](#slash-commands)
@@ -31,6 +49,8 @@ server and configure every feature separately through the dashboard.
 - [Levels and XP reference](#levels-and-xp-reference)
 - [Authentication and security](#authentication-and-security)
 - [Contributing](#contributing)
+- [Repository activity](#repository-activity)
+- [Contributors](#contributors)
 - [License and credits](#license-and-credits)
 
 ---
@@ -187,6 +207,21 @@ Bot_NotStack/
 - **Frontend:** built as static files and deployed to Cloudflare Workers, with `/api/*` and `/webhook/*` routed to the backend on the same domain
   so cookies and Origin checks work unchanged. In development, Vite (`:5173`) proxies `/api` to the backend (`:3035`).
 
+### Main dependencies
+
+- **Backend:**
+    - `@nestjs/*` (core, config, schedule, passport, jwt, serve-static) and passport (local, jwt, custom)
+    - discord.js
+    - prisma, `@prisma/client` and `@prisma/adapter-pg`
+    - `@google/generative-ai`
+    - `@napi-rs/canvas` for welcome cards, rank cards, charts and radar maps (prebuilt binaries, no system packages needed)
+    - gifenc for radar GIFs, and cron for per-server weather schedules
+    - bcryptjs, helmet, express-rate-limit and zod
+- **Frontend:**
+    - React, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-table` and `@tanstack/react-form`
+    - shadcn/ui (Radix UI and Tailwind CSS v4)
+    - recharts, sonner and lucide-react
+
 ---
 
 ## Getting started
@@ -215,6 +250,7 @@ cp .env.example .env
 
 At minimum, set `TOKEN`, `DATABASE_URL`, `JWT_SECRET` and `DASHBOARD_URL`. See [Environment variables](#environment-variables) for the full list.
 
+> [!TIP]
 > If the password in `DATABASE_URL` contains special characters such as `@ # / : ?`, URL-encode them first (`#` → `%23`, `@` → `%40`).
 
 ### 3. Create the database tables
@@ -299,7 +335,8 @@ Turborepo starts three processes together:
 - the backend (`nest start --watch`, port 3035)
 - the dashboard (Vite, `http://localhost:5173`, with hot reload)
 
-> ⚠️ **`pnpm dev` reads the same `.env` as production.** If `.env` holds the real `TOKEN` or `DATABASE_URL`, the real bot logs in and
+> [!WARNING]
+> **`pnpm dev` reads the same `.env` as production.** If `.env` holds the real `TOKEN` or `DATABASE_URL`, the real bot logs in and
 > connects to the real database. For development, create `apps/backend/.env` (it overrides the root file) with an empty `TOKEN=` and the
 > `DATABASE_URL` of a test database.
 
@@ -504,6 +541,7 @@ The dashboard shows this data on two tabs:
     - **Discord events**, searchable by type, time, name, channel or user ID. Each entry shows who acted and the stated reason.
       Events are kept for 90 days (`ACTIVITY_LOG_RETENTION_DAYS`).
 
+> [!TIP]
 > Turn recording off under **Log Management → Filters → Record every event to the database**. The channel, member and role exclusions apply to the Activity Log too.
 
 ### Log files (system admins)
@@ -629,14 +667,31 @@ Members can view the leaderboard and customise their own card. Everything else n
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) for the branch flow, the checks to run and what a pull request should include.
 
-1. Branch from the current `release/*` branch, using `feat/…`, `fix/…`, `docs/…` or `chore/…`, and open the pull request against that release branch.
-2. Before pushing, run `pnpm typecheck`, `pnpm lint` and `pnpm test`. Run `pnpm test:integration` too if you touched the database or XP.
-3. Add new migrations; never edit applied ones. Never test migrations against a production database.
-4. Describe what changed, anything to do before or after deploying (migrations, command changes) and how you tested.
+---
 
-By contributing, you agree that your contributions are licensed under the Apache License 2.0.
+## Repository activity
+
+<p align="center">
+  <a href="https://github.com/NTZ9008/Bot_NotStack/graphs/commit-activity"><img src="https://img.shields.io/github/commit-activity/m/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=E8590C&label=commits" alt="Commits per month"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/commits"><img src="https://img.shields.io/github/last-commit/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=E8590C&label=last%20commit" alt="Last commit"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/pulls?q=is%3Apr+is%3Aclosed"><img src="https://img.shields.io/github/issues-pr-closed/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=9C36B5&label=pull%20requests" alt="Closed pull requests"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/issues"><img src="https://img.shields.io/github/issues/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=1C7ED6&label=issues" alt="Open issues"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/graphs/contributors"><img src="https://img.shields.io/github/contributors/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=2F9E44&label=contributors" alt="Contributors"></a>
+</p>
+
+See [Insights → Pulse](https://github.com/NTZ9008/Bot_NotStack/pulse) for the full activity breakdown.
+
+## Contributors
+
+<a href="https://github.com/NTZ9008/Bot_NotStack/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=NTZ9008/Bot_NotStack" alt="Contributors" />
+</a>
+
+- **Arlif Thongrakjan** ([@NTZ9008](https://github.com/NTZ9008)): creator, AT Tech
+- **Thanapat Julakarn** ([@boatngin](https://github.com/boatngin)): core contributor
+- Everyone in the [contributors list](https://github.com/NTZ9008/Bot_NotStack/graphs/contributors)
 
 ---
 
@@ -659,24 +714,3 @@ Third-party credits:
 - UI components generated from [shadcn/ui](https://ui.shadcn.com) (MIT).
 - Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) and radar data from [RainViewer](https://www.rainviewer.com).
 - Fonts Kanit, Prompt, Noto Sans Thai and Noto Color Emoji (SIL Open Font License) via `@expo-google-fonts`.
-
-### Main dependencies
-
-- **Backend:**
-    - `@nestjs/*` (core, config, schedule, passport, jwt, serve-static) and passport (local, jwt, custom)
-    - discord.js
-    - prisma, `@prisma/client` and `@prisma/adapter-pg`
-    - `@google/generative-ai`
-    - `@napi-rs/canvas` for welcome cards, rank cards, charts and radar maps (prebuilt binaries, no system packages needed)
-    - gifenc for radar GIFs, and cron for per-server weather schedules
-    - bcryptjs, helmet, express-rate-limit and zod
-- **Frontend:**
-    - React, `@tanstack/react-router`, `@tanstack/react-query`, `@tanstack/react-table` and `@tanstack/react-form`
-    - shadcn/ui (Radix UI and Tailwind CSS v4)
-    - recharts, sonner and lucide-react
-
-## Authors
-
-- **Arlif Thongrakjan** ([@NTZ9008](https://github.com/NTZ9008)): creator, AT Tech
-- **Thanapat Julakarn** ([@boatngin](https://github.com/boatngin)): core contributor
-- Everyone in the [contributors list](https://github.com/NTZ9008/Bot_NotStack/graphs/contributors)
