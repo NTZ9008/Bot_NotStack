@@ -673,12 +673,15 @@ Issues and pull requests are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) fo
 
 ## Repository activity
 
-<a href="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats?repo_id=1149653849">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats/thumbnail.png?repo_id=1149653849&image_size=auto&color_scheme=dark">
-    <img alt="Bot_NotStack activity in the last 28 days" src="https://next.ossinsight.io/widgets/official/compose-last-28-days-stats/thumbnail.png?repo_id=1149653849&image_size=auto&color_scheme=light" width="100%">
-  </picture>
-</a>
+<p align="center">
+  <a href="https://github.com/NTZ9008/Bot_NotStack/graphs/commit-activity"><img src="https://img.shields.io/github/commit-activity/m/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=E8590C&label=commits" alt="Commits per month"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/commits"><img src="https://img.shields.io/github/last-commit/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=E8590C&label=last%20commit" alt="Last commit"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/pulls?q=is%3Apr+is%3Aclosed"><img src="https://img.shields.io/github/issues-pr-closed/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=9C36B5&label=pull%20requests" alt="Closed pull requests"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/issues"><img src="https://img.shields.io/github/issues/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=1C7ED6&label=issues" alt="Open issues"></a>
+  <a href="https://github.com/NTZ9008/Bot_NotStack/graphs/contributors"><img src="https://img.shields.io/github/contributors/NTZ9008/Bot_NotStack?style=for-the-badge&labelColor=ececec&color=2F9E44&label=contributors" alt="Contributors"></a>
+</p>
+
+See [Insights → Pulse](https://github.com/NTZ9008/Bot_NotStack/pulse) for the full activity breakdown.
 
 ## Contributors
 
