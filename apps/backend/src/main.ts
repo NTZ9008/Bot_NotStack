@@ -37,15 +37,20 @@ async function bootstrap(): Promise<void> {
                     objectSrc: ["'none'"],
                 },
             },
-            // หน้าเว็บที่อยู่คนละ origin (CORS_ORIGINS) ต้องโหลดรูปจาก API ได้ (รูปพื้นหลังการ์ด / เรดาร์)
-            crossOriginResourcePolicy: { policy: 'same-site' },
+            // หน้าเว็บที่อยู่คนละ origin (CORS_ORIGINS รวมถึง Cloudflare Workers) ต้องโหลดรูปจาก API ได้ (รูปพื้นหลังการ์ด / เรดาร์)
+            crossOriginResourcePolicy: { policy: 'cross-origin' },
         }),
     );
 
-    // หน้าเว็บอยู่คนละ origin กับ API (เช่น dashboard.example.com → api.example.com) — ต้องอยู่ domain เดียวกัน (same-site)
-    // เพราะ cookie ของ session เป็น SameSite=Lax/Strict — ใส่ https://*.example.com เพื่อเปิดให้ทุก subdomain ได้
     const corsOrigins = config.get('CORS_ORIGINS', { infer: true });
-    if (corsOrigins.length) app.enableCors({ origin: allowedOrigins(corsOrigins).cors, credentials: true, methods: ['GET', 'POST'] });
+    if (corsOrigins.length) {
+        app.enableCors({
+            origin: allowedOrigins(corsOrigins).cors,
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+        });
+    }
 
     app.use(cookieParser());
 
