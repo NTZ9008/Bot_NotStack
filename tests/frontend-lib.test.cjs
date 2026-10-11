@@ -36,3 +36,57 @@ test('Thai duration and size formatting', () => {
     assert.equal(formatBytes(10), '1 KB');
     assert.equal(formatBytes(3 * 1024 * 1024), '3.0 MB');
 });
+
+const { visibleNavGroups, findNavItem } = require('../apps/frontend/src/components/layout/nav-items.ts');
+const navItems = (admin, access) => visibleNavGroups(admin, access ? { access } : null).flatMap((group) => group.items);
+
+test('navigation keeps all existing features available to server managers and system admins', () => {
+    const manager = navItems(false, 'manage');
+    assert.deepEqual(
+        manager
+            .filter((item) => item.guild)
+            .map((item) => item.to.split('/').pop())
+            .sort(),
+        ['audit-logs', 'config', 'levels', 'log-manager', 'news', 'overview', 'pr-bot', 'room-access', 'voice-guard', 'weather', 'welcome'],
+    );
+    assert.deepEqual(
+        manager
+            .filter((item) => !item.guild)
+            .map((item) => item.to)
+            .sort(),
+        ['/account', '/servers'],
+    );
+    assert.deepEqual(
+        navItems(true, 'manage')
+            .filter((item) => item.adminOnly)
+            .map((item) => item.to)
+            .sort(),
+        ['/audit-logs', '/logs', '/users'],
+    );
+});
+
+test('navigation, search and feature shortcuts cannot expose management links to viewers', () => {
+    for (const admin of [false, true]) {
+        assert.deepEqual(
+            navItems(admin, 'view')
+                .filter((item) => item.guild)
+                .map((item) => item.to),
+            ['/servers/$guildId/levels'],
+        );
+        assert.equal(
+            navItems(admin, null).some((item) => item.guild),
+            false,
+        );
+    }
+    assert.equal(
+        navItems(false, 'view').some((item) => item.adminOnly),
+        false,
+    );
+});
+
+test('Thai labels retain English search terms and breadcrumb matching', () => {
+    assert.match(findNavItem('/servers/$guildId/config/').keywords, /configuration/);
+    assert.match(findNavItem('/servers/$guildId/voice-guard').keywords, /whitelist blacklist/);
+    assert.equal(findNavItem('/servers/$guildId/config').label, 'ตั้งค่าบอท');
+    assert.equal(findNavItem('/missing'), undefined);
+});

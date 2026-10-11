@@ -1,11 +1,12 @@
 // ==========================================
 // 🌐 ALLOWED ORIGINS — หน้าเว็บที่อยู่คนละ origin กับ API (ค่าจาก CORS_ORIGINS / DASHBOARD_URL)
-// เขียนได้ 2 แบบ:
+// เขียนได้หลายแบบ:
 // - origin ตรงตัว เช่น https://dash.example.com
-// - ทุก subdomain เช่น https://*.example.com (ไม่ใส่ https:// = https) — ไม่รวมโดเมนหลัก example.com เอง ต้องใส่เพิ่มถ้าต้องการ
-// ใช้ทั้ง CORS (เทียบทั้ง origin) และ CSRF guard (เทียบแค่ host เพราะหลัง Nginx / Cloudflare ฝั่ง Node อาจเห็นเป็น http)
+// - ทุก subdomain เช่น https://*.example.com (ไม่ใส่ https:// = https)
+// - wildcard preview เช่น https://*-bot-notstack.mathermobile6439.workers.dev
+// - wildcard port เช่น http://localhost:*
+// ใช้ทั้ง CORS (เทียบ origin) และ CSRF guard (เทียบ host)
 // ==========================================
-const WILDCARD = /^(?:(https?):\/\/)?\*\.((?:[a-z0-9-]+\.)+[a-z0-9-]+)\/?$/i;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -24,28 +25,73 @@ export interface AllowedOrigins {
     allowsHost(host: string): boolean;
 }
 
+function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatcher: (host: string) => boolean } {
+    // ตัดเครื่องหมายคำพูดรอบข้าง, ช่องว่าง และ trailing slash
+    const trimmed = pattern.trim().replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '');
+    if (!trimmed) {
+        return { cors: '', hostMatcher: () => false };
+    }
+
+    // กรณีไม่มี Wildcard (*) ให้เช็คแบบตรงตัว (Exact Match)
+    if (!trimmed.includes('*')) {
+        const host = hostOf(trimmed);
+        return {
+            cors: trimmed,
+            hostMatcher: (h) => host !== null && h.toLowerCase() === host.toLowerCase(),
+        };
+    }
+
+    // กรณีมี Wildcard (*): แยกโปรโตคอลและโฮสต์
+    const match = /^(?:(https?):\/\/)?(.*)$/i.exec(trimmed);
+    const protocol = match?.[1] ? match[1].toLowerCase() : '(?:https?|http)';
+    const hostPattern = match?.[2] ?? trimmed;
+
+    let hostRegexStr: string;
+
+    // แบบที่ 1: *.domain.com (Subdomain wildcard ทั่วไป)
+    if (hostPattern.startsWith('*.')) {
+        const rest = hostPattern.slice(2);
+        hostRegexStr = `(?:[a-z0-9-]+\\.)+${escapeRegExp(rest)}`;
+    } else {
+        // แบบที่ 2: Complex wildcard เช่น *-bot-notstack.mathermobile6439.workers.dev หรือ localhost:*
+        const labels = hostPattern.split('.');
+        const regexLabels = labels.map((label) => {
+            if (label === '*') return '[a-z0-9-]+';
+            // แปลง *- ให้รองรับทั้งแบบมี branch prefix และ production worker (เช่น feat-bot-notstack และ bot-notstack)
+            // แปลง * อื่นๆ เป็น [a-z0-9-]+
+            return escapeRegExp(label)
+                .replace(/\\\*-/g, '(?:[a-z0-9-]+-)?')
+                .replace(/\\\*/g, '[a-z0-9-]+');
+        });
+        hostRegexStr = regexLabels.join('\\.');
+    }
+
+    const corsRegex = new RegExp(`^${protocol === '(?:https?|http)' ? 'https?' : protocol}://${hostRegexStr}$`, 'i');
+    const hostRegex = new RegExp(`^${hostRegexStr}$`, 'i');
+
+    return {
+        cors: corsRegex,
+        hostMatcher: (h) => hostRegex.test(h),
+    };
+}
+
 export function allowedOrigins(list: string[]): AllowedOrigins {
     const cors: (string | RegExp)[] = [];
-    const hosts = new Set<string>();
-    // ".example.com" — host ต้องลงท้ายด้วยตัวนี้ (มีจุดนำหน้า จึงไม่ติด evilexample.com)
-    const suffixes: string[] = [];
+    const hostMatchers: ((host: string) => boolean)[] = [];
 
-    for (const value of list) {
-        const wildcard = WILDCARD.exec(value);
-        if (wildcard) {
-            const domain = wildcard[2]!.toLowerCase();
-            cors.push(new RegExp(`^${wildcard[1] ?? 'https'}://(?:[a-z0-9-]+\\.)+${escapeRegExp(domain)}$`, 'i'));
-            suffixes.push(`.${domain}`);
-            continue;
+    for (const item of list) {
+        const parsed = parseOriginPattern(item);
+        if (parsed.cors) {
+            cors.push(parsed.cors);
+            hostMatchers.push(parsed.hostMatcher);
         }
-        // origin ไม่มี / ท้าย — ตัดออกให้ด้วย ใส่ผิดนิดเดียวจะได้ไม่ตกทั้งหมด
-        cors.push(value.replace(/\/+$/, ''));
-        const host = hostOf(value);
-        if (host) hosts.add(host);
     }
 
     return {
         cors,
-        allowsHost: (host) => hosts.has(host) || suffixes.some((suffix) => host.endsWith(suffix)),
+        allowsHost: (host) => {
+            const normalized = host.toLowerCase();
+            return hostMatchers.some((matcher) => matcher(normalized));
+        },
     };
 }

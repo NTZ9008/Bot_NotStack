@@ -11,7 +11,11 @@ export const Route = createFileRoute('/_app/_admin/audit-logs')({
 function SystemAuditPage() {
     return (
         <>
-            <PageHeader title="System Audit" description="ทุกการกระทำบน Dashboard ทั้งระบบ — การเข้าสู่ระบบ จัดการผู้ใช้ และการตั้งค่าของทุกเซิร์ฟเวอร์" />
+            <PageHeader
+                help="systemAudit"
+                title="ประวัติทั้งระบบ"
+                description="ทุกการกระทำบน Dashboard ทั้งระบบ — การเข้าสู่ระบบ จัดการผู้ใช้ และการตั้งค่าของทุกเซิร์ฟเวอร์"
+            />
             <Card>
                 <CardContent>
                     <DashboardAudit />

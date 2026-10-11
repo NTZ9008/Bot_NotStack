@@ -109,11 +109,11 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>ห้อง Default</CardTitle>
+                    <CardTitle>ห้องเริ่มต้น</CardTitle>
                     <CardDescription>ใช้กับ organization/repo ที่ไม่ได้ระบุไว้ด้านล่าง</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Field hint="เลือก &quot;ไม่ส่ง&quot; = ปิดการแจ้งเตือนของ organization ที่ไม่ได้ระบุห้องไว้">
+                    <Field hint='เลือก "ไม่ส่ง" = ปิดการแจ้งเตือนของ organization ที่ไม่ได้ระบุห้องไว้'>
                         <form
                             className="flex gap-2"
                             onSubmit={(e) => {
@@ -128,7 +128,7 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                                 noneLabel="— ไม่ส่ง —"
                             />
                             <Button type="submit" disabled={saveDefault.isPending}>
-                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} Save
+                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} บันทึก
                             </Button>
                         </form>
                     </Field>
@@ -246,7 +246,11 @@ function PrBotPage() {
     const { data, isLoading, error } = useQuery(prBotQuery(guildId));
     return (
         <>
-            <PageHeader title="PR Bot — GitHub Notifications" description="ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo" />
+            <PageHeader
+                help="prBot"
+                title="แจ้งเตือน GitHub PR"
+                description="ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo"
+            />
             {isLoading ? (
                 <LoadingState />
             ) : error ? (

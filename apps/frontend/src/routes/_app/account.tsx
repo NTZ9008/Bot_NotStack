@@ -140,7 +140,7 @@ function AccountPage() {
 
     return (
         <>
-            <PageHeader title="My Account" description="ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย" />
+            <PageHeader help="account" title="บัญชีของฉัน" description="ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย" />
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>

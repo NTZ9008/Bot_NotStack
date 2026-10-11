@@ -41,7 +41,11 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
         void refresh();
     };
 
-    const update = useMutation({ mutationFn: (patch: { enabled?: boolean; notify?: boolean }) => voiceGuardApi.updateChannel(guildId, mode, { channelId: channel.channelId, ...patch }), onError, onSuccess: refresh });
+    const update = useMutation({
+        mutationFn: (patch: { enabled?: boolean; notify?: boolean }) => voiceGuardApi.updateChannel(guildId, mode, { channelId: channel.channelId, ...patch }),
+        onError,
+        onSuccess: refresh,
+    });
     const addUser = useMutation({
         mutationFn: (userId: string) => voiceGuardApi.addUser(guildId, mode, { channelId: channel.channelId, userId }),
         onSuccess: () => {
@@ -60,7 +64,12 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
     });
 
     const remove = async () => {
-        const ok = await confirm({ title: 'ยืนยันการลบ', description: `ลบห้อง ${channel.channelName} ออกจาก ${mode} ใช่หรือไม่?`, confirmText: 'ลบ', destructive: true });
+        const ok = await confirm({
+            title: 'ยืนยันการลบ',
+            description: `ลบห้อง ${channel.channelName} ออกจาก ${mode} ใช่หรือไม่?`,
+            confirmText: 'ลบ',
+            destructive: true,
+        });
         if (!ok) return;
         try {
             await voiceGuardApi.deleteChannel(guildId, mode, channel.channelId);
@@ -138,7 +147,8 @@ function VoiceGuardPage() {
     return (
         <>
             <PageHeader
-                title="Voice Guard"
+                help="voiceGuard"
+                title="ดูแลห้องเสียง"
                 description="จัดการ Whitelist / Blacklist สำหรับห้องเสียง — คนที่ไม่มีสิทธิ์จะถูกเตะออกจากห้องทันทีที่เข้า"
                 actions={
                     <ToggleGroup
@@ -147,13 +157,18 @@ function VoiceGuardPage() {
                         value={mode}
                         onValueChange={(value) => value && void navigate({ to: '/servers/$guildId/voice-guard', params: { guildId }, search: { mode: value as VoiceGuardMode } })}
                     >
-                        <ToggleGroupItem value="whitelist">Whitelist</ToggleGroupItem>
+                        <ToggleGroupItem value="whitelist">อนุญาตเฉพาะ</ToggleGroupItem>
                         <ToggleGroupItem value="blacklist" className="data-[state=on]:text-destructive">
-                            Blacklist
+                            ห้ามเข้า
                         </ToggleGroupItem>
                     </ToggleGroup>
                 }
             />
+            <p className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed" role="status">
+                {mode === 'whitelist'
+                    ? 'อนุญาตเฉพาะ (Whitelist): สมาชิกที่ไม่อยู่ในรายการจะถูกเตะออก ห้องที่เพิ่มจะเปิดใช้งานทันที แม้ยังไม่มีสมาชิกในรายการ'
+                    : 'ห้ามเข้า (Blacklist): เฉพาะสมาชิกในรายการจะถูกเตะออก หากเปิด Whitelist ด้วย สมาชิกต้องอยู่ใน Whitelist จึงจะเข้าได้'}
+            </p>
             <Card>
                 <CardContent>
                     <Field label={`เพิ่มห้องเสียงเข้า ${mode}`}>

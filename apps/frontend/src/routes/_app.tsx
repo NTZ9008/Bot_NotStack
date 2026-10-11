@@ -43,9 +43,7 @@ function AppLayout() {
                         <h1 className="truncate font-medium">{current?.label ?? 'Dashboard'}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <div className="hidden md:block">
-                            <PageSearch />
-                        </div>
+                        <PageSearch />
                         <ProfileMenu />
                     </div>
                 </header>
