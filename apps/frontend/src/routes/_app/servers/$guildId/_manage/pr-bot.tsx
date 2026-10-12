@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { API_BASE, errorMessage } from '@/lib/api';
+import { PrBotStatsCard } from '@/features/pr-bot/stats-card';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/pr-bot')({
@@ -207,7 +208,13 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                 </Field>
                 <Field label="Secret" hint="ใครรู้ secret นี้ส่งแจ้งเตือนปลอมเข้าเซิร์ฟเวอร์นี้ได้ — ถ้าหลุดให้กดสร้างใหม่แล้วแก้ใน GitHub">
                     <div className="flex flex-wrap gap-2">
-                        <Input readOnly className="min-w-0 flex-1 font-mono text-xs" type={reveal ? 'text' : 'password'} value={settings.webhookSecret} onFocus={(e) => e.target.select()} />
+                        <Input
+                            readOnly
+                            className="min-w-0 flex-1 font-mono text-xs"
+                            type={reveal ? 'text' : 'password'}
+                            value={settings.webhookSecret}
+                            onFocus={(e) => e.target.select()}
+                        />
                         <Button variant="outline" size="icon" aria-label={reveal ? 'ซ่อน secret' : 'แสดง secret'} onClick={() => setReveal((value) => !value)}>
                             {reveal ? <EyeOff /> : <Eye />}
                         </Button>
@@ -258,6 +265,7 @@ function PrBotPage() {
             ) : (
                 data && (
                     <>
+                        <PrBotStatsCard guildId={guildId} />
                         <WebhookCard settings={data} />
                         <PrBotForm settings={data} />
                     </>

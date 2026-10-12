@@ -38,3 +38,23 @@ export const updatePrBotSchema = z.object({
     repoMentions: stringMap.optional(),
 });
 export type UpdatePrBotInput = z.input<typeof updatePrBotSchema>;
+
+// Calendar days including today, in Asia/Bangkok.
+export const prBotStatsQuerySchema = z.object({
+    days: z
+        .enum(['7', '30', '90'])
+        .default('7')
+        .transform((value) => Number(value) as 7 | 30 | 90),
+});
+export type PrBotStatsDays = 7 | 30 | 90;
+export type PrBotNotificationKind = 'sent' | 'merged' | 'closed';
+export type PrBotCounts = Record<PrBotNotificationKind, number>;
+export interface PrBotStatsBucket extends PrBotCounts {
+    label: string;
+}
+export interface PrBotStats {
+    range: { from: string; to: string; days: PrBotStatsDays; timeZone: 'Asia/Bangkok' };
+    totals: PrBotCounts;
+    daily: PrBotStatsBucket[];
+    hourly: PrBotStatsBucket[];
+}

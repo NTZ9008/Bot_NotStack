@@ -1,9 +1,11 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import type { PrBotSecretResponse, PrBotSettings } from '@notstack/shared';
 import { Audit, AuditCtx } from '../../common/decorators/audit.decorator';
 import type { AuditContext } from '../../common/interfaces/app-request.interface';
 import { GuildId } from '../../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../../guilds/decorators/guild-route.decorator';
+import { PrBotStatsQueryDto } from '../dto/pr-bot-stats-query.dto';
+import { PrBotStatsService } from '../pr-bot-stats.service';
 import { UpdatePrBotDto } from '../dto/update-pr-bot.dto';
 import { PrBotSettingsService } from '../pr-bot-settings.service';
 
@@ -11,7 +13,15 @@ import { PrBotSettingsService } from '../pr-bot-settings.service';
 @GuildRoute()
 @Controller('guilds/:guildId/pr-bot')
 export class PrBotSettingsController {
-    constructor(private readonly settings: PrBotSettingsService) {}
+    constructor(
+        private readonly settings: PrBotSettingsService,
+        private readonly stats: PrBotStatsService,
+    ) {}
+
+    @Get('stats')
+    readStats(@GuildId() guildId: string, @Query() query: PrBotStatsQueryDto) {
+        return this.stats.read(guildId, query.days);
+    }
 
     @Get('settings')
     read(@GuildId() guildId: string): Promise<PrBotSettings> {

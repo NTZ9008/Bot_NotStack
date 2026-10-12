@@ -429,3 +429,15 @@ model LevelUpSetting {
 
   @@map("level_up_settings")
 }
+
+// Successful PR notifications/updates. A repeated close delivery is counted once per message.
+model PrNotification {
+  guildId   String   @map("guild_id")
+  messageId String   @map("message_id")
+  kind      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([guildId, messageId, kind])
+  @@index([guildId, createdAt])
+  @@map("pr_notifications")
+}
