@@ -7,6 +7,7 @@ import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { GithubRepository, PullRequestEvent } from './interfaces/github.interface';
 import { PrBotSettingsService } from './pr-bot-settings.service';
+import { PrBotStatsService } from './pr-bot-stats.service';
 import { prClosedPayload, prOpenedPayload } from './utils/pr-bot.embeds';
 
 // ==========================================
@@ -24,6 +25,7 @@ export class PrBotService {
         private readonly discord: DiscordService,
         private readonly prisma: PrismaService,
         config: ConfigService<Env, true>,
+        private readonly stats: PrBotStatsService,
     ) {
         this.legacySecret = config.get('GITHUB_WEBHOOK_SECRET', { infer: true }) ?? '';
     }
@@ -85,6 +87,7 @@ export class PrBotService {
                 ...(mention ? { content: mention } : {}),
                 allowedMentions: { parse: ['users', 'roles'] },
             });
+            await this.stats.record(guildId, message.id, 'sent');
             await this.prisma.prMessage.upsert({
                 where: key,
                 create: { guildId, repoFullName: repo.full_name, prNumber: pr.number, channelId: channel.id, messageId: message.id },
@@ -104,6 +107,7 @@ export class PrBotService {
             const msg = await channel.messages.fetch(existing.messageId).catch(() => null);
             if (!msg) return;
             await msg.edit(prClosedPayload(pr, repo));
+            await this.stats.record(guildId, msg.id, pr.merged ? 'merged' : 'closed');
         }
     }
 }

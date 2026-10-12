@@ -318,7 +318,7 @@ Turborepo starts three processes together:
 | `pnpm lint`             | ESLint: catches bugs the type checker misses, such as unused variables and React hooks rules                                                                                                                                                                                            |
 | `pnpm format`           | Prettier, using `.prettierrc.json`                                                                                                                                                                                                                                                      |
 | `pnpm test`             | Builds the backend, then runs the unit tests. `pnpm test:unit` skips the build.                                                                                                                                                                                                         |
-| `pnpm test:integration` | XP integration tests against a temporary PostgreSQL cluster on loopback. It runs every migration and tests concurrency, caps, CRUD, rollback and API permissions, then removes the cluster. It needs `initdb`, `pg_ctl` and `createdb` on `PATH` and never touches your `DATABASE_URL`. |
+| `pnpm test:integration` | XP and PR statistics integration tests against a temporary PostgreSQL cluster on loopback. It runs every migration and tests concurrency, caps, CRUD, rollback and API permissions, then removes the cluster. It needs `initdb`, `pg_ctl` and `createdb` on `PATH` and never touches your `DATABASE_URL`. |
 
 The unit tests cover:
 
@@ -401,6 +401,10 @@ Deploys work without it, but print a warning.
 - **Room Access:** each server chooses which channels use the ticket system.
 - **Voice Guard:** whitelist and blacklist voice channels, with optional notifications.
 - **PR Bot:** each server has its own webhook URL and secret, which you can copy or regenerate from the page.
+  The notification-frequency chart shows daily totals or the distribution by hour of day over 7, 30 or 90 calendar days, including today, in Asia/Bangkok.
+  Counts distinguish sent notifications (opened, reopened, ready for review), merge updates and close updates. Only successful Discord sends/edits count;
+  repeated close updates for the same message are counted once. Data starts accumulating after this version is deployed; old notifications are not backfilled.
+  Run `pnpm db:migrate` before starting the updated backend to create `pr_notifications`. The chart refreshes every minute.
 
 ### News
 

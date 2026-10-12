@@ -11,6 +11,8 @@ import type {
     NewsInput,
     PrBotSecretResponse,
     PrBotSettings,
+    PrBotStats,
+    PrBotStatsDays,
     RoomAccessItem,
     SuccessResponse,
     UpdateConfigInput,
@@ -101,3 +103,10 @@ export const logSettingsApi = {
 export const prBotQuery = (guildId: string) => queryOptions({ queryKey: [...guildKey(guildId), 'pr-bot'], queryFn: () => api<PrBotSettings>(g(guildId, '/pr-bot/settings')) });
 export const updatePrBot = (guildId: string, input: UpdatePrBotInput) => api<PrBotSettings>(g(guildId, '/pr-bot/settings'), { body: input });
 export const rotatePrBotSecret = (guildId: string) => api<PrBotSecretResponse>(g(guildId, '/pr-bot/secret'), { method: 'POST' });
+
+export const prBotStatsQuery = (guildId: string, days: PrBotStatsDays) =>
+    queryOptions({
+        queryKey: [...guildKey(guildId), 'pr-bot', 'stats', days],
+        queryFn: ({ signal }) => api<PrBotStats>(g(guildId, '/pr-bot/stats'), { query: { days }, signal }),
+        refetchInterval: 60_000,
+    });
