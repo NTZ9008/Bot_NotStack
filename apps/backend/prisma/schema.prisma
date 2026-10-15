@@ -144,16 +144,21 @@ model LogOption {
   @@map("log_options")
 }
 
-// PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมตอน PR ถูกปิด
+// PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมเมื่อมี review / check / comment หรือ PR ถูกปิด
 // repo เดียวกันแจ้งหลายเซิร์ฟเวอร์ได้ (แต่ละเซิร์ฟเวอร์ตั้ง webhook ของตัวเอง)
 model PrMessage {
-  guildId      String @map("guild_id")
-  repoFullName String @map("repo_full_name")
-  prNumber     Int    @map("pr_number")
-  channelId    String @map("channel_id")
-  messageId    String @map("message_id")
+  guildId      String  @map("guild_id")
+  repoFullName String  @map("repo_full_name")
+  prNumber     Int     @map("pr_number")
+  channelId    String  @map("channel_id")
+  messageId    String  @map("message_id")
+  // commit ล่าสุดของ PR — event check_run/status ไม่บอกเลข PR จึงต้องหาจาก sha
+  headSha      String? @map("head_sha")
+  // สถานะที่สะสมจาก webhook (ข้อมูล PR, review, check, comment) — ใช้วาด embed ใหม่ทุกครั้งที่มี event
+  activity     Json    @default("{}")
 
   @@id([guildId, repoFullName, prNumber])
+  @@index([guildId, repoFullName, headSha])
   @@map("pr_messages")
 }
 

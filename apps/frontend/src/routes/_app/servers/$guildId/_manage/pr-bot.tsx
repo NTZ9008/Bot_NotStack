@@ -194,7 +194,9 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
             <CardHeader>
                 <CardTitle>GitHub Webhook</CardTitle>
                 <CardDescription>
-                    ที่ GitHub: Settings → Webhooks → Add webhook — Content type <code>application/json</code>, เลือก event <b>Pull requests</b>
+                    ที่ GitHub: Settings → Webhooks → Add webhook — Content type <code>application/json</code>, เลือก “Let me select individual events” แล้วติ๊ก{' '}
+                    <b>Pull requests</b>, <b>Pull request reviews</b>, <b>Pull request review comments</b>, <b>Issue comments</b>, <b>Check runs</b> และ{' '}
+                    <b>Statuses</b> — ข้อความใน Discord จะอัปเดตเองเมื่อมีคน approve / ขอแก้ / comment และเมื่อ check ผ่านหรือไม่ผ่าน
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">

@@ -92,42 +92,90 @@ test('statistics storage failure does not fail an already delivered notification
     assert.equal(errors.length, 1);
 });
 
-function botFixture({ failSend = false, failEdit = false, channelAvailable = true } = {}) {
+// in-memory pr_messages — รองรับเฉพาะ query ที่ PrBotService ใช้
+function fakePrisma(initial = []) {
+    const rows = new Map(initial.map((row) => [`${row.guildId}|${row.repoFullName}|${row.prNumber}`, { activity: {}, headSha: null, ...row }]));
+    const keyOf = ({ guildId_repoFullName_prNumber: k }) => `${k.guildId}|${k.repoFullName}|${k.prNumber}`;
+    const pick = (row, select) => (row ? Object.fromEntries(Object.keys(select).map((field) => [field, structuredClone(row[field])])) : null);
+    const prisma = {
+        rows,
+        prMessage: {
+            findUnique: async ({ where, select }) => pick(rows.get(keyOf(where)), select),
+            findMany: async ({ where, select }) =>
+                [...rows.values()].filter((row) => Object.entries(where).every(([field, value]) => row[field] === value)).map((row) => pick(row, select)),
+            upsert: async ({ where, create, update }) => {
+                const key = keyOf(where);
+                rows.set(key, rows.has(key) ? { ...rows.get(key), ...structuredClone(update) } : { activity: {}, headSha: null, ...structuredClone(create) });
+            },
+            update: async ({ where, data }) => {
+                const key = keyOf(where);
+                rows.set(key, { ...rows.get(key), ...structuredClone(data) });
+            },
+        },
+        // จำลองล็อกแถวของ SELECT ... FOR UPDATE — transaction ทำทีละอัน
+        lock: Promise.resolve(),
+        $transaction: (fn) => {
+            const run = prisma.lock.then(() => fn(prisma));
+            prisma.lock = run.catch(() => {});
+            return run;
+        },
+        $queryRaw: async (sql, guildId, repoFullName, prNumber) => {
+            assert.match(sql.join('?'), /FOR UPDATE/);
+            const row = rows.get(`${guildId}|${repoFullName}|${prNumber}`);
+            return row ? [{ activity: structuredClone(row.activity) }] : [];
+        },
+    };
+    return prisma;
+}
+
+function botFixture({ failSend = false, failEdit = false, channelAvailable = true, rows } = {}) {
     const records = [];
+    const sent = [];
+    const edits = [];
     const message = {
         id: 'message',
-        edit: async () => {
+        edit: async (payload) => {
             if (failEdit) throw new Error('edit failed');
+            edits.push(payload);
         },
     };
     const channel = {
         id: 'channel',
         isSendable: () => true,
         messages: { fetch: async () => message },
-        send: async () => {
+        send: async (payload) => {
             if (failSend) throw new Error('send failed');
+            sent.push(payload);
             return message;
         },
     };
+    const prisma = fakePrisma(rows);
     const bot = new PrBotService(
         { getChannelIdForOrg: async () => 'channel', getMentionForRepo: async () => '' },
         { ready: true, fetchGuildChannel: async () => (channelAvailable ? channel : null) },
-        { prMessage: { upsert: async () => {}, findUnique: async () => ({ channelId: 'channel', messageId: 'message' }) } },
+        prisma,
         { get: () => '' },
         { record: async (...args) => records.push(args) },
     );
     bot.logger = { error: () => {} };
-    return { bot, records };
+    const lastEmbed = () => (edits.at(-1) ?? sent.at(-1)).embeds[0];
+    const field = (name) => lastEmbed().fields.find((f) => f.name.includes(name))?.value;
+    return { bot, records, sent, edits, prisma, lastEmbed, field };
 }
+const repository = { full_name: 'owner/repo', html_url: 'https://github.com/owner/repo' };
 const payload = {
-    repository: { full_name: 'owner/repo', html_url: 'https://github.com/owner/repo' },
+    repository,
     pull_request: {
         number: 1,
         title: 'Example',
         html_url: 'https://github.com/owner/repo/pull/1',
-        head: { sha: 'abc' },
+        state: 'open',
+        user: { login: 'author' },
+        head: { ref: 'feat/x', sha: 'abc' },
+        requested_reviewers: [{ login: 'alice' }, { login: 'bob' }],
     },
 };
+const legacyRow = { guildId: 'guild', repoFullName: 'owner/repo', prNumber: 1, channelId: 'channel', messageId: 'message' };
 
 test('successful opened, reopened, ready, merged and closed deliveries record the correct kinds', async () => {
     const { bot, records } = botFixture();
@@ -144,15 +192,212 @@ test('successful opened, reopened, ready, merged and closed deliveries record th
 test('failed sends, failed edits and ignored webhook actions do not add statistics', async () => {
     for (const [options, action] of [
         [{ failSend: true }, 'opened'],
-        [{ failEdit: true }, 'closed'],
+        [{ failEdit: true, rows: [legacyRow] }, 'closed'],
     ]) {
         const { bot, records } = botFixture(options);
         await assert.rejects(bot.handle('guild', 'pull_request', { ...payload, action }));
         assert.deepEqual(records, []);
     }
-    const { bot, records } = botFixture({ channelAvailable: false });
+    const { bot, records } = botFixture({ channelAvailable: false, rows: [legacyRow] });
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     await bot.handle('guild', 'pull_request', { ...payload, action: 'synchronize' });
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'closed' });
     await bot.handle('guild', 'ping', payload);
     assert.deepEqual(records, []);
+});
+
+test('opened PR shows who is still requested and stores the head commit for check lookups', async () => {
+    const { bot, prisma, lastEmbed, field } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    assert.match(lastEmbed().description, /Waiting for review\*\* from alice, bob/);
+    assert.equal(field('Reviews'), '⏳ Waiting: alice, bob');
+    assert.equal(field('Checks'), undefined);
+    assert.equal(field('Comments'), undefined);
+    assert.equal(prisma.rows.get('guild|owner/repo|1').headSha, 'abc');
+});
+
+// payload จริงของ GitHub ไม่มีคนที่ review แล้วใน requested_reviewers
+const review = (login, state, submitted_at, requested = [], extra = {}) => ({
+    action: 'submitted',
+    repository,
+    pull_request: { ...payload.pull_request, requested_reviewers: requested.map((name) => ({ login: name })) },
+    review: { id: Math.floor(Math.random() * 1e9), user: { login }, state, submitted_at, ...extra },
+});
+
+test('reviews edit the original message: approval, change requests and later comments', async () => {
+    const { bot, edits, lastEmbed, field } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z', ['bob']));
+    assert.match(lastEmbed().description, /✅ \*\*Approved\*\* by alice/);
+    assert.equal(lastEmbed().color, 0x57f287);
+    assert.equal(field('Reviews'), '✅ Approved: alice\n⏳ Waiting: bob');
+
+    // comment ทีหลังไม่ลบผล approve (เหมือน GitHub)
+    await bot.handle('guild', 'pull_request_review', review('alice', 'commented', '2026-10-16T02:00:00Z'));
+    await bot.handle('guild', 'pull_request_review', review('bob', 'changes_requested', '2026-10-16T03:00:00Z'));
+    assert.match(lastEmbed().description, /Changes requested\*\* by bob/);
+    assert.equal(lastEmbed().color, 0xe67e22);
+    assert.equal(field('Reviews'), '✅ Approved: alice\n🔴 Changes requested: bob');
+
+    // review เก่าที่มาช้าไม่ทับ review ใหม่
+    await bot.handle('guild', 'pull_request_review', review('bob', 'approved', '2026-10-16T02:30:00Z'));
+    assert.match(field('Reviews'), /Changes requested: bob/);
+    await bot.handle('guild', 'pull_request_review', review('bob', 'approved', '2026-10-16T04:00:00Z'));
+    assert.equal(field('Reviews'), '✅ Approved: alice, bob');
+
+    // dismiss → ไม่นับ approve นั้นอีก
+    await bot.handle('guild', 'pull_request_review', { ...review('alice', 'dismissed', '2026-10-16T01:00:00Z'), action: 'dismissed' });
+    assert.equal(field('Reviews'), '✅ Approved: bob');
+    assert.ok(edits.length >= 5);
+});
+
+test('comments show a count and the latest human comments, ignore bots and follow deletes', async () => {
+    const { bot, field } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    const comment = (id, login, body, created_at, extra = {}) => ({
+        action: 'created',
+        repository,
+        issue: { number: 1, pull_request: {} },
+        comment: { id, user: { login }, body, created_at, html_url: `https://github.com/owner/repo/pull/1#c${id}` },
+        ...extra,
+    });
+    await bot.handle('guild', 'issue_comment', comment(1, 'alice', 'first', '2026-10-16T01:00:00Z'));
+    await bot.handle('guild', 'issue_comment', comment(1, 'alice', 'first', '2026-10-16T01:00:00Z')); // redelivery
+    await bot.handle('guild', 'issue_comment', comment(2, 'bob', 'needs **tests**\n\n```js\nx()\n```', '2026-10-16T02:00:00Z'));
+    await bot.handle('guild', 'issue_comment', {
+        ...comment(3, 'vercel[bot]', 'Preview ready', '2026-10-16T03:00:00Z'),
+        comment: { id: 3, user: { login: 'vercel[bot]', type: 'Bot' }, body: 'x' },
+    });
+    await bot.handle('guild', 'pull_request_review_comment', {
+        action: 'created',
+        repository,
+        pull_request: payload.pull_request,
+        comment: { id: 4, user: { login: 'carol' }, body: 'nit', created_at: '2026-10-16T04:00:00Z', html_url: 'https://github.com/owner/repo/pull/1#r4' },
+    });
+    await bot.handle('guild', 'issue_comment', comment(5, 'dave', 'issue only', '2026-10-16T05:00:00Z', { issue: { number: 1 } }));
+    let value = field('Comments');
+    assert.deepEqual(value.split('\n'), [
+        '[**carol**](https://github.com/owner/repo/pull/1#r4): nit',
+        '[**bob**](https://github.com/owner/repo/pull/1#c2): needs \\*\\*tests\\*\\* [code]',
+        '[**alice**](https://github.com/owner/repo/pull/1#c1): first',
+    ]);
+    await bot.handle('guild', 'issue_comment', { ...comment(4, 'x', '', ''), action: 'deleted' }); // id เดียวกันแต่คนละชนิด → ไม่กระทบ
+    await bot.handle('guild', 'issue_comment', { ...comment(2, 'bob', '', ''), action: 'deleted' });
+    value = field('Comments');
+    assert.equal(value.split('\n').length, 2);
+    assert.doesNotMatch(value, /bob/);
+});
+
+const checkRun = (name, status, conclusion, started_at, completed_at, head_sha = 'abc') => ({
+    action: status === 'completed' ? 'completed' : 'created',
+    repository,
+    check_run: { name, head_sha, status, conclusion, started_at, completed_at },
+});
+
+test('checks only say passed / failed / running per check, for the latest commit only', async () => {
+    const { bot, field, prisma } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:05:00Z'));
+    await bot.handle('guild', 'check_run', checkRun('test', 'queued', null, '2026-10-16T01:00:00Z', null));
+    await bot.handle('guild', 'check_run', checkRun('test', 'completed', 'failure', '2026-10-16T01:00:00Z', '2026-10-16T01:06:00Z'));
+    // event "created" ที่มาช้ากว่า "completed" ไม่ทำให้ผลถอยกลับ
+    await bot.handle('guild', 'check_run', checkRun('test', 'in_progress', null, '2026-10-16T01:00:00Z', null));
+    await bot.handle('guild', 'check_run', checkRun('lint', 'in_progress', null, '2026-10-16T01:00:00Z', null));
+    await bot.handle('guild', 'check_run', checkRun('docs', 'completed', 'skipped', '2026-10-16T01:00:00Z', '2026-10-16T01:00:00Z'));
+    await bot.handle('guild', 'status', { repository, sha: 'abc', context: 'vercel', state: 'success', updated_at: '2026-10-16T01:03:00Z' });
+    await bot.handle('guild', 'check_run', checkRun('other-pr', 'completed', 'failure', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z', 'zzz'));
+    assert.equal(
+        field('Checks'),
+        ['❌ 1 failed · 🟡 1 running · ✅ 2 passed · ⚪ 1 skipped', '❌ test', '🟡 lint', '✅ build', '✅ vercel', '⚪ docs'].join('\n'),
+    );
+
+    // re-run ที่เริ่มทีหลังทับผลเดิม
+    await bot.handle('guild', 'check_run', checkRun('test', 'completed', 'success', '2026-10-16T02:00:00Z', '2026-10-16T02:05:00Z'));
+    assert.match(field('Checks'), /^🟡 1 running · ✅ 3 passed/);
+
+    // push commit ใหม่ → ผลเก่าหายไป และ check ของ commit เก่าที่มาช้าถูกข้าม
+    await bot.handle('guild', 'pull_request', {
+        ...payload,
+        action: 'synchronize',
+        pull_request: { ...payload.pull_request, head: { ref: 'feat/x', sha: 'def' } },
+    });
+    assert.equal(prisma.rows.get('guild|owner/repo|1').headSha, 'def');
+    assert.equal(field('Checks'), undefined);
+    await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'failure', '2026-10-16T03:00:00Z', '2026-10-16T03:01:00Z', 'abc'));
+    assert.equal(field('Checks'), undefined);
+    await bot.handle('guild', 'check_run', checkRun('build', 'queued', null, '2026-10-16T03:00:00Z', null, 'def'));
+    assert.equal(field('Checks'), '⏳ 1 queued\n⏳ build');
+});
+
+test('merged PR keeps the review and check summary, and later events never reopen it', async () => {
+    const { bot, lastEmbed, field, records } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z'));
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'closed', pull_request: { ...payload.pull_request, state: 'closed', merged: true } });
+    assert.equal(lastEmbed().title, '🟣 Pull Request Merged');
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'edited' });
+    await bot.handle('guild', 'issue_comment', {
+        action: 'created',
+        repository,
+        issue: { number: 1, pull_request: {} },
+        comment: { id: 9, user: { login: 'bob' }, body: 'thanks' },
+    });
+    assert.equal(lastEmbed().title, '🟣 Pull Request Merged');
+    assert.equal(lastEmbed().color, 0x8957e5);
+    assert.match(field('Reviews'), /Approved: alice/);
+    assert.match(field('Comments'), /thanks/);
+    assert.deepEqual(
+        records.map((r) => r[2]),
+        ['sent', 'merged'],
+    );
+});
+
+test('rows created before this feature render once a review payload supplies PR details', async () => {
+    const { bot, edits, field } = botFixture({ rows: [legacyRow] });
+    await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:05:00Z'));
+    await bot.handle('guild', 'issue_comment', {
+        action: 'created',
+        repository,
+        issue: { number: 1, pull_request: {} },
+        comment: { id: 1, user: { login: 'x' }, body: 'hi' },
+    });
+    assert.equal(edits.length, 0); // ยังไม่มีข้อมูล PR ให้วาด
+    await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z'));
+    assert.equal(edits.length, 1);
+    assert.match(field('Reviews'), /Approved: alice/);
+    assert.match(field('Comments (1)'), /hi/);
+});
+
+test('concurrent webhook bursts coalesce Discord edits and the final edit has every result', async () => {
+    const { bot, edits, field } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    const names = Array.from({ length: 12 }, (_, i) => `job-${String(i).padStart(2, '0')}`);
+    await Promise.all(
+        names.map((name) => bot.handle('guild', 'check_run', checkRun(name, 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z'))),
+    );
+    assert.ok(edits.length < names.length, `expected coalesced edits, got ${edits.length}`);
+    assert.match(field('Checks'), /^✅ 12 passed/);
+});
+
+test('long check lists and comment bodies stay within Discord embed limits', async () => {
+    const { bot, lastEmbed } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    for (let i = 0; i < 40; i++) {
+        await bot.handle(
+            'guild',
+            'check_run',
+            checkRun(`${'very-long-check-name-'.repeat(4)}${i}`, 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z'),
+        );
+    }
+    for (let i = 0; i < 5; i++) {
+        await bot.handle('guild', 'issue_comment', {
+            action: 'created',
+            repository,
+            issue: { number: 1, pull_request: {} },
+            comment: { id: i, user: { login: 'x' }, body: '_'.repeat(5000), created_at: `2026-10-16T0${i}:00:00Z` },
+        });
+    }
+    for (const f of lastEmbed().fields) assert.ok(f.value.length <= 1024, `${f.name} is ${f.value.length} chars`);
+    assert.match(lastEmbed().fields.find((f) => f.name.includes('Checks')).value, /…and \d+ more$/);
+    assert.match(lastEmbed().fields.find((f) => f.name.includes('Comments')).name, /\(5\)/);
 });
