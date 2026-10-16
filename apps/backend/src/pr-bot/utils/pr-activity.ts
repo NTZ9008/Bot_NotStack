@@ -1,3 +1,4 @@
+import { githubMarkdownToDiscord } from './github-markdown';
 import type { CheckRunEvent, GithubComment, GithubPullRequest, GithubRepository, GithubReview, StatusEvent } from '../interfaces/github.interface';
 
 // ==========================================
@@ -17,6 +18,7 @@ export interface PrSnapshot {
     author: string;
     avatarUrl: string | null;
     branch: string;
+    baseBranch?: string; // ไม่มีในข้อมูลที่บันทึกก่อนเพิ่ม field นี้
     headSha: string;
     state: 'open' | 'closed' | 'merged';
     draft: boolean;
@@ -42,7 +44,8 @@ export interface PrActivity {
 }
 
 export const MAX_COMMENTS = 3;
-const COMMENT_BODY_LIMIT = 200;
+// เก็บเป็น markdown ที่แปลงสำหรับ Discord แล้ว — ยาวพอให้อ่านรู้เรื่อง แต่ 3 อันรวมกันยังไม่เกินขนาด embed
+const COMMENT_BODY_LIMIT = 1000;
 const EPOCH = new Date(0).toISOString();
 
 const toIso = (value: string | null | undefined): string => {
@@ -78,6 +81,7 @@ export function snapshotOf(pr: GithubPullRequest, repo: GithubRepository): PrSna
         author: pr.user?.login ?? 'unknown',
         avatarUrl: pr.user?.avatar_url ?? null,
         branch: pr.head?.ref ?? 'unknown',
+        ...(pr.base?.ref ? { baseBranch: pr.base.ref } : {}),
         headSha: pr.head?.sha ?? '',
         state: pr.merged ? 'merged' : pr.state === 'closed' ? 'closed' : 'open',
         draft: Boolean(pr.draft),
@@ -141,15 +145,6 @@ export function applyReview(
     return next;
 }
 
-const excerpt = (body: string): string => {
-    const text = body
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/```[\s\S]*?```/g, '[code]')
-        .replace(/\s+/g, ' ')
-        .trim();
-    return text.length > COMMENT_BODY_LIMIT ? `${text.slice(0, COMMENT_BODY_LIMIT - 1)}…` : text;
-};
-
 // comment ของ bot (CI, preview deploy ฯลฯ) ไม่นับ — ไม่งั้นจะกลบ comment ของคน
 export function applyComment(activity: PrActivity, id: string, comment: GithubComment, action?: string): PrActivity {
     if (comment.user?.type === 'Bot') return activity;
@@ -159,7 +154,7 @@ export function applyComment(activity: PrActivity, id: string, comment: GithubCo
     const entry: PrComment = {
         id,
         author: comment.user?.login ?? 'unknown',
-        body: excerpt(comment.body ?? ''),
+        body: githubMarkdownToDiscord(comment.body ?? '', COMMENT_BODY_LIMIT),
         url: comment.html_url ?? activity.pr?.url ?? '',
         at: toIso(comment.created_at),
     };
