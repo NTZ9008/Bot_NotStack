@@ -16,6 +16,7 @@ export interface GithubPullRequest {
     closed_at?: string | null;
     user?: GithubUser | null;
     head?: { ref?: string; sha?: string } | null;
+    base?: { ref?: string } | null;
     requested_reviewers?: GithubUser[] | null;
     requested_teams?: { name?: string; slug?: string }[] | null;
 }

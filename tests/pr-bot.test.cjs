@@ -158,9 +158,12 @@ function botFixture({ failSend = false, failEdit = false, channelAvailable = tru
         { record: async (...args) => records.push(args) },
     );
     bot.logger = { error: () => {} };
-    const lastEmbed = () => (edits.at(-1) ?? sent.at(-1)).embeds[0];
+    const lastEmbeds = () => (edits.at(-1) ?? sent.at(-1)).embeds;
+    const lastEmbed = () => lastEmbeds()[0];
     const field = (name) => lastEmbed().fields.find((f) => f.name.includes(name))?.value;
-    return { bot, records, sent, edits, prisma, lastEmbed, field };
+    const fieldName = (name) => lastEmbed().fields.find((f) => f.name.includes(name))?.name;
+    const comments = () => lastEmbeds()[1];
+    return { bot, records, sent, edits, prisma, lastEmbed, lastEmbeds, field, fieldName, comments };
 }
 const repository = { full_name: 'owner/repo', html_url: 'https://github.com/owner/repo' };
 const payload = {
@@ -207,12 +210,18 @@ test('failed sends, failed edits and ignored webhook actions do not add statisti
 });
 
 test('opened PR shows who is still requested and stores the head commit for check lookups', async () => {
-    const { bot, prisma, lastEmbed, field } = botFixture();
-    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
-    assert.match(lastEmbed().description, /Waiting for review\*\* from alice, bob/);
-    assert.equal(field('Reviews'), '⏳ Waiting: alice, bob');
+    const { bot, prisma, lastEmbed, lastEmbeds, field, fieldName } = botFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened', pull_request: { ...payload.pull_request, base: { ref: 'main' } } });
+    const embed = lastEmbed();
+    assert.equal(embed.title, '#1 Example');
+    assert.equal(embed.author.name, 'author');
+    assert.equal(embed.author.url, 'https://github.com/author');
+    assert.equal(embed.description.split('\n')[1], '`feat/x` → `main`');
+    assert.match(embed.description, /Waiting for review\*\* from \*\*alice\*\*, \*\*bob\*\*/);
+    assert.equal(fieldName('Reviews'), '👀 Reviews · 0/2 approved');
+    assert.equal(field('Reviews'), '⏳ alice\n⏳ bob');
     assert.equal(field('Checks'), undefined);
-    assert.equal(field('Comments'), undefined);
+    assert.equal(lastEmbeds().length, 1); // ยังไม่มี comment → ไม่มี embed comment
     assert.equal(prisma.rows.get('guild|owner/repo|1').headSha, 'abc');
 });
 
@@ -225,34 +234,35 @@ const review = (login, state, submitted_at, requested = [], extra = {}) => ({
 });
 
 test('reviews edit the original message: approval, change requests and later comments', async () => {
-    const { bot, edits, lastEmbed, field } = botFixture();
+    const { bot, edits, lastEmbed, field, fieldName } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z', ['bob']));
-    assert.match(lastEmbed().description, /✅ \*\*Approved\*\* by alice/);
+    assert.match(lastEmbed().description, /✅ \*\*Approved\*\* by \*\*alice\*\*/);
     assert.equal(lastEmbed().color, 0x57f287);
-    assert.equal(field('Reviews'), '✅ Approved: alice\n⏳ Waiting: bob');
+    assert.equal(field('Reviews'), '✅ alice\n⏳ bob');
+    assert.equal(fieldName('Reviews'), '👀 Reviews · 1/2 approved');
 
     // comment ทีหลังไม่ลบผล approve (เหมือน GitHub)
     await bot.handle('guild', 'pull_request_review', review('alice', 'commented', '2026-10-16T02:00:00Z'));
     await bot.handle('guild', 'pull_request_review', review('bob', 'changes_requested', '2026-10-16T03:00:00Z'));
-    assert.match(lastEmbed().description, /Changes requested\*\* by bob/);
+    assert.match(lastEmbed().description, /Changes requested\*\* by \*\*bob\*\*/);
     assert.equal(lastEmbed().color, 0xe67e22);
-    assert.equal(field('Reviews'), '✅ Approved: alice\n🔴 Changes requested: bob');
+    assert.equal(field('Reviews'), '✅ alice\n🔴 bob');
 
     // review เก่าที่มาช้าไม่ทับ review ใหม่
     await bot.handle('guild', 'pull_request_review', review('bob', 'approved', '2026-10-16T02:30:00Z'));
-    assert.match(field('Reviews'), /Changes requested: bob/);
+    assert.match(field('Reviews'), /🔴 bob/);
     await bot.handle('guild', 'pull_request_review', review('bob', 'approved', '2026-10-16T04:00:00Z'));
-    assert.equal(field('Reviews'), '✅ Approved: alice, bob');
+    assert.equal(field('Reviews'), '✅ alice\n✅ bob');
 
     // dismiss → ไม่นับ approve นั้นอีก
     await bot.handle('guild', 'pull_request_review', { ...review('alice', 'dismissed', '2026-10-16T01:00:00Z'), action: 'dismissed' });
-    assert.equal(field('Reviews'), '✅ Approved: bob');
+    assert.equal(field('Reviews'), '✅ bob');
     assert.ok(edits.length >= 5);
 });
 
 test('comments show a count and the latest human comments, ignore bots and follow deletes', async () => {
-    const { bot, field } = botFixture();
+    const { bot, comments } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     const comment = (id, login, body, created_at, extra = {}) => ({
         action: 'created',
@@ -275,17 +285,21 @@ test('comments show a count and the latest human comments, ignore bots and follo
         comment: { id: 4, user: { login: 'carol' }, body: 'nit', created_at: '2026-10-16T04:00:00Z', html_url: 'https://github.com/owner/repo/pull/1#r4' },
     });
     await bot.handle('guild', 'issue_comment', comment(5, 'dave', 'issue only', '2026-10-16T05:00:00Z', { issue: { number: 1 } }));
-    let value = field('Comments');
-    assert.deepEqual(value.split('\n'), [
-        '[**carol**](https://github.com/owner/repo/pull/1#r4): nit',
-        '[**bob**](https://github.com/owner/repo/pull/1#c2): needs \\*\\*tests\\*\\* [code]',
-        '[**alice**](https://github.com/owner/repo/pull/1#c1): first',
-    ]);
+    assert.equal(comments().title, '💬 Comments (3)');
+    // เก่า → ใหม่ และคง markdown ของ GitHub ไว้ (ตัวหนา, code block)
+    assert.equal(
+        comments().description,
+        [
+            `**[alice](https://github.com/owner/repo/pull/1#c1)** · <t:${Date.parse('2026-10-16T01:00:00Z') / 1000}:R>\nfirst`,
+            `**[bob](https://github.com/owner/repo/pull/1#c2)** · <t:${Date.parse('2026-10-16T02:00:00Z') / 1000}:R>\nneeds **tests**\n\n\`\`\`js\nx()\n\`\`\``,
+            `**[carol](https://github.com/owner/repo/pull/1#r4)** · <t:${Date.parse('2026-10-16T04:00:00Z') / 1000}:R>\nnit`,
+        ].join('\n\n'),
+    );
+    assert.equal(comments().url, undefined); // url ซ้ำกับ embed หลักจะทำให้ Discord รวม embed เข้าด้วยกัน
     await bot.handle('guild', 'issue_comment', { ...comment(4, 'x', '', ''), action: 'deleted' }); // id เดียวกันแต่คนละชนิด → ไม่กระทบ
     await bot.handle('guild', 'issue_comment', { ...comment(2, 'bob', '', ''), action: 'deleted' });
-    value = field('Comments');
-    assert.equal(value.split('\n').length, 2);
-    assert.doesNotMatch(value, /bob/);
+    assert.equal(comments().title, '💬 Comments (2)');
+    assert.doesNotMatch(comments().description, /bob/);
 });
 
 const checkRun = (name, status, conclusion, started_at, completed_at, head_sha = 'abc') => ({
@@ -295,7 +309,7 @@ const checkRun = (name, status, conclusion, started_at, completed_at, head_sha =
 });
 
 test('checks only say passed / failed / running per check, for the latest commit only', async () => {
-    const { bot, field, prisma } = botFixture();
+    const { bot, field, fieldName, prisma } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:05:00Z'));
     await bot.handle('guild', 'check_run', checkRun('test', 'queued', null, '2026-10-16T01:00:00Z', null));
@@ -306,14 +320,12 @@ test('checks only say passed / failed / running per check, for the latest commit
     await bot.handle('guild', 'check_run', checkRun('docs', 'completed', 'skipped', '2026-10-16T01:00:00Z', '2026-10-16T01:00:00Z'));
     await bot.handle('guild', 'status', { repository, sha: 'abc', context: 'vercel', state: 'success', updated_at: '2026-10-16T01:03:00Z' });
     await bot.handle('guild', 'check_run', checkRun('other-pr', 'completed', 'failure', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z', 'zzz'));
-    assert.equal(
-        field('Checks'),
-        ['❌ 1 failed · 🟡 1 running · ✅ 2 passed · ⚪ 1 skipped', '❌ test', '🟡 lint', '✅ build', '✅ vercel', '⚪ docs'].join('\n'),
-    );
+    assert.equal(fieldName('Checks'), '🧪 Checks · 2/5 passed');
+    assert.equal(field('Checks'), ['🟩🟩⬜🟨🟥', '❌ test', '🟡 lint', '✅ build', '✅ vercel', '⚪ docs'].join('\n'));
 
     // re-run ที่เริ่มทีหลังทับผลเดิม
     await bot.handle('guild', 'check_run', checkRun('test', 'completed', 'success', '2026-10-16T02:00:00Z', '2026-10-16T02:05:00Z'));
-    assert.match(field('Checks'), /^🟡 1 running · ✅ 3 passed/);
+    assert.equal(fieldName('Checks'), '🧪 Checks · 3/5 passed');
 
     // push commit ใหม่ → ผลเก่าหายไป และ check ของ commit เก่าที่มาช้าถูกข้าม
     await bot.handle('guild', 'pull_request', {
@@ -326,15 +338,17 @@ test('checks only say passed / failed / running per check, for the latest commit
     await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'failure', '2026-10-16T03:00:00Z', '2026-10-16T03:01:00Z', 'abc'));
     assert.equal(field('Checks'), undefined);
     await bot.handle('guild', 'check_run', checkRun('build', 'queued', null, '2026-10-16T03:00:00Z', null, 'def'));
-    assert.equal(field('Checks'), '⏳ 1 queued\n⏳ build');
+    assert.equal(fieldName('Checks'), '🧪 Checks · 0/1 passed');
+    assert.equal(field('Checks'), '🟨\n⏳ build');
 });
 
 test('merged PR keeps the review and check summary, and later events never reopen it', async () => {
-    const { bot, lastEmbed, field, records } = botFixture();
+    const { bot, lastEmbed, field, records, comments } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z'));
     await bot.handle('guild', 'pull_request', { ...payload, action: 'closed', pull_request: { ...payload.pull_request, state: 'closed', merged: true } });
-    assert.equal(lastEmbed().title, '🟣 Pull Request Merged');
+    assert.match(lastEmbed().description, /^🟣 Merged/);
+    assert.equal(lastEmbed().footer.text, 'Merged');
     await bot.handle('guild', 'pull_request', { ...payload, action: 'edited' });
     await bot.handle('guild', 'issue_comment', {
         action: 'created',
@@ -342,10 +356,11 @@ test('merged PR keeps the review and check summary, and later events never reope
         issue: { number: 1, pull_request: {} },
         comment: { id: 9, user: { login: 'bob' }, body: 'thanks' },
     });
-    assert.equal(lastEmbed().title, '🟣 Pull Request Merged');
+    assert.match(lastEmbed().description, /^🟣 Merged/);
     assert.equal(lastEmbed().color, 0x8957e5);
-    assert.match(field('Reviews'), /Approved: alice/);
-    assert.match(field('Comments'), /thanks/);
+    assert.match(field('Reviews'), /✅ alice/);
+    assert.match(comments().description, /thanks/);
+    assert.equal(comments().color, 0x8957e5);
     assert.deepEqual(
         records.map((r) => r[2]),
         ['sent', 'merged'],
@@ -353,7 +368,7 @@ test('merged PR keeps the review and check summary, and later events never reope
 });
 
 test('rows created before this feature render once a review payload supplies PR details', async () => {
-    const { bot, edits, field } = botFixture({ rows: [legacyRow] });
+    const { bot, edits, field, comments } = botFixture({ rows: [legacyRow] });
     await bot.handle('guild', 'check_run', checkRun('build', 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:05:00Z'));
     await bot.handle('guild', 'issue_comment', {
         action: 'created',
@@ -364,23 +379,24 @@ test('rows created before this feature render once a review payload supplies PR 
     assert.equal(edits.length, 0); // ยังไม่มีข้อมูล PR ให้วาด
     await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z'));
     assert.equal(edits.length, 1);
-    assert.match(field('Reviews'), /Approved: alice/);
-    assert.match(field('Comments (1)'), /hi/);
+    assert.match(field('Reviews'), /✅ alice/);
+    assert.equal(comments().title, '💬 Comments (1)');
+    assert.match(comments().description, /\nhi$/);
 });
 
 test('concurrent webhook bursts coalesce Discord edits and the final edit has every result', async () => {
-    const { bot, edits, field } = botFixture();
+    const { bot, edits, fieldName } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     const names = Array.from({ length: 12 }, (_, i) => `job-${String(i).padStart(2, '0')}`);
     await Promise.all(
         names.map((name) => bot.handle('guild', 'check_run', checkRun(name, 'completed', 'success', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z'))),
     );
     assert.ok(edits.length < names.length, `expected coalesced edits, got ${edits.length}`);
-    assert.match(field('Checks'), /^✅ 12 passed/);
+    assert.equal(fieldName('Checks'), '🧪 Checks · 12/12 passed');
 });
 
 test('long check lists and comment bodies stay within Discord embed limits', async () => {
-    const { bot, lastEmbed } = botFixture();
+    const { bot, lastEmbed, lastEmbeds, comments } = botFixture();
     await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
     for (let i = 0; i < 40; i++) {
         await bot.handle(
@@ -394,10 +410,48 @@ test('long check lists and comment bodies stay within Discord embed limits', asy
             action: 'created',
             repository,
             issue: { number: 1, pull_request: {} },
-            comment: { id: i, user: { login: 'x' }, body: '_'.repeat(5000), created_at: `2026-10-16T0${i}:00:00Z` },
+            comment: { id: i, user: { login: 'x' }, body: `\`\`\`\n${'line of code\n'.repeat(500)}\`\`\``, created_at: `2026-10-16T0${i}:00:00Z` },
         });
     }
     for (const f of lastEmbed().fields) assert.ok(f.value.length <= 1024, `${f.name} is ${f.value.length} chars`);
     assert.match(lastEmbed().fields.find((f) => f.name.includes('Checks')).value, /…and \d+ more$/);
-    assert.match(lastEmbed().fields.find((f) => f.name.includes('Comments')).name, /\(5\)/);
+    assert.equal(comments().title, '💬 Comments (5)');
+    assert.match(comments().description, /\[View all 5 comments on GitHub\]/);
+    // code block ที่ถูกตัดต้องปิดให้ครบ ไม่งั้นข้อความที่เหลือกลายเป็น code ทั้งหมด
+    assert.equal((comments().description.match(/```/g) ?? []).length % 2, 0);
+    const total = lastEmbeds().reduce(
+        (sum, e) =>
+            sum +
+            (e.title?.length ?? 0) +
+            (e.description?.length ?? 0) +
+            (e.author?.name.length ?? 0) +
+            (e.footer?.text.length ?? 0) +
+            (e.fields ?? []).reduce((n, f) => n + f.name.length + f.value.length, 0),
+        0,
+    );
+    assert.ok(total <= 6000, `embeds total ${total} chars`);
+});
+
+const { githubMarkdownToDiscord } = require('../apps/backend/dist/pr-bot/utils/github-markdown');
+
+test('GitHub comment markdown is converted to what Discord can render', () => {
+    const md = (text, limit = 1000) => githubMarkdownToDiscord(text, limit);
+    assert.equal(md('## Summary\n### Details ###'), '**Summary**\n**Details**');
+    assert.equal(md('- [x] done\n  - [ ] todo\n* plain'), '- ☑ done\n  - ☐ todo\n* plain');
+    assert.equal(md('**bold** _it_ ~~gone~~ `code` [link](https://a.b)'), '**bold** _it_ ~~gone~~ `code` [link](https://a.b)');
+    assert.equal(md('![screenshot](https://img/x.png "t") ![](https://img/y.png)'), '[🖼️ screenshot](https://img/x.png) [🖼️ image](https://img/y.png)');
+    assert.equal(md('<img width="300" src="https://img/z.png">'), '[🖼️ image](https://img/z.png)');
+    assert.equal(md('<details><summary>Logs</summary>\n\nhidden</details>'), '**▸ Logs**\n\nhidden');
+    assert.equal(md('a<br>b <b>x</b> <a href="https://u">u</a> <!-- hidden -->'), 'a\nb **x** [u](https://u)');
+    assert.equal(md('> quoted<br>still quoted\n\n---\nafter'), '> quoted\n> still quoted\n\n───\nafter');
+    // ข้างใน code ไม่แปลงอะไร
+    assert.equal(md('`<b>raw</b>` and\n```html\n<b>## raw</b>\n- [ ] raw\n```'), '`<b>raw</b>` and\n```html\n<b>## raw</b>\n- [ ] raw\n```');
+    assert.equal(md('~~~\ntilde\n~~~'), '```\ntilde\n```');
+    assert.equal(md('```suggestion\nconst a = 1;\n```'), '**Suggested change:**\n```\nconst a = 1;\n```');
+    assert.equal(md('```js\nunclosed'), '```js\nunclosed\n```');
+    assert.equal(md('a\r\n\r\n\r\n\r\nb'), 'a\n\nb');
+    const cut = md(`text\n\`\`\`\n${'x\n'.repeat(100)}\`\`\``, 60);
+    assert.ok(cut.length <= 60);
+    assert.ok(cut.endsWith('…\n```'));
+    assert.equal(md('word '.repeat(50), 30).length <= 30, true);
 });

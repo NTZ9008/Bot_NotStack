@@ -94,7 +94,7 @@ test('concurrent PR webhooks lock the row so no check or review result is lost',
     assert.equal(Object.keys(row.activity.checks).length, 21);
     assert.deepEqual(Object.keys(row.activity.reviews).sort(), ['alice', 'bob', 'carol']);
     const fields = edits.at(-1).embeds[0].fields;
-    assert.match(fields.find((f) => f.name.includes('Checks')).value, /^❌ 1 failed · ✅ 20 passed/);
+    assert.equal(fields.find((f) => f.name.includes('Checks')).name, '🧪 Checks · 20/21 passed');
     assert.ok(edits.length < 25, `edits should be coalesced, got ${edits.length}`);
     assert.deepEqual(await prisma.prMessage.findMany({ where: { guildId: 'a', repoFullName: 'owner/repo', headSha: 'abc' }, select: { prNumber: true } }), [
         { prNumber: 7 },
