@@ -108,7 +108,7 @@ Each server turns each feature on and off on its own **Configuration** page.
 
 ### Other
 
-- **PR Bot:** posts GitHub pull-request notifications into Discord and edits the message when the PR is merged or closed. Each server gets its own webhook URL and secret.
+- **PR Bot:** posts GitHub pull-request notifications into Discord and keeps editing the same message as the PR changes: who approved or requested changes, which checks passed or failed, the latest comments, and the merged/closed state. Each server gets its own webhook URL and secret. Subscribe the webhook to Pull requests, Pull request reviews, Pull request review comments, Issue comments, Check runs and Statuses.
 - **Polls:** anonymous, one vote per member. Voting again changes your vote.
 - **Reaction roles**, **auto-replies** (e.g. `สวัสดีบอท`, "hello bot") and password-protected role claiming for the home server.
 
