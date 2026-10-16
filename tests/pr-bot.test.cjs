@@ -173,7 +173,7 @@ const payload = {
         title: 'Example',
         html_url: 'https://github.com/owner/repo/pull/1',
         state: 'open',
-        user: { login: 'author' },
+        user: { login: 'author', avatar_url: 'https://avatars.example/author.png' },
         head: { ref: 'feat/x', sha: 'abc' },
         requested_reviewers: [{ login: 'alice' }, { login: 'bob' }],
     },
@@ -216,6 +216,7 @@ test('opened PR shows who is still requested and stores the head commit for chec
     assert.equal(embed.title, '#1 Example');
     assert.equal(embed.author.name, 'author');
     assert.equal(embed.author.url, 'https://github.com/author');
+    assert.equal(embed.thumbnail.url, 'https://avatars.example/author.png');
     assert.equal(embed.description.split('\n')[1], '`feat/x` → `main`');
     assert.match(embed.description, /Waiting for review\*\* from \*\*alice\*\*, \*\*bob\*\*/);
     assert.equal(fieldName('Reviews'), '👀 Reviews · 0/2 approved');
@@ -321,7 +322,7 @@ test('checks only say passed / failed / running per check, for the latest commit
     await bot.handle('guild', 'status', { repository, sha: 'abc', context: 'vercel', state: 'success', updated_at: '2026-10-16T01:03:00Z' });
     await bot.handle('guild', 'check_run', checkRun('other-pr', 'completed', 'failure', '2026-10-16T01:00:00Z', '2026-10-16T01:01:00Z', 'zzz'));
     assert.equal(fieldName('Checks'), '🧪 Checks · 2/5 passed');
-    assert.equal(field('Checks'), ['🟩🟩⬜🟨🟥', '❌ test', '🟡 lint', '✅ build', '✅ vercel', '⚪ docs'].join('\n'));
+    assert.equal(field('Checks'), ['🟩🟩⬜🟨🟥', '', '❌ test', '🟡 lint', '✅ build', '✅ vercel', '⚪ docs'].join('\n'));
 
     // re-run ที่เริ่มทีหลังทับผลเดิม
     await bot.handle('guild', 'check_run', checkRun('test', 'completed', 'success', '2026-10-16T02:00:00Z', '2026-10-16T02:05:00Z'));
@@ -339,7 +340,7 @@ test('checks only say passed / failed / running per check, for the latest commit
     assert.equal(field('Checks'), undefined);
     await bot.handle('guild', 'check_run', checkRun('build', 'queued', null, '2026-10-16T03:00:00Z', null, 'def'));
     assert.equal(fieldName('Checks'), '🧪 Checks · 0/1 passed');
-    assert.equal(field('Checks'), '🟨\n⏳ build');
+    assert.equal(field('Checks'), '🟨\n\n⏳ build');
 });
 
 test('merged PR keeps the review and check summary, and later events never reopen it', async () => {

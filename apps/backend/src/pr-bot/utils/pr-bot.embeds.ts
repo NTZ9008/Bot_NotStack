@@ -87,7 +87,8 @@ function checksField(activity: PrActivity): APIEmbedField | null {
     if (checks.length > MAX_CHECK_LINES) lines.push(`…and ${checks.length - MAX_CHECK_LINES} more`);
     return {
         name: `🧪 Checks · ${passed}/${checks.length} passed`,
-        value: fitLines([progressBar(checks.map((check) => check.state)), ...lines]),
+        // เว้นบรรทัดระหว่างแถบสีกับรายชื่อ ให้อ่านแยกกันง่าย
+        value: fitLines([progressBar(checks.map((check) => check.state)), '', ...lines]),
         inline: true,
     };
 }
@@ -142,6 +143,8 @@ export function prPayload(pr: PrSnapshot, activity: PrActivity, now = new Date()
         .addFields(fields)
         .setFooter({ text: FOOTER[pr.state] })
         .setTimestamp(time)
+        // รูปโปรไฟล์ใหญ่มุมขวาบน (ไอคอนข้างชื่อด้านบนเล็กเกินไป)
+        .setThumbnail(pr.avatarUrl)
         .toJSON();
     const comments = commentsEmbed(pr, activity, color, MESSAGE_EMBED_LIMIT - embedLength(main) - 100);
 
