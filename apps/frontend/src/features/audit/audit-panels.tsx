@@ -34,6 +34,7 @@ const GROUP_TONE: Record<string, string> = {
     pr_bot: 'bg-fuchsia-500/15 text-fuchsia-300',
     welcome: 'bg-pink-500/15 text-pink-300',
     weather: 'bg-orange-500/15 text-orange-300',
+    jira: 'bg-blue-500/15 text-blue-300',
 };
 
 // สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager

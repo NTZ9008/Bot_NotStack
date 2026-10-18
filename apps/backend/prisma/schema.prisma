@@ -446,3 +446,47 @@ model PrNotification {
   @@index([guildId, createdAt])
   @@map("pr_notifications")
 }
+
+// ==========================================
+// 🎫 JIRA TICKET — เปิด Jira card จากห้องแผงใน Discord (รูปแบบ options ตรวจใน packages/shared/src/jira.ts)
+// ==========================================
+
+// เซิร์ฟเวอร์ละ 1 แถว — apiToken เข้ารหัส (AES-256-GCM, กุญแจจาก JWT_SECRET) ไม่เคยส่งกลับไปหน้าเว็บ
+model JiraSetting {
+  guildId        String   @id @map("guild_id")
+  enabled        Boolean  @default(false)
+  siteUrl        String   @default("") @map("site_url")
+  email          String   @default("")
+  apiToken       String   @default("") @map("api_token")
+  projectKey     String   @default("") @map("project_key")
+  panelChannelId String   @default("") @map("panel_channel_id")
+  panelMessageId String   @default("") @map("panel_message_id")
+  logChannelId   String   @default("") @map("log_channel_id")
+  categoryId     String   @default("") @map("category_id")
+  // ประเภท card ที่เปิดได้ / ยศทีมงาน / หน้าตาแผง
+  options        Json
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("jira_settings")
+}
+
+// ห้องส่วนตัว 1 ห้อง = card 1 ใบ — issueKey ว่าง = ยังไม่ได้สร้าง card, closedAt = ปิดห้องแล้ว
+model JiraTicket {
+  id            Int       @id @default(autoincrement())
+  guildId       String    @map("guild_id")
+  userId        String    @map("user_id")
+  userName      String    @map("user_name")
+  channelId     String?   @map("channel_id")
+  issueKey      String?   @map("issue_key")
+  issueUrl      String?   @map("issue_url")
+  issueType     String?   @map("issue_type")
+  title         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  cardCreatedAt DateTime? @map("card_created_at") @db.Timestamptz(3)
+  closedAt      DateTime? @map("closed_at") @db.Timestamptz(3)
+
+  @@index([guildId, createdAt])
+  @@index([guildId, userId, closedAt])
+  @@index([channelId])
+  @@map("jira_tickets")
+}

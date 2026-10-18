@@ -24,6 +24,7 @@ import { Route as AppServersGuildIdManageRouteImport } from './routes/_app/serve
 import { Route as AppServersGuildIdLevelsRouteImport } from './routes/_app/servers/$guildId/levels'
 import { Route as AppServersGuildIdManageAuditLogsRouteImport } from './routes/_app/servers/$guildId/_manage/audit-logs'
 import { Route as AppServersGuildIdManageConfigRouteImport } from './routes/_app/servers/$guildId/_manage/config'
+import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/servers/$guildId/_manage/jira'
 import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/_app/servers/$guildId/_manage/log-manager'
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
@@ -107,6 +108,12 @@ const AppServersGuildIdManageConfigRoute =
     path: '/config',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageJiraRoute =
+  AppServersGuildIdManageJiraRouteImport.update({
+    id: '/jira',
+    path: '/jira',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageLogManagerRoute =
   AppServersGuildIdManageLogManagerRouteImport.update({
     id: '/log-manager',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/': typeof AppServersGuildIdIndexRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
@@ -190,6 +198,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
@@ -216,6 +225,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/': typeof AppServersGuildIdIndexRoute
   '/_app/servers/$guildId/_manage/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/_app/servers/$guildId/_manage/config': typeof AppServersGuildIdManageConfigRoute
+  '/_app/servers/$guildId/_manage/jira': typeof AppServersGuildIdManageJiraRoute
   '/_app/servers/$guildId/_manage/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/levels'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
@@ -286,6 +298,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/'
     | '/_app/servers/$guildId/_manage/audit-logs'
     | '/_app/servers/$guildId/_manage/config'
+    | '/_app/servers/$guildId/_manage/jira'
     | '/_app/servers/$guildId/_manage/log-manager'
     | '/_app/servers/$guildId/_manage/news'
     | '/_app/servers/$guildId/_manage/overview'
@@ -408,6 +421,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageConfigRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/jira': {
+      id: '/_app/servers/$guildId/_manage/jira'
+      path: '/jira'
+      fullPath: '/servers/$guildId/jira'
+      preLoaderRoute: typeof AppServersGuildIdManageJiraRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/log-manager': {
       id: '/_app/servers/$guildId/_manage/log-manager'
       path: '/log-manager'
@@ -486,6 +506,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageAuditLogsRoute: typeof AppServersGuildIdManageAuditLogsRoute
   AppServersGuildIdManageConfigRoute: typeof AppServersGuildIdManageConfigRoute
+  AppServersGuildIdManageJiraRoute: typeof AppServersGuildIdManageJiraRoute
   AppServersGuildIdManageLogManagerRoute: typeof AppServersGuildIdManageLogManagerRoute
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
@@ -501,6 +522,7 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
     AppServersGuildIdManageAuditLogsRoute:
       AppServersGuildIdManageAuditLogsRoute,
     AppServersGuildIdManageConfigRoute: AppServersGuildIdManageConfigRoute,
+    AppServersGuildIdManageJiraRoute: AppServersGuildIdManageJiraRoute,
     AppServersGuildIdManageLogManagerRoute:
       AppServersGuildIdManageLogManagerRoute,
     AppServersGuildIdManageNewsRoute: AppServersGuildIdManageNewsRoute,

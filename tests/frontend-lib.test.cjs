@@ -47,7 +47,7 @@ test('navigation keeps all existing features available to server managers and sy
             .filter((item) => item.guild)
             .map((item) => item.to.split('/').pop())
             .sort(),
-        ['audit-logs', 'config', 'levels', 'log-manager', 'news', 'overview', 'pr-bot', 'room-access', 'voice-guard', 'weather', 'welcome'],
+        ['audit-logs', 'config', 'jira', 'levels', 'log-manager', 'news', 'overview', 'pr-bot', 'room-access', 'voice-guard', 'weather', 'welcome'],
     );
     assert.deepEqual(
         manager
