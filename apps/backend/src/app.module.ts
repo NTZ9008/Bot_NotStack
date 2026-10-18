@@ -18,6 +18,7 @@ import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
 import { GuildsModule } from './guilds/guilds.module';
 import { HealthController } from './health/health.controller';
+import { JiraModule } from './jira/jira.module';
 import { LevelsModule } from './levels/levels.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
@@ -84,6 +85,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         WelcomeModule,
         WeatherModule,
         PrBotModule,
+        JiraModule,
         ChatModule,
         CommandsModule,
     ],
