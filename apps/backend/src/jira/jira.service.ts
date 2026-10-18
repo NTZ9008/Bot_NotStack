@@ -131,7 +131,8 @@ export class JiraService {
 
     // เหตุผลที่ยังเปิดใช้ไม่ได้ (null = พร้อม)
     missingSetup(settings: StoredJiraSettings): string | null {
-        if (!settings.siteUrl || !settings.email || !settings.apiToken || !settings.projectKey) return 'ยังเชื่อมต่อ Jira ไม่ครบ (site URL / อีเมล / API token / project key)';
+        if (!settings.siteUrl || !settings.email || !settings.apiToken || !settings.projectKey)
+            return 'ยังเชื่อมต่อ Jira ไม่ครบ (site URL / อีเมล / API token / project key)';
         if (!this.cipher.decrypt(settings.apiToken)) return 'อ่าน API token ที่บันทึกไว้ไม่ได้ (JWT_SECRET อาจถูกเปลี่ยน) — กรอก API token ใหม่';
         if (!settings.options.issueTypes.length) return 'ยังไม่ได้เลือกประเภท card ที่ให้เปิดได้';
         if (!settings.panelChannelId) return 'ยังไม่ได้เลือกห้องแผง (ห้องที่มีปุ่มเปิด card)';
@@ -323,4 +324,3 @@ export class JiraService {
         return toView(ticket);
     }
 }
-

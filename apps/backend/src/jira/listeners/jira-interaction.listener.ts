@@ -156,7 +156,8 @@ export class JiraInteractionListener {
                     .filter((roleId) => guild.roles.cache.has(roleId))
                     .map((roleId): OverwriteResolvable => ({ id: roleId, type: OverwriteType.Role, allow: MEMBER_ALLOW })),
             ];
-            const parent = settings.categoryId && guild.channels.cache.get(settings.categoryId)?.type === ChannelType.GuildCategory ? settings.categoryId : null;
+            const parent =
+                settings.categoryId && guild.channels.cache.get(settings.categoryId)?.type === ChannelType.GuildCategory ? settings.categoryId : null;
 
             let channel;
             try {
@@ -263,14 +264,20 @@ export class JiraInteractionListener {
         }
     }
 
-    private async sendLog(interaction: ModalSubmitInteraction<'cached'>, settings: StoredJiraSettings, card: Parameters<typeof cardLogMessage>[0]): Promise<void> {
+    private async sendLog(
+        interaction: ModalSubmitInteraction<'cached'>,
+        settings: StoredJiraSettings,
+        card: Parameters<typeof cardLogMessage>[0],
+    ): Promise<void> {
         if (!settings.logChannelId) return;
         const channel = interaction.guild.channels.cache.get(settings.logChannelId);
         if (!channel?.isSendable()) {
             this.logger.warn(`ไม่พบห้อง log ของ Jira (${interaction.guildId})`);
             return;
         }
-        await channel.send(cardLogMessage(card, interaction.channelId)).catch((err: Error) => this.logger.warn(`ส่ง log Jira (${interaction.guildId}) ไม่สำเร็จ: ${err.message}`));
+        await channel
+            .send(cardLogMessage(card, interaction.channelId))
+            .catch((err: Error) => this.logger.warn(`ส่ง log Jira (${interaction.guildId}) ไม่สำเร็จ: ${err.message}`));
     }
 
     // 4) ปิดห้อง — ถามยืนยันก่อน (ลบห้องแล้วกู้คืนไม่ได้)

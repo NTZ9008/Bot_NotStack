@@ -29,9 +29,7 @@ export const JIRA_IDS = {
 } as const;
 
 export type JiraCustomId =
-    | { action: 'open' }
-    | { action: 'type' | 'close' | 'closeConfirm'; ticketId: number }
-    | { action: 'modal'; ticketId: number; issueTypeId: string };
+    { action: 'open' } | { action: 'type' | 'close' | 'closeConfirm'; ticketId: number } | { action: 'modal'; ticketId: number; issueTypeId: string };
 
 export function parseJiraCustomId(customId: string): JiraCustomId | null {
     if (customId === JIRA_IDS.open) return { action: 'open' };
@@ -72,9 +70,8 @@ export function panelMessage(panel: JiraPanelAppearance): MessagePayload {
     };
 }
 
-const typeLabel = (type: Pick<JiraIssueTypeOption, 'name' | 'emoji'>) => (type.emoji ? `${type.emoji} ${type.name}` : type.name);
-
-const closeButton = (ticketId: number) => new ButtonBuilder().setCustomId(JIRA_IDS.close(ticketId)).setStyle(ButtonStyle.Secondary).setEmoji('🔒').setLabel('ปิดห้อง');
+const closeButton = (ticketId: number) =>
+    new ButtonBuilder().setCustomId(JIRA_IDS.close(ticketId)).setStyle(ButtonStyle.Secondary).setEmoji('🔒').setLabel('ปิดห้อง');
 
 // ข้อความแรกในห้องส่วนตัว: เลือกประเภท card (เลือกแล้วเด้ง pop-up ให้กรอก title / description)
 export function ticketWelcomeMessage(ticketId: number, userId: string, issueTypes: JiraIssueTypeOption[]): MessagePayload {
@@ -96,11 +93,18 @@ export function ticketWelcomeMessage(ticketId: number, userId: string, issueType
                 .setColor(color(JIRA_BLUE))
                 .setTitle('🎫 เปิด Jira card ใหม่')
                 .setDescription(
-                    ['1. เลือก **ประเภท card** จากเมนูด้านล่าง', '2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up แล้วกดส่ง', '3. บอทจะสร้าง card ใน Jira แล้วส่งลิงก์ให้ในห้องนี้'].join('\n'),
+                    [
+                        '1. เลือก **ประเภท card** จากเมนูด้านล่าง',
+                        '2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up แล้วกดส่ง',
+                        '3. บอทจะสร้าง card ใน Jira แล้วส่งลิงก์ให้ในห้องนี้',
+                    ].join('\n'),
                 )
                 .setFooter({ text: 'ห้องนี้เห็นเฉพาะคุณและทีมงาน — กด "ปิดห้อง" เมื่อเสร็จแล้ว' }),
         ],
-        components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select), new ActionRowBuilder<ButtonBuilder>().addComponents(closeButton(ticketId))],
+        components: [
+            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select),
+            new ActionRowBuilder<ButtonBuilder>().addComponents(closeButton(ticketId)),
+        ],
     };
 }
 

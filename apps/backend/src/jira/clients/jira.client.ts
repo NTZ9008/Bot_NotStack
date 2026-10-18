@@ -93,10 +93,10 @@ export class JiraClient {
     }
 
     async project(creds: JiraCredentials, projectKey: string): Promise<JiraProjectInfo> {
-        const project = await this.request<{ name?: string; issueTypes?: { id: string; name: string; description?: string; iconUrl?: string; subtask?: boolean }[] }>(
-            creds,
-            `/rest/api/3/project/${encodeURIComponent(projectKey)}`,
-        );
+        const project = await this.request<{
+            name?: string;
+            issueTypes?: { id: string; name: string; description?: string; iconUrl?: string; subtask?: boolean }[];
+        }>(creds, `/rest/api/3/project/${encodeURIComponent(projectKey)}`);
         return {
             name: project.name ?? projectKey,
             // sub-task ต้องมี parent — เปิดจาก Discord ไม่ได้
