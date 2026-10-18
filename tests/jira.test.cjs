@@ -4,7 +4,8 @@ const { ChannelType, OverwriteType, PermissionFlagsBits, PermissionsBitField } =
 const { updateJiraSchema, normalizeJiraOptions, jiraTicketQuerySchema } = require('../packages/shared/dist');
 const { TokenCipher } = require('../apps/backend/dist/jira/utils/token-cipher');
 const { textToAdf } = require('../apps/backend/dist/jira/utils/adf');
-const { parseJiraCustomId, JIRA_IDS, ticketChannelName } = require('../apps/backend/dist/jira/utils/jira.messages');
+const { parseJiraCustomId, JIRA_IDS, ticketChannelName, issueModal } = require('../apps/backend/dist/jira/utils/jira.messages');
+const { downloadDiscordImages } = require('../apps/backend/dist/jira/utils/discord-images');
 const { JiraClient, JiraApiError } = require('../apps/backend/dist/jira/clients/jira.client');
 const { JiraService } = require('../apps/backend/dist/jira/jira.service');
 const { JiraInteractionListener } = require('../apps/backend/dist/jira/listeners/jira-interaction.listener');
@@ -238,7 +239,14 @@ function setupListener({ settings, tickets = [] } = {}) {
         findOpenTicket: async () => null,
         findTicket: async (_g, id) => db.tickets.find((t) => t.id === id) ?? null,
     };
-    const client = { createIssue: async (_c, input) => (created.push(input), { key: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' }) };
+    const attachments = [];
+    const client = {
+        createIssue: async (_c, input) => (created.push(input), { key: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' }),
+        addAttachment: async (_c, key, file) => {
+            if (file.name.startsWith('deny')) throw new JiraApiError('บัญชี Jira นี้ไม่มีสิทธิ์', 403);
+            attachments.push({ key, file });
+        },
+    };
     const listener = new JiraInteractionListener(jira, client, prisma);
 
     const roles = new Map([['555555', {}]]);
@@ -260,7 +268,7 @@ function setupListener({ settings, tickets = [] } = {}) {
             },
         },
     };
-    return { listener, db, created, channels, sent, guild };
+    return { listener, db, created, channels, sent, guild, attachments };
 }
 
 const baseSettings = {
@@ -404,4 +412,142 @@ test('staff with a configured role may act on someone else’s ticket', async ()
     });
     await listener.onInteraction(staff);
     assert.equal(staff.replies[0].p.components[0].toJSON().components[0].custom_id, 'jira:close-yes:1');
+});
+
+// ---------- รูปแนบ ----------
+
+test('image option is clamped and the pop-up only gets an upload field when enabled', () => {
+    assert.equal(normalizeJiraOptions({}).maxImages, 5);
+    assert.equal(normalizeJiraOptions({ maxImages: 15 }).maxImages, 10);
+    assert.equal(normalizeJiraOptions({ maxImages: -2 }).maxImages, 0);
+    assert.equal(normalizeJiraOptions({ maxImages: 2.9 }).maxImages, 2);
+    assert.equal(normalizeJiraOptions({ maxImages: '3' }).maxImages, 5);
+
+    const type = { id: '10001', name: 'Bug', emoji: '' };
+    const withImages = issueModal(1, type, 3).toJSON();
+    assert.equal(withImages.components.length, 3);
+    assert.deepEqual(withImages.components[2].component, {
+        type: 19,
+        file_types: ['image'],
+        custom_id: 'images',
+        required: false,
+        min_values: 0,
+        max_values: 3,
+    });
+    assert.equal(issueModal(1, type, 0).toJSON().components.length, 2);
+    assert.equal(issueModal(1, type, 50).toJSON().components[2].component.max_values, 10);
+});
+
+test('only images from the Discord CDN within the size limit are downloaded', async () => {
+    const calls = [];
+    const fetch = async (url) => {
+        calls.push(String(url));
+        if (String(url).includes('broken')) return { ok: false, status: 404 };
+        if (String(url).includes('huge')) return { ok: true, arrayBuffer: async () => new ArrayBuffer(2048) };
+        return { ok: true, arrayBuffer: async () => new TextEncoder().encode('png-bytes').buffer };
+    };
+    const cdn = (name) => `https://cdn.discordapp.com/ephemeral-attachments/1/2/${name}?ex=1`;
+    const result = await downloadDiscordImages(
+        [
+            { name: 'screen shot.PNG', url: cdn('a.png'), contentType: 'image/png', size: 10 },
+            { name: 'screen shot.PNG', url: cdn('b.png'), contentType: 'image/png; charset=binary', size: 10 },
+            { name: 'notes.pdf', url: cdn('c.pdf'), contentType: 'application/pdf', size: 10 },
+            { name: 'big.jpg', url: cdn('big.jpg'), contentType: 'image/jpeg', size: 5000 },
+            { name: 'lies.jpg', url: cdn('huge.jpg'), contentType: 'image/jpeg', size: 10 },
+            { name: 'evil.png', url: 'https://169.254.169.254/latest', contentType: 'image/png', size: 10 },
+            { name: 'plain.png', url: 'http://cdn.discordapp.com/x.png', contentType: 'image/png', size: 10 },
+            { name: 'gone.png', url: cdn('broken.png'), contentType: 'image/png', size: 10 },
+            { name: '../../ภาพ.webp', url: cdn('d.webp'), contentType: 'image/webp', size: 10 },
+        ],
+        fetch,
+        1024,
+    );
+    assert.deepEqual(
+        result.files.map((f) => [f.name, f.contentType, f.data.toString()]),
+        [
+            ['screen_shot.png', 'image/png', 'png-bytes'],
+            ['screen_shot-2.png', 'image/png', 'png-bytes'],
+            ['image-9.webp', 'image/webp', 'png-bytes'],
+        ],
+    );
+    assert.equal(result.skipped.length, 6);
+    assert.match(result.skipped.join('\n'), /notes\.pdf \(ไม่ใช่รูปภาพ\)/);
+    assert.match(result.skipped.join('\n'), /big\.jpg \(ใหญ่เกิน/);
+    assert.match(result.skipped.join('\n'), /lies\.jpg \(ใหญ่เกิน/);
+    assert.match(result.skipped.join('\n'), /evil\.png \(ลิงก์ไฟล์ไม่ได้มาจาก Discord\)/);
+    assert.match(result.skipped.join('\n'), /gone\.png \(ดาวน์โหลดจาก Discord ไม่ได้\)/);
+    // ไม่เคยยิงไป host อื่นหรือ http
+    assert.ok(calls.every((url) => url.startsWith('https://cdn.discordapp.com/')));
+});
+
+test('Jira client uploads attachments as multipart with the XSRF header', async () => {
+    const client = new JiraClient();
+    const fetch = fakeFetch([{ status: 200, body: [{ id: '1' }] }]);
+    client.fetchImpl = fetch.fn;
+    await client.addAttachment(creds, 'PROJ-42', { name: 'shot.png', contentType: 'image/png', data: Buffer.from('abc') });
+    const { url, init } = fetch.calls[0];
+    assert.equal(url, 'https://acme.atlassian.net/rest/api/3/issue/PROJ-42/attachments');
+    assert.equal(init.headers['X-Atlassian-Token'], 'no-check');
+    assert.equal(init.headers['Content-Type'], undefined);
+    const file = init.body.get('file');
+    assert.equal(file.name, 'shot.png');
+    assert.equal(file.type, 'image/png');
+    assert.equal(Buffer.from(await file.arrayBuffer()).toString(), 'abc');
+});
+
+test('images uploaded in the pop-up are attached to the card and shown in the room', async () => {
+    const ticket = { id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() };
+    const settings = { ...baseSettings, options: normalizeJiraOptions({ ...baseSettings.options, maxImages: 2 }) };
+    const { listener, created, attachments, sent, guild } = setupListener({ settings, tickets: [ticket] });
+    listener.fetchImpl = async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode('img').buffer });
+    const file = (name) => ({ name, url: `https://cdn.discordapp.com/ephemeral-attachments/1/2/${name}`, contentType: 'image/png', size: 3 });
+    const uploaded = new Map([
+        ['1', file('crash.png')],
+        ['2', file('deny.png')],
+        ['3', file('extra.png')],
+    ]);
+    const fields = {
+        getTextInputValue: (id) => (id === 'title' ? 'App crashes' : 'Steps'),
+        getUploadedFiles: (id) => (id === 'images' ? uploaded : null),
+    };
+    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields, isModalSubmit: () => true });
+    await listener.onInteraction(submit);
+
+    assert.equal(created.length, 1);
+    // ตัดเหลือตามจำนวนที่ตั้งไว้ (2) — extra.png ไม่ถูกโหลด
+    assert.deepEqual(
+        attachments.map((a) => [a.key, a.file.name]),
+        [['PROJ-9', 'crash.png']],
+    );
+    const reply = submit.replies.find((r) => r.type === 'edit').p;
+    assert.deepEqual(
+        reply.files.map((f) => f.name),
+        ['crash.png'],
+    );
+    const embed = reply.embeds[0].toJSON();
+    assert.equal(embed.image.url, 'attachment://crash.png');
+    assert.match(embed.fields.find((f) => f.name.includes('แนบรูปไม่สำเร็จ')).value, /deny\.png \(บัญชี Jira นี้ไม่มีสิทธิ์\)/);
+    assert.equal(sent[0].embeds[0].toJSON().fields.find((f) => f.name === 'รูปแนบ').value, '📎 1 รูป');
+});
+
+test('cards without images, or with image uploads turned off, still work', async () => {
+    const ticket = { id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() };
+    const settings = { ...baseSettings, options: normalizeJiraOptions({ ...baseSettings.options, maxImages: 0 }) };
+    const { listener, created, attachments, guild } = setupListener({ settings, tickets: [ticket] });
+    listener.fetchImpl = async () => {
+        throw new Error('must not download');
+    };
+    const fields = {
+        getTextInputValue: (id) => (id === 'title' ? 'No pics' : 'text'),
+        getUploadedFiles: () => {
+            throw new Error('no such field');
+        },
+    };
+    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields, isModalSubmit: () => true });
+    await listener.onInteraction(submit);
+    assert.equal(created.length, 1);
+    assert.equal(attachments.length, 0);
+    const reply = submit.replies.find((r) => r.type === 'edit').p;
+    assert.deepEqual(reply.files, []);
+    assert.equal(reply.embeds[0].toJSON().image, undefined);
 });

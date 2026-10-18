@@ -299,7 +299,7 @@ function JiraPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>2. ประเภท card ที่ให้เลือก</CardTitle>
+                        <CardTitle>2. ประเภท card และรูปแนบ</CardTitle>
                         <CardDescription>
                             กด “ทดสอบการเชื่อมต่อ” เพื่อดึงประเภทจากโปรเจกต์ แล้วติ๊กประเภทที่ให้สมาชิกเลือกได้ (สูงสุด {JIRA_LIMITS.maxIssueTypes}) — ใส่ emoji
                             หน้าชื่อได้
@@ -335,6 +335,26 @@ function JiraPage() {
                                 </div>
                             );
                         })}
+                        <Field
+                            label="แนบรูปได้สูงสุดต่อ card"
+                            htmlFor="jira-max-images"
+                            className="mt-2 border-t pt-4"
+                            hint={`0 = ไม่มีช่องแนบรูปใน pop-up · สูงสุด ${JIRA_LIMITS.maxImages} รูป รูปละไม่เกิน ${JIRA_LIMITS.maxImageBytes / 1024 / 1024}MB — รูปถูกแนบเข้า card ใน Jira (บัญชีที่เชื่อมต่อต้องมีสิทธิ์ Create attachments)`}
+                        >
+                            <Input
+                                id="jira-max-images"
+                                type="number"
+                                inputMode="numeric"
+                                className="w-28"
+                                min={0}
+                                max={JIRA_LIMITS.maxImages}
+                                value={draft.options.maxImages}
+                                onChange={(e) => {
+                                    const value = Math.trunc(Number(e.target.value));
+                                    patchOptions({ maxImages: Number.isFinite(value) ? Math.min(JIRA_LIMITS.maxImages, Math.max(0, value)) : 0 });
+                                }}
+                            />
+                        </Field>
                     </CardContent>
                 </Card>
 
