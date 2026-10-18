@@ -3,8 +3,10 @@ import {
     ActionRowBuilder,
     ButtonBuilder,
     ButtonStyle,
+    AttachmentBuilder,
     EmbedBuilder,
     escapeMarkdown,
+    FileUploadBuilder,
     LabelBuilder,
     ModalBuilder,
     StringSelectMenuBuilder,
@@ -13,7 +15,7 @@ import {
     type MessageCreateOptions,
 } from 'discord.js';
 
-type MessagePayload = Pick<MessageCreateOptions, 'content' | 'embeds' | 'components' | 'allowedMentions'>;
+type MessagePayload = Pick<MessageCreateOptions, 'content' | 'embeds' | 'components' | 'allowedMentions' | 'files'>;
 
 // ==========================================
 // 🆔 customId ของปุ่ม / เมนู / pop-up — ขึ้นต้นด้วย jira: ทั้งหมด (ตัวจัดการอื่นไม่สนใจ)
@@ -26,6 +28,7 @@ export const JIRA_IDS = {
     closeConfirm: (ticketId: number) => `jira:close-yes:${ticketId}`,
     titleField: 'title',
     descriptionField: 'description',
+    imagesField: 'images',
 } as const;
 
 export type JiraCustomId =
@@ -45,6 +48,7 @@ export function parseJiraCustomId(customId: string): JiraCustomId | null {
 const color = (hex: string) => parseInt(hex.slice(1), 16);
 const JIRA_BLUE = '#2684FF';
 const SUCCESS_GREEN = '#36B37E';
+const WARNING_ORANGE = '#FFAB00';
 
 // ชื่อห้อง: jira-<ชื่อผู้ใช้>-<เลข ticket> (ชื่อที่เป็นภาษาไทย/อีโมจิล้วนจะเหลือแค่ jira-<เลข>)
 export function ticketChannelName(userName: string, ticketId: number): string {
@@ -74,7 +78,7 @@ const closeButton = (ticketId: number) =>
     new ButtonBuilder().setCustomId(JIRA_IDS.close(ticketId)).setStyle(ButtonStyle.Secondary).setEmoji('🔒').setLabel('ปิดห้อง');
 
 // ข้อความแรกในห้องส่วนตัว: เลือกประเภท card (เลือกแล้วเด้ง pop-up ให้กรอก title / description)
-export function ticketWelcomeMessage(ticketId: number, userId: string, issueTypes: JiraIssueTypeOption[]): MessagePayload {
+export function ticketWelcomeMessage(ticketId: number, userId: string, issueTypes: JiraIssueTypeOption[], maxImages = 0): MessagePayload {
     const select = new StringSelectMenuBuilder()
         .setCustomId(JIRA_IDS.type(ticketId))
         .setPlaceholder('เลือกประเภท card ..')
@@ -95,7 +99,9 @@ export function ticketWelcomeMessage(ticketId: number, userId: string, issueType
                 .setDescription(
                     [
                         '1. เลือก **ประเภท card** จากเมนูด้านล่าง',
-                        '2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up แล้วกดส่ง',
+                        maxImages > 0
+                            ? `2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up (แนบรูปได้สูงสุด ${maxImages} รูป ถ้าต้องการ) แล้วกดส่ง`
+                            : '2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up แล้วกดส่ง',
                         '3. บอทจะสร้าง card ใน Jira แล้วส่งลิงก์ให้ในห้องนี้',
                     ].join('\n'),
                 )
@@ -113,8 +119,8 @@ export function ticketDoneComponents(ticketId: number) {
     return [new ActionRowBuilder<ButtonBuilder>().addComponents(closeButton(ticketId))];
 }
 
-export function issueModal(ticketId: number, type: JiraIssueTypeOption): ModalBuilder {
-    return new ModalBuilder()
+export function issueModal(ticketId: number, type: JiraIssueTypeOption, maxImages = 0): ModalBuilder {
+    const modal = new ModalBuilder()
         .setCustomId(JIRA_IDS.modal(ticketId, type.id))
         .setTitle(`Jira card: ${type.name}`.slice(0, 45))
         .addLabelComponents(
@@ -139,6 +145,19 @@ export function issueModal(ticketId: number, type: JiraIssueTypeOption): ModalBu
                         .setPlaceholder('อธิบายรายละเอียด ขั้นตอน หรือสิ่งที่ต้องการ'),
                 ),
         );
+    if (maxImages > 0) {
+        const max = Math.min(maxImages, JIRA_LIMITS.maxImages);
+        modal.addLabelComponents(
+            new LabelBuilder()
+                .setLabel('รูปภาพ (ไม่บังคับ)')
+                .setDescription(`แนบได้สูงสุด ${max} รูป · รูปละไม่เกิน ${Math.round(JIRA_LIMITS.maxImageBytes / 1024 / 1024)}MB — แนบเข้า card ใน Jira`)
+                .setFileUploadComponent(
+                    // file_types ยังไม่มี setter ใน builder — ใส่ผ่าน constructor (Discord ให้เลือกได้เฉพาะรูป บอทตรวจซ้ำอีกชั้น)
+                    new FileUploadBuilder({ file_types: ['image'] }).setCustomId(JIRA_IDS.imagesField).setRequired(false).setMinValues(0).setMaxValues(max),
+                ),
+        );
+    }
+    return modal;
 }
 
 export interface CardInfo {
@@ -147,23 +166,45 @@ export interface CardInfo {
     issueType: string;
     title: string;
     userId: string;
+    // จำนวนรูปที่แนบเข้า Jira สำเร็จ
+    imageCount: number;
+}
+
+export interface CardImages {
+    // รูปที่แนบเข้า Jira สำเร็จ — ส่งเข้าห้องด้วยให้เห็นว่าแนบอะไรไป
+    files: { name: string; data: Buffer }[];
+    // รูปที่แนบไม่สำเร็จ พร้อมเหตุผล
+    failed: string[];
 }
 
 const linkButton = (url: string) => new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel('เปิดใน Jira').setEmoji('🔗');
 
 // ส่งในห้องส่วนตัวหลังสร้าง card สำเร็จ
-export function cardCreatedMessage(card: CardInfo, description: string): MessagePayload {
+export function cardCreatedMessage(card: CardInfo, description: string, images: CardImages = { files: [], failed: [] }): MessagePayload {
+    const embed = new EmbedBuilder()
+        .setColor(color(images.failed.length ? WARNING_ORANGE : SUCCESS_GREEN))
+        .setAuthor({ name: `✅ สร้าง card แล้ว · ${card.issueKey}` })
+        .setTitle(card.title.slice(0, 256))
+        .setURL(card.issueUrl)
+        .setDescription(description.slice(0, 1000) + (description.length > 1000 ? '…' : ''))
+        .addFields({ name: 'ประเภท', value: card.issueType, inline: true }, { name: 'ลิงก์', value: card.issueUrl, inline: true });
+    if (images.files.length) {
+        embed.addFields({ name: 'รูปแนบ', value: `📎 ${images.files.length} รูป`, inline: true });
+        embed.setImage(`attachment://${images.files[0]!.name}`);
+    }
+    if (images.failed.length) {
+        embed.addFields({
+            name: '⚠️ แนบรูปไม่สำเร็จ',
+            value: images.failed
+                .map((line) => `• ${escapeMarkdown(line)}`)
+                .join('\n')
+                .slice(0, 1024),
+        });
+    }
     return {
-        embeds: [
-            new EmbedBuilder()
-                .setColor(color(SUCCESS_GREEN))
-                .setAuthor({ name: `✅ สร้าง card แล้ว · ${card.issueKey}` })
-                .setTitle(card.title.slice(0, 256))
-                .setURL(card.issueUrl)
-                .setDescription(description.slice(0, 1000) + (description.length > 1000 ? '…' : ''))
-                .addFields({ name: 'ประเภท', value: card.issueType, inline: true }, { name: 'ลิงก์', value: card.issueUrl, inline: true }),
-        ],
+        embeds: [embed],
         components: [new ActionRowBuilder<ButtonBuilder>().addComponents(linkButton(card.issueUrl))],
+        files: images.files.map((file) => new AttachmentBuilder(file.data, { name: file.name })),
     };
 }
 
@@ -176,6 +217,7 @@ export function cardLogMessage(card: CardInfo, channelId: string | null): Messag
         .setURL(card.issueUrl)
         .addFields({ name: 'ผู้เปิด', value: `<@${card.userId}>`, inline: true }, { name: 'ประเภท', value: escapeMarkdown(card.issueType), inline: true })
         .setTimestamp(new Date());
+    if (card.imageCount) embed.addFields({ name: 'รูปแนบ', value: `📎 ${card.imageCount} รูป`, inline: true });
     if (channelId) embed.addFields({ name: 'ห้อง', value: `<#${channelId}>`, inline: true });
     return {
         embeds: [embed],
