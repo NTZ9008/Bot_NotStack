@@ -116,3 +116,30 @@ test('closing from the dashboard deletes the room once and keeps the card record
     assert.deepEqual(discord.deleted, ['room']);
     await assert.rejects(service.closeTicket('b', ticket.id, 'other guild'), /ไม่พบห้องนี้/);
 });
+
+test('after a restart, rooms past their auto-close time are closed and newer ones are left for later', async () => {
+    const discord = fakeDiscord(new Set(['old-room', 'new-room', 'manual-room']));
+    const service = new JiraService(prisma, discord, new JiraClient(), config);
+    await service.updateSettings('a', { options: normalizeJiraOptions({ autoCloseSeconds: 15 }) });
+    await service.updateSettings('m', { options: normalizeJiraOptions({ autoCloseSeconds: 0 }) });
+    const now = Date.now();
+    const old = await prisma.jiraTicket.create({
+        data: { guildId: 'a', userId: 'u', userName: 'u', channelId: 'old-room', issueKey: 'P-1', cardCreatedAt: new Date(now - 60_000) },
+    });
+    const fresh = await prisma.jiraTicket.create({
+        data: { guildId: 'a', userId: 'v', userName: 'v', channelId: 'new-room', issueKey: 'P-2', cardCreatedAt: new Date(now) },
+    });
+    const manual = await prisma.jiraTicket.create({
+        data: { guildId: 'm', userId: 'w', userName: 'w', channelId: 'manual-room', issueKey: 'P-3', cardCreatedAt: new Date(now - 60_000) },
+    });
+    // ยังไม่ได้สร้าง card = ไม่ปิดเอง
+    await prisma.jiraTicket.create({ data: { guildId: 'a', userId: 'x', userName: 'x', channelId: 'waiting' } });
+
+    assert.equal(await service.resumeAutoClose(now), 2);
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    assert.deepEqual(discord.deleted, ['old-room']);
+    assert.ok((await prisma.jiraTicket.findUnique({ where: { id: old.id } })).closedAt);
+    assert.equal((await prisma.jiraTicket.findUnique({ where: { id: fresh.id } })).closedAt, null);
+    assert.equal((await prisma.jiraTicket.findUnique({ where: { id: manual.id } })).closedAt, null);
+    service.onApplicationShutdown();
+});

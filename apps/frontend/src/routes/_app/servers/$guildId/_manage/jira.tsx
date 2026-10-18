@@ -386,6 +386,27 @@ function JiraPage() {
                                 noneLabel="— ไม่อยู่ในหมวดหมู่ —"
                             />
                         </Field>
+                        <Field
+                            label="ปิดห้องอัตโนมัติหลังสร้าง card (วินาที)"
+                            htmlFor="jira-auto-close"
+                            hint={`0 = ไม่ปิดเอง (คนเปิด/ทีมงานกดปุ่มปิดห้องเอง) · สูงสุด ${JIRA_LIMITS.maxAutoCloseSeconds} วินาที — ในห้องจะขึ้นเวลานับถอยหลังให้เห็น`}
+                        >
+                            <Input
+                                id="jira-auto-close"
+                                type="number"
+                                inputMode="numeric"
+                                className="w-28"
+                                min={0}
+                                max={JIRA_LIMITS.maxAutoCloseSeconds}
+                                value={draft.options.autoCloseSeconds}
+                                onChange={(e) => {
+                                    const value = Math.trunc(Number(e.target.value));
+                                    patchOptions({
+                                        autoCloseSeconds: Number.isFinite(value) ? Math.min(JIRA_LIMITS.maxAutoCloseSeconds, Math.max(0, value)) : 0,
+                                    });
+                                }}
+                            />
+                        </Field>
                         <IdChoices
                             title="ยศทีมงานที่เห็นทุกห้อง"
                             options={roles}

@@ -1,4 +1,4 @@
-const { test } = require('node:test');
+const { test, mock } = require('node:test');
 const assert = require('node:assert/strict');
 const { ChannelType, OverwriteType, PermissionFlagsBits, PermissionsBitField } = require('../apps/backend/node_modules/discord.js');
 const { updateJiraSchema, normalizeJiraOptions, jiraTicketQuerySchema } = require('../packages/shared/dist');
@@ -238,8 +238,10 @@ function setupListener({ settings, tickets = [] } = {}) {
         credentials: () => creds,
         findOpenTicket: async () => null,
         findTicket: async (_g, id) => db.tickets.find((t) => t.id === id) ?? null,
+        scheduleAutoClose: (guildId, ticketId, delayMs) => scheduled.push({ guildId, ticketId, delayMs }),
     };
     const attachments = [];
+    const scheduled = [];
     const client = {
         createIssue: async (_c, input) => (created.push(input), { key: 'PROJ-9', url: 'https://acme.atlassian.net/browse/PROJ-9' }),
         addAttachment: async (_c, key, file) => {
@@ -268,7 +270,7 @@ function setupListener({ settings, tickets = [] } = {}) {
             },
         },
     };
-    return { listener, db, created, channels, sent, guild, attachments };
+    return { listener, db, created, channels, sent, guild, attachments, scheduled };
 }
 
 const baseSettings = {
@@ -550,4 +552,95 @@ test('cards without images, or with image uploads turned off, still work', async
     const reply = submit.replies.find((r) => r.type === 'edit').p;
     assert.deepEqual(reply.files, []);
     assert.equal(reply.embeds[0].toJSON().image, undefined);
+});
+
+// ---------- ปิดห้องอัตโนมัติ ----------
+
+test('auto close defaults to 15 seconds and is clamped', () => {
+    assert.equal(normalizeJiraOptions({}).autoCloseSeconds, 15);
+    assert.equal(normalizeJiraOptions({ autoCloseSeconds: 0 }).autoCloseSeconds, 0);
+    assert.equal(normalizeJiraOptions({ autoCloseSeconds: 99999 }).autoCloseSeconds, 3600);
+    assert.equal(normalizeJiraOptions({ autoCloseSeconds: -5 }).autoCloseSeconds, 0);
+    assert.equal(normalizeJiraOptions({ autoCloseSeconds: '30' }).autoCloseSeconds, 15);
+});
+
+const openTicket = () => ({ id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() });
+const submitFields = { getTextInputValue: (id) => (id === 'title' ? 'Crash' : 'Steps') };
+
+test('the room shows a countdown and is scheduled to close 15 seconds after the card is created', async () => {
+    const { listener, scheduled, guild } = setupListener({ settings: baseSettings, tickets: [openTicket()] });
+    const before = Date.now();
+    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
+    await listener.onInteraction(submit);
+    const reply = submit.replies.find((r) => r.type === 'edit').p;
+    const at = Number(/<t:(\d+):R>/.exec(reply.content)[1]) * 1000;
+    assert.ok(at >= before + 15_000 && at <= Date.now() + 16_000);
+    assert.equal(scheduled.length, 1);
+    assert.equal(scheduled[0].guildId, 'g1');
+    assert.equal(scheduled[0].ticketId, 1);
+    assert.ok(scheduled[0].delayMs > 14_000 && scheduled[0].delayMs <= 15_000);
+});
+
+test('auto close can be turned off', async () => {
+    const settings = { ...baseSettings, options: normalizeJiraOptions({ ...baseSettings.options, autoCloseSeconds: 0 }) };
+    const { listener, scheduled, guild } = setupListener({ settings, tickets: [openTicket()] });
+    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
+    await listener.onInteraction(submit);
+    assert.equal(submit.replies.find((r) => r.type === 'edit').p.content, '');
+    assert.equal(scheduled.length, 0);
+});
+
+test('scheduled closes fire once, are rescheduled after a restart and cleared on shutdown', async (t) => {
+    mock.timers.enable({ apis: ['setTimeout'], now: 1_000_000 });
+    t.after(() => mock.timers.reset());
+    const settingsByGuild = {
+        a: { options: normalizeJiraOptions({ autoCloseSeconds: 15 }) },
+        off: { options: normalizeJiraOptions({ autoCloseSeconds: 0 }) },
+    };
+    const prisma = {
+        jiraSetting: { findUnique: async ({ where }) => settingsByGuild[where.guildId] ?? null },
+        jiraTicket: {
+            findMany: async () => [
+                { id: 1, guildId: 'a', cardCreatedAt: new Date(1_000_000 - 60_000) },
+                { id: 2, guildId: 'a', cardCreatedAt: new Date(1_000_000 - 5_000) },
+                { id: 3, guildId: 'off', cardCreatedAt: new Date(1_000_000 - 60_000) },
+            ],
+        },
+    };
+    const service = new JiraService(prisma, offlineDiscord, new JiraClient(), config());
+    const closed = [];
+    service.closeTicket = async (guildId, ticketId, reason) => closed.push({ guildId, ticketId, reason });
+
+    assert.equal(await service.resumeAutoClose(1_000_000), 2);
+    mock.timers.tick(0);
+    await new Promise(setImmediate);
+    assert.deepEqual(
+        closed.map((c) => c.ticketId),
+        [1],
+    );
+    mock.timers.tick(9_999);
+    await new Promise(setImmediate);
+    assert.equal(closed.length, 1);
+    mock.timers.tick(1);
+    await new Promise(setImmediate);
+    assert.deepEqual(
+        closed.map((c) => c.ticketId),
+        [1, 2],
+    );
+    assert.match(closed[1].reason, /อัตโนมัติ/);
+
+    // ตั้งซ้ำ = แทนของเดิม ไม่ปิดสองครั้ง, shutdown = ยกเลิกทั้งหมด
+    service.scheduleAutoClose('a', 9, 1000);
+    service.scheduleAutoClose('a', 9, 2000);
+    mock.timers.tick(2000);
+    await new Promise(setImmediate);
+    assert.equal(closed.filter((c) => c.ticketId === 9).length, 1);
+    service.scheduleAutoClose('a', 10, 1000);
+    service.onApplicationShutdown();
+    mock.timers.tick(5000);
+    await new Promise(setImmediate);
+    assert.equal(
+        closed.some((c) => c.ticketId === 10),
+        false,
+    );
 });

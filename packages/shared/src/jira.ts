@@ -25,6 +25,8 @@ export const JIRA_LIMITS = {
     maxImages: 10,
     // ขนาดต่อรูปที่บอทยอมดาวน์โหลดไปแนบใน Jira (เท่าขีดจำกัดอัปโหลดของบัญชี Discord ทั่วไป)
     maxImageBytes: 10 * 1024 * 1024,
+    // ปิดห้องอัตโนมัติหลังสร้าง card ได้นานสุด 1 ชั่วโมง
+    maxAutoCloseSeconds: 3600,
 } as const;
 
 // ประเภท card ที่ให้เลือกใน Discord (id/name มาจาก issue type ของโปรเจกต์ใน Jira)
@@ -48,6 +50,8 @@ export interface JiraOptions {
     staffRoleIds: string[];
     // จำนวนรูปที่แนบได้ต่อ card ในช่องแนบรูปของ pop-up (0 = ไม่มีช่องแนบรูป)
     maxImages: number;
+    // ปิด (ลบ) ห้องส่วนตัวอัตโนมัติกี่วินาทีหลังสร้าง card สำเร็จ (0 = ไม่ปิดเอง ต้องกดปิดห้อง)
+    autoCloseSeconds: number;
     panel: JiraPanelAppearance;
 }
 
@@ -72,6 +76,7 @@ export const defaultJiraOptions = (): JiraOptions => ({
     issueTypes: [],
     staffRoleIds: [],
     maxImages: 5,
+    autoCloseSeconds: 15,
     panel: {
         title: '🎫 เปิด Jira card',
         description: 'กดปุ่มด้านล่างเพื่อเปิด card ใหม่ — บอทจะสร้างห้องส่วนตัวให้ เลือกประเภท แล้วกรอกหัวข้อและรายละเอียด',
@@ -106,14 +111,15 @@ export function normalizeJiraOptions(raw: unknown): JiraOptions {
     ].slice(0, JIRA_LIMITS.maxStaffRoles);
 
     const color = typeof panelSrc.color === 'string' && HEX_COLOR_RE.test(panelSrc.color) ? panelSrc.color.toUpperCase() : defaults.panel.color;
-    const maxImages =
-        typeof src.maxImages === 'number' && Number.isFinite(src.maxImages)
-            ? Math.min(JIRA_LIMITS.maxImages, Math.max(0, Math.trunc(src.maxImages)))
-            : defaults.maxImages;
+    const clampInt = (value: unknown, max: number, fallback: number) =>
+        typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(0, Math.trunc(value))) : fallback;
+    const maxImages = clampInt(src.maxImages, JIRA_LIMITS.maxImages, defaults.maxImages);
+    const autoCloseSeconds = clampInt(src.autoCloseSeconds, JIRA_LIMITS.maxAutoCloseSeconds, defaults.autoCloseSeconds);
     return {
         issueTypes,
         staffRoleIds,
         maxImages,
+        autoCloseSeconds,
         panel: {
             title: str(panelSrc.title, JIRA_LIMITS.maxPanelTitleLength, defaults.panel.title),
             description: str(panelSrc.description, JIRA_LIMITS.maxPanelDescriptionLength, defaults.panel.description),

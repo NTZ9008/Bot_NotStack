@@ -180,7 +180,13 @@ export interface CardImages {
 const linkButton = (url: string) => new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel('เปิดใน Jira').setEmoji('🔗');
 
 // ส่งในห้องส่วนตัวหลังสร้าง card สำเร็จ
-export function cardCreatedMessage(card: CardInfo, description: string, images: CardImages = { files: [], failed: [] }): MessagePayload {
+// autoCloseAt = เวลาที่ห้องจะถูกปิดอัตโนมัติ (null = ไม่ปิดเอง)
+export function cardCreatedMessage(
+    card: CardInfo,
+    description: string,
+    images: CardImages = { files: [], failed: [] },
+    autoCloseAt: Date | null = null,
+): MessagePayload {
     const embed = new EmbedBuilder()
         .setColor(color(images.failed.length ? WARNING_ORANGE : SUCCESS_GREEN))
         .setAuthor({ name: `✅ สร้าง card แล้ว · ${card.issueKey}` })
@@ -202,6 +208,8 @@ export function cardCreatedMessage(card: CardInfo, description: string, images: 
         });
     }
     return {
+        // <t:…:R> = Discord แสดงเวลานับถอยหลังเองฝั่งผู้ใช้ ("in 15 seconds")
+        content: autoCloseAt ? `🔒 ห้องนี้จะปิดอัตโนมัติ <t:${Math.ceil(autoCloseAt.getTime() / 1000)}:R> — เปิดลิงก์ card เก็บไว้ก่อนห้องปิด` : '',
         embeds: [embed],
         components: [new ActionRowBuilder<ButtonBuilder>().addComponents(linkButton(card.issueUrl))],
         files: images.files.map((file) => new AttachmentBuilder(file.data, { name: file.name })),
