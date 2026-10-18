@@ -93,6 +93,13 @@ export class JiraInteractionListener {
     }
 
     // ห้องส่วนตัวถูกลบจาก Discord โดยตรง → บันทึกว่าปิดแล้ว (คนเปิดจะเปิดห้องใหม่ได้)
+    // บอทออนไลน์ (รวมหลังรีสตาร์ท) → ตั้งเวลาปิดห้องที่ค้างอยู่ใหม่
+    @OnDiscord(Events.ClientReady, { once: true })
+    async onReady(): Promise<void> {
+        const count = await this.jira.resumeAutoClose();
+        if (count) this.logger.log(`ตั้งเวลาปิดห้อง Jira ที่ค้างอยู่ใหม่ ${count} ห้อง`);
+    }
+
     @OnDiscord(Events.ChannelDelete)
     async onChannelDelete(channel: Channel): Promise<void> {
         if (channel.type !== ChannelType.GuildText) return;
@@ -257,13 +264,15 @@ export class JiraInteractionListener {
             const { attached, failed } = await this.attachImages(creds, issue.key, images.files);
             failed.unshift(...images.skipped);
 
+            const autoCloseSeconds = settings.options.autoCloseSeconds;
+            const autoCloseAt = autoCloseSeconds > 0 ? new Date(Date.now() + autoCloseSeconds * 1000) : null;
             const card = { issueKey: issue.key, issueUrl: issue.url, issueType: type.name, title, userId: ticket.userId, imageCount: attached.length };
             try {
-                await interaction.editReply(cardCreatedMessage(card, description, { files: attached, failed }));
+                await interaction.editReply(cardCreatedMessage(card, description, { files: attached, failed }, autoCloseAt));
             } catch (err) {
                 // ส่งรูปกลับเข้าห้องไม่ได้ (เช่นรวมกันใหญ่เกินที่เซิร์ฟเวอร์รับ) — รูปอยู่ใน Jira แล้ว ส่งแค่ข้อความ
                 this.logger.warn(`ส่งรูปของ ${issue.key} เข้าห้องไม่สำเร็จ: ${(err as Error).message}`);
-                await interaction.editReply({ ...cardCreatedMessage(card, description, { files: [], failed }), files: [] });
+                await interaction.editReply({ ...cardCreatedMessage(card, description, { files: [], failed }, autoCloseAt), files: [] });
             }
 
             // ข้อความแรกในห้อง: เอาเมนูเลือกประเภทออก (สร้างได้ห้องละ 1 card)
@@ -273,6 +282,8 @@ export class JiraInteractionListener {
                 void interaction.channel.setName(`jira-${issue.key.toLowerCase()}`).catch(() => {});
             }
             await this.sendLog(interaction, settings, card);
+            // นับจากตอนที่ผู้ใช้เห็นข้อความ (เวลาเดียวกับที่บอกในห้อง)
+            if (autoCloseAt) this.jira.scheduleAutoClose(interaction.guildId, ticketId, autoCloseAt.getTime() - Date.now());
         } finally {
             this.creating.delete(ticketId);
         }

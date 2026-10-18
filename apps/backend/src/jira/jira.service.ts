@@ -1,4 +1,4 @@
-import { HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpStatus, Injectable, Logger, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
     defaultJiraOptions,
@@ -82,9 +82,11 @@ const PERMISSION_LABELS: [bigint, string][] = [
 // ขั้นตอนฝั่ง Discord (กดปุ่ม → สร้างห้อง → เลือกประเภท → pop-up → สร้าง card) อยู่ที่ JiraInteractionListener
 // ==========================================
 @Injectable()
-export class JiraService {
+export class JiraService implements OnApplicationShutdown {
     private readonly logger = new Logger('Jira');
     readonly cipher: TokenCipher;
+    // ห้องที่รอปิดอัตโนมัติ (ticket id → timer)
+    private readonly autoCloseTimers = new Map<number, NodeJS.Timeout>();
 
     constructor(
         private readonly prisma: PrismaService,
@@ -322,5 +324,45 @@ export class JiraService {
 
     toTicketView(ticket: JiraTicket): JiraTicketView {
         return toView(ticket);
+    }
+
+    // ---------- ปิดห้องอัตโนมัติหลังสร้าง card ----------
+
+    scheduleAutoClose(guildId: string, ticketId: number, delayMs: number): void {
+        clearTimeout(this.autoCloseTimers.get(ticketId));
+        const timer = setTimeout(
+            () => {
+                this.autoCloseTimers.delete(ticketId);
+                this.closeTicket(guildId, ticketId, `ปิดห้อง Jira ticket #${ticketId} อัตโนมัติหลังสร้าง card`).catch((err: Error) =>
+                    this.logger.warn(`ปิดห้อง Jira ticket #${ticketId} อัตโนมัติไม่สำเร็จ: ${err.message}`),
+                );
+            },
+            Math.max(0, delayMs),
+        );
+        timer.unref();
+        this.autoCloseTimers.set(ticketId, timer);
+    }
+
+    // บอทรีสตาร์ทระหว่างรอปิด → ตั้งเวลาใหม่จากเวลาที่สร้าง card (เลยเวลาแล้ว = ปิดทันที)
+    async resumeAutoClose(now = Date.now()): Promise<number> {
+        const tickets = await this.prisma.jiraTicket.findMany({
+            where: { closedAt: null, issueKey: { not: null }, cardCreatedAt: { not: null } },
+            select: { id: true, guildId: true, cardCreatedAt: true },
+        });
+        const secondsByGuild = new Map<string, number>();
+        let scheduled = 0;
+        for (const ticket of tickets) {
+            if (!secondsByGuild.has(ticket.guildId)) secondsByGuild.set(ticket.guildId, (await this.getSettings(ticket.guildId)).options.autoCloseSeconds);
+            const seconds = secondsByGuild.get(ticket.guildId)!;
+            if (seconds <= 0) continue;
+            this.scheduleAutoClose(ticket.guildId, ticket.id, ticket.cardCreatedAt!.getTime() + seconds * 1000 - now);
+            scheduled++;
+        }
+        return scheduled;
+    }
+
+    onApplicationShutdown(): void {
+        for (const timer of this.autoCloseTimers.values()) clearTimeout(timer);
+        this.autoCloseTimers.clear();
     }
 }
