@@ -86,6 +86,8 @@ export interface ApiOptions {
     responseType?: 'json' | 'text';
     // ไม่พาไปหน้า login เมื่อ session หมด (เช่นตอนเช็คว่า login อยู่ไหม)
     allowUnauthenticated?: boolean;
+    // ข้อมูลสาธารณะที่ไม่ขึ้นกับว่าใคร login (เช่นช่องทาง login) — ไม่ถูกยกเลิกตอนเปลี่ยน/หมด session และไม่ refresh เมื่อเจอ 401
+    sessionless?: boolean;
     signal?: AbortSignal;
 }
 
@@ -126,12 +128,12 @@ async function send(path: string, options: ApiOptions): Promise<Response> {
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
-    const sessionSignal = sessionRequests.capture();
+    const sessionSignal = options.sessionless ? new AbortController().signal : sessionRequests.capture();
     options = { ...options, signal: options.signal ? AbortSignal.any([options.signal, sessionSignal]) : sessionSignal };
     let res = await send(path, options);
     sessionSignal.throwIfAborted();
 
-    if (res.status === 401 && !NO_RETRY.includes(path)) {
+    if (res.status === 401 && !options.sessionless && !NO_RETRY.includes(path)) {
         if (await refreshSession(sessionSignal)) res = await send(path, options);
         sessionSignal.throwIfAborted();
         if (res.status === 401 && !options.allowUnauthenticated) onUnauthorized();

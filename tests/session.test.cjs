@@ -10,7 +10,7 @@ require.extensions['.ts'] = (module, filename) => {
         filename,
     );
 };
-const { QueryClient } = require('../apps/frontend/node_modules/@tanstack/react-query');
+const { QueryClient, QueryObserver } = require('../apps/frontend/node_modules/@tanstack/react-query');
 const { replaceSession } = require('../apps/frontend/src/lib/session.ts');
 const { sessionRequests } = require('../apps/frontend/src/lib/session-state.ts');
 
@@ -47,5 +47,36 @@ test('session expiry clears mutation cache and auth state too', () => {
     replaceSession(client, null);
     assert.equal(client.getMutationCache().getAll().length, 0);
     assert.equal(client.getQueryData(['auth', 'me']), null);
+    client.clear();
+});
+test('session switch keeps public data such as login providers', () => {
+    const client = new QueryClient();
+    client.setQueryData(['auth', 'providers'], { password: true, discord: true });
+    client.setQueryData(['app', 'info'], { version: '4.0.1', bot: null });
+    client.setQueryData(['auth', 'me'], { user: { id: 1 } });
+    replaceSession(client, null);
+    assert.equal(client.getQueryData(['auth', 'providers']).discord, true);
+    assert.equal(client.getQueryData(['app', 'info']).version, '4.0.1');
+    assert.equal(client.getQueryData(['auth', 'me']), null);
+    client.clear();
+});
+test('login page still receives providers that were loading when the session was reset', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    let complete;
+    const observer = new QueryObserver(client, {
+        queryKey: ['auth', 'providers'],
+        queryFn: () =>
+            new Promise((resolve) => {
+                complete = resolve;
+            }),
+    });
+    const results = [];
+    const unsubscribe = observer.subscribe((result) => results.push(result));
+    // เช่น request อื่นบนหน้า login ได้ 401 → refresh ไม่ผ่าน → ล้าง session ระหว่างที่ปุ่ม Discord ยังโหลดอยู่
+    replaceSession(client, null);
+    complete({ password: true, discord: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(observer.getCurrentResult().data?.discord, true);
+    unsubscribe();
     client.clear();
 });
