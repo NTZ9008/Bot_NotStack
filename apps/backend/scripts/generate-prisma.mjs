@@ -16,6 +16,7 @@ const result = spawnSync(command, ['exec', 'prisma', 'generate'], {
     cwd: appDir,
     env: process.env,
     stdio: 'inherit',
+    shell: true,
 });
 
 if (result.error) throw result.error;

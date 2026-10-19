@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
     CircleUser,
     CloudSun,
+    Coins,
     FileText,
     GitPullRequest,
     History,
@@ -138,6 +139,14 @@ const GUILD_GROUPS: NavGroup[] = [
                 icon: Ticket,
                 guild: 'manage',
                 keywords: 'jira ticket card issue เปิดการ์ด แจ้งปัญหา bug task atlassian ห้องส่วนตัว',
+            },
+            {
+                to: '/servers/$guildId/funds',
+                label: PAGE_GUIDES.funds.title,
+                guide: 'funds',
+                icon: Coins,
+                guild: 'manage',
+                keywords: 'funds money เก็บเงิน ยอดเงิน ทุน หารเงิน ค่าห้อง เป้าหมาย report รายงาน',
             },
         ],
     },

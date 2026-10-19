@@ -16,6 +16,7 @@ import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { validateEnv, type Env } from './config/env.validation';
 import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
+import { FundModule } from './fund/fund.module';
 import { GuildsModule } from './guilds/guilds.module';
 import { HealthController } from './health/health.controller';
 import { JiraModule } from './jira/jira.module';
@@ -86,6 +87,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         WeatherModule,
         PrBotModule,
         JiraModule,
+        FundModule,
         ChatModule,
         CommandsModule,
     ],
