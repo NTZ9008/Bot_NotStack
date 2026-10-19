@@ -490,3 +490,63 @@ model JiraTicket {
   @@index([channelId])
   @@map("jira_tickets")
 }
+
+// ==========================================
+// 💰 FUND — เก็บเงินตามเป้า (หลายหัวข้อต่อเซิร์ฟเวอร์) + ส่งรายงานเข้าห้องที่กำหนด
+// ==========================================
+
+// หัวข้อการเก็บเงิน 1 เรื่อง — amountPerMember = ยอดเก็บต่อคนเริ่มต้น (สมาชิกตั้งยอดเฉพาะตัวได้)
+model FundTopic {
+  id              Int       @id @default(autoincrement())
+  guildId         String    @map("guild_id")
+  name            String
+  description     String    @default("")
+  amountPerMember Decimal   @default(0) @map("amount_per_member") @db.Decimal(12, 2)
+  // ห้องที่ส่งรายงาน ('' = ยังไม่ได้เลือก)
+  reportChannelId String    @default("") @map("report_channel_id")
+  dueDate         DateTime? @map("due_date") @db.Timestamptz(3)
+  closed          Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  members  FundMember[]
+  payments FundPayment[]
+
+  @@index([guildId])
+  @@map("fund_topics")
+}
+
+// คนที่ต้องจ่ายในหัวข้อนั้น — targetAmount null = ใช้ยอดต่อคนของหัวข้อ
+model FundMember {
+  id           Int      @id @default(autoincrement())
+  topicId      Int      @map("topic_id")
+  userId       String   @map("user_id")
+  displayName  String   @map("display_name")
+  targetAmount Decimal? @map("target_amount") @db.Decimal(12, 2)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  topic    FundTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  payments FundPayment[]
+
+  @@unique([topicId, userId])
+  @@map("fund_members")
+}
+
+// รายการรับเงิน 1 ครั้ง (จ่ายทีละส่วนได้)
+model FundPayment {
+  id         Int      @id @default(autoincrement())
+  topicId    Int      @map("topic_id")
+  memberId   Int      @map("member_id")
+  amount     Decimal  @db.Decimal(12, 2)
+  note       String   @default("")
+  paidAt     DateTime @default(now()) @map("paid_at") @db.Timestamptz(3)
+  recordedBy String   @default("") @map("recorded_by")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  topic  FundTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  member FundMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([topicId])
+  @@index([memberId])
+  @@map("fund_payments")
+}
