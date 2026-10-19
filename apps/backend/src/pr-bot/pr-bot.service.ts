@@ -112,8 +112,8 @@ export class PrBotService {
             const channel = await this.discord.fetchGuildChannel(guildId, channelId);
             if (!channel || !channel.isSendable() || !('messages' in channel)) return void this.logger.error(`ไม่พบ channel: ${channelId} (${guildId})`);
             const mention = await this.resolveMention(guildId, repo, 'guild' in channel ? channel.guild : null);
-            // reopen / ready_for_review ส่งข้อความใหม่ แต่ยังเก็บ review / comment ที่สะสมไว้
-            const previous = await this.prisma.prMessage.findUnique({ where: key, select: { activity: true } });
+            // reopen / ready_for_review ส่งข้อความใหม่ (ping อีกรอบ) แต่ยังเก็บ review / comment ที่สะสมไว้
+            const previous = await this.prisma.prMessage.findUnique({ where: key, select: { channelId: true, messageId: true, activity: true } });
             const activity = applyPullRequest(normalizeActivity(previous?.activity), pr, repo, action);
             // mention มาจากการตั้งค่าของแอดมิน (ผู้ใช้หรือยศ) — แท็กได้ทั้งสองแบบ
             const message = await channel.send({
@@ -128,6 +128,8 @@ export class PrBotService {
                 create: { guildId, repoFullName: repo.full_name, prNumber: pr.number, ...data },
                 update: data,
             });
+            // ลบข้อความเดิม ไม่งั้นข้อความ draft / closed จะค้างอยู่ในห้อง และไม่ถูกอัปเดตอีกเลย (1 PR = 1 ข้อความ)
+            if (previous && previous.messageId !== message.id) await this.deleteMessage(guildId, previous.channelId, previous.messageId);
             return;
         }
 
@@ -136,6 +138,18 @@ export class PrBotService {
         if (!updated) return; // ไม่เคยเห็น "opened" มาก่อน (เช่น bot เพิ่งเปิดใช้งาน) → ข้าม
         const messageId = await this.refresh(guildId, repo.full_name, pr.number);
         if (action === 'closed' && messageId) await this.stats.record(guildId, messageId, pr.merged ? 'merged' : 'closed');
+    }
+
+    // ข้อความใหม่ส่งสำเร็จแล้ว — ลบข้อความเก่าไม่ได้ (ถูกลบไปแล้ว / ห้องหาย) ก็ไม่ควรทำให้ webhook ล้มเหลว
+    private async deleteMessage(guildId: string, channelId: string, messageId: string): Promise<void> {
+        try {
+            const channel = await this.discord.fetchGuildChannel(guildId, channelId);
+            if (!channel || !('messages' in channel)) return;
+            const msg = await channel.messages.fetch(messageId).catch(() => null);
+            await msg?.delete();
+        } catch (err) {
+            this.logger.error(`ลบข้อความ PR เดิมไม่สำเร็จ: ${messageId} (${guildId})`, err);
+        }
     }
 
     private async handleReview(guildId: string, { action, review, pull_request: pr, repository: repo }: PullRequestReviewEvent): Promise<void> {
