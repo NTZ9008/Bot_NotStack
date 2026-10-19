@@ -87,11 +87,11 @@ test('plain text descriptions become valid Atlassian documents', () => {
 
 test('custom ids round-trip and reject anything else', () => {
     assert.deepEqual(parseJiraCustomId(JIRA_IDS.open), { action: 'open' });
-    assert.deepEqual(parseJiraCustomId(JIRA_IDS.type(7)), { action: 'type', ticketId: 7 });
-    assert.deepEqual(parseJiraCustomId(JIRA_IDS.modal(7, '10001')), { action: 'modal', ticketId: 7, issueTypeId: '10001' });
+    assert.deepEqual(parseJiraCustomId(JIRA_IDS.form(7)), { action: 'form', ticketId: 7 });
+    assert.deepEqual(parseJiraCustomId(JIRA_IDS.modal(7)), { action: 'modal', ticketId: 7 });
     assert.deepEqual(parseJiraCustomId(JIRA_IDS.close(7)), { action: 'close', ticketId: 7 });
     assert.deepEqual(parseJiraCustomId(JIRA_IDS.closeConfirm(7)), { action: 'closeConfirm', ticketId: 7 });
-    for (const id of ['jira:modal:7', 'jira:type:7:1', 'jira:type:x', 'jira:delete:1', 'help_menu', 'jira:open:1', `jira:type:${'9'.repeat(30)}`]) {
+    for (const id of ['jira:modal:7:10001', 'jira:type:7', 'jira:form:x', 'jira:delete:1', 'help_menu', 'jira:open:1', `jira:form:${'9'.repeat(30)}`]) {
         assert.equal(parseJiraCustomId(id), null, id);
     }
     assert.equal(ticketChannelName('Boat.Ngin_99', 12), 'jira-boat-ngin-99-12');
@@ -333,7 +333,10 @@ test('opening creates a channel hidden from everyone except the opener, staff an
     assert.equal(db.tickets[0].userName, 'Boat');
     const welcome = channels[0].messages[0];
     assert.deepEqual(welcome.allowedMentions, { users: ['u1'] });
-    assert.equal(welcome.components[0].toJSON().components[0].custom_id, 'jira:type:1');
+    assert.deepEqual(
+        welcome.components[0].toJSON().components.map((c) => c.custom_id),
+        ['jira:form:1', 'jira:close:1'],
+    );
     assert.equal(i.replies.at(-1).p, '✅ สร้างห้องให้แล้ว: <#ch1>');
 });
 
@@ -358,28 +361,41 @@ test('only the opener or staff can use a ticket and a channel yields one card', 
     const ticket = { id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() };
     const { listener, db, created, sent, guild } = setupListener({ settings: baseSettings, tickets: [ticket] });
 
-    const stranger = interaction(guild, {
-        customId: 'jira:type:1',
-        channelId: 'ch1',
-        values: ['10001'],
-        isStringSelectMenu: () => true,
-        user: { id: 'u2', username: 'other' },
-    });
+    const stranger = interaction(guild, { customId: 'jira:form:1', channelId: 'ch1', isButton: () => true, user: { id: 'u2', username: 'other' } });
     await listener.onInteraction(stranger);
     assert.match(stranger.replies[0].p.content, /เฉพาะคนเปิดห้อง/);
 
-    const wrongRoom = interaction(guild, { customId: 'jira:type:1', channelId: 'elsewhere', values: ['10001'], isStringSelectMenu: () => true });
+    const wrongRoom = interaction(guild, { customId: 'jira:form:1', channelId: 'elsewhere', isButton: () => true });
     await listener.onInteraction(wrongRoom);
     assert.match(wrongRoom.replies[0].p.content, /ปิดไปแล้ว/);
 
-    const pick = interaction(guild, { customId: 'jira:type:1', channelId: 'ch1', values: ['10001'], isStringSelectMenu: () => true });
-    await listener.onInteraction(pick);
-    assert.equal(pick.replies[0].type, 'modal');
-    assert.equal(pick.replies[0].p.custom_id, 'jira:modal:1:10001');
+    const form = interaction(guild, { customId: 'jira:form:1', channelId: 'ch1', isButton: () => true });
+    await listener.onInteraction(form);
+    assert.equal(form.replies[0].type, 'modal');
+    const modal = form.replies[0].p;
+    assert.equal(modal.custom_id, 'jira:modal:1');
+    // ช่องแรกของ pop-up คือ dropdown ประเภท (มีประเภทเดียว = เลือกไว้ให้แล้ว)
+    assert.equal(modal.components[0].component.custom_id, 'type');
+    const [option, ...rest] = modal.components[0].component.options;
+    assert.deepEqual([option.label, option.value, option.default, option.emoji.name, rest.length], ['Bug', '10001', true, '🐞', 0]);
 
-    const fields = { getTextInputValue: (id) => (id === 'title' ? '  App crashes  ' : 'Steps to reproduce') };
+    // ประเภทที่ไม่มีในรายการ → ไม่สร้าง card
+    const noType = interaction(guild, {
+        customId: 'jira:modal:1',
+        channelId: 'ch1',
+        isModalSubmit: () => true,
+        fields: { getTextInputValue: () => 'x', getStringSelectValues: () => ['99999'] },
+    });
+    await listener.onInteraction(noType);
+    assert.match(noType.replies[0].p.content, /เลือกประเภทใหม่/);
+    assert.equal(created.length, 0);
+
+    const fields = {
+        getTextInputValue: (id) => (id === 'title' ? '  App crashes  ' : 'Steps to reproduce'),
+        getStringSelectValues: (id) => (id === 'type' ? ['10001'] : []),
+    };
     const submit = interaction(guild, {
-        customId: 'jira:modal:1:10001',
+        customId: 'jira:modal:1',
         channelId: 'ch1',
         fields,
         isModalSubmit: () => true,
@@ -396,7 +412,7 @@ test('only the opener or staff can use a ticket and a channel yields one card', 
     assert.deepEqual(sent[0].allowedMentions, { parse: [] });
     assert.equal(sent[0].embeds[0].toJSON().url, 'https://acme.atlassian.net/browse/PROJ-9');
 
-    const again = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields, isModalSubmit: () => true });
+    const again = interaction(guild, { customId: 'jira:modal:1', channelId: 'ch1', fields, isModalSubmit: () => true });
     await listener.onInteraction(again);
     assert.match(again.replies[0].p.content, /สร้าง card ไปแล้ว \(PROJ-9\)/);
     assert.equal(created.length, 1);
@@ -426,9 +442,13 @@ test('image option is clamped and the pop-up only gets an upload field when enab
     assert.equal(normalizeJiraOptions({ maxImages: '3' }).maxImages, 5);
 
     const type = { id: '10001', name: 'Bug', emoji: '' };
-    const withImages = issueModal(1, type, 3).toJSON();
-    assert.equal(withImages.components.length, 3);
-    assert.deepEqual(withImages.components[2].component, {
+    const withImages = issueModal(1, [type], 3).toJSON();
+    assert.equal(withImages.components.length, 4);
+    assert.deepEqual(
+        withImages.components.map((c) => c.component.custom_id),
+        ['type', 'title', 'description', 'images'],
+    );
+    assert.deepEqual(withImages.components[3].component, {
         type: 19,
         file_types: ['image'],
         custom_id: 'images',
@@ -436,8 +456,15 @@ test('image option is clamped and the pop-up only gets an upload field when enab
         min_values: 0,
         max_values: 3,
     });
-    assert.equal(issueModal(1, type, 0).toJSON().components.length, 2);
-    assert.equal(issueModal(1, type, 50).toJSON().components[2].component.max_values, 10);
+    assert.equal(issueModal(1, [type], 0).toJSON().components.length, 3);
+    assert.equal(issueModal(1, [type], 50).toJSON().components[3].component.max_values, 10);
+    // หลายประเภท = ต้องเลือกเอง ไม่มีค่าเริ่มต้น
+    const many = issueModal(1, [type, { id: '10002', name: 'Task', emoji: '' }], 0).toJSON().components[0].component;
+    assert.equal(many.required, true);
+    assert.equal(
+        many.options.some((o) => o.default),
+        false,
+    );
 });
 
 test('only images from the Discord CDN within the size limit are downloaded', async () => {
@@ -510,9 +537,10 @@ test('images uploaded in the pop-up are attached to the card and shown in the ro
     ]);
     const fields = {
         getTextInputValue: (id) => (id === 'title' ? 'App crashes' : 'Steps'),
+        getStringSelectValues: () => ['10001'],
         getUploadedFiles: (id) => (id === 'images' ? uploaded : null),
     };
-    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields, isModalSubmit: () => true });
+    const submit = interaction(guild, { customId: 'jira:modal:1', channelId: 'ch1', fields, isModalSubmit: () => true });
     await listener.onInteraction(submit);
 
     assert.equal(created.length, 1);
@@ -541,11 +569,12 @@ test('cards without images, or with image uploads turned off, still work', async
     };
     const fields = {
         getTextInputValue: (id) => (id === 'title' ? 'No pics' : 'text'),
+        getStringSelectValues: () => ['10001'],
         getUploadedFiles: () => {
             throw new Error('no such field');
         },
     };
-    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields, isModalSubmit: () => true });
+    const submit = interaction(guild, { customId: 'jira:modal:1', channelId: 'ch1', fields, isModalSubmit: () => true });
     await listener.onInteraction(submit);
     assert.equal(created.length, 1);
     assert.equal(attachments.length, 0);
@@ -565,12 +594,12 @@ test('auto close defaults to 15 seconds and is clamped', () => {
 });
 
 const openTicket = () => ({ id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() });
-const submitFields = { getTextInputValue: (id) => (id === 'title' ? 'Crash' : 'Steps') };
+const submitFields = { getTextInputValue: (id) => (id === 'title' ? 'Crash' : 'Steps'), getStringSelectValues: () => ['10001'] };
 
 test('the room shows a countdown and is scheduled to close 15 seconds after the card is created', async () => {
     const { listener, scheduled, guild } = setupListener({ settings: baseSettings, tickets: [openTicket()] });
     const before = Date.now();
-    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
+    const submit = interaction(guild, { customId: 'jira:modal:1', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
     await listener.onInteraction(submit);
     const reply = submit.replies.find((r) => r.type === 'edit').p;
     const at = Number(/<t:(\d+):R>/.exec(reply.content)[1]) * 1000;
@@ -584,7 +613,7 @@ test('the room shows a countdown and is scheduled to close 15 seconds after the 
 test('auto close can be turned off', async () => {
     const settings = { ...baseSettings, options: normalizeJiraOptions({ ...baseSettings.options, autoCloseSeconds: 0 }) };
     const { listener, scheduled, guild } = setupListener({ settings, tickets: [openTicket()] });
-    const submit = interaction(guild, { customId: 'jira:modal:1:10001', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
+    const submit = interaction(guild, { customId: 'jira:modal:1', channelId: 'ch1', fields: submitFields, isModalSubmit: () => true });
     await listener.onInteraction(submit);
     assert.equal(submit.replies.find((r) => r.type === 'edit').p.content, '');
     assert.equal(scheduled.length, 0);
