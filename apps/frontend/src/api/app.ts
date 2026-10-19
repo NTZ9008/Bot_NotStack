@@ -4,7 +4,8 @@ import { api } from '@/lib/api';
 
 export const appInfoQuery = queryOptions({
     queryKey: ['app', 'info'],
-    queryFn: () => api<AppInfo>('/version'),
+    // หน้า login ก็เรียก — ไม่ผูกกับ session (401 จาก backend เก่าที่ยังไม่เปิด /version สาธารณะ จะไม่ล้าง session ทับหน้า login)
+    queryFn: () => api<AppInfo>('/version', { sessionless: true }),
     staleTime: 5 * 60 * 1000,
 });
 

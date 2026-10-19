@@ -26,6 +26,8 @@ export const Route = createFileRoute('/login')({
     validateSearch: searchSchema,
     // มี session ค้างอยู่ (เช่นเปิดลิงก์จากที่อื่นแล้ว access token หมดอายุ) → ต่ออายุแล้วเข้า Dashboard เลย
     beforeLoad: async ({ context }) => {
+        // เริ่มโหลดช่องทาง login ไปพร้อมกัน ปุ่ม Discord จะได้ขึ้นเร็ว (ไม่สำเร็จ useQuery ในหน้าจะลองใหม่เอง)
+        void context.queryClient.prefetchQuery(providersQuery);
         const me = await context.queryClient.ensureQueryData(meQuery);
         if (me) throw redirect({ to: '/' });
     },
