@@ -192,6 +192,95 @@ test('successful opened, reopened, ready, merged and closed deliveries record th
     assert.ok(records.every(([guildId, messageId]) => guildId === 'guild' && messageId === 'message'));
 });
 
+// ห้องที่แต่ละข้อความได้ id ไม่ซ้ำกัน — ใช้ดูว่าข้อความไหนถูกส่ง / แก้ / ลบ
+function multiMessageFixture({ failDelete = false } = {}) {
+    const messages = new Map();
+    const deleted = [];
+    let next = 0;
+    const channel = {
+        id: 'channel',
+        isSendable: () => true,
+        messages: { fetch: async (id) => messages.get(id) ?? Promise.reject(new Error('Unknown Message')) },
+        send: async (payload) => {
+            const message = {
+                id: `message-${++next}`,
+                payload,
+                edit: async (edited) => void (message.payload = edited),
+                delete: async () => {
+                    if (failDelete) throw new Error('Missing Permissions');
+                    messages.delete(message.id);
+                    deleted.push(message.id);
+                },
+            };
+            messages.set(message.id, message);
+            return message;
+        },
+    };
+    const prisma = fakePrisma();
+    const records = [];
+    const errors = [];
+    const bot = new PrBotService(
+        { getChannelIdForOrg: async () => 'channel', getMentionForRepo: async () => '' },
+        { ready: true, fetchGuildChannel: async () => channel },
+        prisma,
+        { get: () => '' },
+        { record: async (...args) => records.push(args) },
+    );
+    bot.logger = { error: (...args) => errors.push(args) };
+    return { bot, messages, deleted, prisma, records, errors };
+}
+const draft = { ...payload.pull_request, draft: true };
+
+test('draft PR marked ready for review replaces the draft message instead of leaving a duplicate', async () => {
+    const { bot, messages, deleted, prisma, records } = multiMessageFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened', pull_request: draft });
+    assert.match(messages.get('message-1').payload.embeds[0].description, /Draft pull request/);
+
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'ready_for_review' });
+    assert.deepEqual(deleted, ['message-1']);
+    assert.deepEqual([...messages.keys()], ['message-2']);
+    assert.match(messages.get('message-2').payload.embeds[0].description, /New pull request/);
+    assert.equal(prisma.rows.get('guild|owner/repo|1').messageId, 'message-2');
+
+    // event หลังจากนี้ต้องแก้ข้อความใหม่ ไม่ใช่ข้อความ draft ที่ลบไปแล้ว
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'closed', pull_request: { ...payload.pull_request, merged: true } });
+    assert.match(messages.get('message-2').payload.embeds[0].description, /🟣 Merged/);
+    assert.deepEqual(records, [
+        ['guild', 'message-1', 'sent'],
+        ['guild', 'message-2', 'sent'],
+        ['guild', 'message-2', 'merged'],
+    ]);
+});
+
+test('reopened PR replaces the closed message and keeps accumulated activity', async () => {
+    const { bot, messages, deleted, prisma } = multiMessageFixture();
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened' });
+    await bot.handle('guild', 'pull_request_review', review('alice', 'approved', '2026-10-16T01:00:00Z', ['bob']));
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'closed', pull_request: { ...payload.pull_request, state: 'closed' } });
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'reopened' });
+    assert.deepEqual(deleted, ['message-1']);
+    assert.deepEqual([...messages.keys()], ['message-2']);
+    assert.equal(prisma.rows.get('guild|owner/repo|1').messageId, 'message-2');
+    assert.match(messages.get('message-2').payload.embeds[0].fields.find((f) => f.name.includes('Reviews')).value, /alice/);
+});
+
+test('failing to delete the old PR message does not fail the webhook or lose the new message', async () => {
+    const { bot, messages, prisma, errors } = multiMessageFixture({ failDelete: true });
+    await bot.handle('guild', 'pull_request', { ...payload, action: 'opened', pull_request: draft });
+    await assert.doesNotReject(bot.handle('guild', 'pull_request', { ...payload, action: 'ready_for_review' }));
+    assert.equal(prisma.rows.get('guild|owner/repo|1').messageId, 'message-2');
+    assert.equal(messages.size, 2);
+    assert.equal(errors.length, 1);
+
+    // ข้อความเดิมถูกลบไปก่อนแล้ว (เช่น แอดมินลบเอง) → ข้ามไปเงียบๆ
+    const fresh = multiMessageFixture();
+    await fresh.bot.handle('guild', 'pull_request', { ...payload, action: 'opened', pull_request: draft });
+    fresh.messages.delete('message-1');
+    await fresh.bot.handle('guild', 'pull_request', { ...payload, action: 'ready_for_review' });
+    assert.deepEqual([...fresh.messages.keys()], ['message-2']);
+    assert.deepEqual(fresh.errors, []);
+});
+
 test('failed sends, failed edits and ignored webhook actions do not add statistics', async () => {
     for (const [options, action] of [
         [{ failSend: true }, 'opened'],
