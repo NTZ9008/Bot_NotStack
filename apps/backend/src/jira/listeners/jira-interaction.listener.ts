@@ -15,7 +15,6 @@ import {
     type Interaction,
     type ModalSubmitInteraction,
     type OverwriteResolvable,
-    type StringSelectMenuInteraction,
 } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import type { JiraTicket } from '../../generated/prisma/client';
@@ -49,7 +48,7 @@ const BOT_ALLOW = [...MEMBER_ALLOW, PermissionFlagsBits.ManageChannels];
 // ==========================================
 // 🎫 JIRA TICKET (ฝั่ง Discord)
 // 1) ปุ่มในห้องแผง → สร้างห้องส่วนตัว (ทุกคนมองไม่เห็น ยกเว้นคนกด + ยศทีมงาน + บอท)
-// 2) เมนูเลือกประเภทในห้องนั้น → pop-up กรอก title / description
+// 2) ปุ่ม "กรอก card" ในห้องนั้น → pop-up เดียว: เลือกประเภท + title / description + รูป
 // 3) ส่ง pop-up → สร้าง issue ใน Jira → ส่งลิงก์ในห้อง + แจ้งห้อง log
 // 4) ปุ่มปิดห้อง (คนเปิด / ทีมงาน) → ยืนยัน → ลบห้อง
 // ==========================================
@@ -70,7 +69,7 @@ export class JiraInteractionListener {
 
     @OnDiscord(Events.InteractionCreate)
     async onInteraction(interaction: Interaction): Promise<void> {
-        if (!(interaction.isButton() || interaction.isStringSelectMenu() || interaction.isModalSubmit())) return;
+        if (!(interaction.isButton() || interaction.isModalSubmit())) return;
         const id = parseJiraCustomId(interaction.customId);
         if (!id) return;
         if (!interaction.inCachedGuild()) {
@@ -80,8 +79,8 @@ export class JiraInteractionListener {
 
         try {
             if (id.action === 'open' && interaction.isButton()) return await this.open(interaction);
-            if (id.action === 'type' && interaction.isStringSelectMenu()) return await this.chooseType(interaction, id.ticketId);
-            if (id.action === 'modal' && interaction.isModalSubmit()) return await this.submit(interaction, id.ticketId, id.issueTypeId);
+            if (id.action === 'form' && interaction.isButton()) return await this.openForm(interaction, id.ticketId);
+            if (id.action === 'modal' && interaction.isModalSubmit()) return await this.submit(interaction, id.ticketId);
             if (id.action === 'close' && interaction.isButton()) return await this.askClose(interaction, id.ticketId);
             if (id.action === 'closeConfirm' && interaction.isButton()) return await this.close(interaction, id.ticketId);
         } catch (err) {
@@ -112,7 +111,7 @@ export class JiraInteractionListener {
 
     // ตรวจว่ากดในห้องของ ticket นี้จริง และคนกดมีสิทธิ์ (คนเปิด หรือทีมงาน)
     private async loadTicket(
-        interaction: StringSelectMenuInteraction<'cached'> | ModalSubmitInteraction<'cached'> | ButtonInteraction<'cached'>,
+        interaction: ModalSubmitInteraction<'cached'> | ButtonInteraction<'cached'>,
         ticketId: number,
     ): Promise<{ ticket: JiraTicket; settings: StoredJiraSettings } | null> {
         const [ticket, settings] = await Promise.all([this.jira.findTicket(interaction.guildId, ticketId), this.jira.getSettings(interaction.guildId)]);
@@ -187,31 +186,40 @@ export class JiraInteractionListener {
             }
 
             await this.prisma.jiraTicket.update({ where: { id: ticket.id }, data: { channelId: channel.id } });
-            await channel.send(ticketWelcomeMessage(ticket.id, user.id, settings.options.issueTypes, settings.options.maxImages));
+            await channel.send(ticketWelcomeMessage(ticket.id, user.id, settings.options.maxImages));
             await interaction.editReply(`✅ สร้างห้องให้แล้ว: <#${channel.id}>`);
         } finally {
             this.opening.delete(lockKey);
         }
     }
 
-    // 2) เลือกประเภท → เด้ง pop-up
-    private async chooseType(interaction: StringSelectMenuInteraction<'cached'>, ticketId: number): Promise<void> {
+    // 2) ปุ่ม "กรอก card" → เด้ง pop-up (ประเภทเลือกใน pop-up)
+    private async openForm(interaction: ButtonInteraction<'cached'>, ticketId: number): Promise<void> {
         const loaded = await this.loadTicket(interaction, ticketId);
         if (!loaded) return;
         if (loaded.ticket.issueKey) {
             await interaction.reply({ content: `✅ ห้องนี้สร้าง card ไปแล้ว (${loaded.ticket.issueKey})`, flags: ephemeral });
             return;
         }
-        const type = loaded.settings.options.issueTypes.find((t) => t.id === interaction.values[0]);
-        if (!type) {
-            await interaction.reply({ content: '❌ ประเภทนี้ถูกปิดไปแล้ว เลือกประเภทอื่น', flags: ephemeral });
+        const { issueTypes, maxImages } = loaded.settings.options;
+        if (!loaded.settings.enabled || !issueTypes.length) {
+            await interaction.reply({ content: '⏸️ ระบบเปิด Jira card ปิดอยู่ หรือยังไม่มีประเภท card ให้เลือก — แจ้งแอดมิน', flags: ephemeral });
             return;
         }
-        await interaction.showModal(issueModal(ticketId, type, loaded.settings.options.maxImages));
+        await interaction.showModal(issueModal(ticketId, issueTypes, maxImages));
+    }
+
+    // ประเภทที่เลือกใน pop-up (ไม่มี / อ่านไม่ได้ = null)
+    private selectedTypeId(interaction: ModalSubmitInteraction<'cached'>): string | null {
+        try {
+            return interaction.fields.getStringSelectValues(JIRA_IDS.typeField)[0] ?? null;
+        } catch {
+            return null;
+        }
     }
 
     // 3) ส่ง pop-up → สร้าง card ใน Jira
-    private async submit(interaction: ModalSubmitInteraction<'cached'>, ticketId: number, issueTypeId: string): Promise<void> {
+    private async submit(interaction: ModalSubmitInteraction<'cached'>, ticketId: number): Promise<void> {
         const loaded = await this.loadTicket(interaction, ticketId);
         if (!loaded) return;
         const { ticket, settings } = loaded;
@@ -219,10 +227,14 @@ export class JiraInteractionListener {
             await interaction.reply({ content: `✅ ห้องนี้สร้าง card ไปแล้ว${ticket.issueKey ? ` (${ticket.issueKey})` : ''}`, flags: ephemeral });
             return;
         }
+        const issueTypeId = this.selectedTypeId(interaction);
         const type = settings.options.issueTypes.find((t) => t.id === issueTypeId);
         const creds = this.jira.credentials(settings);
         if (!type || !creds || !settings.enabled) {
-            await interaction.reply({ content: '❌ ระบบหรือประเภท card นี้ถูกปิด/เปลี่ยนไปแล้ว ลองเลือกใหม่อีกครั้ง', flags: ephemeral });
+            await interaction.reply({
+                content: '❌ ระบบหรือประเภท card นี้ถูกปิด/เปลี่ยนไปแล้ว — กด "กรอก card" แล้วเลือกประเภทใหม่อีกครั้ง',
+                flags: ephemeral,
+            });
             return;
         }
 
@@ -253,7 +265,7 @@ export class JiraInteractionListener {
                 const message = err instanceof JiraApiError ? err.message : 'เชื่อมต่อ Jira ไม่สำเร็จ';
                 if (!(err instanceof JiraApiError)) this.logger.error(`สร้าง issue (${interaction.guildId}) ไม่สำเร็จ: ${(err as Error).stack}`);
                 else this.logger.warn(`สร้าง issue (${interaction.guildId}) ไม่สำเร็จ: ${err.message}`);
-                await interaction.editReply(`❌ สร้าง card ไม่สำเร็จ: ${message}\nลองเลือกประเภทแล้วส่งใหม่อีกครั้ง หรือแจ้งแอดมิน`);
+                await interaction.editReply(`❌ สร้าง card ไม่สำเร็จ: ${message}\nกด "กรอก card" เพื่อลองใหม่อีกครั้ง หรือแจ้งแอดมิน`);
                 return;
             }
 

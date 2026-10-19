@@ -22,27 +22,25 @@ type MessagePayload = Pick<MessageCreateOptions, 'content' | 'embeds' | 'compone
 // ==========================================
 export const JIRA_IDS = {
     open: 'jira:open',
-    type: (ticketId: number) => `jira:type:${ticketId}`,
-    modal: (ticketId: number, issueTypeId: string) => `jira:modal:${ticketId}:${issueTypeId}`,
+    form: (ticketId: number) => `jira:form:${ticketId}`,
+    modal: (ticketId: number) => `jira:modal:${ticketId}`,
     close: (ticketId: number) => `jira:close:${ticketId}`,
     closeConfirm: (ticketId: number) => `jira:close-yes:${ticketId}`,
+    typeField: 'type',
     titleField: 'title',
     descriptionField: 'description',
     imagesField: 'images',
 } as const;
 
-export type JiraCustomId =
-    { action: 'open' } | { action: 'type' | 'close' | 'closeConfirm'; ticketId: number } | { action: 'modal'; ticketId: number; issueTypeId: string };
+export type JiraCustomId = { action: 'open' } | { action: 'form' | 'modal' | 'close' | 'closeConfirm'; ticketId: number };
 
 export function parseJiraCustomId(customId: string): JiraCustomId | null {
     if (customId === JIRA_IDS.open) return { action: 'open' };
-    const match = /^jira:(type|close|close-yes|modal):(\d+)(?::(\d+))?$/.exec(customId);
+    const match = /^jira:(form|modal|close|close-yes):(\d+)$/.exec(customId);
     if (!match) return null;
     const ticketId = Number(match[2]);
     if (!Number.isSafeInteger(ticketId)) return null;
-    if (match[1] === 'modal') return match[3] ? { action: 'modal', ticketId, issueTypeId: match[3] } : null;
-    if (match[3]) return null;
-    return { action: match[1] === 'close-yes' ? 'closeConfirm' : (match[1] as 'type' | 'close'), ticketId };
+    return { action: match[1] === 'close-yes' ? 'closeConfirm' : (match[1] as 'form' | 'modal' | 'close'), ticketId };
 }
 
 const color = (hex: string) => parseInt(hex.slice(1), 16);
@@ -77,18 +75,8 @@ export function panelMessage(panel: JiraPanelAppearance): MessagePayload {
 const closeButton = (ticketId: number) =>
     new ButtonBuilder().setCustomId(JIRA_IDS.close(ticketId)).setStyle(ButtonStyle.Secondary).setEmoji('🔒').setLabel('ปิดห้อง');
 
-// ข้อความแรกในห้องส่วนตัว: เลือกประเภท card (เลือกแล้วเด้ง pop-up ให้กรอก title / description)
-export function ticketWelcomeMessage(ticketId: number, userId: string, issueTypes: JiraIssueTypeOption[], maxImages = 0): MessagePayload {
-    const select = new StringSelectMenuBuilder()
-        .setCustomId(JIRA_IDS.type(ticketId))
-        .setPlaceholder('เลือกประเภท card ..')
-        .addOptions(
-            issueTypes.slice(0, JIRA_LIMITS.maxIssueTypes).map((type) => ({
-                label: type.name.slice(0, 100),
-                value: type.id,
-                ...(type.emoji ? { emoji: type.emoji } : {}),
-            })),
-        );
+// ข้อความแรกในห้องส่วนตัว: ปุ่มเปิด pop-up (ประเภท + หัวข้อ + รายละเอียด + รูป ในหน้าเดียว)
+export function ticketWelcomeMessage(ticketId: number, userId: string, maxImages = 0): MessagePayload {
     return {
         content: `<@${userId}>`,
         allowedMentions: { users: [userId] },
@@ -98,32 +86,53 @@ export function ticketWelcomeMessage(ticketId: number, userId: string, issueType
                 .setTitle('🎫 เปิด Jira card ใหม่')
                 .setDescription(
                     [
-                        '1. เลือก **ประเภท card** จากเมนูด้านล่าง',
+                        '1. กดปุ่ม **📝 กรอก card** ด้านล่าง',
                         maxImages > 0
-                            ? `2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up (แนบรูปได้สูงสุด ${maxImages} รูป ถ้าต้องการ) แล้วกดส่ง`
-                            : '2. กรอก **หัวข้อ** และ **รายละเอียด** ใน pop-up แล้วกดส่ง',
+                            ? `2. เลือก **ประเภท** กรอก **หัวข้อ** และ **รายละเอียด** (แนบรูปได้สูงสุด ${maxImages} รูป ถ้าต้องการ) แล้วกดส่ง`
+                            : '2. เลือก **ประเภท** กรอก **หัวข้อ** และ **รายละเอียด** แล้วกดส่ง',
                         '3. บอทจะสร้าง card ใน Jira แล้วส่งลิงก์ให้ในห้องนี้',
                     ].join('\n'),
                 )
                 .setFooter({ text: 'ห้องนี้เห็นเฉพาะคุณและทีมงาน — กด "ปิดห้อง" เมื่อเสร็จแล้ว' }),
         ],
         components: [
-            new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(select),
-            new ActionRowBuilder<ButtonBuilder>().addComponents(closeButton(ticketId)),
+            new ActionRowBuilder<ButtonBuilder>().addComponents(
+                new ButtonBuilder().setCustomId(JIRA_IDS.form(ticketId)).setStyle(ButtonStyle.Primary).setEmoji('📝').setLabel('กรอก card'),
+                closeButton(ticketId),
+            ),
         ],
     };
 }
 
-// เมื่อสร้าง card แล้ว ข้อความแรกเหลือแค่ปุ่มปิดห้อง (เลือกประเภทซ้ำไม่ได้)
+// เมื่อสร้าง card แล้ว ข้อความแรกเหลือแค่ปุ่มปิดห้อง (กรอก card ซ้ำไม่ได้)
 export function ticketDoneComponents(ticketId: number) {
     return [new ActionRowBuilder<ButtonBuilder>().addComponents(closeButton(ticketId))];
 }
 
-export function issueModal(ticketId: number, type: JiraIssueTypeOption, maxImages = 0): ModalBuilder {
+// pop-up เดียวจบ: ประเภท (dropdown) + หัวข้อ + รายละเอียด + รูป (ถ้าเปิด) — Discord ให้ใส่ได้ 5 ช่อง ใช้ไม่เกิน 4
+export function issueModal(ticketId: number, issueTypes: JiraIssueTypeOption[], maxImages = 0): ModalBuilder {
+    const types = issueTypes.slice(0, JIRA_LIMITS.maxIssueTypes);
     const modal = new ModalBuilder()
-        .setCustomId(JIRA_IDS.modal(ticketId, type.id))
-        .setTitle(`Jira card: ${type.name}`.slice(0, 45))
+        .setCustomId(JIRA_IDS.modal(ticketId))
+        .setTitle('เปิด Jira card')
         .addLabelComponents(
+            new LabelBuilder().setLabel('ประเภท card').setStringSelectMenuComponent(
+                new StringSelectMenuBuilder()
+                    .setCustomId(JIRA_IDS.typeField)
+                    .setPlaceholder('เลือกประเภท card ..')
+                    .setRequired(true)
+                    .setMinValues(1)
+                    .setMaxValues(1)
+                    .addOptions(
+                        types.map((type) => ({
+                            label: type.name.slice(0, 100),
+                            value: type.id,
+                            ...(type.emoji ? { emoji: type.emoji } : {}),
+                            // มีประเภทเดียว = เลือกไว้ให้เลย
+                            ...(types.length === 1 ? { default: true } : {}),
+                        })),
+                    ),
+            ),
             new LabelBuilder()
                 .setLabel('หัวข้อ (Title)')
                 .setTextInputComponent(
