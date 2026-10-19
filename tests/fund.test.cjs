@@ -6,10 +6,14 @@ const {
     addFundMembersSchema,
     updateFundMemberSchema,
     createFundPaymentSchema,
+    batchFundPaymentSchema,
     sendFundReportSchema,
     roundMoney,
     formatBaht,
     fundMemberStatus,
+    calculateDays,
+    calculateDailyAmount,
+    generateFundCsv,
 } = require('../packages/shared/dist');
 const { buildFundReport, progressBar } = require('../apps/backend/dist/fund/utils/fund-report');
 
@@ -148,4 +152,143 @@ test('buildFundReport produces valid embed payload with summary and members', ()
     // Paid member Alice shouldn't be mentioned
     assert.ok(!reportWithMention.content.includes('<@111111111111111111>'));
     assert.deepEqual(reportWithMention.allowedMentions.users, ['333333333333333333', '222222222222222222']);
+});
+
+test('calculateDays and calculateDailyAmount calculate correct days and baht', () => {
+    // Same day inclusive = 1 day
+    assert.equal(calculateDays('2026-10-01', '2026-10-01'), 1);
+    // 1 to 15 October = 15 days
+    assert.equal(calculateDays('2026-10-01', '2026-10-15'), 15);
+    // End before start = 0
+    assert.equal(calculateDays('2026-10-15', '2026-10-01'), 0);
+    // Invalid input = 0
+    assert.equal(calculateDays(null, '2026-10-01'), 0);
+    assert.equal(calculateDays('invalid', '2026-10-01'), 0);
+
+    // 15 baht per day for 15 days = 225 baht
+    assert.equal(calculateDailyAmount(15, '2026-10-01', '2026-10-15'), 225);
+    // 15 baht per day for 1 day = 15 baht
+    assert.equal(calculateDailyAmount(15, '2026-10-01', '2026-10-01'), 15);
+    // Float daily rate: 12.50 baht for 4 days = 50 baht
+    assert.equal(calculateDailyAmount(12.5, '2026-10-01', '2026-10-04'), 50);
+});
+
+test('createFundTopicSchema supports dailyRate and startDate', () => {
+    const dailyTopic = createFundTopicSchema.parse({
+        name: 'กองกลางรายวัน 15 บาท',
+        amountPerMember: 450,
+        dailyRate: 15,
+        startDate: '2026-10-01T00:00:00.000Z',
+    });
+    assert.equal(dailyTopic.name, 'กองกลางรายวัน 15 บาท');
+    assert.equal(dailyTopic.dailyRate, 15);
+    assert.equal(typeof dailyTopic.startDate, 'string');
+});
+
+test('createFundPaymentSchema supports periodStart and periodEnd', () => {
+    const payment = createFundPaymentSchema.parse({
+        memberId: 1,
+        amount: 225,
+        note: 'งวดวันที่ 01/10 ถึง 15/10',
+        periodStart: '2026-10-01T00:00:00.000Z',
+        periodEnd: '2026-10-15T23:59:59.000Z',
+    });
+    assert.equal(payment.memberId, 1);
+    assert.equal(payment.amount, 225);
+    assert.equal(payment.note, 'งวดวันที่ 01/10 ถึง 15/10');
+    assert.equal(typeof payment.periodStart, 'string');
+    assert.equal(typeof payment.periodEnd, 'string');
+});
+
+test('batchFundPaymentSchema validates batch payments for multiple members', () => {
+    const batch = batchFundPaymentSchema.parse({
+        memberIds: [1, 2, 3],
+        amount: 150,
+        note: 'งวดวันที่ 01/10 ถึง 10/10 (10 วัน)',
+        periodStart: '2026-10-01T00:00:00.000Z',
+        periodEnd: '2026-10-10T23:59:59.000Z',
+    });
+    assert.deepEqual(batch.memberIds, [1, 2, 3]);
+    assert.equal(batch.amount, 150);
+
+    // Empty memberIds fails
+    assert.equal(batchFundPaymentSchema.safeParse({ memberIds: [], amount: 100 }).success, false);
+    // Non-positive amount fails
+    assert.equal(batchFundPaymentSchema.safeParse({ memberIds: [1], amount: 0 }).success, false);
+});
+
+test('generateFundCsv generates valid UTF-8 BOM CSV with summary, members and payment periods', () => {
+    const topic = {
+        id: 1,
+        name: 'กองกลางรายวัน',
+        description: 'เก็บวันละ 15 บาท',
+        amountPerMember: 450,
+        dailyRate: 15,
+        startDate: '2026-10-01T00:00:00.000Z',
+        reportChannelId: '',
+        dueDate: '2026-10-31T23:59:00.000Z',
+        closed: false,
+        memberCount: 2,
+        paidCount: 1,
+        target: 900,
+        collected: 675,
+        createdAt: '2026-10-01T00:00:00.000Z',
+        updatedAt: '2026-10-15T12:00:00.000Z',
+        members: [
+            { id: 1, userId: '111', displayName: 'Alice, In Wonderland', avatar: '', target: 450, customTarget: false, paid: 450, remaining: 0, status: 'paid' },
+            { id: 2, userId: '222', displayName: 'Bob', avatar: '', target: 450, customTarget: false, paid: 225, remaining: 225, status: 'partial' },
+        ],
+        payments: [
+            {
+                id: 1,
+                memberId: 1,
+                memberName: 'Alice, In Wonderland',
+                amount: 450,
+                note: 'จ่ายครบทั้งเดือน',
+                paidAt: '2026-10-05T10:00:00.000Z',
+                periodStart: '2026-10-01T00:00:00.000Z',
+                periodEnd: '2026-10-30T23:59:00.000Z',
+                recordedBy: 'Admin',
+            },
+        ],
+    };
+
+    const csv = generateFundCsv(topic);
+    // Starts with UTF-8 BOM
+    assert.ok(csv.startsWith('\uFEFF'));
+    // Contains header info
+    assert.ok(csv.includes('หัวข้อการเก็บเงิน,กองกลางรายวัน'));
+    assert.ok(csv.includes('รายวัน (วันละ 15 บาท)'));
+    // Escaped comma in Alice's name
+    assert.ok(csv.includes('"Alice, In Wonderland"'));
+    // Contains payment period
+    assert.ok(csv.includes('จ่ายครบทั้งเดือน'));
+});
+
+test('buildFundReport includes daily rate field when dailyRate is set', () => {
+    const topic = {
+        id: 1,
+        name: 'กองกลางรายวัน',
+        description: '',
+        amountPerMember: 450,
+        dailyRate: 15,
+        startDate: '2026-10-01T00:00:00.000Z',
+        reportChannelId: '',
+        dueDate: null,
+        closed: false,
+        memberCount: 1,
+        paidCount: 1,
+        target: 450,
+        collected: 450,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        members: [{ id: 1, userId: '111', displayName: 'Alice', avatar: '', target: 450, customTarget: false, paid: 450, remaining: 0, status: 'paid' }],
+        payments: [],
+    };
+
+    const report = buildFundReport(topic, { mentionUnpaid: false });
+    const summaryEmbed = report.embeds[0];
+    const dailyField = summaryEmbed.data.fields.find((f) => f.name === '📅 ยอดรายวัน');
+    assert.ok(dailyField);
+    assert.ok(dailyField.value.includes('15 บาท/วัน'));
 });

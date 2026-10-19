@@ -2,8 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import {
     FUND_LIMITS,
     fundMemberStatus,
+    generateFundCsv,
     roundMoney,
     type AddFundMembersData,
+    type BatchFundPaymentData,
     type CreateFundPaymentData,
     type CreateFundTopicData,
     type FundMemberView,
@@ -35,6 +37,8 @@ interface TopicRow {
     name: string;
     description: string;
     amountPerMember: Decimalish;
+    dailyRate?: Decimalish;
+    startDate?: Date | null;
     reportChannelId: string;
     dueDate: Date | null;
     closed: boolean;
@@ -53,6 +57,8 @@ interface PaymentRow {
     amount: Decimalish;
     note: string;
     paidAt: Date;
+    periodStart?: Date | null;
+    periodEnd?: Date | null;
     recordedBy: string;
 }
 
@@ -96,6 +102,8 @@ export class FundService {
             amount: toNum(p.amount),
             note: p.note,
             paidAt: p.paidAt.toISOString(),
+            periodStart: p.periodStart?.toISOString() ?? null,
+            periodEnd: p.periodEnd?.toISOString() ?? null,
             recordedBy: p.recordedBy,
         }));
         return { ...this.summarize(topic, members), members, payments };
@@ -109,6 +117,8 @@ export class FundService {
                 name: body.name.trim(),
                 description: body.description ?? '',
                 amountPerMember: body.amountPerMember,
+                dailyRate: body.dailyRate ?? null,
+                startDate: body.startDate ? new Date(body.startDate) : null,
                 reportChannelId: body.reportChannelId ?? '',
                 dueDate: body.dueDate ? new Date(body.dueDate) : null,
             },
@@ -125,6 +135,8 @@ export class FundService {
                 name: body.name?.trim(),
                 description: body.description,
                 amountPerMember: body.amountPerMember,
+                dailyRate: body.dailyRate === undefined ? undefined : body.dailyRate,
+                startDate: body.startDate === undefined ? undefined : body.startDate ? new Date(body.startDate) : null,
                 reportChannelId: body.reportChannelId,
                 dueDate: body.dueDate === undefined ? undefined : body.dueDate ? new Date(body.dueDate) : null,
                 closed: body.closed,
@@ -189,10 +201,43 @@ export class FundService {
                 amount: body.amount,
                 note: body.note ?? '',
                 paidAt: body.paidAt ? new Date(body.paidAt) : new Date(),
+                periodStart: body.periodStart ? new Date(body.periodStart) : null,
+                periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
                 recordedBy,
             },
         });
         await this.touch(topicId);
+    }
+
+    async batchPayments(guildId: string, topicId: number, body: BatchFundPaymentData, recordedBy: string): Promise<{ count: number }> {
+        const topic = await this.requireTopic(guildId, topicId);
+        if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนบันทึกรายการ');
+        if (!body.memberIds.length) throw badRequest('กรุณาเลือกสมาชิกอย่างน้อย 1 คน');
+
+        const members = await this.prisma.fundMember.findMany({
+            where: { topicId, id: { in: body.memberIds } },
+            select: { id: true },
+        });
+        if (members.length === 0) throw badRequest('ไม่พบสมาชิกที่เลือกในหัวข้อนี้');
+
+        const paidAt = body.paidAt ? new Date(body.paidAt) : new Date();
+        const periodStart = body.periodStart ? new Date(body.periodStart) : null;
+        const periodEnd = body.periodEnd ? new Date(body.periodEnd) : null;
+
+        await this.prisma.fundPayment.createMany({
+            data: members.map((m) => ({
+                topicId,
+                memberId: m.id,
+                amount: body.amount,
+                note: body.note ?? '',
+                paidAt,
+                periodStart,
+                periodEnd,
+                recordedBy,
+            })),
+        });
+        await this.touch(topicId);
+        return { count: members.length };
     }
 
     async removePayment(guildId: string, topicId: number, paymentId: number): Promise<void> {
@@ -200,6 +245,17 @@ export class FundService {
         const { count } = await this.prisma.fundPayment.deleteMany({ where: { id: paymentId, topicId } });
         if (!count) throw notFound('ไม่พบรายการรับเงินนี้');
         await this.touch(topicId);
+    }
+
+    async exportCsv(guildId: string, topicId: number): Promise<{ filename: string; csv: string }> {
+        const detail = await this.detail(guildId, topicId);
+        const csv = generateFundCsv(detail);
+        const safeName = (detail.name || 'fund').replace(/[/\\?%*:|"<>]/g, '_').slice(0, 50);
+        const dateStr = new Date().toISOString().slice(0, 10);
+        return {
+            filename: `fund-${safeName}-${dateStr}.csv`,
+            csv,
+        };
     }
 
     // ---------- รายงาน ----------
@@ -247,6 +303,8 @@ export class FundService {
             name: topic.name,
             description: topic.description,
             amountPerMember: toNum(topic.amountPerMember),
+            dailyRate: toNum(topic.dailyRate) || null,
+            startDate: topic.startDate?.toISOString() ?? null,
             reportChannelId: topic.reportChannelId,
             dueDate: topic.dueDate?.toISOString() ?? null,
             closed: topic.closed,

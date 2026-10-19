@@ -1,5 +1,6 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Res } from '@nestjs/common';
 import type { FundTopicDetail, FundTopicSummary, SuccessResponse } from '@notstack/shared';
+import type { Response } from 'express';
 import { Audit, AuditCtx } from '../common/decorators/audit.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import type { AuditContext } from '../common/interfaces/app-request.interface';
@@ -8,6 +9,7 @@ import type { User } from '../generated/prisma/client';
 import { GuildId } from '../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../guilds/decorators/guild-route.decorator';
 import { AddFundMembersDto } from './dto/add-fund-members.dto';
+import { BatchFundPaymentDto } from './dto/batch-fund-payment.dto';
 import { CreateFundPaymentDto } from './dto/create-fund-payment.dto';
 import { CreateFundTopicDto } from './dto/create-fund-topic.dto';
 import { SendFundReportDto } from './dto/send-fund-report.dto';
@@ -53,6 +55,18 @@ export class FundController {
     @Get(':id')
     detail(@GuildId() guildId: string, @Param('id') id: string): Promise<FundTopicDetail> {
         return this.fund.detail(guildId, topicId(id));
+    }
+
+    @Get(':id/export')
+    async exportCsv(
+        @GuildId() guildId: string,
+        @Param('id') id: string,
+        @Res({ passthrough: true }) res: Response,
+    ): Promise<string> {
+        const { filename, csv } = await this.fund.exportCsv(guildId, topicId(id));
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        return csv;
     }
 
     @Audit('fund.topic_update')
@@ -119,6 +133,22 @@ export class FundController {
         const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
         await this.fund.addPayment(guildId, topicId(id), body, recordedBy);
         return { success: true };
+    }
+
+    @Audit('fund.payment_batch')
+    @Post(':id/payments/batch')
+    @HttpCode(HttpStatus.OK)
+    async batchPayments(
+        @GuildId() guildId: string,
+        @Param('id') id: string,
+        @Body() body: BatchFundPaymentDto,
+        @CurrentUser() user: User | undefined,
+        @AuditCtx() audit: AuditContext,
+    ): Promise<SuccessResponse> {
+        audit.targetId = id;
+        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
+        const { count } = await this.fund.batchPayments(guildId, topicId(id), body, recordedBy);
+        return { success: true, message: `บันทึกการรับเงิน ${count} คนแล้ว` };
     }
 
     @Audit('fund.payment_delete')

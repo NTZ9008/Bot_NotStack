@@ -2,10 +2,11 @@ import { z } from 'zod';
 import { SNOWFLAKE_RE } from './common';
 
 // ==========================================
-// 💰 FUND — เก็บเงินตามเป้า
-// - หัวข้อ (topic) ได้หลายเรื่องต่อเซิร์ฟเวอร์ แต่ละเรื่องตั้ง "ยอดเก็บต่อคน" ได้
+// 💰 FUND — เก็บเงินตามเป้า (ยอดคงที่ & ยอดรายวัน)
+// - หัวข้อ (topic) ได้หลายเรื่องต่อเซิร์ฟเวอร์ แต่ละเรื่องตั้ง "ยอดเก็บต่อคน" หรือ "ยอดรายวัน" ได้
+// - รองรับการบันทึกย้อนหลังตามห้วงเวลา (periodStart - periodEnd) คำนวณวันและยอดเงินให้อัตโนมัติ
 // - เพิ่ม/ลบคนในหัวข้อได้ และตั้งยอดเฉพาะคนได้ (null = ใช้ยอดต่อคนของหัวข้อ)
-// - บันทึกการรับเงินทีละรายการ (จ่ายเป็นงวดได้) แล้วส่งรายงานเข้าห้องที่กำหนด
+// - บันทึกการรับเงินทีละรายการหรือเป็นกลุ่ม (Batch) และ Export เป็น CSV รองรับภาษาไทย (UTF-8 BOM)
 // ==========================================
 export const FUND_LIMITS = {
     name: 100,
@@ -41,6 +42,9 @@ export interface FundPaymentView {
     amount: number;
     note: string;
     paidAt: string;
+    // ห้วงเวลาที่จ่าย (ถ้ามี เช่น งวดวันที่ 01/10/2026 - 15/10/2026)
+    periodStart: string | null;
+    periodEnd: string | null;
     recordedBy: string;
 }
 
@@ -49,6 +53,9 @@ export interface FundTopicSummary {
     name: string;
     description: string;
     amountPerMember: number;
+    // ยอดรายวัน (เช่น 15 บาท/วัน) — null หรือ 0 = ยอดคงที่
+    dailyRate: number | null;
+    startDate: string | null;
     reportChannelId: string;
     dueDate: string | null;
     closed: boolean;
@@ -77,6 +84,79 @@ export function fundMemberStatus(target: number, paid: number): FundMemberStatus
     return paid + 0.001 >= target ? 'paid' : 'partial';
 }
 
+// คำนวณจำนวนวันระหว่าง 2 วันที่ (แบบนับรวมวันเริ่มต้นและสิ้นสุด เช่น 1 ถึง 15 = 15 วัน)
+export function calculateDays(from: string | Date | null | undefined, to: string | Date | null | undefined): number {
+    if (!from || !to) return 0;
+    const d1 = new Date(from);
+    const d2 = new Date(to);
+    if (Number.isNaN(d1.getTime()) || Number.isNaN(d2.getTime())) return 0;
+    const utc1 = Date.UTC(d1.getFullYear(), d1.getMonth(), d1.getDate());
+    const utc2 = Date.UTC(d2.getFullYear(), d2.getMonth(), d2.getDate());
+    const diff = Math.floor((utc2 - utc1) / (1000 * 60 * 60 * 24));
+    return diff >= 0 ? diff + 1 : 0;
+}
+
+export function calculateDailyAmount(dailyRate: number, from: string | Date, to: string | Date): number {
+    return roundMoney(calculateDays(from, to) * (Number(dailyRate) || 0));
+}
+
+// สร้างไฟล์ CSV พร้อม UTF-8 BOM สำหรับเปิดใน Excel ได้ภาษาไทยไม่เพี้ยน
+function escapeCsv(cell: unknown): string {
+    const str = String(cell ?? '');
+    return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')
+        ? `"${str.replace(/"/g, '""')}"`
+        : str;
+}
+
+export function generateFundCsv(topic: FundTopicDetail): string {
+    const lines: string[] = [];
+    const pushRow = (...cols: unknown[]) => lines.push(cols.map(escapeCsv).join(','));
+
+    // --- ส่วนสรุปหัวข้อ ---
+    pushRow('หัวข้อการเก็บเงิน', topic.name);
+    if (topic.description) pushRow('รายละเอียด', topic.description);
+    pushRow(
+        'รูปแบบการเก็บ',
+        topic.dailyRate && topic.dailyRate > 0 ? `รายวัน (วันละ ${formatBaht(topic.dailyRate)})` : 'ยอดคงที่',
+    );
+    if (topic.startDate) pushRow('วันที่เริ่มเก็บ', new Date(topic.startDate).toLocaleDateString('th-TH'));
+    if (topic.dueDate) pushRow('วันครบกำหนด', new Date(topic.dueDate).toLocaleDateString('th-TH'));
+    pushRow('สถานะ', topic.closed ? 'ปิดการเก็บเงินแล้ว' : 'กำลังเปิดรับเงิน');
+    pushRow('ยอดเป้าหมายรวม', topic.target);
+    pushRow('ยอดเก็บได้แล้ว', topic.collected);
+    pushRow('ยอดคงค้างรวม', Math.max(0, roundMoney(topic.target - topic.collected)));
+    pushRow('จำนวนสมาชิก', `${topic.paidCount}/${topic.memberCount} คน (จ่ายครบ/ทั้งหมด)`);
+    pushRow('');
+
+    // --- ส่วนรายชื่อสมาชิก ---
+    pushRow('--- รายชื่อสมาชิก ---');
+    pushRow('User ID', 'ชื่อ', 'ยอดเป้าหมาย', 'จ่ายแล้ว', 'คงค้าง', 'สถานะ');
+    const statusMap: Record<FundMemberStatus, string> = { paid: 'จ่ายครบ', partial: 'จ่ายบางส่วน', unpaid: 'ยังไม่จ่าย' };
+    for (const m of topic.members) {
+        pushRow(m.userId, m.displayName, m.target, m.paid, m.remaining, statusMap[m.status] || m.status);
+    }
+    pushRow('');
+
+    // --- ส่วนประวัติการรับเงิน ---
+    pushRow('--- ประวัติการรับเงิน ---');
+    pushRow('ลำดับ', 'วันเวลาที่รับเงิน', 'ชื่อสมาชิก', 'จำนวนเงิน', 'ห้วงเวลาที่จ่าย (เริ่มต้น)', 'ห้วงเวลาที่จ่าย (สิ้นสุด)', 'หมายเหตุ', 'ผู้บันทึก');
+    topic.payments.forEach((p, idx) => {
+        pushRow(
+            idx + 1,
+            new Date(p.paidAt).toLocaleString('th-TH'),
+            p.memberName,
+            p.amount,
+            p.periodStart ? new Date(p.periodStart).toLocaleDateString('th-TH') : '-',
+            p.periodEnd ? new Date(p.periodEnd).toLocaleDateString('th-TH') : '-',
+            p.note || '-',
+            p.recordedBy || '-',
+        );
+    });
+
+    // \uFEFF คือ UTF-8 BOM ให้ Microsoft Excel บน Windows เปิดภาษาไทยได้ถูกต้อง
+    return `\uFEFF${lines.join('\r\n')}`;
+}
+
 // ---------- validation ----------
 const money = (label: string) =>
     z.coerce
@@ -89,14 +169,14 @@ const money = (label: string) =>
 const snowflake = z.string().regex(SNOWFLAKE_RE, 'รหัส Discord ไม่ถูกต้อง');
 const channelId = z.union([z.literal(''), snowflake]);
 
-// วันครบกำหนด: ISO string / '' / null (= ไม่กำหนด)
-const dueDate = z
+// วันที่: ISO string / '' / null (= ไม่กำหนด)
+const dateField = z
     .union([z.string(), z.null()])
     .transform((value, ctx) => {
         if (!value) return null;
         const date = new Date(value);
         if (Number.isNaN(date.getTime())) {
-            ctx.addIssue({ code: 'custom', message: 'วันครบกำหนดไม่ถูกต้อง' });
+            ctx.addIssue({ code: 'custom', message: 'วันที่ไม่ถูกต้อง' });
             return z.NEVER;
         }
         return date.toISOString();
@@ -106,8 +186,10 @@ export const createFundTopicSchema = z.object({
     name: z.string({ error: 'กรุณาตั้งชื่อหัวข้อ' }).trim().min(1, 'กรุณาตั้งชื่อหัวข้อ').max(FUND_LIMITS.name, `ชื่อหัวข้อยาวได้ไม่เกิน ${FUND_LIMITS.name} ตัวอักษร`),
     description: z.string().trim().max(FUND_LIMITS.description, `รายละเอียดยาวได้ไม่เกิน ${FUND_LIMITS.description} ตัวอักษร`).optional(),
     amountPerMember: money('ยอดเก็บต่อคน'),
+    dailyRate: money('ยอดรายวัน').nullable().optional(),
+    startDate: dateField.optional(),
+    dueDate: dateField.optional(),
     reportChannelId: channelId.optional(),
-    dueDate: dueDate.optional(),
 });
 export type CreateFundTopicInput = z.input<typeof createFundTopicSchema>;
 export type CreateFundTopicData = z.output<typeof createFundTopicSchema>;
@@ -141,10 +223,23 @@ export const createFundPaymentSchema = z.object({
     memberId: z.coerce.number().int().positive('กรุณาเลือกคนที่จ่าย'),
     amount: money('จำนวนเงิน').refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0'),
     note: z.string().trim().max(FUND_LIMITS.note, `หมายเหตุยาวได้ไม่เกิน ${FUND_LIMITS.note} ตัวอักษร`).optional(),
-    paidAt: dueDate.optional(),
+    paidAt: dateField.optional(),
+    periodStart: dateField.optional(),
+    periodEnd: dateField.optional(),
 });
 export type CreateFundPaymentInput = z.input<typeof createFundPaymentSchema>;
 export type CreateFundPaymentData = z.output<typeof createFundPaymentSchema>;
+
+export const batchFundPaymentSchema = z.object({
+    memberIds: z.array(z.coerce.number().int().positive()).min(1, 'กรุณาเลือกสมาชิกอย่างน้อย 1 คน'),
+    amount: money('จำนวนเงิน').refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0'),
+    note: z.string().trim().max(FUND_LIMITS.note, `หมายเหตุยาวได้ไม่เกิน ${FUND_LIMITS.note} ตัวอักษร`).optional(),
+    paidAt: dateField.optional(),
+    periodStart: dateField.optional(),
+    periodEnd: dateField.optional(),
+});
+export type BatchFundPaymentInput = z.input<typeof batchFundPaymentSchema>;
+export type BatchFundPaymentData = z.output<typeof batchFundPaymentSchema>;
 
 export const sendFundReportSchema = z.object({
     // ไม่ส่ง = ใช้ห้องรายงานที่ตั้งไว้ในหัวข้อ

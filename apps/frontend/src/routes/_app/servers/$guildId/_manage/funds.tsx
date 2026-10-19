@@ -1,7 +1,16 @@
-import { formatBaht, type FundMemberStatus, type FundMemberView, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
+import {
+    calculateDailyAmount,
+    calculateDays,
+    formatBaht,
+    roundMoney,
+    type FundMemberStatus,
+    type FundMemberView,
+    type FundTopicDetail,
+    type FundTopicSummary,
+} from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Banknote, CheckCheck, Lock, LockOpen, Pencil, Plus, Send, Trash2, Users, X } from 'lucide-react';
+import { Banknote, Calendar, CheckCheck, Download, Lock, LockOpen, Pencil, Plus, Send, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -85,7 +94,10 @@ function TopicDialog({
     const textChannels = allChannels.filter((ch) => ch.sendable);
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
+    const [mode, setMode] = useState<'fixed' | 'daily'>('fixed');
     const [amount, setAmount] = useState('');
+    const [dailyRate, setDailyRate] = useState('');
+    const [startDate, setStartDate] = useState('');
     const [dueDate, setDueDate] = useState('');
     const [reportChannelId, setReportChannelId] = useState('');
 
@@ -93,14 +105,35 @@ function TopicDialog({
         if (!open) return;
         setName(topic?.name ?? '');
         setDescription(topic?.description ?? '');
+        const isDaily = Boolean(topic?.dailyRate && topic.dailyRate > 0);
+        setMode(isDaily ? 'daily' : 'fixed');
         setAmount(topic ? String(topic.amountPerMember) : '');
+        setDailyRate(topic?.dailyRate ? String(topic.dailyRate) : '15');
+        setStartDate(toDateInput(topic?.startDate ?? null));
         setDueDate(toDateInput(topic?.dueDate ?? null));
         setReportChannelId(topic?.reportChannelId ?? '');
     }, [open, topic]);
 
+    const days = mode === 'daily' && startDate && dueDate ? calculateDays(startDate, dueDate) : 0;
+    const computedDailyTotal = days > 0 && Number(dailyRate) > 0 ? calculateDailyAmount(Number(dailyRate), startDate, dueDate) : 0;
+
     const save = useMutation({
         mutationFn: () => {
-            const input = { name, description, amountPerMember: Number(amount || 0), dueDate: fromDateInput(dueDate), reportChannelId };
+            const isDaily = mode === 'daily';
+            const rate = isDaily && Number(dailyRate) > 0 ? Number(dailyRate) : null;
+            const targetPerMember = isDaily
+                ? (computedDailyTotal > 0 ? computedDailyTotal : Number(amount || 0))
+                : Number(amount || 0);
+
+            const input = {
+                name,
+                description,
+                amountPerMember: targetPerMember,
+                dailyRate: rate,
+                startDate: isDaily && startDate ? new Date(`${startDate}T00:00:00`).toISOString() : null,
+                dueDate: fromDateInput(dueDate),
+                reportChannelId,
+            };
             return topic ? fundApi.update(guildId, topic.id, input) : fundApi.create(guildId, input);
         },
         onSuccess: (saved) => {
@@ -117,7 +150,7 @@ function TopicDialog({
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{topic ? 'แก้ไขหัวข้อเก็บเงิน' : 'สร้างหัวข้อเก็บเงิน'}</DialogTitle>
-                    <DialogDescription>ตั้งชื่อเรื่องและยอดเก็บต่อคน — ตั้งยอดเฉพาะบางคนได้ภายหลังในรายชื่อ</DialogDescription>
+                    <DialogDescription>ตั้งชื่อเรื่อง ยอดเก็บต่อคน หรือเลือกเก็บแบบรายวัน (เช่น วันละ 15 บาท)</DialogDescription>
                 </DialogHeader>
                 <form
                     id="fund-topic-form"
@@ -128,19 +161,95 @@ function TopicDialog({
                     }}
                 >
                     <Field label="ชื่อหัวข้อ" htmlFor="fund-name">
-                        <Input id="fund-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น ค่าเลี้ยงปีใหม่ 2027" maxLength={100} autoFocus />
+                        <Input id="fund-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น ค่ากองกลางกลุ่ม / วันละ 15 บาท" maxLength={100} autoFocus />
                     </Field>
                     <Field label="รายละเอียด (ไม่บังคับ)" htmlFor="fund-desc">
                         <Textarea id="fund-desc" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} maxLength={500} placeholder="เลขบัญชี / วิธีโอน / หมายเหตุ" />
                     </Field>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        <Field label="ยอดเก็บต่อคน (บาท)" htmlFor="fund-amount">
-                            <Input id="fund-amount" type="number" min={0} step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
-                        </Field>
-                        <Field label="ครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
-                            <Input id="fund-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-                        </Field>
-                    </div>
+
+                    <Field label="รูปแบบการเก็บเงิน">
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant={mode === 'fixed' ? 'default' : 'outline'}
+                                onClick={() => setMode('fixed')}
+                            >
+                                💰 ยอดคงที่ต่อคน
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant={mode === 'daily' ? 'default' : 'outline'}
+                                onClick={() => setMode('daily')}
+                            >
+                                📅 ยอดรายวัน (เช่น 15 บาท)
+                            </Button>
+                        </div>
+                    </Field>
+
+                    {mode === 'daily' ? (
+                        <div className="rounded-lg border bg-muted/20 p-3 space-y-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Field label="ยอดเก็บต่อวัน (บาท/วัน)" htmlFor="fund-daily-rate">
+                                    <Input
+                                        id="fund-daily-rate"
+                                        type="number"
+                                        min={0.01}
+                                        step="0.01"
+                                        inputMode="decimal"
+                                        value={dailyRate}
+                                        onChange={(e) => setDailyRate(e.target.value)}
+                                        placeholder="15"
+                                    />
+                                </Field>
+                                <Field label="วันที่เริ่มเก็บ" htmlFor="fund-start-date">
+                                    <Input
+                                        id="fund-start-date"
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                    />
+                                </Field>
+                            </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <Field label="วันครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
+                                    <Input
+                                        id="fund-due"
+                                        type="date"
+                                        value={dueDate}
+                                        onChange={(e) => setDueDate(e.target.value)}
+                                    />
+                                </Field>
+                                <Field
+                                    label="ยอดเป้าหมายต่อคน (บาท)"
+                                    htmlFor="fund-amount"
+                                    hint={computedDailyTotal > 0 ? `คำนวณจาก ${days} วัน × ${dailyRate} บาท` : 'ปล่อยเป็น 0 หรือใส่เป้าหมาย'}
+                                >
+                                    <Input
+                                        id="fund-amount"
+                                        type="number"
+                                        min={0}
+                                        step="0.01"
+                                        inputMode="decimal"
+                                        value={amount || (computedDailyTotal > 0 ? String(computedDailyTotal) : '')}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        placeholder={computedDailyTotal > 0 ? String(computedDailyTotal) : '0'}
+                                    />
+                                </Field>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            <Field label="ยอดเก็บต่อคน (บาท)" htmlFor="fund-amount">
+                                <Input id="fund-amount" type="number" min={0} step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
+                            </Field>
+                            <Field label="ครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
+                                <Input id="fund-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                            </Field>
+                        </div>
+                    )}
+
                     <Field label="ห้องส่งรายงาน" hint="เปลี่ยนได้ภายหลัง หรือเลือกห้องอื่นตอนกดส่งรายงาน">
                         <ChannelSelect channels={textChannels} value={reportChannelId} onChange={setReportChannelId} noneLabel="ยังไม่เลือก" />
                     </Field>
@@ -159,7 +268,7 @@ function TopicDialog({
 }
 
 // ==========================================
-// 💵 บันทึกการรับเงิน
+// 💵 บันทึกการรับเงิน (รายคน)
 // ==========================================
 function PaymentDialog({
     topic,
@@ -178,6 +287,9 @@ function PaymentDialog({
     const [amount, setAmount] = useState('');
     const [note, setNote] = useState('');
     const [paidAt, setPaidAt] = useState('');
+    const [usePeriod, setUsePeriod] = useState(false);
+    const [periodStart, setPeriodStart] = useState('');
+    const [periodEnd, setPeriodEnd] = useState('');
 
     useEffect(() => {
         if (!open) return;
@@ -185,7 +297,38 @@ function PaymentDialog({
         setAmount(member && member.remaining > 0 ? String(member.remaining) : '');
         setNote('');
         setPaidAt(toLocalInput(new Date()));
-    }, [open, member]);
+        const isDaily = Boolean(topic.dailyRate && topic.dailyRate > 0);
+        setUsePeriod(isDaily);
+        if (isDaily) {
+            const today = toDateInput(new Date().toISOString());
+            const start = topic.startDate ? toDateInput(topic.startDate) : today;
+            setPeriodStart(start);
+            setPeriodEnd(today);
+            const days = calculateDays(start, today);
+            if (days > 0 && topic.dailyRate) {
+                setAmount(String(roundMoney(days * topic.dailyRate)));
+                setNote(`งวดวันที่ ${start} ถึง ${today} (${days} วัน)`);
+            }
+        } else {
+            setPeriodStart('');
+            setPeriodEnd('');
+        }
+    }, [open, member, topic]);
+
+    const periodDays = usePeriod && periodStart && periodEnd ? calculateDays(periodStart, periodEnd) : 0;
+
+    const handlePeriodChange = (start: string, end: string) => {
+        setPeriodStart(start);
+        setPeriodEnd(end);
+        if (start && end) {
+            const days = calculateDays(start, end);
+            if (days > 0 && topic.dailyRate && topic.dailyRate > 0) {
+                const autoAmount = roundMoney(days * topic.dailyRate);
+                setAmount(String(autoAmount));
+                setNote((prev) => (!prev || prev.startsWith('งวดวันที่') ? `งวดวันที่ ${start} ถึง ${end} (${days} วัน)` : prev));
+            }
+        }
+    };
 
     const selected = topic.members.find((m) => String(m.id) === memberId);
     const save = useMutation({
@@ -195,6 +338,8 @@ function PaymentDialog({
                 amount: Number(amount),
                 note,
                 paidAt: paidAt ? new Date(paidAt).toISOString() : null,
+                periodStart: usePeriod && periodStart ? new Date(`${periodStart}T00:00:00`).toISOString() : null,
+                periodEnd: usePeriod && periodEnd ? new Date(`${periodEnd}T23:59:59`).toISOString() : null,
             }),
         onSuccess: () => {
             toast.success('บันทึกการรับเงินแล้ว');
@@ -233,6 +378,59 @@ function PaymentDialog({
                             </SelectContent>
                         </Select>
                     </Field>
+
+                    <div className="rounded-lg border bg-muted/20 p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="toggle-period" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                                <Calendar className="size-3.5 text-primary" />
+                                บันทึกตามห้วงวันที่ (ย้อนหลัง / รายวัน)
+                            </Label>
+                            <Checkbox
+                                id="toggle-period"
+                                checked={usePeriod}
+                                onCheckedChange={(c) => {
+                                    const checked = c === true;
+                                    setUsePeriod(checked);
+                                    if (checked && !periodStart) {
+                                        const today = toDateInput(new Date().toISOString());
+                                        const start = topic.startDate ? toDateInput(topic.startDate) : today;
+                                        handlePeriodChange(start, today);
+                                    }
+                                }}
+                            />
+                        </div>
+                        {usePeriod && (
+                            <div className="space-y-2 pt-1">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Field label="ตั้งแต่วันที่" htmlFor="pay-period-start">
+                                        <Input
+                                            id="pay-period-start"
+                                            type="date"
+                                            value={periodStart}
+                                            onChange={(e) => handlePeriodChange(e.target.value, periodEnd)}
+                                        />
+                                    </Field>
+                                    <Field label="ถึงวันที่" htmlFor="pay-period-end">
+                                        <Input
+                                            id="pay-period-end"
+                                            type="date"
+                                            value={periodEnd}
+                                            onChange={(e) => handlePeriodChange(periodStart, e.target.value)}
+                                        />
+                                    </Field>
+                                </div>
+                                {periodDays > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                        📅 รวม <span className="font-semibold text-foreground">{periodDays} วัน</span>
+                                        {topic.dailyRate && topic.dailyRate > 0 && (
+                                            <span> (วันละ {formatBaht(topic.dailyRate)} = <span className="font-semibold text-emerald-400">{formatBaht(periodDays * topic.dailyRate)}</span>)</span>
+                                        )}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                     <Field
                         label="จำนวนเงิน (บาท)"
                         htmlFor="fund-pay-amount"
@@ -254,6 +452,222 @@ function PaymentDialog({
                     <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(Number(amount) > 0)}>
                         บันทึก
                     </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+// ==========================================
+// 📅 บันทึกการรับเงินเป็นกลุ่ม / หลายคนตามห้วงเวลา
+// ==========================================
+function BatchPaymentDialog({
+    topic,
+    open,
+    onOpenChange,
+}: {
+    topic: FundTopicDetail;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const guildId = useGuildId();
+    const refresh = useFundRefresh();
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [periodStart, setPeriodStart] = useState('');
+    const [periodEnd, setPeriodEnd] = useState('');
+    const [amount, setAmount] = useState('');
+    const [paidAt, setPaidAt] = useState('');
+    const [note, setNote] = useState('');
+
+    useEffect(() => {
+        if (!open) return;
+        const unpaid = topic.members.filter((m) => m.status !== 'paid').map((m) => m.id);
+        setSelectedIds(unpaid.length > 0 ? unpaid : topic.members.map((m) => m.id));
+        setPaidAt(toLocalInput(new Date()));
+        const today = toDateInput(new Date().toISOString());
+        const start = topic.startDate ? toDateInput(topic.startDate) : today;
+        setPeriodStart(start);
+        setPeriodEnd(today);
+        if (topic.dailyRate && topic.dailyRate > 0) {
+            const days = calculateDays(start, today);
+            const total = roundMoney(days * topic.dailyRate);
+            setAmount(String(total));
+            setNote(`งวดวันที่ ${start} ถึง ${today} (${days} วัน)`);
+        } else {
+            setAmount(String(topic.amountPerMember || ''));
+            setNote('');
+        }
+    }, [open, topic]);
+
+    const handlePeriodChange = (start: string, end: string) => {
+        setPeriodStart(start);
+        setPeriodEnd(end);
+        if (start && end) {
+            const days = calculateDays(start, end);
+            if (days > 0 && topic.dailyRate && topic.dailyRate > 0) {
+                const autoAmount = roundMoney(days * topic.dailyRate);
+                setAmount(String(autoAmount));
+                setNote(`งวดวันที่ ${start} ถึง ${end} (${days} วัน)`);
+            }
+        }
+    };
+
+    const days = periodStart && periodEnd ? calculateDays(periodStart, periodEnd) : 0;
+    const totalCollected = roundMoney(selectedIds.length * Number(amount || 0));
+
+    const toggleMember = (id: number) => {
+        setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    };
+
+    const selectAll = () => setSelectedIds(topic.members.map((m) => m.id));
+    const selectNone = () => setSelectedIds([]);
+    const selectUnpaid = () => setSelectedIds(topic.members.filter((m) => m.status !== 'paid').map((m) => m.id));
+
+    const save = useMutation({
+        mutationFn: () =>
+            fundApi.batchPayment(guildId, topic.id, {
+                memberIds: selectedIds,
+                amount: Number(amount),
+                note,
+                paidAt: paidAt ? new Date(paidAt).toISOString() : null,
+                periodStart: periodStart ? new Date(`${periodStart}T00:00:00`).toISOString() : null,
+                periodEnd: periodEnd ? new Date(`${periodEnd}T23:59:59`).toISOString() : null,
+            }),
+        onSuccess: (res) => {
+            toast.success(res.message ?? 'บันทึกการรับเงินเรียบร้อยแล้ว');
+            void refresh();
+            onOpenChange(false);
+        },
+        onError,
+    });
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>บันทึกรับเงินตามห้วงเวลา (หลายคน)</DialogTitle>
+                    <DialogDescription>{topic.name} — บันทึกเก็บยอดรายวันย้อนหลังให้สมาชิกหลายคนพร้อมกันในครั้งเดียว</DialogDescription>
+                </DialogHeader>
+                <form
+                    id="fund-batch-form"
+                    className="grid gap-3"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        save.mutate();
+                    }}
+                >
+                    <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                        <p className="text-xs font-semibold text-muted-foreground">📅 กำหนดห้วงเวลาที่จ่าย</p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Field label="ตั้งแต่วันที่" htmlFor="batch-period-start">
+                                <Input
+                                    id="batch-period-start"
+                                    type="date"
+                                    value={periodStart}
+                                    onChange={(e) => handlePeriodChange(e.target.value, periodEnd)}
+                                />
+                            </Field>
+                            <Field label="ถึงวันที่" htmlFor="batch-period-end">
+                                <Input
+                                    id="batch-period-end"
+                                    type="date"
+                                    value={periodEnd}
+                                    onChange={(e) => handlePeriodChange(periodStart, e.target.value)}
+                                />
+                            </Field>
+                        </div>
+                        {days > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                📅 รวม <span className="font-semibold text-foreground">{days} วัน</span>
+                                {topic.dailyRate && topic.dailyRate > 0 && (
+                                    <span> (วันละ {formatBaht(topic.dailyRate)} = <span className="font-semibold text-emerald-400">{formatBaht(days * topic.dailyRate)} ต่อคน</span>)</span>
+                                )}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                        <Field label="ยอดเงินต่อคน (บาท)" htmlFor="batch-amount">
+                            <Input
+                                id="batch-amount"
+                                type="number"
+                                min={0.01}
+                                step="0.01"
+                                inputMode="decimal"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                placeholder="0"
+                            />
+                        </Field>
+                        <Field label="วันเวลาที่บันทึกรับเงิน" htmlFor="batch-paid-at">
+                            <Input
+                                id="batch-paid-at"
+                                type="datetime-local"
+                                value={paidAt}
+                                onChange={(e) => setPaidAt(e.target.value)}
+                            />
+                        </Field>
+                    </div>
+
+                    <Field label="หมายเหตุ (ไม่บังคับ)" htmlFor="batch-note">
+                        <Input
+                            id="batch-note"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            maxLength={200}
+                            placeholder="เช่น งวดวันที่ 01/10 ถึง 15/10"
+                        />
+                    </Field>
+
+                    <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-xs">
+                            <Label className="font-medium">เลือกคนที่จ่าย ({selectedIds.length}/{topic.members.length} คน)</Label>
+                            <div className="flex gap-1">
+                                <Button type="button" size="xs" variant="ghost" onClick={selectAll}>ทั้งหมด</Button>
+                                <Button type="button" size="xs" variant="ghost" onClick={selectUnpaid}>เฉพาะค้าง</Button>
+                                <Button type="button" size="xs" variant="ghost" onClick={selectNone}>ล้าง</Button>
+                            </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto rounded-lg border divide-y bg-background p-1">
+                            {topic.members.map((m) => {
+                                const checked = selectedIds.includes(m.id);
+                                return (
+                                    <label
+                                        key={m.id}
+                                        className="flex items-center justify-between gap-2 p-1.5 hover:bg-muted/50 rounded cursor-pointer text-xs"
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <Checkbox
+                                                checked={checked}
+                                                onCheckedChange={() => toggleMember(m.id)}
+                                            />
+                                            <span className="truncate font-medium">{m.displayName}</span>
+                                        </div>
+                                        <span className="text-muted-foreground tabular-nums shrink-0">
+                                            {m.remaining > 0 ? `ค้าง ${formatBaht(m.remaining)}` : '✅ จ่ายครบแล้ว'}
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </form>
+                <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+                    <p className="text-xs text-muted-foreground">
+                        ยอดรวม: <span className="font-semibold text-emerald-400">{formatBaht(totalCollected)}</span>
+                    </p>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                            ยกเลิก
+                        </Button>
+                        <Button
+                            type="submit"
+                            form="fund-batch-form"
+                            disabled={save.isPending || selectedIds.length === 0 || !(Number(amount) > 0)}
+                        >
+                            บันทึก {selectedIds.length} คน
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -484,23 +898,33 @@ function PaymentsTab({ topic }: { topic: FundTopicDetail }) {
     if (topic.payments.length === 0) return <EmptyState>ยังไม่มีรายการรับเงิน</EmptyState>;
     return (
         <ul className="divide-y rounded-lg border">
-            {topic.payments.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 px-3 py-2 text-sm">
-                    <div className="min-w-0 flex-1">
-                        <p className="font-medium">
-                            {p.memberName} <span className="text-emerald-400 tabular-nums">+{formatBaht(p.amount)}</span>
-                        </p>
-                        <p className="truncate text-xs text-muted-foreground">
-                            {formatDateTime(p.paidAt)}
-                            {p.note && ` · ${p.note}`}
-                            {p.recordedBy && ` · บันทึกโดย ${p.recordedBy}`}
-                        </p>
-                    </div>
-                    <Button size="icon-xs" variant="ghost" aria-label="ลบรายการ" onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}>
-                        <Trash2 className="text-destructive" />
-                    </Button>
-                </li>
-            ))}
+            {topic.payments.map((p) => {
+                const days = p.periodStart && p.periodEnd ? calculateDays(p.periodStart, p.periodEnd) : 0;
+                return (
+                    <li key={p.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                        <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-1.5 font-medium">
+                                <span>{p.memberName}</span>
+                                <span className="text-emerald-400 tabular-nums">+{formatBaht(p.amount)}</span>
+                                {p.periodStart && p.periodEnd && (
+                                    <Badge variant="outline" className="text-[11px] font-normal border-primary/30 bg-primary/5 text-primary">
+                                        งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} – {new Date(p.periodEnd).toLocaleDateString('th-TH')}
+                                        {days > 0 && ` (${days} วัน)`}
+                                    </Badge>
+                                )}
+                            </div>
+                            <p className="truncate text-xs text-muted-foreground">
+                                {formatDateTime(p.paidAt)}
+                                {p.note && ` · ${p.note}`}
+                                {p.recordedBy && ` · บันทึกโดย ${p.recordedBy}`}
+                            </p>
+                        </div>
+                        <Button size="icon-xs" variant="ghost" aria-label="ลบรายการ" onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}>
+                            <Trash2 className="text-destructive" />
+                        </Button>
+                    </li>
+                );
+            })}
         </ul>
     );
 }
@@ -559,6 +983,8 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
     const query = useQuery(fundQuery(guildId, topicId));
     const [editOpen, setEditOpen] = useState(false);
     const [payOpen, setPayOpen] = useState(false);
+    const [batchOpen, setBatchOpen] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [payMember, setPayMember] = useState<FundMemberView | null>(null);
 
     const toggleClosed = useMutation({
@@ -569,6 +995,18 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
         },
         onError,
     });
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await fundApi.exportCsv(guildId, topicId);
+            toast.success('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว');
+        } catch (err) {
+            onError(err);
+        } finally {
+            setExporting(false);
+        }
+    };
 
     if (query.isLoading) return <LoadingState />;
     if (query.error) return <ErrorState error={query.error} />;
@@ -610,12 +1048,28 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
                             )}
                         </CardTitle>
                         {topic.description && <p className="text-sm whitespace-pre-line text-muted-foreground">{topic.description}</p>}
-                        <p className="text-xs text-muted-foreground">
-                            ยอดต่อคน {formatBaht(topic.amountPerMember)}
-                            {topic.dueDate && ` · ครบกำหนด ${new Date(topic.dueDate).toLocaleDateString('th-TH', { dateStyle: 'medium' })}`}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            {topic.dailyRate && topic.dailyRate > 0 ? (
+                                <Badge variant="secondary" className="font-normal border-primary/30 bg-primary/10 text-primary">
+                                    📅 เก็บวันละ {formatBaht(topic.dailyRate)}
+                                    {topic.startDate && ` (เริ่ม ${new Date(topic.startDate).toLocaleDateString('th-TH')})`}
+                                </Badge>
+                            ) : (
+                                <span>ยอดต่อคน {formatBaht(topic.amountPerMember)}</span>
+                            )}
+                            {topic.dueDate && <span>· ครบกำหนด {new Date(topic.dueDate).toLocaleDateString('th-TH', { dateStyle: 'medium' })}</span>}
+                        </div>
                     </div>
-                    <div className="flex shrink-0 gap-1">
+                    <div className="flex shrink-0 flex-wrap items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleExport()}
+                            disabled={exporting}
+                            title="ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์ CSV"
+                        >
+                            <Download /> {exporting ? 'กำลังส่งออก...' : 'Export CSV'}
+                        </Button>
                         <Button variant="outline" size="sm" onClick={() => toggleClosed.mutate(!topic.closed)} disabled={toggleClosed.isPending}>
                             {topic.closed ? <LockOpen /> : <Lock />} {topic.closed ? 'เปิดอีกครั้ง' : 'ปิดการเก็บ'}
                         </Button>
@@ -658,16 +1112,27 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
                                 <TabsTrigger value="members">รายชื่อ ({topic.memberCount})</TabsTrigger>
                                 <TabsTrigger value="payments">ประวัติรับเงิน ({topic.payments.length})</TabsTrigger>
                             </TabsList>
-                            <Button
-                                size="sm"
-                                disabled={topic.closed || topic.members.length === 0}
-                                onClick={() => {
-                                    setPayMember(null);
-                                    setPayOpen(true);
-                                }}
-                            >
-                                <Banknote /> บันทึกการรับเงิน
-                            </Button>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={topic.closed || topic.members.length === 0}
+                                    onClick={() => setBatchOpen(true)}
+                                    title="บันทึกรับเงินสำหรับห้วงเวลาเดียวกันให้กับหลายคนพร้อมกัน"
+                                >
+                                    <Calendar /> บันทึกตามห้วงเวลา (หลายคน)
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    disabled={topic.closed || topic.members.length === 0}
+                                    onClick={() => {
+                                        setPayMember(null);
+                                        setPayOpen(true);
+                                    }}
+                                >
+                                    <Banknote /> บันทึกการรับเงิน
+                                </Button>
+                            </div>
                         </div>
                         <TabsContent value="members">
                             <MembersTab
@@ -687,6 +1152,7 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
 
             <TopicDialog open={editOpen} onOpenChange={setEditOpen} topic={topic} />
             <PaymentDialog topic={topic} member={payMember} open={payOpen} onOpenChange={setPayOpen} />
+            <BatchPaymentDialog topic={topic} open={batchOpen} onOpenChange={setBatchOpen} />
         </div>
     );
 }
@@ -703,6 +1169,11 @@ function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSummary; a
                 <p className="truncate font-medium">{topic.name}</p>
                 {topic.closed && <Lock className="size-3.5 shrink-0 text-muted-foreground" />}
             </div>
+            {topic.dailyRate && topic.dailyRate > 0 && (
+                <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                    วันละ {formatBaht(topic.dailyRate)}
+                </Badge>
+            )}
             <ProgressBar value={pct} className="h-1.5" />
             <p className="text-xs text-muted-foreground tabular-nums">
                 {formatBaht(topic.collected)} / {formatBaht(topic.target)} · ครบ {topic.paidCount}/{topic.memberCount} คน

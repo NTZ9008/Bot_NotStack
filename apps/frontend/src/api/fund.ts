@@ -1,5 +1,6 @@
 import type {
     AddFundMembersInput,
+    BatchFundPaymentInput,
     CreateFundPaymentInput,
     CreateFundTopicInput,
     FundTopicDetail,
@@ -38,6 +39,26 @@ export const fundApi = {
         api<SuccessResponse>(f(guildId, `/${id}/members/${memberId}`), { body: input }),
     removeMember: (guildId: string, id: number, memberId: number) => api<SuccessResponse>(f(guildId, `/${id}/members/${memberId}/delete`), { method: 'POST' }),
     addPayment: (guildId: string, id: number, input: CreateFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments`), { body: input }),
+    batchPayment: (guildId: string, id: number, input: BatchFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments/batch`), { body: input }),
     removePayment: (guildId: string, id: number, paymentId: number) => api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),
+    exportCsv: async (guildId: string, id: number) => {
+        const res = await fetch(`/api/guilds/${guildId}/funds/${id}/export`, { credentials: 'include' });
+        if (!res.ok) throw new Error('ดาวน์โหลด CSV ไม่สำเร็จ');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const disposition = res.headers.get('Content-Disposition');
+        let filename = `fund-${id}.csv`;
+        if (disposition && disposition.includes('filename=')) {
+            const match = disposition.match(/filename="?([^";]+)"?/);
+            if (match && match[1]) filename = decodeURIComponent(match[1]);
+        }
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    },
 };

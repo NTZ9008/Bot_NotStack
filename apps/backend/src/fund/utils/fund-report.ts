@@ -65,6 +65,13 @@ export function buildFundReport(topic: FundTopicDetail, options: { mentionUnpaid
         )
         .setFooter({ text: 'NotStack • ระบบเก็บเงิน' })
         .setTimestamp();
+    if (topic.dailyRate && topic.dailyRate > 0) {
+        summary.addFields({
+            name: '📅 ยอดรายวัน',
+            value: `${formatBaht(topic.dailyRate)}/วัน${topic.startDate ? ` (เริ่ม <t:${Math.floor(new Date(topic.startDate).getTime() / 1000)}:d>)` : ''}`,
+            inline: true,
+        });
+    }
     if (topic.dueDate) {
         summary.addFields({ name: '📅 ครบกำหนด', value: `<t:${Math.floor(new Date(topic.dueDate).getTime() / 1000)}:D>`, inline: true });
     }
