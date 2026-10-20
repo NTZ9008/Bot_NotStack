@@ -51,8 +51,7 @@ export class ActivityController {
                 query.fresh && !query.to
                     ? {
                           ...input,
-                          to: new Date(),
-                          from: query.from ?? new Date(Date.now() - (query.hours ?? 168) * 3600000),
+                          ...resolveRange({ ...query, to: new Date(), from: query.from ?? new Date(Date.now() - (query.hours ?? 168) * 3600000) }),
                       }
                     : input,
             );

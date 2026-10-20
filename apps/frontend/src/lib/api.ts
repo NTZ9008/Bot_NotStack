@@ -1,3 +1,4 @@
+import { decodePreviewResponse } from './preview-response';
 import { sessionRequests } from './session-state';
 import type { ApiErrorBody } from '@notstack/shared';
 import { AUTH_ERROR_CODES } from '@notstack/shared/auth-codes';
@@ -148,14 +149,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
 
     const result: unknown =
-        options.responseType === 'preview'
-            ? {
-                  image: await res.blob(),
-                  vars: res.headers.has('X-Preview-Vars') ? JSON.parse(decodeURIComponent(res.headers.get('X-Preview-Vars')!)) : undefined,
-              }
-            : options.responseType === 'text'
-              ? await res.text()
-              : await res.json();
+        options.responseType === 'preview' ? await decodePreviewResponse(res) : options.responseType === 'text' ? await res.text() : await res.json();
     sessionSignal.throwIfAborted();
     return result as T;
 }

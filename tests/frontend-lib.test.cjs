@@ -294,3 +294,20 @@ test('URL parsers preserve optional strings and reject invalid search values wit
     for (const bad of [undefined, null, '', 'bad', -1, 0, 1.5, Infinity, Symbol('id')]) assert.equal(positiveSearchId(bad), undefined);
     assert.equal(positiveSearchId('12'), 12);
 });
+
+test('preview decoder accepts binary responses and old JSON APIs during rolling deployments', async () => {
+    const { decodePreviewResponse } = require('../apps/frontend/src/lib/preview-response.ts');
+    const vars = { user: 'สมาชิก' };
+    const binary = await decodePreviewResponse(
+        new Response('webp', { headers: { 'Content-Type': 'image/webp', 'X-Preview-Vars': encodeURIComponent(JSON.stringify(vars)) } }),
+    );
+    assert.equal(await binary.image.text(), 'webp');
+    assert.deepEqual(binary.vars, vars);
+    const legacy = await decodePreviewResponse(
+        new Response(JSON.stringify({ image: 'data:image/png;base64,cG5n', vars }), { headers: { 'Content-Type': 'application/json' } }),
+    );
+    assert.equal(legacy.image.type, 'image/png');
+    assert.equal(await legacy.image.text(), 'png');
+    assert.deepEqual(legacy.vars, vars);
+    await assert.rejects(decodePreviewResponse(new Response('<html>error</html>')));
+});

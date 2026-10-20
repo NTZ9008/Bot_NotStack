@@ -197,3 +197,10 @@ test('overview cache shares rolling presets, isolates filters and preserves expl
     assert.notEqual(fresh.revision, exact.revision);
     assert.equal((await controller.stats('g', custom, response())).revision, fresh.revision);
 });
+
+test('explicit overview refresh still enforces the maximum one-year range', async () => {
+    const { ActivityController } = require('../apps/backend/dist/log-manager/controllers/activity.controller');
+    const controller = new ActivityController({}, { stats: async (input) => input }, {});
+    const data = await controller.stats('g', { from: new Date('2000-01-01'), fresh: true, includeBots: false, limit: 10 }, response());
+    assert.equal(data.to.getTime() - data.from.getTime(), 365 * 86400000);
+});
