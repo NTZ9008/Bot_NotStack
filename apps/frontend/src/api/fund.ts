@@ -11,7 +11,7 @@ import type {
     UpdateFundTopicInput,
 } from '@notstack/shared';
 import { queryOptions } from '@tanstack/react-query';
-import { api } from '@/lib/api';
+import { api, apiUrl, refreshSession } from '@/lib/api';
 import { guildKey } from './guilds';
 
 // ==========================================
@@ -43,22 +43,45 @@ export const fundApi = {
     removePayment: (guildId: string, id: number, paymentId: number) => api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),
     exportCsv: async (guildId: string, id: number) => {
-        const res = await fetch(`/api/guilds/${guildId}/funds/${id}/export`, { credentials: 'include' });
-        if (!res.ok) throw new Error('ดาวน์โหลด CSV ไม่สำเร็จ');
+        const url = apiUrl(f(guildId, `/${id}/export`));
+        let res = await fetch(url, { credentials: 'include' });
+        if (res.status === 401) {
+            const refreshed = await refreshSession();
+            if (refreshed) {
+                res = await fetch(url, { credentials: 'include' });
+            }
+        }
+        if (!res.ok) {
+            const errData = (await res.json().catch(() => ({}))) as { message?: string };
+            throw new Error(errData.message || 'ดาวน์โหลด CSV ไม่สำเร็จ');
+        }
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = blobUrl;
         const disposition = res.headers.get('Content-Disposition');
         let filename = `fund-${id}.csv`;
-        if (disposition && disposition.includes('filename=')) {
-            const match = disposition.match(/filename="?([^";]+)"?/);
-            if (match && match[1]) filename = decodeURIComponent(match[1]);
+        if (disposition) {
+            const starMatch = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+            const standardMatch = disposition.match(/filename="?([^";]+)"?/i);
+            if (starMatch && starMatch[1]) {
+                try {
+                    filename = decodeURIComponent(starMatch[1]);
+                } catch {
+                    filename = starMatch[1];
+                }
+            } else if (standardMatch && standardMatch[1]) {
+                try {
+                    filename = decodeURIComponent(standardMatch[1]);
+                } catch {
+                    filename = standardMatch[1];
+                }
+            }
         }
         a.download = filename;
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(blobUrl);
     },
 };
