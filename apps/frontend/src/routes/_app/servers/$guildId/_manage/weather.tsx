@@ -1,6 +1,6 @@
 import type { WeatherSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useBlocker } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { AlertTriangle, Loader2, RotateCcw, Save, Send } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -20,6 +20,7 @@ import { isDirty, toDraft, type PatchWeather, type WeatherDraft } from '@/featur
 import { WEATHER_SECTIONS, WeatherForm, type WeatherSection } from '@/features/weather/weather-form';
 import { WeatherPreview } from '@/features/weather/weather-preview';
 import { useGuildId } from '@/hooks/use-guild';
+import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/weather')({
@@ -85,16 +86,11 @@ function WeatherPage() {
     }, []);
 
     // ออกจากหน้านี้ (หรือปิดแท็บ) ตอนมีการแก้ไขค้างอยู่ → ถามก่อน
-    useBlocker({
-        shouldBlockFn: async () =>
-            dirty &&
-            !(await confirm({
-                title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-                description: 'การตั้งค่ารายงานสภาพอากาศมีการแก้ไขที่ยังไม่ได้กดบันทึก',
-                confirmText: 'ทิ้งการแก้ไข',
-                destructive: true,
-            })),
-        enableBeforeUnload: () => dirty,
+    useUnsavedChangesGuard(dirty, {
+        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
+        description: 'การตั้งค่ารายงานสภาพอากาศมีการแก้ไขที่ยังไม่ได้กดบันทึก',
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
     });
 
     const save = async () => {
@@ -112,17 +108,7 @@ function WeatherPage() {
         }
     };
 
-    // Ctrl/⌘ + S = บันทึก
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                void save();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    });
+    useSaveShortcut(() => void save());
 
     // สวิตช์บันทึกทันที — ใช้ค่าที่บันทึกไว้ (การแก้ไขที่ค้างอยู่ยังอยู่ ไม่ถูกบันทึกไปด้วย)
     const toggle = async (enabled: boolean) => {

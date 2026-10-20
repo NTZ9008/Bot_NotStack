@@ -1,6 +1,6 @@
 import { JIRA_LIMITS, type JiraConnectionResult, type JiraOptions, type JiraSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useBlocker } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { ExternalLink, Loader2, PlugZap, RotateCcw, Save, Send } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +24,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { JiraTicketsCard } from '@/features/jira/tickets-card';
 import { useGuildId } from '@/hooks/use-guild';
+import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/jira')({
@@ -90,16 +91,11 @@ function JiraPage() {
     const patch = (next: Partial<Draft>) => setDraft((current) => (current ? { ...current, ...next } : current));
     const patchOptions = (next: Partial<JiraOptions>) => setDraft((current) => (current ? { ...current, options: { ...current.options, ...next } } : current));
 
-    useBlocker({
-        shouldBlockFn: async () =>
-            dirty &&
-            !(await confirm({
-                title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-                description: 'การตั้งค่า Jira มีการแก้ไขที่ยังไม่ได้กดบันทึก',
-                confirmText: 'ทิ้งการแก้ไข',
-                destructive: true,
-            })),
-        enableBeforeUnload: () => dirty,
+    useUnsavedChangesGuard(dirty, {
+        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
+        description: 'การตั้งค่า Jira มีการแก้ไขที่ยังไม่ได้กดบันทึก',
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
     });
 
     const save = async () => {
@@ -117,16 +113,7 @@ function JiraPage() {
         }
     };
 
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                void save();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    });
+    useSaveShortcut(() => void save());
 
     // สวิตช์บันทึกทันทีด้วยค่าที่บันทึกไว้ (การแก้ไขที่ค้างอยู่ไม่ถูกบันทึกไปด้วย)
     const toggle = async (enabled: boolean) => {

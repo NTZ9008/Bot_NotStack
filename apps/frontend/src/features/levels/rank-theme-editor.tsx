@@ -1,6 +1,5 @@
 import type { RankBackgroundType, RankCardMeta, RankCardStyle, RankCardTheme, RankPreviewKind, WelcomeAsset, WelcomeCard, WelcomeMeta } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker } from '@tanstack/react-router';
 import { Check, RotateCcw, Save } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -15,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AssetGallery } from '@/features/welcome/asset-gallery';
 import { RangeField, Segmented, SwitchRow } from '@/features/welcome/form-controls';
 import { SHAPE_LABELS } from '@/features/welcome/types';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { RankPreview } from './rank-preview';
@@ -112,10 +112,7 @@ function ThemeEditor({
         });
     const patchMembers = (data: Partial<RankCardTheme['members']>) => setDraft((old) => ({ ...old, members: { ...old.members, ...data } }));
 
-    useBlocker({
-        shouldBlockFn: async () => dirty && !(await confirm({ title: 'ทิ้งการแก้ไขธีมการ์ดที่ยังไม่บันทึก?', destructive: true })),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, { title: 'ทิ้งการแก้ไขธีมการ์ดที่ยังไม่บันทึก?', destructive: true });
 
     const save = useMutation({
         mutationFn: () => rankCardApi.saveTheme(guildId, draft),

@@ -7,7 +7,6 @@ import {
     type RankCardTheme,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker } from '@tanstack/react-router';
 import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { insertAtCursor, PlaceholderChips, Segmented, SwitchRow } from '@/features/welcome/form-controls';
 import { useAuth } from '@/hooks/use-auth';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 import { renderDiscordMarkdown } from '@/lib/discord-markdown';
 import { RankPreview } from './rank-preview';
@@ -54,10 +54,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
     const patchReward = (index: number, data: Partial<LevelUpSettings['rewards'][number]>) =>
         setDraft((old) => ({ ...old, rewards: old.rewards.map((reward, i) => (i === index ? { ...reward, ...data } : reward)) }));
 
-    useBlocker({
-        shouldBlockFn: async () => dirty && !(await confirm({ title: 'ทิ้งการตั้งค่าเลเวลอัปที่ยังไม่บันทึก?', destructive: true })),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, { title: 'ทิ้งการตั้งค่าเลเวลอัปที่ยังไม่บันทึก?', destructive: true });
 
     const save = useMutation({
         mutationFn: () => rankCardApi.saveLevelUp(guildId, draft),

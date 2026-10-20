@@ -9,7 +9,6 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker } from '@tanstack/react-router';
 import { Copy, Plus, Save, Trash2 } from 'lucide-react';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
@@ -22,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { IdChoices } from '@/components/id-choices';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
@@ -84,10 +84,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const patch = (data: Partial<typeof draft>) => setDraft((old) => ({ ...old, ...data }));
     const patchRule = (id: string, data: Partial<XpRule>) =>
         setDraft((old) => ({ ...old, rules: old.rules.map((r) => (r.id === id ? { ...r, ...data } : r)) }));
-    useBlocker({
-        shouldBlockFn: async () => dirty && !(await confirm({ title: 'ทิ้งการตั้งค่า XP ที่ยังไม่บันทึก?', destructive: true })),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, { title: 'ทิ้งการตั้งค่า XP ที่ยังไม่บันทึก?', destructive: true });
     const save = useMutation({
         mutationFn: () => xpApi.save(guildId, { revision: saved.revision, settings: xpSettingsSchema.parse(draft) }),
         onSuccess: (data) => {

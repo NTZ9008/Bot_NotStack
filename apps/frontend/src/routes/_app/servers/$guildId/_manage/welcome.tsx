@@ -1,6 +1,6 @@
 import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useBlocker } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -24,6 +24,7 @@ import { isDirty, pickDraft, type CardDraft, type Section } from '@/features/wel
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useGuildId } from '@/hooks/use-guild';
+import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     loader: ({ context, params }) =>
@@ -92,20 +93,16 @@ function WelcomePage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cards.data]);
 
-    const confirmDiscard = async () =>
-        !dirty ||
-        confirm({
-            title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-            description: `การ์ด "${draft?.name}" มีการแก้ไขที่ยังไม่ได้กดบันทึก`,
-            confirmText: 'ทิ้งการแก้ไข',
-            destructive: true,
-        });
+    const discardDialog = {
+        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
+        description: `การ์ด "${draft?.name}" มีการแก้ไขที่ยังไม่ได้กดบันทึก`,
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
+    };
+    const confirmDiscard = async () => !dirty || confirm(discardDialog);
 
     // ออกจากหน้านี้ (หรือปิดแท็บ) ตอนมีการแก้ไขค้างอยู่ → ถามก่อน
-    useBlocker({
-        shouldBlockFn: async () => !(await confirmDiscard()),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, discardDialog);
 
     const select = async (id: number) => {
         if (id === draft?.id || !(await confirmDiscard())) return;
@@ -130,17 +127,7 @@ function WelcomePage() {
         }
     };
 
-    // Ctrl/⌘ + S = บันทึก
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                void save();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    });
+    useSaveShortcut(() => void save());
 
     // เปิด/ปิดบันทึกทันที (ทั้งสวิตช์ในรายการและบนหัวตัวแก้ไข) — ไม่กระทบการแก้ไขอื่นที่ค้างอยู่
     const toggle = async (card: WelcomeCard, enabled: boolean) => {
