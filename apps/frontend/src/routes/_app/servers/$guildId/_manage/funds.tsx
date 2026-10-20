@@ -6,6 +6,7 @@ import {
     roundMoney,
     type FundMemberStatus,
     type FundMemberView,
+    type FundPaymentView,
     type FundTopicDetail,
     type FundTopicSummary,
 } from '@notstack/shared';
@@ -341,16 +342,18 @@ function TopicDialog({
 }
 
 // ==========================================
-// 💵 บันทึกการรับเงิน (รายคน)
+// 💵 บันทึก / แก้ไขการรับเงิน (รายคน / รายรายการ)
 // ==========================================
 function PaymentDialog({
     topic,
     member,
+    payment,
     open,
     onOpenChange,
 }: {
     topic: FundTopicDetail;
     member: FundMemberView | null;
+    payment?: FundPaymentView | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
@@ -366,6 +369,18 @@ function PaymentDialog({
 
     useEffect(() => {
         if (!open) return;
+        if (payment) {
+            setMemberId(String(payment.memberId));
+            setAmount(String(payment.amount));
+            setNote(payment.note ?? '');
+            setPaidAt(toLocalInput(new Date(payment.paidAt)));
+            const hasPeriod = Boolean(payment.periodStart && payment.periodEnd);
+            setUsePeriod(hasPeriod);
+            setPeriodStart(toDateInput(payment.periodStart));
+            setPeriodEnd(toDateInput(payment.periodEnd));
+            return;
+        }
+
         const initialMember = member ?? topic.members.find((m) => m.remaining > 0) ?? topic.members[0] ?? null;
         setMemberId(initialMember ? String(initialMember.id) : '');
         setNote('');
@@ -390,10 +405,11 @@ function PaymentDialog({
             setPeriodEnd('');
             setAmount(initialMember && initialMember.remaining > 0 ? String(initialMember.remaining) : '');
         }
-    }, [open, member, topic]);
+    }, [open, member, payment, topic]);
 
     const handleMemberSelect = (newId: string) => {
         setMemberId(newId);
+        if (payment) return;
         const targetMember = topic.members.find((m) => String(m.id) === newId);
         if (targetMember && targetMember.remaining > 0 && !usePeriod) {
             setAmount(String(targetMember.remaining));
@@ -418,17 +434,19 @@ function PaymentDialog({
 
     const selected = topic.members.find((m) => String(m.id) === memberId);
     const save = useMutation({
-        mutationFn: () =>
-            fundApi.addPayment(guildId, topic.id, {
+        mutationFn: () => {
+            const payload = {
                 memberId: Number(memberId),
                 amount: Number(amount),
                 note: note.trim(),
                 paidAt: paidAt ? new Date(paidAt).toISOString() : null,
                 periodStart: usePeriod && periodStart ? new Date(`${periodStart}T00:00:00`).toISOString() : null,
                 periodEnd: usePeriod && periodEnd ? new Date(`${periodEnd}T23:59:59`).toISOString() : null,
-            }),
+            };
+            return payment ? fundApi.updatePayment(guildId, topic.id, payment.id, payload) : fundApi.addPayment(guildId, topic.id, payload);
+        },
         onSuccess: () => {
-            toast.success('บันทึกการรับเงินแล้ว');
+            toast.success(payment ? 'แก้ไขรายการรับเงินแล้ว' : 'บันทึกการรับเงินแล้ว');
             void refresh();
             onOpenChange(false);
         },
@@ -439,7 +457,7 @@ function PaymentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>บันทึกการรับเงิน</DialogTitle>
+                    <DialogTitle>{payment ? 'แก้ไขรายการรับเงิน' : 'บันทึกการรับเงิน'}</DialogTitle>
                     <DialogDescription>{topic.name}</DialogDescription>
                 </DialogHeader>
                 <form
@@ -542,7 +560,7 @@ function PaymentDialog({
                                     onChange={(e) => setAmount(e.target.value)}
                                     className="flex-1"
                                 />
-                                {selected && selected.remaining > 0 && Number(amount) !== selected.remaining && (
+                                {!payment && selected && selected.remaining > 0 && Number(amount) !== selected.remaining && (
                                     <Button
                                         type="button"
                                         variant="outline"
@@ -569,7 +587,7 @@ function PaymentDialog({
                     </Button>
                     <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(Number(amount) > 0) || invalidPeriod}>
                         {save.isPending && <Loader2 className="animate-spin" />}
-                        บันทึก
+                        {payment ? 'บันทึกการแก้ไข' : 'บันทึก'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -832,7 +850,7 @@ function BatchPaymentDialog({
 }
 
 // ==========================================
-// 🎯 ยอดเฉพาะคน (กดที่ยอดเพื่อแก้)
+// 🎯 ยอดต้องจ่ายเฉพาะคน (กดที่ยอดเพื่อแก้)
 // ==========================================
 function TargetCell({ topic, member }: { topic: FundTopicDetail; member: FundMemberView }) {
     const guildId = useGuildId();
@@ -842,6 +860,7 @@ function TargetCell({ topic, member }: { topic: FundTopicDetail; member: FundMem
     const update = useMutation({
         mutationFn: (targetAmount: number | null) => fundApi.updateMember(guildId, topic.id, member.id, { targetAmount }),
         onSuccess: () => {
+            toast.success('บันทึกยอดที่ต้องจ่ายแล้ว');
             setEditing(false);
             void refresh();
         },
@@ -899,6 +918,64 @@ function TargetCell({ topic, member }: { topic: FundTopicDetail; member: FundMem
                     ใช้ยอดกลาง
                 </Button>
             )}
+            <Button type="button" size="icon-xs" variant="ghost" onClick={() => setEditing(false)} aria-label="ยกเลิก">
+                <X />
+            </Button>
+        </form>
+    );
+}
+
+// ==========================================
+// 💰 ยอดจ่ายแล้วรายคน (กดที่ยอดเพื่อแก้ไขยอดที่จ่ายแล้วได้โดยตรง)
+// ==========================================
+function PaidCell({ topic, member }: { topic: FundTopicDetail; member: FundMemberView }) {
+    const guildId = useGuildId();
+    const refresh = useFundRefresh();
+    const [editing, setEditing] = useState(false);
+    const [value, setValue] = useState('');
+    const update = useMutation({
+        mutationFn: (paidAmount: number) => fundApi.updateMember(guildId, topic.id, member.id, { paidAmount }),
+        onSuccess: () => {
+            toast.success('แก้ไขยอดที่จ่ายแล้วเรียบร้อย');
+            setEditing(false);
+            void refresh();
+        },
+        onError,
+    });
+
+    if (topic.closed) {
+        return <span className="tabular-nums font-medium text-emerald-400">{formatBaht(member.paid)}</span>;
+    }
+
+    if (!editing) {
+        return (
+            <button
+                type="button"
+                className="group inline-flex items-center justify-end gap-1.5 rounded px-1 text-right tabular-nums font-medium text-emerald-400 hover:bg-muted"
+                onClick={() => {
+                    setValue(String(member.paid));
+                    setEditing(true);
+                }}
+                title="กดเพื่อแก้ไขยอดที่จ่ายแล้วของคนนี้"
+            >
+                {formatBaht(member.paid)}
+                <Pencil className="size-3 text-foreground opacity-0 group-hover:opacity-60" />
+            </button>
+        );
+    }
+
+    return (
+        <form
+            className="flex items-center justify-end gap-1"
+            onSubmit={(event) => {
+                event.preventDefault();
+                update.mutate(Number(value || 0));
+            }}
+        >
+            <Input type="number" min={0} step="0.01" value={value} onChange={(e) => setValue(e.target.value)} className="h-7 w-24 text-right" autoFocus />
+            <Button type="submit" size="xs" disabled={update.isPending}>
+                บันทึก
+            </Button>
             <Button type="button" size="icon-xs" variant="ghost" onClick={() => setEditing(false)} aria-label="ยกเลิก">
                 <X />
             </Button>
@@ -1099,7 +1176,7 @@ function MembersTab({ topic, onPay }: { topic: FundTopicDetail; onPay: (member: 
                                     <tr>
                                         <th className="px-3 py-2 text-left font-medium">ชื่อสมาชิก</th>
                                         <th className="px-3 py-2 text-left font-medium">ต้องจ่าย</th>
-                                        <th className="px-3 py-2 text-right font-medium">จ่ายแล้ว</th>
+                                        <th className="px-3 py-2 text-right font-medium">จ่ายแล้ว (กดแก้ได้)</th>
                                         <th className="px-3 py-2 text-right font-medium">คงค้าง</th>
                                         <th className="px-3 py-2 text-left font-medium">สถานะ</th>
                                         <th className="px-3 py-2" />
@@ -1122,8 +1199,8 @@ function MembersTab({ topic, onPay }: { topic: FundTopicDetail; onPay: (member: 
                                                 <td className="px-3 py-2">
                                                     <TargetCell topic={topic} member={m} />
                                                 </td>
-                                                <td className="px-3 py-2 text-right tabular-nums font-medium text-emerald-400">
-                                                    {formatBaht(m.paid)}
+                                                <td className="px-3 py-2 text-right">
+                                                    <PaidCell topic={topic} member={m} />
                                                 </td>
                                                 <td className={cn('px-3 py-2 text-right tabular-nums', m.remaining > 0 ? 'font-medium text-amber-400' : 'text-muted-foreground')}>
                                                     {formatBaht(m.remaining)}
@@ -1174,9 +1251,9 @@ function MembersTab({ topic, onPay }: { topic: FundTopicDetail; onPay: (member: 
 }
 
 // ==========================================
-// 🧾 ประวัติการรับเงิน + ค้นหา
+// 🧾 ประวัติการรับเงิน + ค้นหา + แก้ไข/ลบรายการ
 // ==========================================
-function PaymentsTab({ topic }: { topic: FundTopicDetail }) {
+function PaymentsTab({ topic, onEditPayment }: { topic: FundTopicDetail; onEditPayment: (payment: FundPaymentView) => void }) {
     const guildId = useGuildId();
     const refresh = useFundRefresh();
     const confirm = useConfirm();
@@ -1261,15 +1338,28 @@ function PaymentsTab({ topic }: { topic: FundTopicDetail }) {
                                         {p.recordedBy && ` · บันทึกโดย ${p.recordedBy}`}
                                     </p>
                                 </div>
-                                <Button
-                                    size="icon-xs"
-                                    variant="ghost"
-                                    aria-label="ลบรายการ"
-                                    disabled={topic.closed}
-                                    onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}
-                                >
-                                    <Trash2 className="text-destructive" />
-                                </Button>
+                                <div className="flex shrink-0 items-center gap-1">
+                                    <Button
+                                        size="icon-xs"
+                                        variant="ghost"
+                                        aria-label="แก้ไขรายการ"
+                                        title="แก้ไขรายการรับเงิน"
+                                        disabled={topic.closed}
+                                        onClick={() => onEditPayment(p)}
+                                    >
+                                        <Pencil />
+                                    </Button>
+                                    <Button
+                                        size="icon-xs"
+                                        variant="ghost"
+                                        aria-label="ลบรายการ"
+                                        title="ลบรายการรับเงิน"
+                                        disabled={topic.closed}
+                                        onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}
+                                    >
+                                        <Trash2 className="text-destructive" />
+                                    </Button>
+                                </div>
                             </li>
                         );
                     })}
@@ -1542,6 +1632,7 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
     const [batchOpen, setBatchOpen] = useState(false);
     const [exporting, setExporting] = useState(false);
     const [payMember, setPayMember] = useState<FundMemberView | null>(null);
+    const [editingPayment, setEditingPayment] = useState<FundPaymentView | null>(null);
 
     const toggleClosed = useMutation({
         mutationFn: (closed: boolean) => fundApi.update(guildId, topicId, { closed }),
@@ -1649,7 +1740,7 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
                     {topic.closed && (
                         <div className="flex items-center gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
                             <Lock className="size-4 shrink-0" />
-                            <span>หัวข้อนี้ปิดการเก็บเงินแล้ว — หากต้องการเพิ่ม/ลบคนหรือบันทึกรับเงินเพิ่ม กรุณากด “เปิดอีกครั้ง” ด้านบน</span>
+                            <span>หัวข้อนี้ปิดการเก็บเงินแล้ว — หากต้องการเพิ่ม/ลบคนหรือบันทึก/แก้ไขรับเงิน กรุณากด “เปิดอีกครั้ง” ด้านบน</span>
                         </div>
                     )}
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -1698,6 +1789,7 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
                                     disabled={topic.closed || topic.members.length === 0}
                                     onClick={() => {
                                         setPayMember(null);
+                                        setEditingPayment(null);
                                         setPayOpen(true);
                                     }}
                                 >
@@ -1710,12 +1802,20 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
                                 topic={topic}
                                 onPay={(member) => {
                                     setPayMember(member);
+                                    setEditingPayment(null);
                                     setPayOpen(true);
                                 }}
                             />
                         </TabsContent>
                         <TabsContent value="payments">
-                            <PaymentsTab topic={topic} />
+                            <PaymentsTab
+                                topic={topic}
+                                onEditPayment={(payment) => {
+                                    setPayMember(null);
+                                    setEditingPayment(payment);
+                                    setPayOpen(true);
+                                }}
+                            />
                         </TabsContent>
                         <TabsContent value="analytics">
                             <TopicAnalyticsTab topic={topic} />
@@ -1725,7 +1825,16 @@ function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => 
             </Card>
 
             <TopicDialog open={editOpen} onOpenChange={setEditOpen} topic={topic} />
-            <PaymentDialog topic={topic} member={payMember} open={payOpen} onOpenChange={setPayOpen} />
+            <PaymentDialog
+                topic={topic}
+                member={payMember}
+                payment={editingPayment}
+                open={payOpen}
+                onOpenChange={(open) => {
+                    setPayOpen(open);
+                    if (!open) setEditingPayment(null);
+                }}
+            />
             <BatchPaymentDialog topic={topic} open={batchOpen} onOpenChange={setBatchOpen} />
         </div>
     );
@@ -1875,7 +1984,7 @@ function FundsPage() {
             <PageHeader
                 help="funds"
                 title="เก็บเงินตามเป้า"
-                description="สร้างหัวข้อเก็บเงินได้หลายเรื่อง ตั้งยอดคงที่หรือรายวัน เพิ่ม/ลบคน บันทึกรับเงิน วิเคราะห์กราฟแดชบอร์ด ส่งออก CSV และส่งรายงานเข้า Discord"
+                description="สร้างหัวข้อเก็บเงินได้หลายเรื่อง ตั้งยอดคงที่หรือรายวัน เพิ่ม/ลบคน บันทึกและแก้ไขการรับเงิน วิเคราะห์กราฟแดชบอร์ด ส่งออก CSV และส่งรายงานเข้า Discord"
                 actions={
                     <Button onClick={() => setCreateOpen(true)}>
                         <Plus /> สร้างหัวข้อ

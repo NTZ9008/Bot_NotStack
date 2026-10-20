@@ -8,6 +8,7 @@ import type {
     SendFundReportInput,
     SuccessResponse,
     UpdateFundMemberInput,
+    UpdateFundPaymentInput,
     UpdateFundTopicInput,
 } from '@notstack/shared';
 import { queryOptions } from '@tanstack/react-query';
@@ -39,6 +40,8 @@ export const fundApi = {
         api<SuccessResponse>(f(guildId, `/${id}/members/${memberId}`), { body: input }),
     removeMember: (guildId: string, id: number, memberId: number) => api<SuccessResponse>(f(guildId, `/${id}/members/${memberId}/delete`), { method: 'POST' }),
     addPayment: (guildId: string, id: number, input: CreateFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments`), { body: input }),
+    updatePayment: (guildId: string, id: number, paymentId: number, input: UpdateFundPaymentInput) =>
+        api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}`), { body: input }),
     batchPayment: (guildId: string, id: number, input: BatchFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments/batch`), { body: input }),
     removePayment: (guildId: string, id: number, paymentId: number) => api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),

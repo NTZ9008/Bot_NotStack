@@ -6,7 +6,7 @@ import { SNOWFLAKE_RE } from './common';
 // - หัวข้อ (topic) ได้หลายเรื่องต่อเซิร์ฟเวอร์ แต่ละเรื่องตั้ง "ยอดเก็บต่อคน" หรือ "ยอดรายวัน" ได้
 // - รองรับการบันทึกย้อนหลังตามห้วงเวลา (periodStart - periodEnd) คำนวณวันและยอดเงินให้อัตโนมัติ
 // - เพิ่ม/ลบคนในหัวข้อได้ และตั้งยอดเฉพาะคนได้ (null = ใช้ยอดต่อคนของหัวข้อ)
-// - บันทึกการรับเงินทีละรายการหรือเป็นกลุ่ม (Batch) และ Export เป็น CSV รองรับภาษาไทย (UTF-8 BOM)
+// - บันทึก/แก้ไขการรับเงินทีละรายการหรือเป็นกลุ่ม (Batch) และ Export เป็น CSV รองรับภาษาไทย (UTF-8 BOM)
 // ==========================================
 export const FUND_LIMITS = {
     name: 100,
@@ -232,7 +232,9 @@ export type AddFundMembersData = z.output<typeof addFundMembersSchema>;
 
 export const updateFundMemberSchema = z.object({
     // null = กลับไปใช้ยอดต่อคนของหัวข้อ
-    targetAmount: money('ยอดเฉพาะคน').nullable(),
+    targetAmount: money('ยอดเฉพาะคน').nullable().optional(),
+    // ปรับยอดที่จ่ายแล้วรวมของคนนี้โดยตรง
+    paidAmount: money('ยอดที่จ่ายแล้ว').optional(),
 });
 export type UpdateFundMemberInput = z.input<typeof updateFundMemberSchema>;
 export type UpdateFundMemberData = z.output<typeof updateFundMemberSchema>;
@@ -247,6 +249,17 @@ export const createFundPaymentSchema = z.object({
 });
 export type CreateFundPaymentInput = z.input<typeof createFundPaymentSchema>;
 export type CreateFundPaymentData = z.output<typeof createFundPaymentSchema>;
+
+export const updateFundPaymentSchema = z.object({
+    memberId: z.coerce.number().int().positive('กรุณาเลือกคนที่จ่าย').optional(),
+    amount: money('จำนวนเงิน').refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0').optional(),
+    note: z.string().trim().max(FUND_LIMITS.note, `หมายเหตุยาวได้ไม่เกิน ${FUND_LIMITS.note} ตัวอักษร`).optional(),
+    paidAt: dateField.optional(),
+    periodStart: dateField.optional(),
+    periodEnd: dateField.optional(),
+});
+export type UpdateFundPaymentInput = z.input<typeof updateFundPaymentSchema>;
+export type UpdateFundPaymentData = z.output<typeof updateFundPaymentSchema>;
 
 export const batchFundPaymentSchema = z.object({
     memberIds: z.array(z.coerce.number().int().positive()).min(1, 'กรุณาเลือกสมาชิกอย่างน้อย 1 คน'),
