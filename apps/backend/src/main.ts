@@ -50,7 +50,8 @@ async function bootstrap(): Promise<void> {
             credentials: true,
             methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
-            exposedHeaders: ['Content-Disposition'],
+            exposedHeaders: ['Content-Disposition', 'X-Preview-Vars', 'Server-Timing'],
+            maxAge: 600,
         });
     }
 

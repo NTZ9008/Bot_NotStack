@@ -1,3 +1,6 @@
+import { createHash } from 'node:crypto';
+import { ResultCache } from '../common/utils/result-cache';
+import { timeOperation, withServerTiming } from '../common/utils/server-timing';
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Query, Res } from '@nestjs/common';
 import {
     ALIGNS,
@@ -53,6 +56,12 @@ const DEFAULT_CONTENT = 'ยินดีต้อนรับ {mention} เข�
 @Controller('guilds/:guildId/welcome')
 export class WelcomeController {
     private readonly logger = new Logger('Welcome');
+    private readonly previews = new ResultCache<Awaited<ReturnType<WelcomeService['renderImage']>>>(
+        15_000,
+        64,
+        16 * 1024 * 1024,
+        (result) => result.image.length,
+    );
 
     constructor(
         private readonly store: WelcomeStore,
@@ -123,6 +132,7 @@ export class WelcomeController {
                 design: body.design ?? source?.design ?? defaultDesign(),
                 backgroundId: body.backgroundId !== undefined ? body.backgroundId : (source?.backgroundId ?? null),
             });
+            this.previews.clear();
             audit.targetId = card.id;
             return { success: true, card };
         } catch (err) {
@@ -154,6 +164,7 @@ export class WelcomeController {
 
             const card = await this.store.updateCard(guildId, id, data);
             if (!card) throw notFound('ไม่พบการ์ดนี้ (อาจถูกลบไปแล้ว)');
+            this.previews.clear();
             const warning = card.enabled ? await this.welcome.channelWarning(guildId, card.channelId) : null;
             return { success: true, card, warning };
         } catch (err) {
@@ -188,13 +199,27 @@ export class WelcomeController {
         @Body() body: WelcomePreviewDto,
         @CurrentUser() user: User,
         @Res({ passthrough: true }) res: Response,
-    ): Promise<WelcomePreviewResponse> {
+        @Query('compact') compact?: string,
+    ): Promise<WelcomePreviewResponse | void> {
         try {
             const backgroundId = parseId(body.backgroundId);
             await this.validateBackground(guildId, { backgroundId });
-            const sample = await this.welcome.resolveSample(guildId, body.userId, user.discordId);
-            const { image, vars } = await this.welcome.renderImage(body.design, backgroundId, sample);
+            const key = createHash('sha256')
+                .update(JSON.stringify([guildId, user.id, user.discordId, body, compact === '1']))
+                .digest('hex');
+            const { image, vars } = await withServerTiming(res, () =>
+                this.previews.get(key, async () => {
+                    const sample = await timeOperation('discord', () => this.welcome.resolveSample(guildId, body.userId, user.discordId));
+                    return this.welcome.renderImage(body.design, backgroundId, sample, compact === '1');
+                }),
+            );
             res.set('Cache-Control', 'no-store');
+            if (compact === '1') {
+                res.set('X-Preview-Vars', encodeURIComponent(JSON.stringify(vars)))
+                    .type('image/webp')
+                    .send(image);
+                return;
+            }
             // vars ส่งกลับไปให้หน้าเว็บแทนค่าตัวแปรในข้อความเองได้ทันทีขณะพิมพ์ (ไม่ต้องรอวาดรูปใหม่)
             return { image: `data:image/png;base64,${image.toString('base64')}`, vars };
         } catch (err) {
@@ -262,7 +287,12 @@ export class WelcomeController {
     // อัปโหลดเป็นไฟล์ดิบ (body = ตัวไฟล์รูป, ชื่อไฟล์อยู่ใน ?name=) — ไม่ต้องพึ่ง library multipart
     @Audit('welcome.asset_upload')
     @Post('assets')
-    async uploadAsset(@GuildId() guildId: string, @Body() body: unknown, @Query('name') rawName: unknown, @AuditCtx() audit: AuditContext): Promise<WelcomeAssetResponse> {
+    async uploadAsset(
+        @GuildId() guildId: string,
+        @Body() body: unknown,
+        @Query('name') rawName: unknown,
+        @AuditCtx() audit: AuditContext,
+    ): Promise<WelcomeAssetResponse> {
         try {
             const file = await this.renderer.prepareAssetUpload(body).catch((err: Error) => {
                 throw badRequest(err.message);
@@ -310,6 +340,7 @@ export class WelcomeController {
             const id = parseId(idParam);
             if (!id || !(await this.store.deleteAsset(guildId, id))) throw notFound('ไม่พบรูปนี้ (อาจถูกลบไปแล้ว)');
             this.renderer.forgetAsset(id);
+            this.previews.clear();
             return { success: true };
         } catch (err) {
             this.fail(err, 'ลบรูปไม่สำเร็จ');

@@ -1,21 +1,17 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
-import { z } from 'zod';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardAudit, DiscordActivity } from '@/features/audit/audit-panels';
 import { useGuildId } from '@/hooks/use-guild';
-import { canPreloadInBackground, schedulePreloads } from '@/lib/background-preload';
-import { sessionRequests } from '@/lib/session-state';
-
-const searchSchema = z.object({
-    source: z.enum(['dashboard', 'discord']).catch('dashboard').default('dashboard'),
-});
+import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>): { source?: 'dashboard' | 'discord' } => ({
+        source: search.source === 'discord' ? 'discord' : 'dashboard',
+    }),
     loaderDeps: ({ search }) => ({ source: search.source }),
     loader: ({ context: { queryClient }, params, deps }) =>
         deps.source === 'discord'
@@ -32,25 +28,20 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs'
 
 function AuditLogsPage() {
     const guildId = useGuildId();
-    const { source } = Route.useSearch();
+    const { source = 'dashboard' } = Route.useSearch();
     const navigate = useNavigate();
     const router = useRouter();
-    useEffect(
+    const tasks = useMemo(
         () =>
-            schedulePreloads(
-                [
-                    () =>
-                        router.preloadRoute({
-                            to: '/servers/$guildId/audit-logs',
-                            params: { guildId },
-                            search: { source: source === 'dashboard' ? 'discord' : 'dashboard' },
-                        }),
-                ],
-                sessionRequests.capture(),
-                () => canPreloadInBackground() && !router.state.isLoading,
-            ),
+            (['dashboard', 'discord'] as const).map((target) => ({
+                key: `${guildId}:audit:${target}`,
+                run: async () => {
+                    if (source !== target) await router.preloadRoute({ to: '/servers/$guildId/audit-logs', params: { guildId }, search: { source: target } });
+                },
+            })),
         [guildId, source, router],
     );
+    const prioritize = usePreloadTasks(tasks);
     return (
         <>
             <PageHeader
@@ -67,8 +58,22 @@ function AuditLogsPage() {
                         }
                     >
                         <TabsList className="mb-4">
-                            <TabsTrigger value="dashboard">การตั้งค่าบน Dashboard</TabsTrigger>
-                            <TabsTrigger value="discord">เหตุการณ์ในเซิร์ฟเวอร์ Discord</TabsTrigger>
+                            <TabsTrigger
+                                value="dashboard"
+                                onMouseEnter={() => prioritize(`${guildId}:audit:dashboard`)}
+                                onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
+                                onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
+                            >
+                                การตั้งค่าบน Dashboard
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="discord"
+                                onMouseEnter={() => prioritize(`${guildId}:audit:discord`)}
+                                onFocus={() => prioritize(`${guildId}:audit:discord`)}
+                                onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
+                            >
+                                เหตุการณ์ในเซิร์ฟเวอร์ Discord
+                            </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">
                             <DashboardAudit guildId={guildId} />

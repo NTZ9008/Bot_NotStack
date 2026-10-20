@@ -1,6 +1,10 @@
-import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Res, UseGuards } from '@nestjs/common';
+import { createHash } from 'node:crypto';
+import { ResultCache } from '../common/utils/result-cache';
+import { withServerTiming } from '../common/utils/server-timing';
+import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Query, Res, UseGuards } from '@nestjs/common';
 import {
     allowedMemberStyle,
+    applyMemberStyle,
     defaultLevelUpSettings,
     defaultRankTheme,
     LEVEL_UP_DESTINATION_LABELS,
@@ -58,6 +62,7 @@ const dataUrl = (image: Buffer) => `data:image/png;base64,${image.toString('base
 @Controller('guilds/:guildId/rank-card')
 export class RankCardController {
     private readonly logger = new Logger('RankCard');
+    private readonly previews = new ResultCache<Buffer>(15_000, 64, 16 * 1024 * 1024, (image) => image.length);
 
     constructor(
         private readonly store: RankCardStore,
@@ -112,7 +117,9 @@ export class RankCardController {
     async saveTheme(@GuildId() guildId: string, @Body() body: ThemeDto): Promise<RankCardTheme> {
         try {
             await this.cards.assertOwnedAssets(guildId, themeAssetIds(body.theme));
-            return await this.store.saveTheme(guildId, body.theme);
+            const saved = await this.store.saveTheme(guildId, body.theme);
+            this.previews.clear();
+            return saved;
         } catch (err) {
             this.fail(err, 'บันทึกธีมการ์ดไม่สำเร็จ');
         }
@@ -123,11 +130,27 @@ export class RankCardController {
     @UseGuards(RenderRateLimitGuard)
     @Post('preview')
     @HttpCode(HttpStatus.OK)
-    async preview(@GuildId() guildId: string, @Body() body: PreviewDto, @CurrentUser() user: User, @Res({ passthrough: true }) res: Response): Promise<RankPreviewResponse> {
+    async preview(
+        @GuildId() guildId: string,
+        @Body() body: PreviewDto,
+        @CurrentUser() user: User,
+        @Res({ passthrough: true }) res: Response,
+        @Query('compact') compact?: string,
+    ): Promise<RankPreviewResponse | void> {
         try {
             await this.cards.assertOwnedAssets(guildId, themeAssetIds(body.theme));
-            const image = await this.cards.preview(guildId, body.kind, body.theme.style, user.discordId, body.levelUp);
+            const levelUp = body.kind === 'levelup' ? (body.levelUp ?? (await this.store.levelUp(guildId))) : undefined;
+            const key = createHash('sha256')
+                .update(JSON.stringify([guildId, user.id, user.discordId, body, levelUp, compact === '1']))
+                .digest('hex');
+            const image = await withServerTiming(res, () =>
+                this.previews.get(key, () => this.cards.preview(guildId, body.kind, body.theme.style, user.discordId, levelUp, compact === '1')),
+            );
             res.set('Cache-Control', 'no-store');
+            if (compact === '1') {
+                res.type('image/webp').send(image);
+                return;
+            }
             return { image: dataUrl(image) };
         } catch (err) {
             this.fail(err, 'สร้างรูปตัวอย่างไม่สำเร็จ');
@@ -179,6 +202,7 @@ export class RankCardController {
             if (!discordId) throw badRequest(reason ?? 'แต่งการ์ดไม่ได้');
             if (!(await this.store.theme(guildId)).members.enabled) throw badRequest('แอดมินของเซิร์ฟเวอร์นี้ปิดการแต่งการ์ดเอง');
             await this.store.saveMemberStyle(guildId, discordId, body.style);
+            this.previews.clear();
             return await this.myCard(guildId, user);
         } catch (err) {
             this.fail(err, 'บันทึกการ์ดของคุณไม่สำเร็จ');
@@ -194,6 +218,7 @@ export class RankCardController {
             const { discordId, reason } = await this.myContext(guildId, user);
             if (!discordId) throw badRequest(reason ?? 'แต่งการ์ดไม่ได้');
             await this.store.deleteMemberStyle(guildId, discordId);
+            this.previews.clear();
             return await this.myCard(guildId, user);
         } catch (err) {
             this.fail(err, 'รีเซ็ตการ์ดของคุณไม่สำเร็จ');
@@ -205,12 +230,31 @@ export class RankCardController {
     @UseGuards(RenderRateLimitGuard)
     @Post('me/preview')
     @HttpCode(HttpStatus.OK)
-    async previewMine(@GuildId() guildId: string, @Body() body: MyPreviewDto, @CurrentUser() user: User, @Res({ passthrough: true }) res: Response): Promise<RankPreviewResponse> {
+    async previewMine(
+        @GuildId() guildId: string,
+        @Body() body: MyPreviewDto,
+        @CurrentUser() user: User,
+        @Res({ passthrough: true }) res: Response,
+        @Query('compact') compact?: string,
+    ): Promise<RankPreviewResponse | void> {
         try {
             const { discordId, reason } = await this.myContext(guildId, user);
             if (!discordId) throw badRequest(reason ?? 'แต่งการ์ดไม่ได้');
-            const image = await this.cards.previewMember(guildId, discordId, body.style, body.kind);
+            // Include current permissions/theme so a cached draft cannot outlive an admin change.
+            const theme = await this.store.theme(guildId);
+            const style = applyMemberStyle(theme, body.style);
+            await this.cards.assertOwnedAssets(guildId, style.background.type === 'image' && style.background.imageId ? [style.background.imageId] : []);
+            const key = createHash('sha256')
+                .update(JSON.stringify([guildId, user.id, discordId, body, theme, compact === '1']))
+                .digest('hex');
+            const image = await withServerTiming(res, () =>
+                this.previews.get(key, () => this.cards.previewMember(guildId, discordId, body.style, body.kind, compact === '1')),
+            );
             res.set('Cache-Control', 'no-store');
+            if (compact === '1') {
+                res.type('image/webp').send(image);
+                return;
+            }
             return { image: dataUrl(image) };
         } catch (err) {
             this.fail(err, 'สร้างรูปตัวอย่างไม่สำเร็จ');
@@ -251,7 +295,8 @@ export class RankCardController {
             const guild = this.discord.guild(guildId);
             if (guild) {
                 // ห้อง / ยศต้องเป็นของเซิร์ฟเวอร์นี้
-                if (settings.channelId && !(await this.discord.fetchGuildChannel(guildId, settings.channelId))) throw badRequest('ไม่พบห้องประกาศนี้ในเซิร์ฟเวอร์');
+                if (settings.channelId && !(await this.discord.fetchGuildChannel(guildId, settings.channelId)))
+                    throw badRequest('ไม่พบห้องประกาศนี้ในเซิร์ฟเวอร์');
                 const missing = settings.rewards.find((reward) => !guild.roles.cache.has(reward.roleId));
                 if (missing) throw badRequest(`ไม่พบยศรางวัลของเลเวล ${missing.level} ในเซิร์ฟเวอร์`);
                 if (settings.rewards.some((reward) => reward.roleId === guild.id)) throw badRequest('ใช้ @everyone เป็นยศรางวัลไม่ได้');
@@ -259,6 +304,7 @@ export class RankCardController {
                 throw badRequest('Channel ID ไม่ถูกต้อง');
             }
             const saved = await this.store.saveLevelUp(guildId, settings);
+            this.previews.clear();
             return { settings: saved, warnings: await this.levelUp.warnings(guildId, saved) };
         } catch (err) {
             this.fail(err, 'บันทึกการตั้งค่าเลเวลอัปไม่สำเร็จ');
@@ -275,7 +321,9 @@ export class RankCardController {
             return {
                 success: true,
                 queued,
-                message: queued ? `กำลังปรับยศรางวัลให้สมาชิกที่มี XP ${queued.toLocaleString()} คน (ทำงานเบื้องหลัง)` : 'กำลังปรับยศอยู่แล้ว หรือยังไม่มีสมาชิกที่มี XP',
+                message: queued
+                    ? `กำลังปรับยศรางวัลให้สมาชิกที่มี XP ${queued.toLocaleString()} คน (ทำงานเบื้องหลัง)`
+                    : 'กำลังปรับยศอยู่แล้ว หรือยังไม่มีสมาชิกที่มี XP',
             };
         } catch (err) {
             this.fail(err, 'ปรับยศรางวัลไม่สำเร็จ');

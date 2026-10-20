@@ -1,8 +1,9 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
-import { RouteSkeleton } from '@/components/skeleton/route-skeleton';
+import { NavigationSkeleton } from '@/components/skeleton/navigation';
 import { replaceSession } from '@/lib/session';
 import { setUnauthorizedHandler } from '@/lib/api';
+import { pausePreloads } from '@/lib/background-preload';
 import { routeTree } from './routeTree.gen';
 
 export interface RouterContext {
@@ -27,12 +28,15 @@ export const router = createRouter({
     defaultPreload: 'intent',
     // ข้อมูลของหน้าให้ TanStack Query เป็นคนดูแล cache
     defaultPreloadStaleTime: 0,
-    // ระหว่างรอโค้ดของหน้า + ข้อมูลจาก loader แสดงโครงร่างของหน้านั้น (ขึ้นหลัง 150ms และค้างอย่างน้อย 300ms กันกระพริบ)
-    defaultPendingComponent: RouteSkeleton,
-    defaultPendingMs: 150,
-    defaultPendingMinMs: 300,
+    // Keep the current page during short transitions; never hold ready content behind a timer.
+    defaultPendingComponent: NavigationSkeleton,
+    defaultPendingMs: 250,
+    defaultPendingMinMs: 0,
     scrollRestoration: true,
 });
+
+router.subscribe('onBeforeLoad', () => pausePreloads(true));
+router.subscribe('onResolved', () => pausePreloads(false));
 
 // session หมดอายุ (refresh ไม่ผ่าน) → ล้างข้อมูลผู้ใช้แล้วพาไปหน้า login
 setUnauthorizedHandler(() => {

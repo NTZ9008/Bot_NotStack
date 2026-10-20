@@ -1,14 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { fillPlaceholders, isSnowflake, type WelcomeDesign, type WelcomeVars } from '@notstack/shared';
-import {
-    AttachmentBuilder,
-    PermissionFlagsBits,
-    type Guild,
-    type GuildMember,
-    type MessageCreateOptions,
-    type SendableChannels,
-    type User,
-} from 'discord.js';
+import { AttachmentBuilder, PermissionFlagsBits, type Guild, type GuildMember, type MessageCreateOptions, type SendableChannels, type User } from 'discord.js';
 import { DiscordService } from '../discord/discord.service';
 import { WelcomeRenderer } from './welcome.renderer';
 import { WelcomeStore } from './welcome.store';
@@ -58,7 +50,10 @@ export class WelcomeService {
     ) {}
 
     // ห้องต้องเป็นห้องข้อความของเซิร์ฟเวอร์เดียวกับสมาชิก และบอทต้องมีสิทธิ์ส่งไฟล์ — คืนข้อความ error ภาษาไทยถ้าส่งไม่ได้
-    async resolveTargetChannel(guild: Guild, channelId: string): Promise<{ channel: SendableChannels; error?: undefined } | { channel?: undefined; error: string }> {
+    async resolveTargetChannel(
+        guild: Guild,
+        channelId: string,
+    ): Promise<{ channel: SendableChannels; error?: undefined } | { channel?: undefined; error: string }> {
         if (!channelId) return { error: 'การ์ดนี้ยังไม่ได้เลือกห้องที่จะส่ง' };
         const channel = guild.channels.cache.get(channelId) ?? (await guild.channels.fetch(channelId).catch(() => null));
         if (!channel) return { error: `ไม่พบห้อง ${channelId} ในเซิร์ฟเวอร์ ${guild.name}` };
@@ -92,7 +87,12 @@ export class WelcomeService {
         return { guild: targetGuild, member, user };
     }
 
-    async renderImage(design: WelcomeDesign, backgroundId: number | null, target: WelcomeTarget): Promise<{ image: Buffer; vars: WelcomeVars; mentionId: string | null }> {
+    async renderImage(
+        design: WelcomeDesign,
+        backgroundId: number | null,
+        target: WelcomeTarget,
+        compact = false,
+    ): Promise<{ image: Buffer; vars: WelcomeVars; mentionId: string | null }> {
         const { vars, mentionId } = buildVars(target);
         const [background, avatar] = await Promise.all([
             this.renderer.loadAssetImage(backgroundId).catch((err: Error) => {
@@ -101,7 +101,7 @@ export class WelcomeService {
             }),
             design.avatar.visible ? this.renderer.loadAvatarImage(target.member?.user ?? target.user) : null,
         ]);
-        const image = await this.renderer.render({ design, background, avatar, vars });
+        const image = await this.renderer.render({ design, background, avatar, vars }, compact);
         return { image, vars, mentionId };
     }
 

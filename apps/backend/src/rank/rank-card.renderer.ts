@@ -1,5 +1,6 @@
+import { renderSurface } from '../common/utils/render-surface';
 import { Injectable } from '@nestjs/common';
-import { createCanvas, type Image, type SKRSContext2D } from '@napi-rs/canvas';
+import { type Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { LEVEL_UP_CARD_SIZE, RANK_CARD_SIZES, type RankCardBackground, type RankCardStyle } from '@notstack/shared';
 import { fontString, registerFonts } from '../common/canvas/fonts';
 
@@ -168,7 +169,15 @@ export class RankCardRenderer {
     }
 
     // ตั้งฟอนต์ให้ข้อความพอดี maxWidth (ย่อจนถึง minSize แล้วตัดท้ายเป็น …) — คืนข้อความที่จะวาด
-    private fit(ctx: SKRSContext2D, style: RankCardStyle, text: string, weight: number, size: number, maxWidth: number, minSize = Math.round(size * 0.6)): string {
+    private fit(
+        ctx: SKRSContext2D,
+        style: RankCardStyle,
+        text: string,
+        weight: number,
+        size: number,
+        maxWidth: number,
+        minSize = Math.round(size * 0.6),
+    ): string {
         let current = size;
         ctx.font = fontString(style.font, weight, current);
         while (current > minSize && ctx.measureText(text).width > maxWidth) {
@@ -229,8 +238,23 @@ export class RankCardRenderer {
     }
 
     // "LABEL value" ชิดขวา — คืนตำแหน่ง x ซ้ายสุดที่ใช้ไป (วางตัวถัดไปต่อทางซ้ายได้)
-    private stat(ctx: SKRSContext2D, style: RankCardStyle, right: number, baseline: number, label: string, value: string, valueColor: string, valueSize: number): number {
-        const valueWidth = this.text(ctx, style, value, right, baseline, { size: valueSize, weight: 900, color: valueColor, align: 'right', baseline: 'alphabetic' });
+    private stat(
+        ctx: SKRSContext2D,
+        style: RankCardStyle,
+        right: number,
+        baseline: number,
+        label: string,
+        value: string,
+        valueColor: string,
+        valueSize: number,
+    ): number {
+        const valueWidth = this.text(ctx, style, value, right, baseline, {
+            size: valueSize,
+            weight: 900,
+            color: valueColor,
+            align: 'right',
+            baseline: 'alphabetic',
+        });
         const labelRight = right - valueWidth - 10;
         const labelWidth = this.text(ctx, style, label, labelRight, baseline, {
             size: Math.round(valueSize * 0.42),
@@ -259,15 +283,14 @@ export class RankCardRenderer {
     // ==========================================
     // การ์ด /rank
     // ==========================================
-    async renderRank(style: RankCardStyle, data: RankCardData, images: CardImages): Promise<Buffer> {
+    async renderRank(style: RankCardStyle, data: RankCardData, images: CardImages, compact = false): Promise<Buffer> {
         const { width, height } = RANK_CARD_SIZES[style.layout];
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
+        const { ctx, encode } = renderSurface(width, height, compact);
         this.background(ctx, width, height, style.background, images.background);
         if (style.layout === 'centered') this.centered(ctx, style, data);
         else if (style.layout === 'minimal') this.minimal(ctx, style, data);
         else this.classic(ctx, style, data);
-        return canvas.encode('png');
+        return encode();
     }
 
     private classic(ctx: SKRSContext2D, style: RankCardStyle, data: RankCardData): void {
@@ -318,12 +341,29 @@ export class RankCardRenderer {
 
         let left = 960;
         if (style.show.level) {
-            const valueWidth = this.text(ctx, style, compactNumber(data.level), 960, 112, { size: 76, weight: 900, color: style.accentColor, align: 'right', baseline: 'alphabetic' });
-            const labelWidth = this.text(ctx, style, 'LV', 960 - valueWidth - 8, 112, { size: 26, weight: 700, color: style.subTextColor, align: 'right', baseline: 'alphabetic' });
+            const valueWidth = this.text(ctx, style, compactNumber(data.level), 960, 112, {
+                size: 76,
+                weight: 900,
+                color: style.accentColor,
+                align: 'right',
+                baseline: 'alphabetic',
+            });
+            const labelWidth = this.text(ctx, style, 'LV', 960 - valueWidth - 8, 112, {
+                size: 26,
+                weight: 700,
+                color: style.subTextColor,
+                align: 'right',
+                baseline: 'alphabetic',
+            });
             left = 960 - valueWidth - 8 - labelWidth;
         }
         if (style.show.rank) {
-            this.text(ctx, style, data.rank ? `RANK #${compactNumber(data.rank)}` : 'RANK -', 960, 160, { size: 24, weight: 700, color: style.subTextColor, align: 'right' });
+            this.text(ctx, style, data.rank ? `RANK #${compactNumber(data.rank)}` : 'RANK -', 960, 160, {
+                size: 24,
+                weight: 700,
+                color: style.subTextColor,
+                align: 'right',
+            });
         }
 
         const right = Math.min(left, 800) - 30;
@@ -337,24 +377,27 @@ export class RankCardRenderer {
     // ==========================================
     // ตาราง /leaderboard (สูงตามจำนวนแถว)
     // ==========================================
-    async renderLeaderboard(style: RankCardStyle, data: LeaderboardData, images: CardImages): Promise<Buffer> {
+    async renderLeaderboard(style: RankCardStyle, data: LeaderboardData, images: CardImages, compact = false): Promise<Buffer> {
         const width = 1000;
         const rows = Math.max(1, data.rows.length);
         const height = LB_HEADER + rows * (LB_ROW + LB_GAP) + 20;
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
+        const { ctx, encode } = renderSurface(width, height, compact);
         this.background(ctx, width, height, style.background, images.background);
 
         // หัวตาราง: ไอคอน + ชื่อเซิร์ฟเวอร์ + หน้า
         const iconStyle = { ...style, avatarShape: 'circle' as const };
         this.avatar(ctx, iconStyle, data.serverIcon, 80, 72, 80, 4);
         this.text(ctx, style, data.serverName, 140, 56, { size: 38, weight: 700, maxWidth: 820 });
-        this.text(ctx, style, `LEADERBOARD  •  หน้า ${data.page}/${Math.max(1, data.totalPages)}`, 140, 98, { size: 22, weight: 700, color: style.accentColor });
+        this.text(ctx, style, `LEADERBOARD  •  หน้า ${data.page}/${Math.max(1, data.totalPages)}`, 140, 98, {
+            size: 22,
+            weight: 700,
+            color: style.accentColor,
+        });
 
         if (!data.rows.length) {
             this.panel(ctx, 30, LB_HEADER, 940, LB_ROW, 20, Math.max(0.25, style.panelOpacity));
             this.text(ctx, style, 'ยังไม่มีใครได้ XP ในเซิร์ฟเวอร์นี้', 500, LB_HEADER + LB_ROW / 2, { size: 28, color: style.subTextColor, align: 'center' });
-            return canvas.encode('png');
+            return encode();
         }
 
         data.rows.forEach((row, i) => {
@@ -368,24 +411,35 @@ export class RankCardRenderer {
                 ctx.roundRect(30, top, 8, LB_ROW, [20, 0, 0, 20]);
                 ctx.fill();
             }
-            this.text(ctx, style, `#${compactNumber(row.rank)}`, 92, mid, { size: row.rank >= 100 ? 26 : 34, weight: 900, color: medal ?? style.subTextColor, align: 'center', maxWidth: 90 });
+            this.text(ctx, style, `#${compactNumber(row.rank)}`, 92, mid, {
+                size: row.rank >= 100 ? 26 : 34,
+                weight: 900,
+                color: medal ?? style.subTextColor,
+                align: 'center',
+                maxWidth: 90,
+            });
             this.avatar(ctx, style, row.avatar, 172, mid, 60, 3);
 
             this.text(ctx, style, row.displayName, 220, top + 34, { size: 28, weight: 700, maxWidth: 470 });
             this.bar(ctx, style, 220, top + 58, 470, 10, progressOf(row));
-            this.text(ctx, style, `LV ${compactNumber(row.level)}`, 945, top + 34, { size: 32, weight: 900, color: style.accentColor, align: 'right', maxWidth: 230 });
+            this.text(ctx, style, `LV ${compactNumber(row.level)}`, 945, top + 34, {
+                size: 32,
+                weight: 900,
+                color: style.accentColor,
+                align: 'right',
+                maxWidth: 230,
+            });
             this.text(ctx, style, `${compactNumber(row.xp)} XP`, 945, top + 66, { size: 20, color: style.subTextColor, align: 'right', maxWidth: 230 });
         });
-        return canvas.encode('png');
+        return encode();
     }
 
     // ==========================================
     // การ์ดเลเวลอัป
     // ==========================================
-    async renderLevelUp(style: RankCardStyle, data: LevelUpCardData, images: CardImages): Promise<Buffer> {
+    async renderLevelUp(style: RankCardStyle, data: LevelUpCardData, images: CardImages, compact = false): Promise<Buffer> {
         const { width, height } = LEVEL_UP_CARD_SIZE;
-        const canvas = createCanvas(width, height);
-        const ctx = canvas.getContext('2d');
+        const { ctx, encode } = renderSurface(width, height, compact);
         this.background(ctx, width, height, style.background, images.background);
         this.panel(ctx, 18, 18, width - 36, height - 36, 26, style.panelOpacity);
         this.avatar(ctx, style, data.avatar, 140, 130, 164, 6);
@@ -402,6 +456,6 @@ export class RankCardRenderer {
         if (data.rewardNames.length) {
             this.text(ctx, style, `🎁 ได้รับยศ ${data.rewardNames.join(', ')}`, 262, 214, { size: 22, color: style.subTextColor, maxWidth: 600 });
         }
-        return canvas.encode('png');
+        return encode();
     }
 }

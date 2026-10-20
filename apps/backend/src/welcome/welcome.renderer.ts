@@ -1,3 +1,4 @@
+import { renderSurface } from '../common/utils/render-surface';
 import { Injectable, Logger } from '@nestjs/common';
 import { createCanvas, loadImage, type Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { fillPlaceholders, WELCOME_MAX_UPLOAD_BYTES, type WelcomeDesign, type WelcomeTextLayer, type WelcomeVars } from '@notstack/shared';
@@ -198,7 +199,9 @@ export class WelcomeRenderer {
     }
 
     private drawText(ctx: SKRSContext2D, layer: WelcomeTextLayer, vars: WelcomeVars): void {
-        const lines = fillPlaceholders(layer.text, vars, 'image').split('\n').map((line) => line.trimEnd());
+        const lines = fillPlaceholders(layer.text, vars, 'image')
+            .split('\n')
+            .map((line) => line.trimEnd());
         if (!lines.some(Boolean)) return;
 
         const spacing = layer.letterSpacing;
@@ -246,14 +249,16 @@ export class WelcomeRenderer {
     }
 
     // design ต้องผ่าน normalizeDesign มาแล้ว — คืนไฟล์ PNG
-    async render({ design, background = null, avatar = null, vars }: { design: WelcomeDesign; background?: Image | null; avatar?: Image | null; vars: WelcomeVars }): Promise<Buffer> {
-        const canvas = createCanvas(design.width, design.height);
-        const ctx = canvas.getContext('2d');
+    async render(
+        { design, background = null, avatar = null, vars }: { design: WelcomeDesign; background?: Image | null; avatar?: Image | null; vars: WelcomeVars },
+        compact = false,
+    ): Promise<Buffer> {
+        const { ctx, encode } = renderSurface(design.width, design.height, compact);
 
         this.drawBackground(ctx, design, background);
         this.drawAvatar(ctx, design.avatar, avatar);
         for (const layer of design.texts) this.drawText(ctx, layer, vars);
 
-        return canvas.encode('png');
+        return encode();
     }
 }
