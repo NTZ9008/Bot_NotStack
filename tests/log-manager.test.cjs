@@ -216,3 +216,53 @@ test('activity text turns Discord mentions into readable names', () => {
     assert.deepEqual(activityEventLabel('memberJoin'), { label: LOG_EVENTS.find((e) => e.key === 'memberJoin').label, group: LOG_EVENTS.find((e) => e.key === 'memberJoin').group });
     assert.deepEqual(activityEventLabel('unknownEvent'), { label: 'unknownEvent', group: 'อื่นๆ' });
 });
+
+test('log listeners bind every Discord event once and route member/voice changes to the right log keys', async () => {
+    backendRequire('reflect-metadata');
+    const { Collection: DjsCollection, PermissionsBitField: Perms } = backendRequire('discord.js');
+    const { DISCORD_LISTENERS } = require('../apps/backend/dist/discord/decorators/on-discord.decorator');
+    const { LOG_LISTENERS } = require('../apps/backend/dist/log-manager/listeners');
+
+    const sent = [];
+    const logs = {
+        isActive: () => true,
+        pushAuditEntry: () => {},
+        findInAuditBuffer: () => null,
+        fetchExecutor: async () => null,
+        sendLog: async (_guild, key, payload) => sent.push({ key, title: payload.title }),
+    };
+    const listeners = LOG_LISTENERS.map((Listener) => new Listener(logs));
+    const events = listeners.flatMap((listener) =>
+        Object.getOwnPropertyNames(Object.getPrototypeOf(listener)).flatMap((name) => (Reflect.getMetadata(DISCORD_LISTENERS, listener[name]) ?? []).map((meta) => meta.event)),
+    );
+    assert.equal(events.length, 39);
+    assert.equal(new Set(events).size, 39, 'แต่ละ event ควรมี handler ของ Log Manager แค่ตัวเดียว');
+    const call = (name, ...args) => listeners.find((l) => typeof l[name] === 'function')[name](...args);
+
+    const guild = { id: 'g1', memberCount: 3 };
+    const role = (id) => ({ id, guild, permissions: new Perms() });
+    const member = (nickname, roleIds, timeoutUntil) => ({
+        id: 'u1',
+        guild,
+        nickname,
+        user: { id: 'u1', bot: false, username: 'u', displayAvatarURL: () => 'a' },
+        roles: { cache: new DjsCollection(roleIds.map((id) => [id, role(id)])) },
+        communicationDisabledUntilTimestamp: timeoutUntil,
+    });
+    await call('onMemberUpdate', member('a', ['r1'], null), member('b', ['r2'], Date.now() + 60000));
+    assert.deepEqual(
+        sent.map((s) => s.key),
+        ['nicknameUpdate', 'roleGiven', 'roleRemoved', 'memberTimeout'],
+    );
+
+    sent.length = 0;
+    const voice = (channelId, extra = {}) => ({ member: member(null, [], null), guild, channelId, selfMute: false, ...extra });
+    await call('onVoiceStateUpdate', voice(null), voice('v1'));
+    await call('onVoiceStateUpdate', voice('v1'), voice('v2'));
+    await call('onVoiceStateUpdate', voice('v2'), voice(null));
+    await call('onVoiceStateUpdate', voice('v2'), voice('v2', { selfMute: true }));
+    assert.deepEqual(
+        sent.map((s) => s.key),
+        ['voiceJoin', 'voiceSwitch', 'voiceLeave', 'voiceStateChange'],
+    );
+});

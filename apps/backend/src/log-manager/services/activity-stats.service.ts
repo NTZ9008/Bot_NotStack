@@ -57,7 +57,16 @@ export class ActivityStatsService {
     // ใครเคลื่อนไหวมากสุด — นับจำนวนเหตุการณ์ทั้งหมด + แยกประเภทที่คนสนใจ
     private async topUsers({ guildId, from, to, includeBots, limit }: RangeFilter & { limit: number }) {
         const rows = await this.prisma.$queryRaw<
-            { user_id: string; user_name: string | null; is_bot: boolean; total: number; messages: number; voice_joins: number; commands: number; last_seen: Date }[]
+            {
+                user_id: string;
+                user_name: string | null;
+                is_bot: boolean;
+                total: number;
+                messages: number;
+                voice_joins: number;
+                commands: number;
+                last_seen: Date;
+            }[]
         >`
             SELECT user_id,
                    MAX(user_name) AS user_name,
