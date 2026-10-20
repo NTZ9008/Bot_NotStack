@@ -27,10 +27,10 @@ export const router = createRouter({
     defaultPreload: 'intent',
     // ข้อมูลของหน้าให้ TanStack Query เป็นคนดูแล cache
     defaultPreloadStaleTime: 0,
-    // ระหว่างรอโค้ดของหน้า + ข้อมูลจาก loader แสดงโครงร่างของหน้านั้น (ขึ้นหลัง 150ms และค้างอย่างน้อย 300ms กันกระพริบ)
+    // Keep the current page during short transitions; never hold ready content behind a timer.
     defaultPendingComponent: RouteSkeleton,
-    defaultPendingMs: 150,
-    defaultPendingMinMs: 300,
+    defaultPendingMs: 250,
+    defaultPendingMinMs: 0,
     scrollRestoration: true,
 });
 

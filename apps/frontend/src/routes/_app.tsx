@@ -27,6 +27,7 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
+    const isNavigating = useRouterState({ select: (state) => state.isLoading });
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath });
     const current = findNavItem(routePath);
     const { guildId } = useParams({ strict: false });
@@ -37,6 +38,7 @@ function AppLayout() {
             <AppSidebar />
             <SidebarInset className="min-w-0 bg-transparent">
                 <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
+                    {isNavigating && <div role="progressbar" aria-label="กำลังเปิดหน้า" className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
                     <SidebarTrigger />
                     <Separator orientation="vertical" className="mx-1 h-5" />
                     <div className="flex min-w-0 items-center gap-1.5 text-sm">
