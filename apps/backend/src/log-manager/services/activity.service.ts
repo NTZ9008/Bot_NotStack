@@ -20,6 +20,8 @@ import { activityEventLabel, humanizeMentions, type MentionResolvers } from '../
 const FLUSH_DELAY = 2000; // รอรวม event สักครู่ก่อนเขียนลง DB
 const FLUSH_MAX = 100; // ถ้าค้างถึงจำนวนนี้ เขียนทันทีไม่ต้องรอ
 const CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+// จำนวนที่เก็บไว้ / เริ่มเก็บเมื่อไหร่ เป็นแค่ข้อมูลประกอบ — count ทั้งตารางของเซิร์ฟเวอร์ใหญ่ใช้เวลาเป็นร้อย ms จึง cache ไว้สั้นๆ
+const META_CACHE_MS = 60 * 1000;
 
 function truncate(value: unknown, max: number): string {
     const str = String(value ?? '');
@@ -53,6 +55,7 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     private readonly logger = new Logger('Activity');
     private readonly buffer: Prisma.ActivityEventCreateManyInput[] = [];
     private flushTimer: NodeJS.Timeout | null = null;
+    private readonly metaCache = new Map<string, { at: number; total: number; since: string | null }>();
     readonly retentionDays: number;
 
     constructor(
@@ -210,13 +213,19 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
 
     // จำนวนเหตุการณ์ทั้งหมดที่เก็บอยู่ + ช่วงเวลาที่มีข้อมูล (ใช้บอกผู้ใช้ว่าเริ่มเก็บตั้งแต่เมื่อไหร่)
     async meta(guildId: string, enabled: boolean): Promise<ActivityMeta> {
-        const [total, oldest] = await Promise.all([
-            this.prisma.activityEvent.count({ where: { guildId } }),
-            this.prisma.activityEvent.findFirst({ where: { guildId }, orderBy: { id: 'asc' }, select: { createdAt: true } }),
-        ]);
+        let stored = this.metaCache.get(guildId);
+        if (!stored || Date.now() - stored.at > META_CACHE_MS) {
+            const [total, oldest] = await Promise.all([
+                this.prisma.activityEvent.count({ where: { guildId } }),
+                // เรียงตาม created_at ให้ใช้ index (guild_id, created_at) ได้ทันที
+                this.prisma.activityEvent.findFirst({ where: { guildId }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
+            ]);
+            stored = { at: Date.now(), total, since: oldest?.createdAt.toISOString() ?? null };
+            this.metaCache.set(guildId, stored);
+        }
         return {
-            total,
-            since: oldest?.createdAt.toISOString() ?? null,
+            total: stored.total,
+            since: stored.since,
             retentionDays: this.retentionDays,
             enabled,
             eventTypes: this.listEventTypes(),
