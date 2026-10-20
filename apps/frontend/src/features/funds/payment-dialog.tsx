@@ -1,0 +1,245 @@
+import { formatBaht, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
+import { useMutation } from '@tanstack/react-query';
+import { Calendar, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
+import { fundApi } from '@/api/fund';
+import { Field } from '@/components/field';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGuildId } from '@/hooks/use-guild';
+import { toLocalInput } from '@/lib/format';
+import { PeriodFields } from './period-fields';
+import {
+    dailyRateOf,
+    defaultPeriod,
+    endOfDayIso,
+    isAutoPeriodNote,
+    onFundError,
+    periodAmount,
+    periodNote,
+    startOfDayIso,
+    toDateInput,
+    useFundRefresh,
+} from './utils';
+
+const remainingOf = (member: FundMemberView | null | undefined) => (member && member.remaining > 0 ? String(member.remaining) : '');
+
+// ==========================================
+// 💵 บันทึก / แก้ไขการรับเงิน (รายคน / รายรายการ)
+// payment = แก้ไขรายการเดิม, member = เปิดจากแถวของคนนั้น (ไม่ระบุ = เลือกคนที่ยังค้างคนแรก)
+// ==========================================
+export function PaymentDialog({
+    topic,
+    member,
+    payment,
+    open,
+    onOpenChange,
+}: {
+    topic: FundTopicDetail;
+    member: FundMemberView | null;
+    payment?: FundPaymentView | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
+    const guildId = useGuildId();
+    const refresh = useFundRefresh();
+    const dailyRate = dailyRateOf(topic);
+    const [memberId, setMemberId] = useState('');
+    const [amount, setAmount] = useState('');
+    const [note, setNote] = useState('');
+    const [paidAt, setPaidAt] = useState('');
+    const [usePeriod, setUsePeriod] = useState(false);
+    const [periodStart, setPeriodStart] = useState('');
+    const [periodEnd, setPeriodEnd] = useState('');
+
+    useEffect(() => {
+        if (!open) return;
+        if (payment) {
+            setMemberId(String(payment.memberId));
+            setAmount(String(payment.amount));
+            setNote(payment.note ?? '');
+            setPaidAt(toLocalInput(new Date(payment.paidAt)));
+            setUsePeriod(Boolean(payment.periodStart && payment.periodEnd));
+            setPeriodStart(toDateInput(payment.periodStart));
+            setPeriodEnd(toDateInput(payment.periodEnd));
+            return;
+        }
+
+        const initialMember = member ?? topic.members.find((m) => m.remaining > 0) ?? topic.members[0] ?? null;
+        setMemberId(initialMember ? String(initialMember.id) : '');
+        setNote('');
+        setPaidAt(toLocalInput(new Date()));
+        setUsePeriod(Boolean(dailyRate));
+        if (!dailyRate) {
+            setPeriodStart('');
+            setPeriodEnd('');
+            setAmount(remainingOf(initialMember));
+            return;
+        }
+        // หัวข้อรายวัน: ตั้งห้วงเวลาเริ่มต้นให้ แล้วใช้ยอดค้างของคนนั้น (หรือยอดตามจำนวนวันถ้าไม่ค้าง)
+        const { start, end } = defaultPeriod(topic);
+        const { days, amount: calc } = periodAmount(topic, start, end);
+        setPeriodStart(start);
+        setPeriodEnd(end);
+        if (days > 0) {
+            setAmount(remainingOf(initialMember) || String(calc));
+            setNote(periodNote(start, end, days));
+        } else {
+            setAmount(remainingOf(initialMember));
+        }
+    }, [open, member, payment, topic, dailyRate]);
+
+    const handleMemberSelect = (newId: string) => {
+        setMemberId(newId);
+        if (payment) return;
+        const targetMember = topic.members.find((m) => String(m.id) === newId);
+        if (targetMember && targetMember.remaining > 0 && !usePeriod) setAmount(String(targetMember.remaining));
+    };
+
+    const handlePeriodChange = (start: string, end: string) => {
+        setPeriodStart(start);
+        setPeriodEnd(end);
+        const { days, amount: auto } = periodAmount(topic, start, end);
+        if (auto > 0) {
+            setAmount(String(auto));
+            setNote((prev) => (isAutoPeriodNote(prev) ? periodNote(start, end, days) : prev));
+        }
+    };
+
+    const invalidPeriod = Boolean(usePeriod && periodStart && periodEnd && periodStart > periodEnd);
+    const selected = topic.members.find((m) => String(m.id) === memberId);
+    const save = useMutation({
+        mutationFn: () => {
+            const payload = {
+                memberId: Number(memberId),
+                amount: Number(amount),
+                note: note.trim(),
+                paidAt: paidAt ? new Date(paidAt).toISOString() : null,
+                periodStart: usePeriod && periodStart ? startOfDayIso(periodStart) : null,
+                periodEnd: usePeriod && periodEnd ? endOfDayIso(periodEnd) : null,
+            };
+            return payment ? fundApi.updatePayment(guildId, topic.id, payment.id, payload) : fundApi.addPayment(guildId, topic.id, payload);
+        },
+        onSuccess: () => {
+            toast.success(payment ? 'แก้ไขรายการรับเงินแล้ว' : 'บันทึกการรับเงินแล้ว');
+            void refresh();
+            onOpenChange(false);
+        },
+        onError: onFundError,
+    });
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>{payment ? 'แก้ไขรายการรับเงิน' : 'บันทึกการรับเงิน'}</DialogTitle>
+                    <DialogDescription>{topic.name}</DialogDescription>
+                </DialogHeader>
+                <form
+                    id="fund-payment-form"
+                    className="grid gap-3"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        if (invalidPeriod) return;
+                        save.mutate();
+                    }}
+                >
+                    <Field label="คนที่จ่าย">
+                        <Select value={memberId} onValueChange={handleMemberSelect}>
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="-- เลือกคน --" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-80">
+                                {topic.members.map((m) => (
+                                    <SelectItem key={m.id} value={String(m.id)}>
+                                        {m.displayName} {m.remaining > 0 ? `(ค้าง ${formatBaht(m.remaining)})` : '✅ จ่ายครบ'}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </Field>
+
+                    <div className="rounded-lg border bg-muted/20 p-2.5 space-y-2">
+                        <div className="flex items-center justify-between">
+                            <Label htmlFor="toggle-period" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                                <Calendar className="size-3.5 text-primary" />
+                                บันทึกตามห้วงวันที่ (ย้อนหลัง / รายวัน)
+                            </Label>
+                            <Checkbox
+                                id="toggle-period"
+                                checked={usePeriod}
+                                onCheckedChange={(c) => {
+                                    const checked = c === true;
+                                    setUsePeriod(checked);
+                                    if (checked && !periodStart) {
+                                        const { start, end } = defaultPeriod(topic);
+                                        handlePeriodChange(start, end);
+                                    }
+                                }}
+                            />
+                        </div>
+                        {usePeriod && (
+                            <div className="space-y-2 pt-1">
+                                <PeriodFields idPrefix="pay" start={periodStart} end={periodEnd} onChange={handlePeriodChange} dailyRate={dailyRate} />
+                            </div>
+                        )}
+                    </div>
+
+                    <Field
+                        label="จำนวนเงิน (บาท)"
+                        htmlFor="fund-pay-amount"
+                        hint={
+                            selected
+                                ? `เป้าหมาย ${formatBaht(selected.target)} · จ่ายแล้ว ${formatBaht(selected.paid)} · ค้าง ${formatBaht(selected.remaining)}`
+                                : undefined
+                        }
+                    >
+                        <div className="flex gap-2">
+                            <Input
+                                id="fund-pay-amount"
+                                type="number"
+                                min={0.01}
+                                step="0.01"
+                                inputMode="decimal"
+                                value={amount}
+                                onChange={(e) => setAmount(e.target.value)}
+                                className="flex-1"
+                            />
+                            {!payment && selected && selected.remaining > 0 && Number(amount) !== selected.remaining && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAmount(String(selected.remaining))}
+                                    title="กรอกยอดคงค้างทั้งหมดของคนนี้"
+                                >
+                                    ยอดค้าง ({formatBaht(selected.remaining)})
+                                </Button>
+                            )}
+                        </div>
+                    </Field>
+                    <Field label="วันเวลาที่รับเงิน" htmlFor="fund-pay-at">
+                        <Input id="fund-pay-at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+                    </Field>
+                    <Field label="หมายเหตุ (ไม่บังคับ)" htmlFor="fund-pay-note">
+                        <Input id="fund-pay-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="เช่น โอนผ่าน PromptPay" />
+                    </Field>
+                </form>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>
+                        ยกเลิก
+                    </Button>
+                    <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(Number(amount) > 0) || invalidPeriod}>
+                        {save.isPending && <Loader2 className="animate-spin" />}
+                        {payment ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
