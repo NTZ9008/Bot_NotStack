@@ -69,55 +69,41 @@ export function buildDatasets(labels: string[], series: { bucket: string; eventK
     return datasets;
 }
 
-export interface VoiceEvent {
+// ยอดรวมของแต่ละชนิดเหตุการณ์ทั้งช่วง (มากไปน้อย, เท่ากันเรียงตามชื่อ key)
+export function breakdownFromSeries(series: { eventKey: string; total: number }[]): { eventKey: string; total: number }[] {
+    const totals = new Map<string, number>();
+    for (const point of series) totals.set(point.eventKey, (totals.get(point.eventKey) ?? 0) + point.total);
+    return [...totals.entries()].map(([eventKey, total]) => ({ eventKey, total })).sort((a, b) => b.total - a.total || a.eventKey.localeCompare(b.eventKey));
+}
+
+// ยอดเวลาในห้องเสียงต่อ (คน, ห้อง) ที่ SQL รวมมาแล้ว — ms = เวลารวมของ session ที่ยาวกว่า 0
+export interface VoicePair {
     userId: string;
     userName: string | null;
     channelId: string | null;
     channelName: string | null;
-    eventKey: string;
-    at: number;
+    ms: number;
+    sessions: number;
 }
 
-/**
- * เวลาที่แต่ละคนอยู่ในห้องเสียง — จับคู่ "เข้า" กับ "ออก" ตามลำดับเวลาของแต่ละคน (events ต้องเรียงจากเก่าไปใหม่)
- * คนที่ยังอยู่ในห้องตอนสิ้นสุดช่วงเวลาจะนับถึง endOfRange
- */
-export function computeVoiceTime(events: VoiceEvent[], endOfRange: number) {
-    const open = new Map<string, { at: number; channelId: string | null; channelName: string | null }>();
+// รวมเป็นอันดับเวลาในห้องเสียงต่อคนและต่อห้อง (นาที ปัดเศษจากยอดรวม ms ของแต่ละคน/ห้อง)
+export function summarizeVoiceTime(pairs: VoicePair[]) {
     const perUser = new Map<string, { userName: string | null; ms: number; sessions: number }>();
     const perChannel = new Map<string, { channelName: string | null; ms: number }>();
-    const userEntry = (userId: string) => {
-        const entry = perUser.get(userId) ?? { userName: null, ms: 0, sessions: 0 };
-        perUser.set(userId, entry);
-        return entry;
-    };
-
-    const close = (userId: string, at: number) => {
-        const session = open.get(userId);
-        if (!session) return;
-        open.delete(userId);
-        const ms = Math.max(0, Math.min(at, endOfRange) - session.at);
-        if (ms <= 0) return;
-
-        const user = userEntry(userId);
+    for (const pair of pairs) {
+        const ms = Number(pair.ms) || 0;
+        const user = perUser.get(pair.userId) ?? { userName: null, ms: 0, sessions: 0 };
+        user.userName ||= pair.userName;
         user.ms += ms;
-        user.sessions += 1;
-
-        if (session.channelId) {
-            const channel = perChannel.get(session.channelId) ?? { channelName: session.channelName, ms: 0 };
+        user.sessions += Number(pair.sessions) || 0;
+        perUser.set(pair.userId, user);
+        if (pair.channelId && ms > 0) {
+            const channel = perChannel.get(pair.channelId) ?? { channelName: null, ms: 0 };
+            channel.channelName ||= pair.channelName;
             channel.ms += ms;
-            if (!channel.channelName) channel.channelName = session.channelName;
-            perChannel.set(session.channelId, channel);
+            perChannel.set(pair.channelId, channel);
         }
-    };
-
-    for (const ev of events) {
-        close(ev.userId, ev.at);
-        if (!VOICE_LEAVE_KEYS.includes(ev.eventKey)) open.set(ev.userId, { at: ev.at, channelId: ev.channelId, channelName: ev.channelName });
-        const user = userEntry(ev.userId);
-        if (!user.userName) user.userName = ev.userName;
     }
-    for (const userId of [...open.keys()]) close(userId, endOfRange);
 
     const users = [...perUser.entries()]
         .map(([userId, v]) => ({ userId, userName: v.userName || userId, minutes: Math.round(v.ms / 60000), sessions: v.sessions }))

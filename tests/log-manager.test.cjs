@@ -167,7 +167,7 @@ test('dispatcher uses saved appearance for queued and attached logs without chan
     assert.equal(recorded.length, 3);
 });
 
-const { bucketLabels, buildDatasets, computeVoiceTime } = require('../apps/backend/dist/log-manager/utils/activity-stats.util');
+const { bucketLabels, breakdownFromSeries, buildDatasets, summarizeVoiceTime } = require('../apps/backend/dist/log-manager/utils/activity-stats.util');
 const { activityEventLabel, humanizeMentions } = require('../apps/backend/dist/log-manager/utils/activity-humanize.util');
 
 test('activity buckets cover the whole range in the selected time zone without gaps', () => {
@@ -186,27 +186,35 @@ test('activity buckets cover the whole range in the selected time zone without g
     assert.deepEqual(datasets, { serverJoin: [2, 0], serverLeave: [0, 1], voiceJoin: [0, 0], voiceLeave: [0, 3], total: [2, 9] });
 });
 
-test('voice time pairs join/switch/leave per user and counts open sessions up to the end of range', () => {
+test('voice time totals per-user and per-channel minutes from SQL (user, channel) pairs', () => {
     const min = 60000;
-    const ev = (userId, eventKey, at, channelId) => ({ userId, userName: `name-${userId}`, channelId, channelName: `room-${channelId}`, eventKey, at });
-    const { users, channels } = computeVoiceTime(
-        [
-            ev('u1', 'voiceJoin', 0, 'a'),
-            ev('u1', 'voiceSwitch', 10 * min, 'b'), // 10 นาทีในห้อง a
-            ev('u2', 'voiceJoin', 15 * min, 'a'),
-            ev('u1', 'voiceLeave', 30 * min, 'b'), // 20 นาทีในห้อง b
-            ev('u3', 'voiceLeave', 31 * min, 'a'), // ออกโดยไม่เคยเห็นตอนเข้า → ไม่นับ
-        ],
-        45 * min, // u2 ยังอยู่ในห้อง a → นับถึงตรงนี้ 30 นาที
-    );
+    const { users, channels } = summarizeVoiceTime([
+        { userId: 'u1', userName: 'Boat', channelId: 'a', channelName: 'Lobby', ms: 10 * min, sessions: 1 },
+        { userId: 'u1', userName: null, channelId: 'b', channelName: 'Game', ms: 20 * min + 20000, sessions: 2 },
+        { userId: 'u2', userName: null, channelId: 'a', channelName: null, ms: 30 * min, sessions: 1 },
+        { userId: 'u3', userName: 'Zero', channelId: 'a', channelName: 'Lobby', ms: 0, sessions: 0 }, // ไม่มี session ที่ยาวกว่า 0
+    ]);
     assert.deepEqual(users, [
-        { userId: 'u1', userName: 'name-u1', minutes: 30, sessions: 2 },
-        { userId: 'u2', userName: 'name-u2', minutes: 30, sessions: 1 },
+        { userId: 'u1', userName: 'Boat', minutes: 30, sessions: 3 },
+        { userId: 'u2', userName: 'u2', minutes: 30, sessions: 1 },
     ]);
     assert.deepEqual(channels, [
-        { channelId: 'a', channelName: 'room-a', minutes: 40 },
-        { channelId: 'b', channelName: 'room-b', minutes: 20 },
+        { channelId: 'a', channelName: 'Lobby', minutes: 40 },
+        { channelId: 'b', channelName: 'Game', minutes: 20 },
     ]);
+    assert.deepEqual(
+        breakdownFromSeries([
+            { eventKey: 'voiceJoin', total: 2 },
+            { eventKey: 'messageSent', total: 3 },
+            { eventKey: 'voiceJoin', total: 4 },
+            { eventKey: 'memberJoin', total: 3 },
+        ]),
+        [
+            { eventKey: 'voiceJoin', total: 6 },
+            { eventKey: 'memberJoin', total: 3 },
+            { eventKey: 'messageSent', total: 3 },
+        ],
+    );
 });
 
 test('activity text turns Discord mentions into readable names', () => {
