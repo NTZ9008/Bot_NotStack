@@ -192,6 +192,11 @@ const rangeQuery = {
 
 export const activityStatsQuerySchema = z.object({
     ...rangeQuery,
+    hours: z.coerce.number().int().min(1).max(8760).optional(),
+    fresh: z
+        .unknown()
+        .transform((value) => value === 'true')
+        .optional(),
     tz: optionalText(64),
     limit: optionalId.transform((value) => Math.min(value ?? 10, 50)),
 });
@@ -209,7 +214,11 @@ export const activityQuerySchema = z.object({
         .unknown()
         .transform((value) =>
             typeof value === 'string' && value
-                ? value.split(',').map((key) => key.trim()).filter(Boolean).slice(0, 50)
+                ? value
+                      .split(',')
+                      .map((key) => key.trim())
+                      .filter(Boolean)
+                      .slice(0, 50)
                 : undefined,
         )
         .optional(),

@@ -22,11 +22,16 @@ export const rankMetaQuery = (guildId: string) =>
         staleTime: Infinity,
     });
 export const rankThemeQuery = (guildId: string) =>
-    queryOptions({ queryKey: [...rankCardKey(guildId), 'theme'], queryFn: ({ signal }) => api<RankCardTheme>(r(guildId, '/theme'), { signal }) });
+    queryOptions({
+        staleTime: 120_000,
+        queryKey: [...rankCardKey(guildId), 'theme'],
+        queryFn: ({ signal }) => api<RankCardTheme>(r(guildId, '/theme'), { signal }),
+    });
 export const myRankCardQuery = (guildId: string) =>
     queryOptions({ queryKey: [...rankCardKey(guildId), 'me'], queryFn: ({ signal }) => api<MyRankCardResponse>(r(guildId, '/me'), { signal }) });
 export const levelUpQuery = (guildId: string) =>
     queryOptions({
+        staleTime: 120_000,
         queryKey: [...rankCardKey(guildId), 'level-up'],
         queryFn: ({ signal }) => api<LevelUpSettingsResponse>(r(guildId, '/level-up'), { signal }),
     });

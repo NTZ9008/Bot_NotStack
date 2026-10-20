@@ -89,17 +89,25 @@ export const activityMetaQuery = (guildId: string) =>
     });
 
 export interface StatsParams {
+    hours?: number;
     from?: string;
     to?: string;
     interval?: 'hour' | 'day';
     includeBots: boolean;
 }
 
-export const activityStatsQuery = (guildId: string, params: StatsParams) =>
+export const activityStatsQuery = (guildId: string, params: StatsParams, fresh = false) =>
     queryOptions({
         queryKey: [...guildKey(guildId), 'activity', 'stats', params],
-        queryFn: () =>
+        staleTime: 15_000,
+        queryFn: ({ signal }) =>
             api<ActivityStats>(`/guilds/${guildId}/activity/stats`, {
-                query: { ...params, includeBots: params.includeBots ? 'true' : undefined, tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
+                signal,
+                query: {
+                    ...params,
+                    fresh: fresh ? 'true' : undefined,
+                    includeBots: params.includeBots ? 'true' : undefined,
+                    tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                },
             }),
     });

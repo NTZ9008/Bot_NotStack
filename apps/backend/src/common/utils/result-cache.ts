@@ -13,7 +13,8 @@ export class ResultCache<T> {
         private readonly now = Date.now,
     ) {}
 
-    get(key: string, load: () => Promise<T>): Promise<T> {
+    get(key: string, load: () => Promise<T>, refresh = false): Promise<T> {
+        if (refresh) this.clear();
         for (const [id, entry] of this.values) if (entry.expires <= this.now()) this.remove(id);
         const hit = this.values.get(key);
         if (hit) {

@@ -1,5 +1,5 @@
 import type { ActivityStats } from '@notstack/shared';
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { RefreshCw } from 'lucide-react';
@@ -58,14 +58,14 @@ function shortLabel(bucket: string, interval: string): string {
     return interval === 'hour' ? `${day}/${month} ${time.slice(0, 2)}:00` : `${day}/${month}`;
 }
 
-function rangeFromPreset(preset: string, custom: { from: string; to: string }): Pick<StatsParams, 'from' | 'to'> {
+function rangeFromPreset(preset: string, custom: { from: string; to: string }): Pick<StatsParams, 'from' | 'to' | 'hours'> {
     if (preset === 'custom') {
         return {
             from: custom.from ? new Date(custom.from).toISOString() : undefined,
             to: custom.to ? new Date(custom.to).toISOString() : undefined,
         };
     }
-    return { from: new Date(Date.now() - Number(preset) * 3600000).toISOString() };
+    return preset === '168' ? {} : { hours: Number(preset) };
 }
 
 function StatTile({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'bad' | 'info' }) {
@@ -107,7 +107,9 @@ function Charts({ data }: { data: ActivityStats }) {
     }));
     const topUsers = data.topUsers.slice(0, 10).map((u) => ({ name: u.userName, total: u.total }));
     const breakdown = data.breakdown.slice(0, 10);
-    const breakdownConfig = Object.fromEntries(breakdown.map((row, i) => [row.eventKey, { label: row.label, color: PALETTE[i % PALETTE.length] }])) satisfies ChartConfig;
+    const breakdownConfig = Object.fromEntries(
+        breakdown.map((row, i) => [row.eventKey, { label: row.label, color: PALETTE[i % PALETTE.length] }]),
+    ) satisfies ChartConfig;
 
     const area = (config: ChartConfig, keys: string[]) => (
         <ChartContainer config={config} className="aspect-auto h-64 w-full">
@@ -118,7 +120,15 @@ function Charts({ data }: { data: ActivityStats }) {
                 <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
                 <ChartLegend content={<ChartLegendContent />} />
                 {keys.map((key) => (
-                    <Area key={key} dataKey={key} type="monotone" stroke={`var(--color-${key})`} fill={`var(--color-${key})`} fillOpacity={0.2} strokeWidth={2} />
+                    <Area
+                        key={key}
+                        dataKey={key}
+                        type="monotone"
+                        stroke={`var(--color-${key})`}
+                        fill={`var(--color-${key})`}
+                        fillOpacity={0.2}
+                        strokeWidth={2}
+                    />
                 ))}
             </AreaChart>
         </ChartContainer>
@@ -133,7 +143,14 @@ function Charts({ data }: { data: ActivityStats }) {
                     <BarChart data={topUsers} layout="vertical" margin={{ left: 8, right: 16 }}>
                         <CartesianGrid horizontal={false} />
                         <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
-                        <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} width={110} tickFormatter={(v: string) => (v.length > 14 ? `${v.slice(0, 13)}…` : v)} />
+                        <YAxis
+                            type="category"
+                            dataKey="name"
+                            tickLine={false}
+                            axisLine={false}
+                            width={110}
+                            tickFormatter={(v: string) => (v.length > 14 ? `${v.slice(0, 13)}…` : v)}
+                        />
                         <ChartTooltip content={<ChartTooltipContent hideLabel={false} />} />
                         <Bar dataKey="total" fill="var(--color-total)" radius={6} />
                     </BarChart>
@@ -235,17 +252,32 @@ function Tables({ data }: { data: ActivityStats }) {
 
 function OverviewPage() {
     const guildId = useGuildId();
+    const queryClient = useQueryClient();
     const [preset, setPreset] = useState('168');
     const [interval, setInterval] = useState<'auto' | 'hour' | 'day'>('auto');
     const [includeBots, setIncludeBots] = useState(false);
     const [custom, setCustom] = useState({ from: toLocalInput(new Date(Date.now() - 7 * 86400000)), to: toLocalInput(new Date()) });
     // ช่วงเวลาที่ใช้ดึงข้อมูลจริง (คำนวณใหม่เมื่อเลือกช่วง / กดรีเฟรช / กดดูข้อมูล)
     // The API defaults to the last seven days. Keep its cache key stable on remount.
-    const [range, setRange] = useState<Pick<StatsParams, 'from' | 'to'>>({});
+    const [range, setRange] = useState<Pick<StatsParams, 'from' | 'to' | 'hours'>>({});
 
-    const params = useMemo<StatsParams>(() => ({ ...range, interval: interval === 'auto' ? undefined : interval, includeBots }), [range, interval, includeBots]);
+    const params = useMemo<StatsParams>(
+        () => ({ ...range, interval: interval === 'auto' ? undefined : interval, includeBots }),
+        [range, interval, includeBots],
+    );
     const { data, isLoading, isFetching, error } = useQuery({ ...activityStatsQuery(guildId, params), placeholderData: keepPreviousData });
 
+    const refresh = () => {
+        const nextRange = rangeFromPreset(preset, custom);
+        setRange(nextRange);
+        // Bypass both freshness layers on an explicit refresh, including identical custom dates.
+        void queryClient
+            .fetchQuery({
+                ...activityStatsQuery(guildId, { ...nextRange, interval: params.interval, includeBots }, true),
+                staleTime: 0,
+            })
+            .catch(() => undefined);
+    };
     const summary = data?.summary;
     const net = summary ? summary.serverJoin - summary.serverLeave : 0;
     const tiles = summary
@@ -265,7 +297,9 @@ function OverviewPage() {
         <>
             <PageHeader
                 help="overview"
-                title="ภาพรวมเซิร์ฟเวอร์" description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด" />
+                title="ภาพรวมเซิร์ฟเวอร์"
+                description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด"
+            />
             <GettingStarted />
             <Card>
                 <CardContent className="space-y-3">
@@ -303,7 +337,7 @@ function OverviewPage() {
                                 รวมบอท
                                 <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
                             </Label>
-                            <Button variant="outline" onClick={() => setRange(rangeFromPreset(preset, custom))}>
+                            <Button variant="outline" onClick={refresh}>
                                 <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> รีเฟรช
                             </Button>
                         </div>
@@ -311,10 +345,22 @@ function OverviewPage() {
                     {preset === 'custom' && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Label className="gap-2">
-                                ตั้งแต่ <Input type="datetime-local" className="w-56" value={custom.from} onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))} />
+                                ตั้งแต่{' '}
+                                <Input
+                                    type="datetime-local"
+                                    className="w-56"
+                                    value={custom.from}
+                                    onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))}
+                                />
                             </Label>
                             <Label className="gap-2">
-                                ถึง <Input type="datetime-local" className="w-56" value={custom.to} onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))} />
+                                ถึง{' '}
+                                <Input
+                                    type="datetime-local"
+                                    className="w-56"
+                                    value={custom.to}
+                                    onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))}
+                                />
                             </Label>
                             <Button onClick={() => setRange(rangeFromPreset('custom', custom))}>ดูข้อมูล</Button>
                         </div>

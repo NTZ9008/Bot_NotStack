@@ -16,11 +16,11 @@ import { guildKey } from './guilds';
 const w = (guildId: string, path: string) => `/guilds/${guildId}/welcome${path}`;
 
 export const welcomeMetaQuery = (guildId: string) =>
-    queryOptions({ queryKey: [...guildKey(guildId), 'welcome', 'meta'], queryFn: () => api<WelcomeMeta>(w(guildId, '/meta')) });
+    queryOptions({ staleTime: 120_000, queryKey: [...guildKey(guildId), 'welcome', 'meta'], queryFn: () => api<WelcomeMeta>(w(guildId, '/meta')) });
 export const welcomeCardsQuery = (guildId: string) =>
-    queryOptions({ queryKey: [...guildKey(guildId), 'welcome', 'cards'], queryFn: () => api<WelcomeCard[]>(w(guildId, '/cards')) });
+    queryOptions({ staleTime: 120_000, queryKey: [...guildKey(guildId), 'welcome', 'cards'], queryFn: () => api<WelcomeCard[]>(w(guildId, '/cards')) });
 export const welcomeAssetsQuery = (guildId: string) =>
-    queryOptions({ queryKey: [...guildKey(guildId), 'welcome', 'assets'], queryFn: () => api<WelcomeAsset[]>(w(guildId, '/assets')) });
+    queryOptions({ staleTime: 120_000, queryKey: [...guildKey(guildId), 'welcome', 'assets'], queryFn: () => api<WelcomeAsset[]>(w(guildId, '/assets')) });
 
 export const assetImageUrl = (guildId: string, id: number) => apiUrl(w(guildId, `/assets/${id}/image`));
 

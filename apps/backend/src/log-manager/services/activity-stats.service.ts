@@ -1,3 +1,4 @@
+import { timeOperation } from '../../common/utils/server-timing';
 import { Injectable } from '@nestjs/common';
 import type { ActivityInterval, ActivityStats } from '@notstack/shared';
 import { Prisma } from '../../generated/prisma/client';
@@ -169,10 +170,10 @@ export class ActivityStatsService {
     }: RangeFilter & { interval: ActivityInterval; timeZone: string; limit: number }): Promise<ActivityStats> {
         const range = { guildId, from, to, includeBots };
         const [series, users, channels, voice] = await Promise.all([
-            this.timeSeries({ ...range, interval, timeZone }),
-            this.topUsers({ ...range, limit }),
-            this.topVoiceChannels({ ...range, limit }),
-            this.voiceTime(range),
+            timeOperation('timeSeries', () => this.timeSeries({ ...range, interval, timeZone })),
+            timeOperation('topUsers', () => this.topUsers({ ...range, limit })),
+            timeOperation('topVoiceChannels', () => this.topVoiceChannels({ ...range, limit })),
+            timeOperation('voiceTime', () => this.voiceTime(range)),
         ]);
 
         // รวมเป็นชุดข้อมูลที่หน้าเว็บเอาไปวาดกราฟได้เลย

@@ -170,3 +170,30 @@ test('compact previews are smaller WebP images while Discord outputs remain full
     assert.equal(full.subarray(1, 4).toString(), 'PNG');
     assert.equal((await loadImage(full)).width, design.width);
 });
+
+test('overview cache shares rolling presets, isolates filters and preserves explicit refresh/custom boundaries', async () => {
+    const { ActivityController } = require('../apps/backend/dist/log-manager/controllers/activity.controller');
+    let calls = 0;
+    const controller = new ActivityController({}, { stats: async (input) => ({ ...input, revision: ++calls }) }, {});
+    const query = { includeBots: false, limit: 10, hours: 720 };
+    const first = await controller.stats('g', query, response());
+    const warm = await controller.stats('g', query, response());
+    assert.equal(first.revision, warm.revision);
+    for (const [guild, extra] of [
+        ['other', {}],
+        ['g', { includeBots: true }],
+        ['g', { tz: 'UTC' }],
+        ['g', { interval: 'hour' }],
+        ['g', { limit: 20 }],
+        ['g', { hours: 24 }],
+    ]) {
+        assert.notEqual((await controller.stats(guild, { ...query, ...extra }, response())).revision, first.revision);
+    }
+    const custom = { ...query, from: new Date('2026-09-01T01:02:03.123Z'), to: new Date('2026-09-20T11:12:13.456Z') };
+    const exact = await controller.stats('g', custom, response());
+    assert.equal(exact.from.toISOString(), custom.from.toISOString());
+    assert.equal(exact.to.toISOString(), custom.to.toISOString());
+    const fresh = await controller.stats('g', { ...custom, fresh: true }, response());
+    assert.notEqual(fresh.revision, exact.revision);
+    assert.equal((await controller.stats('g', custom, response())).revision, fresh.revision);
+});
