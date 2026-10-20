@@ -10,11 +10,10 @@ import {
     type RankCardTheme,
     type RankMemberStyle,
 } from '@notstack/shared';
-import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { toJsonValue } from '../prisma/json.util';
 
 const CACHE_TTL_MS = 60 * 1000;
-const json = (value: unknown) => value as Prisma.InputJsonValue;
 
 // ==========================================
 // 💾 RANK CARD STORE — ธีมการ์ดของเซิร์ฟเวอร์ / การ์ดของสมาชิก / ตั้งค่าเลเวลอัป
@@ -38,7 +37,7 @@ export class RankCardStore {
     }
 
     async saveTheme(guildId: string, theme: RankCardTheme): Promise<RankCardTheme> {
-        await this.prisma.rankCardSetting.upsert({ where: { guildId }, create: { guildId, theme: json(theme) }, update: { theme: json(theme) } });
+        await this.prisma.rankCardSetting.upsert({ where: { guildId }, create: { guildId, theme: toJsonValue(theme) }, update: { theme: toJsonValue(theme) } });
         this.themes.set(guildId, { value: theme, at: Date.now() });
         return theme;
     }
@@ -57,7 +56,7 @@ export class RankCardStore {
             return {};
         }
         const key = { guildId_userId: { guildId, userId } };
-        await this.prisma.rankCardMember.upsert({ where: key, create: { guildId, userId, style: json(allowed) }, update: { style: json(allowed) } });
+        await this.prisma.rankCardMember.upsert({ where: key, create: { guildId, userId, style: toJsonValue(allowed) }, update: { style: toJsonValue(allowed) } });
         return allowed;
     }
 
@@ -75,7 +74,7 @@ export class RankCardStore {
     }
 
     async saveLevelUp(guildId: string, settings: LevelUpSettings): Promise<LevelUpSettings> {
-        await this.prisma.levelUpSetting.upsert({ where: { guildId }, create: { guildId, settings: json(settings) }, update: { settings: json(settings) } });
+        await this.prisma.levelUpSetting.upsert({ where: { guildId }, create: { guildId, settings: toJsonValue(settings) }, update: { settings: toJsonValue(settings) } });
         this.levelUps.set(guildId, { value: settings, at: Date.now() });
         return settings;
     }
