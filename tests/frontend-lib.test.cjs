@@ -90,3 +90,155 @@ test('Thai labels retain English search terms and breadcrumb matching', () => {
     assert.equal(findNavItem('/servers/$guildId/config').label, 'ตั้งค่าบอท');
     assert.equal(findNavItem('/missing'), undefined);
 });
+
+const { schedulePreloads, canPreloadInBackground } = require('../apps/frontend/src/lib/background-preload.ts');
+
+// Flush the promise continuation after each simulated timer tick.
+const flushPreloads = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+};
+
+test('background preload waits between pages and never overlaps pending work', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const calls = [];
+    let finish;
+    schedulePreloads(
+        [
+            () => {
+                calls.push('first');
+                return new Promise((resolve) => {
+                    finish = resolve;
+                });
+            },
+            async () => {
+                calls.push('second');
+            },
+        ],
+        new AbortController().signal,
+    );
+    assert.deepEqual(calls, []);
+    t.mock.timers.tick(300);
+    assert.deepEqual(calls, ['first']);
+    t.mock.timers.tick(3000);
+    assert.deepEqual(calls, ['first']);
+    finish();
+    await flushPreloads();
+    t.mock.timers.tick(299);
+    assert.deepEqual(calls, ['first']);
+    t.mock.timers.tick(1);
+    await flushPreloads();
+    assert.deepEqual(calls, ['first', 'second']);
+});
+
+test('background preload pauses during navigation and resumes without dropping a page', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let ready = false;
+    let calls = 0;
+    schedulePreloads(
+        [
+            async () => {
+                calls++;
+            },
+        ],
+        new AbortController().signal,
+        () => ready,
+    );
+    t.mock.timers.tick(300);
+    assert.equal(calls, 0);
+    ready = true;
+    t.mock.timers.tick(300);
+    await flushPreloads();
+    assert.equal(calls, 1);
+});
+
+test('a failed speculative load does not prevent the next page from warming', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let calls = 0;
+    schedulePreloads(
+        [
+            async () => {
+                throw new Error('offline');
+            },
+            async () => {
+                calls++;
+            },
+        ],
+        new AbortController().signal,
+    );
+    t.mock.timers.tick(300);
+    await flushPreloads();
+    t.mock.timers.tick(300);
+    await flushPreloads();
+    assert.equal(calls, 1);
+});
+
+for (const cancel of ['session change', 'unmount']) {
+    test(`background preload stops queued work on ${cancel}, even after an in-flight load resolves`, async (t) => {
+        t.mock.timers.enable({ apis: ['setTimeout'] });
+        const controller = new AbortController();
+        let finish;
+        let calls = 0;
+        const stop = schedulePreloads(
+            [
+                () =>
+                    new Promise((resolve) => {
+                        finish = resolve;
+                    }),
+                async () => {
+                    calls++;
+                },
+            ],
+            controller.signal,
+        );
+        t.mock.timers.tick(300);
+        if (cancel === 'session change') controller.abort();
+        else stop();
+        finish();
+        await flushPreloads();
+        t.mock.timers.tick(3000);
+        assert.equal(calls, 0);
+    });
+}
+
+test('an already expired session never starts a preload', (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    let calls = 0;
+    schedulePreloads(
+        [
+            async () => {
+                calls++;
+            },
+        ],
+        AbortSignal.abort(),
+    );
+    t.mock.timers.tick(3000);
+    assert.equal(calls, 0);
+});
+
+test('background loading respects hidden pages, offline status and data-saving connections', (t) => {
+    const document = { visibilityState: 'visible' };
+    const navigator = { onLine: true, connection: { saveData: false, effectiveType: '4g' } };
+    for (const [name, value] of Object.entries({ document, navigator })) {
+        const original = Object.getOwnPropertyDescriptor(globalThis, name);
+        Object.defineProperty(globalThis, name, { configurable: true, value });
+        t.after(() => {
+            if (original) Object.defineProperty(globalThis, name, original);
+            else delete globalThis[name];
+        });
+    }
+    assert.equal(canPreloadInBackground(), true);
+    document.visibilityState = 'hidden';
+    assert.equal(canPreloadInBackground(), false);
+    document.visibilityState = 'visible';
+    navigator.onLine = false;
+    assert.equal(canPreloadInBackground(), false);
+    navigator.onLine = true;
+    navigator.connection.saveData = true;
+    assert.equal(canPreloadInBackground(), false);
+    navigator.connection.saveData = false;
+    navigator.connection.effectiveType = '2g';
+    assert.equal(canPreloadInBackground(), false);
+    delete navigator.connection;
+    assert.equal(canPreloadInBackground(), true);
+});

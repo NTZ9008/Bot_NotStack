@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Route = createFileRoute('/_app/_admin/logs')({
+    loader: ({ context }) => context.queryClient.ensureQueryData(logFilesQuery),
     component: LogsPage,
 });
 

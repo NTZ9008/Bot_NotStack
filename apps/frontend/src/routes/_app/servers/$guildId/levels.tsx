@@ -1,8 +1,12 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
-import { useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, useRouter } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
 import { levelsQuery } from '@/api/bot';
+import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
+import { xpHistoryQuery, xpSettingsQuery } from '@/api/levels';
+import { levelUpQuery, myRankCardQuery, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';
+import { welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } from '@/api/welcome';
 import { PageHeader } from '@/components/page-header';
 import { RankBadge } from '@/components/rank-badge';
 import { LeaderboardTableSkeleton } from '@/components/skeleton/levels';
@@ -18,9 +22,11 @@ import { RankThemePanel } from '@/features/levels/rank-theme-editor';
 import { XpSettingsPanel } from '@/features/levels/settings';
 import { useAuth } from '@/hooks/use-auth';
 import { useGuild } from '@/hooks/use-guild';
+import { canPreloadInBackground, schedulePreloads } from '@/lib/background-preload';
+import { sessionRequests } from '@/lib/session-state';
 
 export const Route = createFileRoute('/_app/servers/$guildId/levels')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(levelsQuery(params.guildId)),
+    loader: ({ context, params }) => context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25 })),
     component: LevelsPage,
 });
 function Leaderboard({ guildId }: { guildId: string }) {
@@ -158,7 +164,36 @@ function Leaderboard({ guildId }: { guildId: string }) {
 }
 function LevelsPage() {
     const guild = useGuild();
+    const queryClient = useQueryClient();
+    const router = useRouter();
     const manage = guild.access === 'manage';
+    const guildId = guild.id;
+
+    useEffect(
+        () =>
+            schedulePreloads(
+                [
+                    () => queryClient.prefetchQuery(rankMetaQuery(guildId)),
+                    () => queryClient.prefetchQuery(myRankCardQuery(guildId)),
+                    ...(manage
+                        ? [
+                              () => queryClient.prefetchQuery(rankThemeQuery(guildId)),
+                              () => queryClient.prefetchQuery(welcomeMetaQuery(guildId)),
+                              () => queryClient.prefetchQuery(welcomeAssetsQuery(guildId)),
+                              () => queryClient.prefetchQuery(welcomeCardsQuery(guildId)),
+                              () => queryClient.prefetchQuery(levelUpQuery(guildId)),
+                              () => queryClient.prefetchQuery(xpSettingsQuery(guildId)),
+                              () => queryClient.prefetchQuery(guildChannelsQuery(guildId)),
+                              () => queryClient.prefetchQuery(guildRolesQuery(guildId)),
+                              () => queryClient.prefetchQuery(xpHistoryQuery(guildId)),
+                          ]
+                        : []),
+                ],
+                sessionRequests.capture(),
+                () => canPreloadInBackground() && !router.state.isLoading,
+            ),
+        [guildId, manage, queryClient, router],
+    );
     return (
         <>
             <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />

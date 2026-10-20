@@ -20,7 +20,11 @@ import { PrBotStatsCard } from '@/features/pr-bot/stats-card';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/pr-bot')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(prBotQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(prBotQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: PrBotPage,
 });
 

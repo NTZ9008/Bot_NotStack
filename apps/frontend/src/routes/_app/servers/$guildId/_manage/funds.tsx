@@ -22,9 +22,12 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/funds')({
     validateSearch: searchSchema,
     // เริ่มโหลดรายการหัวข้อ (และหัวข้อที่เลือกอยู่ใน URL) พร้อมกับโค้ดของหน้า — ไม่รอให้หน้า render ก่อน
     loaderDeps: ({ search }) => ({ topic: search.topic }),
-    loader: ({ context: { queryClient }, params, deps }) => {
-        void queryClient.prefetchQuery(fundsQuery(params.guildId));
-        if (deps.topic) void queryClient.prefetchQuery(fundQuery(params.guildId, deps.topic));
+    loader: ({ context: { queryClient }, params, deps, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(fundsQuery(params.guildId)),
+            deps.topic ? queryClient.prefetchQuery(fundQuery(params.guildId, deps.topic)) : undefined,
+        ]);
+        return preload ? loading : undefined;
     },
     component: FundsPage,
 });
