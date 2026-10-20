@@ -13,6 +13,8 @@ export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
             staleTime: 15 * 1000,
+            // Keep visited/preloaded pages available while moving between menus.
+            gcTime: 15 * 60 * 1000,
             retry: (failureCount, error) => failureCount < 1 && !(error instanceof Error && 'status' in error && Number(error.status) < 500),
             refetchOnWindowFocus: false,
         },

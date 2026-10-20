@@ -31,9 +31,12 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/voice-guard
     validateSearch: searchSchema,
     // เริ่มโหลดข้อมูลพร้อมกับโค้ดของหน้า (และตอนเอาเมาส์ชี้ลิงก์) — ไม่รอให้หน้า render ก่อน
     loaderDeps: ({ search }) => ({ mode: search.mode }),
-    loader: ({ context: { queryClient }, params, deps }) => {
-        void queryClient.prefetchQuery(voiceGuardQuery(params.guildId, deps.mode));
-        void queryClient.prefetchQuery(voiceChannelsQuery(params.guildId));
+    loader: ({ context: { queryClient }, params, deps, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(voiceGuardQuery(params.guildId, deps.mode)),
+            queryClient.prefetchQuery(voiceChannelsQuery(params.guildId)),
+        ]);
+        return preload ? loading : undefined;
     },
     component: VoiceGuardPage,
 });

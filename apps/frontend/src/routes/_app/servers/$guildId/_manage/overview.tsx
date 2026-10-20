@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/overview')({
+    loader: ({ context, params }) => context.queryClient.ensureQueryData(activityStatsQuery(params.guildId, { includeBots: false })),
     component: OverviewPage,
 });
 
@@ -239,7 +240,8 @@ function OverviewPage() {
     const [includeBots, setIncludeBots] = useState(false);
     const [custom, setCustom] = useState({ from: toLocalInput(new Date(Date.now() - 7 * 86400000)), to: toLocalInput(new Date()) });
     // ช่วงเวลาที่ใช้ดึงข้อมูลจริง (คำนวณใหม่เมื่อเลือกช่วง / กดรีเฟรช / กดดูข้อมูล)
-    const [range, setRange] = useState(() => rangeFromPreset('168', custom));
+    // The API defaults to the last seven days. Keep its cache key stable on remount.
+    const [range, setRange] = useState<Pick<StatsParams, 'from' | 'to'>>({});
 
     const params = useMemo<StatsParams>(() => ({ ...range, interval: interval === 'auto' ? undefined : interval, includeBots }), [range, interval, includeBots]);
     const { data, isLoading, isFetching, error } = useQuery({ ...activityStatsQuery(guildId, params), placeholderData: keepPreviousData });

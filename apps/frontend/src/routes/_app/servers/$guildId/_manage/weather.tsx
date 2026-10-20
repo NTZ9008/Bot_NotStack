@@ -27,6 +27,8 @@ import { errorMessage } from '@/lib/api';
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/weather')({
     loader: ({ context, params }) =>
         Promise.all([
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
             context.queryClient.ensureQueryData(weatherMetaQuery(params.guildId)),
             context.queryClient.ensureQueryData(weatherSettingsQuery(params.guildId)),
         ]),

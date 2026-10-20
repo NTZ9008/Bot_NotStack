@@ -27,7 +27,12 @@ import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-cha
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/jira')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(jiraSettingsQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(jiraSettingsQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: JiraPage,
 });
 

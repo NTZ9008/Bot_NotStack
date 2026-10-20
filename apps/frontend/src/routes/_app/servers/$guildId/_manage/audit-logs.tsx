@@ -1,10 +1,14 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { useEffect } from 'react';
+import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
 import { z } from 'zod';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardAudit, DiscordActivity } from '@/features/audit/audit-panels';
 import { useGuildId } from '@/hooks/use-guild';
+import { canPreloadInBackground, schedulePreloads } from '@/lib/background-preload';
+import { sessionRequests } from '@/lib/session-state';
 
 const searchSchema = z.object({
     source: z.enum(['dashboard', 'discord']).catch('dashboard').default('dashboard'),
@@ -12,6 +16,17 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs')({
     validateSearch: searchSchema,
+    loaderDeps: ({ search }) => ({ source: search.source }),
+    loader: ({ context: { queryClient }, params, deps }) =>
+        deps.source === 'discord'
+            ? Promise.all([
+                  queryClient.ensureInfiniteQueryData(activityQuery(params.guildId, { hours: 168, includeBots: false })).catch(() => undefined),
+                  queryClient.ensureQueryData(activityMetaQuery(params.guildId)).catch(() => undefined),
+              ])
+            : Promise.all([
+                  queryClient.ensureInfiniteQueryData(auditLogsQuery({}, params.guildId)).catch(() => undefined),
+                  queryClient.ensureQueryData(auditActionsQuery(params.guildId)).catch(() => undefined),
+              ]),
     component: AuditLogsPage,
 });
 
@@ -19,6 +34,23 @@ function AuditLogsPage() {
     const guildId = useGuildId();
     const { source } = Route.useSearch();
     const navigate = useNavigate();
+    const router = useRouter();
+    useEffect(
+        () =>
+            schedulePreloads(
+                [
+                    () =>
+                        router.preloadRoute({
+                            to: '/servers/$guildId/audit-logs',
+                            params: { guildId },
+                            search: { source: source === 'dashboard' ? 'discord' : 'dashboard' },
+                        }),
+                ],
+                sessionRequests.capture(),
+                () => canPreloadInBackground() && !router.state.isLoading,
+            ),
+        [guildId, source, router],
+    );
     return (
         <>
             <PageHeader

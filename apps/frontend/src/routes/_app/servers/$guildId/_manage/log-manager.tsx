@@ -17,7 +17,12 @@ import { failedToast, savedToast, useSettingsCache } from '@/features/log-manage
 import { useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/log-manager')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(logSettingsQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(logSettingsQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: LogManagerPage,
 });
 

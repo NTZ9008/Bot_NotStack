@@ -30,6 +30,8 @@ import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-cha
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     loader: ({ context, params }) =>
         Promise.all([
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
             context.queryClient.ensureQueryData(welcomeMetaQuery(params.guildId)),
             context.queryClient.ensureQueryData(welcomeCardsQuery(params.guildId)),
             context.queryClient.ensureQueryData(welcomeAssetsQuery(params.guildId)),

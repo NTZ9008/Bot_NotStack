@@ -25,10 +25,13 @@ import { useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/room-access')({
     // เริ่มโหลดข้อมูลพร้อมกับโค้ดของหน้า (และตอนเอาเมาส์ชี้ลิงก์) — ไม่รอให้หน้า render ก่อน
-    loader: ({ context: { queryClient }, params }) => {
-        void queryClient.prefetchQuery(roomAccessQuery(params.guildId));
-        void queryClient.prefetchQuery(accessRoomsQuery(params.guildId));
-        void queryClient.prefetchQuery(guildChannelsQuery(params.guildId));
+    loader: ({ context: { queryClient }, params, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(roomAccessQuery(params.guildId)),
+            queryClient.prefetchQuery(accessRoomsQuery(params.guildId)),
+            queryClient.prefetchQuery(guildChannelsQuery(params.guildId)),
+        ]);
+        return preload ? loading : undefined;
     },
     component: RoomAccessPage,
 });

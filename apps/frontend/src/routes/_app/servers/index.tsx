@@ -17,6 +17,7 @@ import { formatNumber } from '@/lib/format';
 
 // ?denied=true → เพิ่งถูกพากลับมาเพราะไม่มีสิทธิ์ในเซิร์ฟเวอร์ที่เปิด
 export const Route = createFileRoute('/_app/servers/')({
+    loader: ({ context }) => context.queryClient.ensureQueryData(guildsQuery),
     validateSearch: (search: Record<string, unknown>): { denied?: boolean } => (search.denied === true || search.denied === 'true' ? { denied: true } : {}),
     component: ServersPage,
 });

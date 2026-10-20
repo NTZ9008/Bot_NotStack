@@ -16,7 +16,11 @@ import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/config')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(configQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(configQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: ConfigPage,
 });
 
