@@ -6,7 +6,7 @@ import { SNOWFLAKE_RE } from './common';
 // - หัวข้อ (topic) ได้หลายเรื่องต่อเซิร์ฟเวอร์ แต่ละเรื่องตั้ง "ยอดเก็บต่อคน" หรือ "ยอดรายวัน" ได้
 // - รองรับการบันทึกย้อนหลังตามห้วงเวลา (periodStart - periodEnd) คำนวณวันและยอดเงินให้อัตโนมัติ
 // - เพิ่ม/ลบคนในหัวข้อได้ และตั้งยอดเฉพาะคนได้ (null = ใช้ยอดต่อคนของหัวข้อ)
-// - บันทึกการรับเงินทีละรายการหรือเป็นกลุ่ม (Batch) และ Export เป็น CSV รองรับภาษาไทย (UTF-8 BOM)
+// - บันทึก/แก้ไขการรับเงินทีละรายการหรือเป็นกลุ่ม (Batch) และ Export เป็น CSV รองรับภาษาไทย (UTF-8 BOM)
 // ==========================================
 export const FUND_LIMITS = {
     name: 100,
@@ -102,11 +102,27 @@ export function calculateDailyAmount(dailyRate: number, from: string | Date, to:
 
 // สร้างไฟล์ CSV พร้อม UTF-8 BOM สำหรับเปิดใน Excel ได้ภาษาไทยไม่เพี้ยน
 function escapeCsv(cell: unknown): string {
-    const str = String(cell ?? '');
+    let str = String(cell ?? '');
+    // ป้องกัน CSV Formula Injection ใน Microsoft Excel / LibreOffice
+    if (/^[=+\-@]/.test(str)) {
+        str = `'${str}`;
+    }
     return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')
         ? `"${str.replace(/"/g, '""')}"`
         : str;
 }
+
+const formatCsvDate = (val: string | Date | null | undefined): string => {
+    if (!val) return '-';
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? '-' : d.toLocaleDateString('th-TH');
+};
+
+const formatCsvDateTime = (val: string | Date | null | undefined): string => {
+    if (!val) return '-';
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('th-TH');
+};
 
 export function generateFundCsv(topic: FundTopicDetail): string {
     const lines: string[] = [];
@@ -119,8 +135,8 @@ export function generateFundCsv(topic: FundTopicDetail): string {
         'รูปแบบการเก็บ',
         topic.dailyRate && topic.dailyRate > 0 ? `รายวัน (วันละ ${formatBaht(topic.dailyRate)})` : 'ยอดคงที่',
     );
-    if (topic.startDate) pushRow('วันที่เริ่มเก็บ', new Date(topic.startDate).toLocaleDateString('th-TH'));
-    if (topic.dueDate) pushRow('วันครบกำหนด', new Date(topic.dueDate).toLocaleDateString('th-TH'));
+    if (topic.startDate) pushRow('วันที่เริ่มเก็บ', formatCsvDate(topic.startDate));
+    if (topic.dueDate) pushRow('วันครบกำหนด', formatCsvDate(topic.dueDate));
     pushRow('สถานะ', topic.closed ? 'ปิดการเก็บเงินแล้ว' : 'กำลังเปิดรับเงิน');
     pushRow('ยอดเป้าหมายรวม', topic.target);
     pushRow('ยอดเก็บได้แล้ว', topic.collected);
@@ -133,7 +149,9 @@ export function generateFundCsv(topic: FundTopicDetail): string {
     pushRow('User ID', 'ชื่อ', 'ยอดเป้าหมาย', 'จ่ายแล้ว', 'คงค้าง', 'สถานะ');
     const statusMap: Record<FundMemberStatus, string> = { paid: 'จ่ายครบ', partial: 'จ่ายบางส่วน', unpaid: 'ยังไม่จ่าย' };
     for (const m of topic.members) {
-        pushRow(m.userId, m.displayName, m.target, m.paid, m.remaining, statusMap[m.status] || m.status);
+        // ใช้ ="ID" เพื่อไม่ให้ Excel แปลง Discord ID (18-19 หลัก) เป็น Scientific notation เช่น 1.23E+17
+        const formattedUserId = m.userId ? `="${m.userId}"` : '';
+        pushRow(formattedUserId, m.displayName, m.target, m.paid, m.remaining, statusMap[m.status] || m.status);
     }
     pushRow('');
 
@@ -143,11 +161,11 @@ export function generateFundCsv(topic: FundTopicDetail): string {
     topic.payments.forEach((p, idx) => {
         pushRow(
             idx + 1,
-            new Date(p.paidAt).toLocaleString('th-TH'),
+            formatCsvDateTime(p.paidAt),
             p.memberName,
             p.amount,
-            p.periodStart ? new Date(p.periodStart).toLocaleDateString('th-TH') : '-',
-            p.periodEnd ? new Date(p.periodEnd).toLocaleDateString('th-TH') : '-',
+            p.periodStart ? formatCsvDate(p.periodStart) : '-',
+            p.periodEnd ? formatCsvDate(p.periodEnd) : '-',
             p.note || '-',
             p.recordedBy || '-',
         );
@@ -214,7 +232,9 @@ export type AddFundMembersData = z.output<typeof addFundMembersSchema>;
 
 export const updateFundMemberSchema = z.object({
     // null = กลับไปใช้ยอดต่อคนของหัวข้อ
-    targetAmount: money('ยอดเฉพาะคน').nullable(),
+    targetAmount: money('ยอดเฉพาะคน').nullable().optional(),
+    // ปรับยอดที่จ่ายแล้วรวมของคนนี้โดยตรง
+    paidAmount: money('ยอดที่จ่ายแล้ว').optional(),
 });
 export type UpdateFundMemberInput = z.input<typeof updateFundMemberSchema>;
 export type UpdateFundMemberData = z.output<typeof updateFundMemberSchema>;
@@ -229,6 +249,17 @@ export const createFundPaymentSchema = z.object({
 });
 export type CreateFundPaymentInput = z.input<typeof createFundPaymentSchema>;
 export type CreateFundPaymentData = z.output<typeof createFundPaymentSchema>;
+
+export const updateFundPaymentSchema = z.object({
+    memberId: z.coerce.number().int().positive('กรุณาเลือกคนที่จ่าย').optional(),
+    amount: money('จำนวนเงิน').refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0').optional(),
+    note: z.string().trim().max(FUND_LIMITS.note, `หมายเหตุยาวได้ไม่เกิน ${FUND_LIMITS.note} ตัวอักษร`).optional(),
+    paidAt: dateField.optional(),
+    periodStart: dateField.optional(),
+    periodEnd: dateField.optional(),
+});
+export type UpdateFundPaymentInput = z.input<typeof updateFundPaymentSchema>;
+export type UpdateFundPaymentData = z.output<typeof updateFundPaymentSchema>;
 
 export const batchFundPaymentSchema = z.object({
     memberIds: z.array(z.coerce.number().int().positive()).min(1, 'กรุณาเลือกสมาชิกอย่างน้อย 1 คน'),

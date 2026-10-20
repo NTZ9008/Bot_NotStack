@@ -101,9 +101,11 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'fund.topic_update': 'แก้ไขหัวข้อเก็บเงิน',
     'fund.topic_delete': 'ลบหัวข้อเก็บเงิน',
     'fund.member_add': 'เพิ่มคนในหัวข้อเก็บเงิน',
-    'fund.member_update': 'ตั้งยอดเฉพาะคน',
+    'fund.member_update': 'แก้ไขยอดสมาชิก',
     'fund.member_remove': 'ลบคนออกจากหัวข้อเก็บเงิน',
     'fund.payment_add': 'บันทึกการรับเงิน',
+    'fund.payment_batch': 'บันทึกการรับเงินเป็นกลุ่ม',
+    'fund.payment_update': 'แก้ไขรายการรับเงิน',
     'fund.payment_delete': 'ลบรายการรับเงิน',
     'fund.report_send': 'ส่งรายงานการเก็บเงิน',
     'weather.settings_update': 'ตั้งค่ารายงานสภาพอากาศ',
@@ -134,6 +136,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     welcome: 'Welcome Announcement',
     weather: 'Weather',
     rank: 'การ์ด Rank & เลเวลอัป',
+    fund: 'เก็บเงินตามเป้า',
 };
 
 export function auditLabel(action: string): string {

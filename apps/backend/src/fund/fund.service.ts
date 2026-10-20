@@ -14,6 +14,7 @@ import {
     type FundTopicSummary,
     type SendFundReportInput,
     type UpdateFundMemberData,
+    type UpdateFundPaymentData,
     type UpdateFundTopicData,
 } from '@notstack/shared';
 import type { GuildMember } from 'discord.js';
@@ -176,9 +177,69 @@ export class FundService {
         return { added: result.count, skipped: ids.size - result.count };
     }
 
-    async updateMember(guildId: string, topicId: number, memberId: number, body: UpdateFundMemberData): Promise<void> {
+    async updateMember(guildId: string, topicId: number, memberId: number, body: UpdateFundMemberData, recordedBy = 'Dashboard'): Promise<void> {
+        const topic = await this.requireTopic(guildId, topicId);
         await this.requireMember(guildId, topicId, memberId);
-        await this.prisma.fundMember.update({ where: { id: memberId }, data: { targetAmount: body.targetAmount } });
+
+        if (body.targetAmount !== undefined) {
+            await this.prisma.fundMember.update({ where: { id: memberId }, data: { targetAmount: body.targetAmount } });
+        }
+
+        if (body.paidAmount !== undefined) {
+            if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนแก้ไขยอดเงิน');
+            const newPaid = roundMoney(body.paidAmount);
+            const payments = await this.prisma.fundPayment.findMany({
+                where: { topicId, memberId },
+                orderBy: [{ paidAt: 'desc' }, { id: 'desc' }],
+            });
+
+            if (newPaid <= 0) {
+                await this.prisma.fundPayment.deleteMany({ where: { topicId, memberId } });
+            } else if (payments.length === 0) {
+                await this.prisma.fundPayment.create({
+                    data: {
+                        topicId,
+                        memberId,
+                        amount: newPaid,
+                        note: 'ปรับปรุงยอดจ่ายแล้ว',
+                        paidAt: new Date(),
+                        recordedBy,
+                    },
+                });
+            } else if (payments.length === 1) {
+                await this.prisma.fundPayment.update({
+                    where: { id: payments[0]!.id },
+                    data: { amount: newPaid, recordedBy },
+                });
+            } else {
+                const currentPaid = roundMoney(payments.reduce((sum, p) => sum + toNum(p.amount), 0));
+                if (newPaid > currentPaid) {
+                    const diff = roundMoney(newPaid - currentPaid);
+                    const latest = payments[0]!;
+                    await this.prisma.fundPayment.update({
+                        where: { id: latest.id },
+                        data: { amount: roundMoney(toNum(latest.amount) + diff), recordedBy },
+                    });
+                } else if (newPaid < currentPaid) {
+                    let toReduce = roundMoney(currentPaid - newPaid);
+                    for (const p of payments) {
+                        if (toReduce <= 0) break;
+                        const amt = toNum(p.amount);
+                        if (amt <= toReduce + 0.001) {
+                            await this.prisma.fundPayment.delete({ where: { id: p.id } });
+                            toReduce = roundMoney(Math.max(0, toReduce - amt));
+                        } else {
+                            await this.prisma.fundPayment.update({
+                                where: { id: p.id },
+                                data: { amount: roundMoney(amt - toReduce), recordedBy },
+                            });
+                            toReduce = 0;
+                        }
+                    }
+                }
+            }
+        }
+
         await this.touch(topicId);
     }
 
@@ -203,6 +264,30 @@ export class FundService {
                 paidAt: body.paidAt ? new Date(body.paidAt) : new Date(),
                 periodStart: body.periodStart ? new Date(body.periodStart) : null,
                 periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
+                recordedBy,
+            },
+        });
+        await this.touch(topicId);
+    }
+
+    async updatePayment(guildId: string, topicId: number, paymentId: number, body: UpdateFundPaymentData, recordedBy: string): Promise<void> {
+        const topic = await this.requireTopic(guildId, topicId);
+        if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนแก้ไขรายการ');
+        const existing = await this.prisma.fundPayment.findFirst({ where: { id: paymentId, topicId } });
+        if (!existing) throw notFound('ไม่พบรายการรับเงินนี้');
+        if (body.memberId !== undefined) {
+            await this.requireMember(guildId, topicId, body.memberId);
+        }
+
+        await this.prisma.fundPayment.update({
+            where: { id: paymentId },
+            data: {
+                memberId: body.memberId,
+                amount: body.amount,
+                note: body.note,
+                paidAt: body.paidAt === undefined ? undefined : body.paidAt ? new Date(body.paidAt) : undefined,
+                periodStart: body.periodStart === undefined ? undefined : body.periodStart ? new Date(body.periodStart) : null,
+                periodEnd: body.periodEnd === undefined ? undefined : body.periodEnd ? new Date(body.periodEnd) : null,
                 recordedBy,
             },
         });

@@ -14,6 +14,7 @@ import { CreateFundPaymentDto } from './dto/create-fund-payment.dto';
 import { CreateFundTopicDto } from './dto/create-fund-topic.dto';
 import { SendFundReportDto } from './dto/send-fund-report.dto';
 import { UpdateFundMemberDto } from './dto/update-fund-member.dto';
+import { UpdateFundPaymentDto } from './dto/update-fund-payment.dto';
 import { UpdateFundTopicDto } from './dto/update-fund-topic.dto';
 import { FundService } from './fund.service';
 
@@ -24,12 +25,15 @@ const topicId = (value: string) => requireId(value, 'ไม่พบหัวข
 // GET  /                                  รายการหัวข้อ (สรุปยอด)
 // POST /                                  สร้างหัวข้อ
 // GET  /:id                               รายละเอียด (คน + รายการรับเงิน)
+// GET  /:id/export                        ส่งออกข้อมูลเป็นไฟล์ CSV
 // POST /:id                               แก้ไขหัวข้อ (ชื่อ / ยอดต่อคน / ห้องรายงาน / ปิด-เปิด)
 // POST /:id/delete                        ลบหัวข้อ
 // POST /:id/members                       เพิ่มคน (เลือกทีละคน หรือดึงทั้งยศ)
-// POST /:id/members/:memberId             ตั้งยอดเฉพาะคน
+// POST /:id/members/:memberId             ตั้งยอดเฉพาะคน / ปรับยอดที่จ่ายแล้ว
 // POST /:id/members/:memberId/delete      ลบคน
 // POST /:id/payments                      บันทึกการรับเงิน
+// POST /:id/payments/batch                บันทึกการรับเงินหลายคนพร้อมกัน
+// POST /:id/payments/:paymentId           แก้ไขรายการรับเงิน
 // POST /:id/payments/:paymentId/delete    ลบรายการรับเงิน
 // POST /:id/report                        ส่งรายงานเข้าห้อง
 // ==========================================
@@ -63,9 +67,11 @@ export class FundController {
         @Param('id') id: string,
         @Res({ passthrough: true }) res: Response,
     ): Promise<string> {
-        const { filename, csv } = await this.fund.exportCsv(guildId, topicId(id));
+        const numericId = topicId(id);
+        const { filename, csv } = await this.fund.exportCsv(guildId, numericId);
+        const encoded = encodeURIComponent(filename);
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="fund-${numericId}.csv"; filename*=UTF-8''${encoded}`);
         return csv;
     }
 
@@ -103,10 +109,12 @@ export class FundController {
         @Param('id') id: string,
         @Param('memberId') memberId: string,
         @Body() body: UpdateFundMemberDto,
+        @CurrentUser() user: User | undefined,
         @AuditCtx() audit: AuditContext,
     ): Promise<SuccessResponse> {
         audit.targetId = memberId;
-        await this.fund.updateMember(guildId, topicId(id), requireId(memberId, 'ไม่พบคนนี้ในหัวข้อ'), body);
+        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
+        await this.fund.updateMember(guildId, topicId(id), requireId(memberId, 'ไม่พบคนนี้ในหัวข้อ'), body, recordedBy);
         return { success: true };
     }
 
@@ -149,6 +157,23 @@ export class FundController {
         const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
         const { count } = await this.fund.batchPayments(guildId, topicId(id), body, recordedBy);
         return { success: true, message: `บันทึกการรับเงิน ${count} คนแล้ว` };
+    }
+
+    @Audit('fund.payment_update')
+    @Post(':id/payments/:paymentId')
+    @HttpCode(HttpStatus.OK)
+    async updatePayment(
+        @GuildId() guildId: string,
+        @Param('id') id: string,
+        @Param('paymentId') paymentId: string,
+        @Body() body: UpdateFundPaymentDto,
+        @CurrentUser() user: User | undefined,
+        @AuditCtx() audit: AuditContext,
+    ): Promise<SuccessResponse> {
+        audit.targetId = paymentId;
+        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
+        await this.fund.updatePayment(guildId, topicId(id), requireId(paymentId, 'ไม่พบรายการรับเงินนี้'), body, recordedBy);
+        return { success: true };
     }
 
     @Audit('fund.payment_delete')
