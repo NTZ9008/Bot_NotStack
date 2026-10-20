@@ -1,6 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
-import { RouteSkeleton } from '@/components/skeleton/route-skeleton';
+import { NavigationSkeleton } from '@/components/skeleton/navigation';
 import { replaceSession } from '@/lib/session';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { pausePreloads } from '@/lib/background-preload';
@@ -29,7 +29,7 @@ export const router = createRouter({
     // ข้อมูลของหน้าให้ TanStack Query เป็นคนดูแล cache
     defaultPreloadStaleTime: 0,
     // Keep the current page during short transitions; never hold ready content behind a timer.
-    defaultPendingComponent: RouteSkeleton,
+    defaultPendingComponent: NavigationSkeleton,
     defaultPendingMs: 250,
     defaultPendingMinMs: 0,
     scrollRestoration: true,

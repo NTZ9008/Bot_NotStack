@@ -285,3 +285,12 @@ test('background loading respects hidden pages, offline status and data-saving c
     delete navigator.connection;
     assert.equal(canPreloadInBackground(), true);
 });
+
+test('URL parsers preserve optional strings and reject invalid search values without form schemas', () => {
+    const { stringSearch, positiveSearchId } = require('../apps/frontend/src/lib/search-params.ts');
+    assert.deepEqual(stringSearch({ error: 'denied', extra: 'ignored' }, ['error', 'redirect']), { error: 'denied' });
+    assert.deepEqual(stringSearch({ redirect: '' }, ['error', 'redirect']), { redirect: '' });
+    for (const bad of [true, 12, null, [], {}]) assert.throws(() => stringSearch({ error: bad }, ['error']), /Invalid search/);
+    for (const bad of [undefined, null, '', 'bad', -1, 0, 1.5, Infinity, Symbol('id')]) assert.equal(positiveSearchId(bad), undefined);
+    assert.equal(positiveSearchId('12'), 12);
+});

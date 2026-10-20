@@ -1,8 +1,8 @@
+import { positiveSearchId } from '@/lib/search-params';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { z } from 'zod';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/search-input';
@@ -14,12 +14,8 @@ import { TopicDialog } from '@/features/funds/topic-dialog';
 import { TopicPanel } from '@/features/funds/topic-panel';
 import { useGuildId } from '@/hooks/use-guild';
 
-const searchSchema = z.object({
-    topic: z.coerce.number().int().positive().optional().catch(undefined),
-});
-
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/funds')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>): { topic?: number } => ({ topic: positiveSearchId(search.topic) }),
     // เริ่มโหลดรายการหัวข้อ (และหัวข้อที่เลือกอยู่ใน URL) พร้อมกับโค้ดของหน้า — ไม่รอให้หน้า render ก่อน
     loaderDeps: ({ search }) => ({ topic: search.topic }),
     loader: ({ context: { queryClient }, params, deps, preload }) => {

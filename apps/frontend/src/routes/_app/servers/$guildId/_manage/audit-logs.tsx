@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { useMemo } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
-import { z } from 'zod';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,12 +8,10 @@ import { DashboardAudit, DiscordActivity } from '@/features/audit/audit-panels';
 import { useGuildId } from '@/hooks/use-guild';
 import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 
-const searchSchema = z.object({
-    source: z.enum(['dashboard', 'discord']).catch('dashboard').default('dashboard'),
-});
-
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>): { source?: 'dashboard' | 'discord' } => ({
+        source: search.source === 'discord' ? 'discord' : 'dashboard',
+    }),
     loaderDeps: ({ search }) => ({ source: search.source }),
     loader: ({ context: { queryClient }, params, deps }) =>
         deps.source === 'discord'
@@ -31,7 +28,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs'
 
 function AuditLogsPage() {
     const guildId = useGuildId();
-    const { source } = Route.useSearch();
+    const { source = 'dashboard' } = Route.useSearch();
     const navigate = useNavigate();
     const router = useRouter();
     const tasks = useMemo(

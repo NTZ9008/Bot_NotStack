@@ -1,5 +1,6 @@
 import { sessionRequests } from './session-state';
-import { AUTH_ERROR_CODES, type ApiErrorBody } from '@notstack/shared';
+import type { ApiErrorBody } from '@notstack/shared';
+import { AUTH_ERROR_CODES } from '@notstack/shared/auth-codes';
 
 // ==========================================
 // 🌐 API CLIENT — เรียก /api/* แบบมี cookie session
