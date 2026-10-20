@@ -7,10 +7,10 @@ import type {
     WelcomeCardResponse,
     WelcomeDesign,
     WelcomeMeta,
-    WelcomePreviewResponse,
+    WelcomeVars,
 } from '@notstack/shared';
 import { queryOptions } from '@tanstack/react-query';
-import { api, apiUrl } from '@/lib/api';
+import { api, apiUrl, type ImagePreview } from '@/lib/api';
 import { guildKey } from './guilds';
 
 const w = (guildId: string, path: string) => `/guilds/${guildId}/welcome${path}`;
@@ -34,7 +34,8 @@ export const welcomeApi = {
     createCard: (guildId: string, input: WelcomeCardInput & { duplicateOf?: number }) => api<WelcomeCardResponse>(w(guildId, '/cards'), { body: input }),
     updateCard: (guildId: string, id: number, input: WelcomeCardInput) => api<WelcomeCardResponse>(w(guildId, `/cards/${id}/update`), { body: input }),
     deleteCard: (guildId: string, id: number) => api<SuccessResponse>(w(guildId, `/cards/${id}/delete`), { method: 'POST' }),
-    preview: (guildId: string, input: PreviewInput, signal?: AbortSignal) => api<WelcomePreviewResponse>(w(guildId, '/preview'), { body: input, signal }),
+    preview: (guildId: string, input: PreviewInput, signal?: AbortSignal) =>
+        api<ImagePreview & { vars: WelcomeVars }>(w(guildId, '/preview'), { body: input, signal, query: { compact: 1 }, responseType: 'preview' }),
     test: (guildId: string, input: { channelId: string; content: string; design: WelcomeDesign; backgroundId: number | null; userId: string | null }) =>
         api<SuccessResponse>(w(guildId, '/test'), { body: input }),
     uploadAsset: (guildId: string, file: File) =>

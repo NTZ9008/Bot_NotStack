@@ -83,7 +83,7 @@ export interface ApiOptions {
     raw?: BodyInit;
     contentType?: string;
     query?: Record<string, string | number | boolean | null | undefined>;
-    responseType?: 'json' | 'text';
+    responseType?: 'json' | 'text' | 'preview';
     // ไม่พาไปหน้า login เมื่อ session หมด (เช่นตอนเช็คว่า login อยู่ไหม)
     allowUnauthenticated?: boolean;
     // ข้อมูลสาธารณะที่ไม่ขึ้นกับว่าใคร login (เช่นช่องทาง login) — ไม่ถูกยกเลิกตอนเปลี่ยน/หมด session และไม่ refresh เมื่อเจอ 401
@@ -146,9 +146,21 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
         throw new ApiError(res.status, message, data ?? {});
     }
 
-    const result: unknown = options.responseType === 'text' ? await res.text() : await res.json();
+    const result: unknown =
+        options.responseType === 'preview'
+            ? {
+                  image: await res.blob(),
+                  vars: res.headers.has('X-Preview-Vars') ? JSON.parse(decodeURIComponent(res.headers.get('X-Preview-Vars')!)) : undefined,
+              }
+            : options.responseType === 'text'
+              ? await res.text()
+              : await res.json();
     sessionSignal.throwIfAborted();
     return result as T;
 }
 
 export const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+
+export interface ImagePreview {
+    image: Blob;
+}

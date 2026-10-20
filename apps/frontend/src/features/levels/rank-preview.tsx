@@ -1,10 +1,11 @@
-import type { RankPreviewKind, RankPreviewResponse } from '@notstack/shared';
+import { useObjectUrl } from '@/hooks/use-object-url';
+import type { RankPreviewKind } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { DiscordMessage } from '@/components/discord-message';
 import { Segmented } from '@/features/welcome/form-controls';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { errorMessage } from '@/lib/api';
+import { errorMessage, type ImagePreview } from '@/lib/api';
 
 export const PREVIEW_KIND_LABELS: Record<RankPreviewKind, string> = { rank: '/rank', leaderboard: '/leaderboard', levelup: 'เลเวลอัป' };
 
@@ -23,7 +24,7 @@ export function RankPreview<T>({
 }: {
     queryKey: readonly unknown[];
     input: T;
-    fetcher: (input: T, signal: AbortSignal) => Promise<RankPreviewResponse>;
+    fetcher: (input: T, signal: AbortSignal) => Promise<ImagePreview>;
     kind: RankPreviewKind;
     kinds: RankPreviewKind[];
     onKind: (kind: RankPreviewKind) => void;
@@ -35,9 +36,11 @@ export function RankPreview<T>({
         queryKey: [...queryKey, 'preview', kind, payload],
         queryFn: ({ signal }) => fetcher(payload, signal),
         placeholderData: keepPreviousData,
-        staleTime: Infinity,
+        staleTime: 30_000,
+        gcTime: 60_000,
         retry: false,
     });
+    const imageUrl = useObjectUrl(preview.data?.image);
     const options = Object.fromEntries(kinds.map((k) => [k, PREVIEW_KIND_LABELS[k]])) as Record<RankPreviewKind, string>;
 
     return (
@@ -47,7 +50,7 @@ export function RankPreview<T>({
                 {children}
                 <div className="relative mt-1 w-full max-w-xl overflow-hidden rounded-lg bg-black/30">
                     {preview.data ? (
-                        <img src={preview.data.image} alt="ตัวอย่างการ์ด" className="block w-full" />
+                        <img src={imageUrl} alt="ตัวอย่างการ์ด" className="block w-full" />
                     ) : (
                         <div className="flex aspect-[10/3] items-center justify-center p-4 text-center text-sm text-[#b5bac1]">
                             {preview.error ? `สร้างรูปตัวอย่างไม่สำเร็จ: ${errorMessage(preview.error)}` : 'กำลังสร้างรูปตัวอย่าง...'}

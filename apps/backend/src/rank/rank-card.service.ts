@@ -1,3 +1,4 @@
+import { timeOperation } from '../common/utils/server-timing';
 import { Injectable, Logger } from '@nestjs/common';
 import {
     applyMemberStyle,
@@ -84,18 +85,18 @@ export class RankCardService {
 
     // XP + อันดับในเซิร์ฟเวอร์ (ยังไม่มี XP = เลเวล 0 ไม่มีอันดับ)
     async progress(guildId: string, userId: string): Promise<RankProgress & { rank: number | null }> {
-        const page = await this.levels.list(guildId, { page: 1, pageSize: 1, userId });
+        const page = await timeOperation('db', () => this.levels.list(guildId, { page: 1, pageSize: 1, userId }));
         const row = page.items[0];
         const xp = row?.xp ?? 0;
         const level = levelForXp(xp, page.settings);
         return { rank: row?.rank ?? null, xp, level, levelStartXp: xpAtLevel(level, page.settings), nextLevelXp: xpForNextLevel(level, page.settings) };
     }
 
-    async renderRank(guildId: string, user: User, member: GuildMember | null, style?: RankCardStyle): Promise<RankCardResult> {
+    async renderRank(guildId: string, user: User, member: GuildMember | null, style?: RankCardStyle, compact = false): Promise<RankCardResult> {
         const useStyle = style ?? (await this.styleFor(guildId, user.id));
         const [progress, avatar, background] = await Promise.all([
             this.progress(guildId, user.id),
-            this.images.loadAvatarImage(user, 256),
+            timeOperation('images', () => this.images.loadAvatarImage(user, 256)),
             this.backgroundImage(useStyle),
         ]);
         const data = {
@@ -104,13 +105,13 @@ export class RankCardService {
             username: user.username,
             serverName: this.discord.guild(guildId)?.name ?? '',
         };
-        return { image: await this.renderer.renderRank(useStyle, { ...data, avatar }, { background }), data };
+        return { image: await this.renderer.renderRank(useStyle, { ...data, avatar }, { background }, compact), data };
     }
 
     // ตารางอันดับใช้ธีมของเซิร์ฟเวอร์ (ไม่ใช่การ์ดของคนใดคนหนึ่ง) — หน้าเกินจำนวนหน้าที่มี = หน้าสุดท้าย
-    async renderLeaderboard(guildId: string, page: number, style?: RankCardStyle, sampleIfEmpty = false): Promise<LeaderboardResult> {
+    async renderLeaderboard(guildId: string, page: number, style?: RankCardStyle, sampleIfEmpty = false, compact = false): Promise<LeaderboardResult> {
         const useStyle = style ?? (await this.store.theme(guildId)).style;
-        let result = await this.levels.list(guildId, { page, pageSize: LEADERBOARD_PAGE_SIZE });
+        let result = await timeOperation('db', () => this.levels.list(guildId, { page, pageSize: LEADERBOARD_PAGE_SIZE }));
         const totalPages = Math.max(1, Math.ceil(result.total / LEADERBOARD_PAGE_SIZE));
         if (page > totalPages && result.total) result = await this.levels.list(guildId, { page: totalPages, pageSize: LEADERBOARD_PAGE_SIZE });
 
@@ -118,12 +119,12 @@ export class RankCardService {
         const [rows, serverIcon, background] = await Promise.all([
             Promise.all(
                 result.items.map(async (item): Promise<LeaderboardRow> => {
-                    const user = this.discord.ready ? await this.discord.fetchUser(item.userId) : null;
+                    const user = this.discord.ready ? await timeOperation('discord', () => this.discord.fetchUser(item.userId)) : null;
                     const level = levelForXp(item.xp, result.settings);
                     return {
                         rank: item.rank,
                         displayName: item.username,
-                        avatar: await this.images.loadAvatarImage(user, 128),
+                        avatar: await timeOperation('images', () => this.images.loadAvatarImage(user, 128)),
                         level,
                         xp: item.xp,
                         levelStartXp: xpAtLevel(level, result.settings),
@@ -139,6 +140,7 @@ export class RankCardService {
             useStyle,
             { serverName: guild?.name ?? 'เซิร์ฟเวอร์', serverIcon, page: result.page, totalPages, rows: shown },
             { background },
+            compact,
         );
         return { image, page: result.page, totalPages, total: result.total };
     }
@@ -149,10 +151,16 @@ export class RankCardService {
         member: GuildMember | null,
         levels: { previousLevel: number; level: number; rewardNames: string[] },
         style?: RankCardStyle,
+        compact = false,
     ): Promise<Buffer> {
         const useStyle = style ?? (await this.styleFor(guildId, user.id));
-        const [avatar, background] = await Promise.all([this.images.loadAvatarImage(user, 256), this.backgroundImage(useStyle)]);
-        return this.renderer.renderLevelUp(useStyle, { displayName: member?.displayName || user.globalName || user.username, avatar, ...levels }, { background });
+        const [avatar, background] = await Promise.all([timeOperation('images', () => this.images.loadAvatarImage(user, 256)), this.backgroundImage(useStyle)]);
+        return this.renderer.renderLevelUp(
+            useStyle,
+            { displayName: member?.displayName || user.globalName || user.username, avatar, ...levels },
+            { background },
+            compact,
+        );
     }
 
     // ==========================================
@@ -163,7 +171,15 @@ export class RankCardService {
             const level = 30 - i * 3;
             const levelStartXp = xpAtLevel(level, curve);
             const nextLevelXp = xpForNextLevel(level, curve);
-            return { rank: i + 1, displayName, avatar: null, level, xp: Math.round(levelStartXp + (nextLevelXp - levelStartXp) * 0.6), levelStartXp, nextLevelXp };
+            return {
+                rank: i + 1,
+                displayName,
+                avatar: null,
+                level,
+                xp: Math.round(levelStartXp + (nextLevelXp - levelStartXp) * 0.6),
+                levelStartXp,
+                nextLevelXp,
+            };
         });
     }
 
@@ -172,7 +188,11 @@ export class RankCardService {
         const client = this.discord.ready;
         if (!client) return { user: null, member: null };
         const id = discordId ?? client.user.id;
-        const member = (await this.discord.guild(guildId)?.members.fetch(id).catch(() => null)) ?? null;
+        const member =
+            (await this.discord
+                .guild(guildId)
+                ?.members.fetch(id)
+                .catch(() => null)) ?? null;
         return { user: member?.user ?? (await this.discord.fetchUser(id)), member };
     }
 
@@ -184,33 +204,56 @@ export class RankCardService {
             .filter((name): name is string => Boolean(name));
     }
 
-    async preview(guildId: string, kind: RankPreviewKind, style: RankCardStyle, viewerDiscordId: string | null, levelUp?: LevelUpSettings): Promise<Buffer> {
-        if (kind === 'leaderboard') return (await this.renderLeaderboard(guildId, 1, style, true)).image;
+    async preview(
+        guildId: string,
+        kind: RankPreviewKind,
+        style: RankCardStyle,
+        viewerDiscordId: string | null,
+        levelUp?: LevelUpSettings,
+        compact = false,
+    ): Promise<Buffer> {
+        if (kind === 'leaderboard') return (await this.renderLeaderboard(guildId, 1, style, true, compact)).image;
 
-        const { user, member } = await this.sampleUser(guildId, viewerDiscordId);
+        const { user, member } = await timeOperation('discord', () => this.sampleUser(guildId, viewerDiscordId));
         if (kind === 'levelup') {
             const settings = levelUp ?? (await this.store.levelUp(guildId));
             // ตัวอย่างใช้เลเวลของยศรางวัลแรก (ถ้ามี) จะได้เห็นบรรทัด "ได้รับยศ"
             const level = settings.rewards[0]?.level ?? 12;
             const rewardNames = await this.rewardNames(guildId, settings, level);
-            if (user) return this.renderLevelUp(guildId, user, member, { previousLevel: level - 1, level, rewardNames }, style);
-            return this.renderer.renderLevelUp(style, { displayName: 'NotStack', avatar: null, previousLevel: level - 1, level, rewardNames }, { background: await this.backgroundImage(style) });
+            if (user) return this.renderLevelUp(guildId, user, member, { previousLevel: level - 1, level, rewardNames }, style, compact);
+            return this.renderer.renderLevelUp(
+                style,
+                { displayName: 'NotStack', avatar: null, previousLevel: level - 1, level, rewardNames },
+                { background: await this.backgroundImage(style) },
+                compact,
+            );
         }
 
-        if (user) return (await this.renderRank(guildId, user, member, style)).image;
+        if (user) return (await this.renderRank(guildId, user, member, style, compact)).image;
         return this.renderer.renderRank(
             style,
-            { displayName: 'NotStack', username: 'notstack', avatar: null, rank: 1, level: 12, xp: 15500, levelStartXp: 14400, nextLevelXp: 16900, serverName: '' },
+            {
+                displayName: 'NotStack',
+                username: 'notstack',
+                avatar: null,
+                rank: 1,
+                level: 12,
+                xp: 15500,
+                levelStartXp: 14400,
+                nextLevelXp: 16900,
+                serverName: '',
+            },
             { background: await this.backgroundImage(style) },
+            compact,
         );
     }
 
-    async previewMember(guildId: string, discordId: string, draft: RankMemberStyle, kind: RankPreviewKind): Promise<Buffer> {
+    async previewMember(guildId: string, discordId: string, draft: RankMemberStyle, kind: RankPreviewKind, compact = false): Promise<Buffer> {
         const style = applyMemberStyle(await this.store.theme(guildId), draft);
-        if (kind !== 'levelup') return this.preview(guildId, 'rank', style, discordId);
+        if (kind !== 'levelup') return this.preview(guildId, 'rank', style, discordId, undefined, compact);
         const { level } = await this.progress(guildId, discordId);
         const { user, member } = await this.sampleUser(guildId, discordId);
-        if (!user) return this.preview(guildId, 'levelup', style, discordId);
-        return this.renderLevelUp(guildId, user, member, { previousLevel: level, level: level + 1, rewardNames: [] }, style);
+        if (!user) return this.preview(guildId, 'levelup', style, discordId, undefined, compact);
+        return this.renderLevelUp(guildId, user, member, { previousLevel: level, level: level + 1, rewardNames: [] }, style, compact);
     }
 }

@@ -1,3 +1,4 @@
+import { useObjectUrl } from '@/hooks/use-object-url';
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -75,7 +76,10 @@ export function WelcomePreview({
 }) {
     const guildId = useGuildId();
     const { design } = draft;
-    const nextPayload = useMemo<PreviewInput>(() => ({ design, backgroundId: draft.backgroundId, userId: sampleUserId }), [design, draft.backgroundId, sampleUserId]);
+    const nextPayload = useMemo<PreviewInput>(
+        () => ({ design, backgroundId: draft.backgroundId, userId: sampleUserId }),
+        [design, draft.backgroundId, sampleUserId],
+    );
     // การเปลี่ยนสัดส่วนการ์ดต้องเริ่ม render ใหม่ทันที ส่วน slider/ข้อความยัง debounce
     // เพื่อไม่ให้ยิงคำขอจำนวนมากระหว่างที่ผู้ใช้ลากหรือพิมพ์ต่อเนื่อง
     const sizeKey = `${design.width}x${design.height}`;
@@ -84,9 +88,11 @@ export function WelcomePreview({
         queryKey: ['guild', guildId, 'welcome', 'preview', payload],
         queryFn: ({ signal }) => welcomeApi.preview(guildId, payload, signal),
         placeholderData: keepPreviousData,
-        staleTime: Infinity,
+        staleTime: 30_000,
+        gcTime: 60_000,
         retry: false,
     });
+    const imageUrl = useObjectUrl(preview.data?.image);
     const vars = preview.data?.vars ?? FALLBACK_VARS;
     useEffect(() => {
         if (preview.data?.vars) onVars(preview.data.vars);
@@ -153,7 +159,7 @@ export function WelcomePreview({
                 className="relative mt-1 w-full max-w-xl touch-none overflow-hidden rounded-lg bg-black/30 select-none"
                 style={{ aspectRatio: `${design.width} / ${design.height}` }}
             >
-                {preview.data && <img src={preview.data.image} alt="ตัวอย่างการ์ดต้อนรับ" className="absolute inset-0 size-full" draggable={false} />}
+                {preview.data && <img src={imageUrl} alt="ตัวอย่างการ์ดต้อนรับ" className="absolute inset-0 size-full" draggable={false} />}
 
                 {guides.v && <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-pink-400" />}
                 {guides.h && <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-pink-400" />}
@@ -168,7 +174,12 @@ export function WelcomePreview({
                                     'absolute cursor-move border-2 border-dashed border-white/0 transition-colors hover:border-white/70',
                                     design.avatar.shape === 'circle' ? 'rounded-full' : 'rounded-md',
                                 )}
-                                style={{ width: avatarBox, height: avatarBox, left: design.avatar.x * scale - avatarBox / 2, top: design.avatar.y * scale - avatarBox / 2 }}
+                                style={{
+                                    width: avatarBox,
+                                    height: avatarBox,
+                                    left: design.avatar.x * scale - avatarBox / 2,
+                                    top: design.avatar.y * scale - avatarBox / 2,
+                                }}
                                 onPointerDown={(e) => startDrag(e, 'avatar')}
                             />
                         )}
