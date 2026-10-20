@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { WELCOME_MAX_UPLOAD_BYTES } from '@notstack/shared';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
@@ -53,6 +54,8 @@ async function bootstrap(): Promise<void> {
         });
     }
 
+    // บีบอัดคำตอบ (JSON / CSV / ไฟล์หน้าเว็บ) ที่ใหญ่กว่า 1KB — รูปภาพบีบซ้ำไม่ได้จึงถูกข้ามอัตโนมัติ
+    app.use(compression({ threshold: 1024 }));
     app.use(cookieParser());
 
     // GitHub webhook: ต้องใช้ raw body ตรวจลายเซ็น HMAC
