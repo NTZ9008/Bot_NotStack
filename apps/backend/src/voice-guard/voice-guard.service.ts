@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { DiscordUserInfo, VoiceGuardChannel, VoiceGuardMode } from '@notstack/shared';
+import { defaultAvatarUrl, type DiscordUserInfo, type VoiceGuardChannel, type VoiceGuardMode } from '@notstack/shared';
 import { ChannelType } from 'discord.js';
 import { badRequest, notFound } from '../common/exceptions/api.exception';
 import { DiscordService } from '../discord/discord.service';
@@ -25,11 +25,6 @@ export interface ChannelGuardRules {
 
 // กติกาที่ใช้ตอนมีคนเข้าห้องเสียง cache ไว้ (แก้จากหน้าเว็บแล้วล้างทันที — TTL กันกรณีแก้ฐานข้อมูลตรงๆ)
 const RULE_CACHE_TTL_MS = 5 * 60 * 1000;
-
-const fallbackAvatar = (userId: string) => {
-    const index = /^\d+$/.test(userId) ? Number(BigInt(userId) % 5n) : 0;
-    return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
-};
 
 // ==========================================
 // 🎙️ VOICE GUARD — Whitelist / Blacklist ของห้องเสียง (แยกตามเซิร์ฟเวอร์)
@@ -148,7 +143,7 @@ export class VoiceGuardService {
                 users.push({
                     userId,
                     username: user ? user.globalName || user.username : userId,
-                    avatar: user ? user.displayAvatarURL({ size: 64 }) : fallbackAvatar(userId),
+                    avatar: user ? user.displayAvatarURL({ size: 64 }) : defaultAvatarUrl(userId),
                 });
             }
             result.push({

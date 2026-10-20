@@ -19,6 +19,10 @@ import { UpdateFundTopicDto } from './dto/update-fund-topic.dto';
 import { FundService } from './fund.service';
 
 const topicId = (value: string) => requireId(value, 'ไม่พบหัวข้อเก็บเงินนี้');
+const memberIdOf = (value: string) => requireId(value, 'ไม่พบคนนี้ในหัวข้อ');
+const paymentIdOf = (value: string) => requireId(value, 'ไม่พบรายการรับเงินนี้');
+// ชื่อผู้บันทึกที่แสดงในประวัติรับเงิน
+const recorderName = (user: User | undefined) => user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
 
 // ==========================================
 // 🌐 FUND API — /api/guilds/:guildId/funds/* (ผู้ที่จัดการเซิร์ฟเวอร์นั้นได้)
@@ -113,8 +117,7 @@ export class FundController {
         @AuditCtx() audit: AuditContext,
     ): Promise<SuccessResponse> {
         audit.targetId = memberId;
-        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
-        await this.fund.updateMember(guildId, topicId(id), requireId(memberId, 'ไม่พบคนนี้ในหัวข้อ'), body, recordedBy);
+        await this.fund.updateMember(guildId, topicId(id), memberIdOf(memberId), body, recorderName(user));
         return { success: true };
     }
 
@@ -123,7 +126,7 @@ export class FundController {
     @HttpCode(HttpStatus.OK)
     async removeMember(@GuildId() guildId: string, @Param('id') id: string, @Param('memberId') memberId: string, @AuditCtx() audit: AuditContext): Promise<SuccessResponse> {
         audit.targetId = memberId;
-        await this.fund.removeMember(guildId, topicId(id), requireId(memberId, 'ไม่พบคนนี้ในหัวข้อ'));
+        await this.fund.removeMember(guildId, topicId(id), memberIdOf(memberId));
         return { success: true };
     }
 
@@ -138,8 +141,7 @@ export class FundController {
         @AuditCtx() audit: AuditContext,
     ): Promise<SuccessResponse> {
         audit.targetId = id;
-        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
-        await this.fund.addPayment(guildId, topicId(id), body, recordedBy);
+        await this.fund.addPayment(guildId, topicId(id), body, recorderName(user));
         return { success: true };
     }
 
@@ -154,8 +156,7 @@ export class FundController {
         @AuditCtx() audit: AuditContext,
     ): Promise<SuccessResponse> {
         audit.targetId = id;
-        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
-        const { count } = await this.fund.batchPayments(guildId, topicId(id), body, recordedBy);
+        const { count } = await this.fund.batchPayments(guildId, topicId(id), body, recorderName(user));
         return { success: true, message: `บันทึกการรับเงิน ${count} คนแล้ว` };
     }
 
@@ -171,8 +172,7 @@ export class FundController {
         @AuditCtx() audit: AuditContext,
     ): Promise<SuccessResponse> {
         audit.targetId = paymentId;
-        const recordedBy = user?.displayName || user?.discordUsername || user?.username || 'Dashboard';
-        await this.fund.updatePayment(guildId, topicId(id), requireId(paymentId, 'ไม่พบรายการรับเงินนี้'), body, recordedBy);
+        await this.fund.updatePayment(guildId, topicId(id), paymentIdOf(paymentId), body, recorderName(user));
         return { success: true };
     }
 
@@ -181,7 +181,7 @@ export class FundController {
     @HttpCode(HttpStatus.OK)
     async removePayment(@GuildId() guildId: string, @Param('id') id: string, @Param('paymentId') paymentId: string, @AuditCtx() audit: AuditContext): Promise<SuccessResponse> {
         audit.targetId = paymentId;
-        await this.fund.removePayment(guildId, topicId(id), requireId(paymentId, 'ไม่พบรายการรับเงินนี้'));
+        await this.fund.removePayment(guildId, topicId(id), paymentIdOf(paymentId));
         return { success: true };
     }
 

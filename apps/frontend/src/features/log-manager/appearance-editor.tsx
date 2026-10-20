@@ -1,17 +1,16 @@
 import { DEFAULT_LOG_APPEARANCE, formatLogEmbed, type LogAppearance, type LogEmbedContent, type LogEventSetting } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { useBlocker } from '@tanstack/react-router';
 import { Check, RotateCcw, Save } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { logSettingsApi } from '@/api/bot';
-import { useConfirm } from '@/components/confirm-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 const samples: Record<string, LogEmbedContent> = {
@@ -66,7 +65,6 @@ export function AppearanceEditor({
     const [draft, setDraft] = useState<LogAppearance>({ ...appearance });
     const [persisted, setPersisted] = useState<LogAppearance>(appearance);
     const [sample, setSample] = useState('messageUpdate');
-    const confirm = useConfirm();
     const lastAppearance = useRef(appearance);
     useEffect(() => {
         const previous = lastAppearance.current;
@@ -85,16 +83,11 @@ export function AppearanceEditor({
         onError: (error) => toast.error('บันทึกไม่สำเร็จ', { description: errorMessage(error) }),
     });
     const dirty = JSON.stringify(draft) !== JSON.stringify(persisted);
-    useBlocker({
-        shouldBlockFn: async () =>
-            dirty &&
-            !(await confirm({
-                title: 'ทิ้งรูปแบบที่ยังไม่บันทึก?',
-                description: 'การแก้ไขรูปแบบ Log จะหายไปเมื่อออกจากหน้านี้',
-                confirmText: 'ทิ้งการแก้ไข',
-                destructive: true,
-            })),
-        enableBeforeUnload: () => dirty,
+    useUnsavedChangesGuard(dirty, {
+        title: 'ทิ้งรูปแบบที่ยังไม่บันทึก?',
+        description: 'การแก้ไขรูปแบบ Log จะหายไปเมื่อออกจากหน้านี้',
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
     });
     const patch = (next: Partial<LogAppearance>) => setDraft((current) => ({ ...current, ...next }));
     const event = events.find((e) => e.key === sample);

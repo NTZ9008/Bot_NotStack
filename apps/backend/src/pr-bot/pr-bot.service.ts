@@ -5,7 +5,6 @@ import type { Guild } from 'discord.js';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
-import type { Prisma } from '../generated/prisma/client';
 import type {
     CheckRunEvent,
     GithubRepository,
@@ -19,6 +18,7 @@ import { PrBotSettingsService } from './pr-bot-settings.service';
 import { PrBotStatsService } from './pr-bot-stats.service';
 import { applyCheckRun, applyPullRequest, applyPullRequestComment, applyReview, applyStatus, normalizeActivity, type PrActivity } from './utils/pr-activity';
 import { prPayload } from './utils/pr-bot.embeds';
+import { toJsonValue } from '../prisma/json.util';
 
 // ==========================================
 // 🔀 PR BOT — แจ้งเตือน GitHub Pull Request เข้า Discord และแก้ข้อความเดิมเมื่อมี review / check / comment หรือ PR ถูก merge/close
@@ -122,7 +122,7 @@ export class PrBotService {
                 allowedMentions: { parse: ['users', 'roles'] },
             });
             await this.stats.record(guildId, message.id, 'sent');
-            const data = { channelId: channel.id, messageId: message.id, headSha: activity.pr!.headSha, activity: toJson(activity) };
+            const data = { channelId: channel.id, messageId: message.id, headSha: activity.pr!.headSha, activity: toJsonValue(activity) };
             await this.prisma.prMessage.upsert({
                 where: key,
                 create: { guildId, repoFullName: repo.full_name, prNumber: pr.number, ...data },
@@ -196,7 +196,7 @@ export class PrBotService {
             const activity = apply(normalizeActivity(row.activity));
             await tx.prMessage.update({
                 where: { guildId_repoFullName_prNumber: { guildId, repoFullName, prNumber } },
-                data: { activity: toJson(activity), ...(activity.pr?.headSha ? { headSha: activity.pr.headSha } : {}) },
+                data: { activity: toJsonValue(activity), ...(activity.pr?.headSha ? { headSha: activity.pr.headSha } : {}) },
             });
             return true;
         });
@@ -240,4 +240,3 @@ export class PrBotService {
     }
 }
 
-const toJson = (activity: PrActivity) => activity as unknown as Prisma.InputJsonValue;

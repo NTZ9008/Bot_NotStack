@@ -1,6 +1,5 @@
 import type { MyRankCardResponse, RankBackgroundType, RankCardMeta, RankMemberStyle, RankPreviewKind } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useBlocker } from '@tanstack/react-router';
 import { Check, Info, RotateCcw, Save } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -12,6 +11,7 @@ import { ErrorState, LoadingState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Segmented } from '@/features/welcome/form-controls';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { RankPreview } from './rank-preview';
@@ -53,10 +53,7 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
         ...(rules.backgrounds && rules.backgroundIds.length ? { image: 'รูป' } : {}),
     };
 
-    useBlocker({
-        shouldBlockFn: async () => dirty && !(await confirm({ title: 'ทิ้งการแก้ไขการ์ดที่ยังไม่บันทึก?', destructive: true })),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, { title: 'ทิ้งการแก้ไขการ์ดที่ยังไม่บันทึก?', destructive: true });
 
     const apply = (data: MyRankCardResponse, message: string) => {
         setSaved(data);

@@ -124,6 +124,12 @@ const formatCsvDateTime = (val: string | Date | null | undefined): string => {
     return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('th-TH');
 };
 
+// ชื่อไฟล์ CSV เดียวกันทั้งตอนดาวน์โหลดจากหน้าเว็บและจาก API (ตัดอักขระที่ใช้ในชื่อไฟล์ไม่ได้ออก)
+export function fundCsvFilename(topicName: string, date = new Date()): string {
+    const safeName = (topicName || 'fund').replace(/[/\\?%*:|"<>]/g, '_').slice(0, 50);
+    return `fund-${safeName}-${date.toISOString().slice(0, 10)}.csv`;
+}
+
 export function generateFundCsv(topic: FundTopicDetail): string {
     const lines: string[] = [];
     const pushRow = (...cols: unknown[]) => lines.push(cols.map(escapeCsv).join(','));

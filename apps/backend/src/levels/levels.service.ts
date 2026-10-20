@@ -27,6 +27,7 @@ import { bangkokDay } from '../common/utils/parse.util';
 import { DiscordService } from '../discord/discord.service';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { toJsonValue } from '../prisma/json.util';
 
 type Tx = Prisma.TransactionClient;
 
@@ -118,7 +119,7 @@ export class LevelsService {
             const previous = await this.readSettings(tx, guildId);
             if (previous.revision !== input.revision) throw conflict('การตั้งค่าถูกแก้จากที่อื่นแล้ว กรุณาโหลดใหม่ก่อนบันทึก');
             const settings = xpSettingsSchema.parse(input.settings);
-            const data = { settings: settings as unknown as Prisma.InputJsonValue, revision: previous.revision + 1 };
+            const data = { settings: toJsonValue(settings), revision: previous.revision + 1 };
             await tx.xpSetting.upsert({ where: { guildId }, create: { guildId, ...data }, update: data });
             // Levels are derived from total XP; a curve change never destroys XP.
             if (settings.curveBase !== previous.settings.curveBase || settings.curveExponent !== previous.settings.curveExponent) {

@@ -22,6 +22,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JiraApiError, JiraClient, type JiraCredentials } from './clients/jira.client';
 import { panelMessage } from './utils/jira.messages';
 import { TokenCipher } from './utils/token-cipher';
+import { toJsonValue } from '../prisma/json.util';
 
 const PAGE_SIZE = 20;
 
@@ -180,7 +181,7 @@ export class JiraService implements OnApplicationShutdown {
         }
 
         const { updatedAt: _updatedAt, ...fields } = next;
-        const data = { ...fields, options: next.options as unknown as Prisma.InputJsonValue };
+        const data = { ...fields, options: toJsonValue(next.options) };
         const row = await this.prisma.jiraSetting.upsert({ where: { guildId }, create: { guildId, ...data }, update: data });
         const settings: StoredJiraSettings = { ...row, options: normalizeJiraOptions(row.options) };
         return { settings, warning: await this.permissionWarning(guildId, settings) };

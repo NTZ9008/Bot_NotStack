@@ -4,6 +4,7 @@ import { GuildId } from '../../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../../guilds/decorators/guild-route.decorator';
 import { ActivityQueryDto } from '../dto/activity-query.dto';
 import { ActivityStatsQueryDto } from '../dto/activity-stats-query.dto';
+import { ActivityStatsService } from '../services/activity-stats.service';
 import { ActivityService } from '../services/activity.service';
 import { LogSettingsService } from '../services/log-settings.service';
 
@@ -30,12 +31,13 @@ function resolveRange(query: { from?: Date; to?: Date; interval?: ActivityInterv
 export class ActivityController {
     constructor(
         private readonly activity: ActivityService,
+        private readonly activityStats: ActivityStatsService,
         private readonly settings: LogSettingsService,
     ) {}
 
     @Get('stats')
     stats(@GuildId() guildId: string, @Query() query: ActivityStatsQueryDto): Promise<ActivityStats> {
-        return this.activity.stats({ guildId, ...resolveRange(query), timeZone: query.tz ?? 'Asia/Bangkok', limit: query.limit });
+        return this.activityStats.stats({ guildId, ...resolveRange(query), timeZone: query.tz ?? 'Asia/Bangkok', limit: query.limit });
     }
 
     @Get()
