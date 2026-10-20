@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
     FUND_LIMITS,
+    defaultAvatarUrl,
+    fundCsvFilename,
     fundMemberStatus,
     generateFundCsv,
     roundMoney,
@@ -22,14 +24,14 @@ import { badRequest, notFound } from '../common/exceptions/api.exception';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildFundReport } from './utils/fund-report';
+import { planPaidAdjustment } from './utils/paid-adjustment';
 
 type Decimalish = { toNumber(): number } | null | undefined;
 const toNum = (value: Decimalish): number => (value ? roundMoney(value.toNumber()) : 0);
 
-const fallbackAvatar = (userId: string) => {
-    const index = /^\d+$/.test(userId) ? Number(BigInt(userId) % 5n) : 0;
-    return `https://cdn.discordapp.com/embed/avatars/${index}.png`;
-};
+// วันที่จาก body: ไม่ส่งมา = ไม่แก้ค่าเดิม, ค่าว่าง/null = ล้างค่า
+const patchDate = (value: string | null | undefined): Date | null | undefined => (value === undefined ? undefined : value ? new Date(value) : null);
+const toDateOrNull = (value: string | null | undefined): Date | null => (value ? new Date(value) : null);
 
 // ข้อมูลดิบจากฐานข้อมูลก่อนแปลงเป็นข้อมูลหน้าเว็บ
 interface TopicRow {
@@ -94,7 +96,7 @@ export class FundService {
         if (!topic) throw notFound('ไม่พบหัวข้อเก็บเงินนี้');
         const computed = this.computeMembers(topic, topic.members, topic.payments);
         const avatars = await this.avatars(guildId, topic.members.map((m) => m.userId));
-        const members: FundMemberView[] = computed.map((m) => ({ ...m, avatar: avatars.get(m.userId) ?? fallbackAvatar(m.userId) }));
+        const members: FundMemberView[] = computed.map((m) => ({ ...m, avatar: avatars.get(m.userId) ?? defaultAvatarUrl(m.userId) }));
         const names = new Map(topic.members.map((m) => [m.id, m.displayName]));
         const payments: FundPaymentView[] = topic.payments.map((p) => ({
             id: p.id,
@@ -119,9 +121,9 @@ export class FundService {
                 description: body.description ?? '',
                 amountPerMember: body.amountPerMember,
                 dailyRate: body.dailyRate ?? null,
-                startDate: body.startDate ? new Date(body.startDate) : null,
+                startDate: toDateOrNull(body.startDate),
                 reportChannelId: body.reportChannelId ?? '',
-                dueDate: body.dueDate ? new Date(body.dueDate) : null,
+                dueDate: toDateOrNull(body.dueDate),
             },
         });
         return this.detail(guildId, topic.id);
@@ -136,10 +138,10 @@ export class FundService {
                 name: body.name?.trim(),
                 description: body.description,
                 amountPerMember: body.amountPerMember,
-                dailyRate: body.dailyRate === undefined ? undefined : body.dailyRate,
-                startDate: body.startDate === undefined ? undefined : body.startDate ? new Date(body.startDate) : null,
+                dailyRate: body.dailyRate,
+                startDate: patchDate(body.startDate),
                 reportChannelId: body.reportChannelId,
-                dueDate: body.dueDate === undefined ? undefined : body.dueDate ? new Date(body.dueDate) : null,
+                dueDate: patchDate(body.dueDate),
                 closed: body.closed,
             },
         });
@@ -179,72 +181,40 @@ export class FundService {
 
     async updateMember(guildId: string, topicId: number, memberId: number, body: UpdateFundMemberData, recordedBy = 'Dashboard'): Promise<void> {
         const topic = await this.requireTopic(guildId, topicId);
-        await this.requireMember(guildId, topicId, memberId);
+        await this.requireMember(topicId, memberId);
+        if (body.paidAmount !== undefined && topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนแก้ไขยอดเงิน');
 
-        if (body.targetAmount !== undefined) {
-            await this.prisma.fundMember.update({ where: { id: memberId }, data: { targetAmount: body.targetAmount } });
-        }
-
-        if (body.paidAmount !== undefined) {
-            if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนแก้ไขยอดเงิน');
-            const newPaid = roundMoney(body.paidAmount);
-            const payments = await this.prisma.fundPayment.findMany({
-                where: { topicId, memberId },
-                orderBy: [{ paidAt: 'desc' }, { id: 'desc' }],
-            });
-
-            if (newPaid <= 0) {
-                await this.prisma.fundPayment.deleteMany({ where: { topicId, memberId } });
-            } else if (payments.length === 0) {
-                await this.prisma.fundPayment.create({
-                    data: {
-                        topicId,
-                        memberId,
-                        amount: newPaid,
-                        note: 'ปรับปรุงยอดจ่ายแล้ว',
-                        paidAt: new Date(),
-                        recordedBy,
-                    },
+        await this.prisma.$transaction(async (tx) => {
+            if (body.targetAmount !== undefined) {
+                await tx.fundMember.update({ where: { id: memberId }, data: { targetAmount: body.targetAmount } });
+            }
+            if (body.paidAmount !== undefined) {
+                const payments = await tx.fundPayment.findMany({
+                    where: { topicId, memberId },
+                    orderBy: [{ paidAt: 'desc' }, { id: 'desc' }],
+                    select: { id: true, amount: true },
                 });
-            } else if (payments.length === 1) {
-                await this.prisma.fundPayment.update({
-                    where: { id: payments[0]!.id },
-                    data: { amount: newPaid, recordedBy },
-                });
-            } else {
-                const currentPaid = roundMoney(payments.reduce((sum, p) => sum + toNum(p.amount), 0));
-                if (newPaid > currentPaid) {
-                    const diff = roundMoney(newPaid - currentPaid);
-                    const latest = payments[0]!;
-                    await this.prisma.fundPayment.update({
-                        where: { id: latest.id },
-                        data: { amount: roundMoney(toNum(latest.amount) + diff), recordedBy },
+                const plan = planPaidAdjustment(
+                    payments.map((p) => ({ id: p.id, amount: toNum(p.amount) })),
+                    body.paidAmount,
+                );
+                if (plan.deleteIds.length) await tx.fundPayment.deleteMany({ where: { id: { in: plan.deleteIds } } });
+                for (const update of plan.updates) {
+                    await tx.fundPayment.update({ where: { id: update.id }, data: { amount: update.amount, recordedBy } });
+                }
+                if (plan.create !== null) {
+                    await tx.fundPayment.create({
+                        data: { topicId, memberId, amount: plan.create, note: 'ปรับปรุงยอดจ่ายแล้ว', paidAt: new Date(), recordedBy },
                     });
-                } else if (newPaid < currentPaid) {
-                    let toReduce = roundMoney(currentPaid - newPaid);
-                    for (const p of payments) {
-                        if (toReduce <= 0) break;
-                        const amt = toNum(p.amount);
-                        if (amt <= toReduce + 0.001) {
-                            await this.prisma.fundPayment.delete({ where: { id: p.id } });
-                            toReduce = roundMoney(Math.max(0, toReduce - amt));
-                        } else {
-                            await this.prisma.fundPayment.update({
-                                where: { id: p.id },
-                                data: { amount: roundMoney(amt - toReduce), recordedBy },
-                            });
-                            toReduce = 0;
-                        }
-                    }
                 }
             }
-        }
-
-        await this.touch(topicId);
+            await tx.fundTopic.update({ where: { id: topicId }, data: { updatedAt: new Date() } });
+        });
     }
 
     async removeMember(guildId: string, topicId: number, memberId: number): Promise<void> {
-        await this.requireMember(guildId, topicId, memberId);
+        await this.requireTopic(guildId, topicId);
+        await this.requireMember(topicId, memberId);
         // รายการรับเงินของคนนี้ลบตาม (ON DELETE CASCADE)
         await this.prisma.fundMember.delete({ where: { id: memberId } });
         await this.touch(topicId);
@@ -252,9 +222,8 @@ export class FundService {
 
     // ---------- รับเงิน ----------
     async addPayment(guildId: string, topicId: number, body: CreateFundPaymentData, recordedBy: string): Promise<void> {
-        const topic = await this.requireTopic(guildId, topicId);
-        if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนบันทึกรายการ');
-        await this.requireMember(guildId, topicId, body.memberId);
+        await this.requireOpenTopic(guildId, topicId, 'บันทึกรายการ');
+        await this.requireMember(topicId, body.memberId);
         await this.prisma.fundPayment.create({
             data: {
                 topicId,
@@ -262,8 +231,8 @@ export class FundService {
                 amount: body.amount,
                 note: body.note ?? '',
                 paidAt: body.paidAt ? new Date(body.paidAt) : new Date(),
-                periodStart: body.periodStart ? new Date(body.periodStart) : null,
-                periodEnd: body.periodEnd ? new Date(body.periodEnd) : null,
+                periodStart: toDateOrNull(body.periodStart),
+                periodEnd: toDateOrNull(body.periodEnd),
                 recordedBy,
             },
         });
@@ -271,13 +240,10 @@ export class FundService {
     }
 
     async updatePayment(guildId: string, topicId: number, paymentId: number, body: UpdateFundPaymentData, recordedBy: string): Promise<void> {
-        const topic = await this.requireTopic(guildId, topicId);
-        if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนแก้ไขรายการ');
+        await this.requireOpenTopic(guildId, topicId, 'แก้ไขรายการ');
         const existing = await this.prisma.fundPayment.findFirst({ where: { id: paymentId, topicId } });
         if (!existing) throw notFound('ไม่พบรายการรับเงินนี้');
-        if (body.memberId !== undefined) {
-            await this.requireMember(guildId, topicId, body.memberId);
-        }
+        if (body.memberId !== undefined) await this.requireMember(topicId, body.memberId);
 
         await this.prisma.fundPayment.update({
             where: { id: paymentId },
@@ -285,9 +251,9 @@ export class FundService {
                 memberId: body.memberId,
                 amount: body.amount,
                 note: body.note,
-                paidAt: body.paidAt === undefined ? undefined : body.paidAt ? new Date(body.paidAt) : undefined,
-                periodStart: body.periodStart === undefined ? undefined : body.periodStart ? new Date(body.periodStart) : null,
-                periodEnd: body.periodEnd === undefined ? undefined : body.periodEnd ? new Date(body.periodEnd) : null,
+                paidAt: body.paidAt ? new Date(body.paidAt) : undefined, // วันเวลาที่รับเงินล้างไม่ได้
+                periodStart: patchDate(body.periodStart),
+                periodEnd: patchDate(body.periodEnd),
                 recordedBy,
             },
         });
@@ -295,8 +261,7 @@ export class FundService {
     }
 
     async batchPayments(guildId: string, topicId: number, body: BatchFundPaymentData, recordedBy: string): Promise<{ count: number }> {
-        const topic = await this.requireTopic(guildId, topicId);
-        if (topic.closed) throw badRequest('หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อนบันทึกรายการ');
+        await this.requireOpenTopic(guildId, topicId, 'บันทึกรายการ');
         if (!body.memberIds.length) throw badRequest('กรุณาเลือกสมาชิกอย่างน้อย 1 คน');
 
         const members = await this.prisma.fundMember.findMany({
@@ -306,8 +271,8 @@ export class FundService {
         if (members.length === 0) throw badRequest('ไม่พบสมาชิกที่เลือกในหัวข้อนี้');
 
         const paidAt = body.paidAt ? new Date(body.paidAt) : new Date();
-        const periodStart = body.periodStart ? new Date(body.periodStart) : null;
-        const periodEnd = body.periodEnd ? new Date(body.periodEnd) : null;
+        const periodStart = toDateOrNull(body.periodStart);
+        const periodEnd = toDateOrNull(body.periodEnd);
 
         await this.prisma.fundPayment.createMany({
             data: members.map((m) => ({
@@ -334,13 +299,7 @@ export class FundService {
 
     async exportCsv(guildId: string, topicId: number): Promise<{ filename: string; csv: string }> {
         const detail = await this.detail(guildId, topicId);
-        const csv = generateFundCsv(detail);
-        const safeName = (detail.name || 'fund').replace(/[/\\?%*:|"<>]/g, '_').slice(0, 50);
-        const dateStr = new Date().toISOString().slice(0, 10);
-        return {
-            filename: `fund-${safeName}-${dateStr}.csv`,
-            csv,
-        };
+        return { filename: fundCsvFilename(detail.name), csv: generateFundCsv(detail) };
     }
 
     // ---------- รายงาน ----------
@@ -408,8 +367,14 @@ export class FundService {
         return topic;
     }
 
-    private async requireMember(guildId: string, topicId: number, memberId: number) {
-        await this.requireTopic(guildId, topicId);
+    private async requireOpenTopic(guildId: string, topicId: number, action: string) {
+        const topic = await this.requireTopic(guildId, topicId);
+        if (topic.closed) throw badRequest(`หัวข้อนี้ปิดการเก็บเงินแล้ว — เปิดอีกครั้งก่อน${action}`);
+        return topic;
+    }
+
+    // เรียกหลัง requireTopic เสมอ (ตรวจว่าหัวข้อเป็นของเซิร์ฟเวอร์นี้แล้ว)
+    private async requireMember(topicId: number, memberId: number) {
         const member = await this.prisma.fundMember.findFirst({ where: { id: memberId, topicId } });
         if (!member) throw notFound('ไม่พบคนนี้ในหัวข้อ');
         return member;
@@ -436,33 +401,29 @@ export class FundService {
         return [...role.members.values()].filter((member) => !member.user.bot);
     }
 
-    private async displayNames(guildId: string, userIds: string[]): Promise<Map<string, string>> {
-        const result = new Map<string, string>();
-        const guild = this.discord.guild(guildId);
-        for (const userId of userIds) {
-            const member = guild?.members.cache.get(userId) ?? (await guild?.members.fetch(userId).catch(() => null));
-            if (member) {
-                result.set(userId, member.displayName);
-                continue;
-            }
-            const user = await this.discord.fetchUser(userId);
-            if (user) result.set(userId, user.globalName || user.username);
-        }
-        return result;
+    // หาข้อมูลของหลายคนพร้อมกัน (discord.js จัดคิว rate limit ให้เอง) — คนที่หาไม่เจอจะไม่อยู่ใน Map
+    private async lookupUsers(userIds: string[], find: (userId: string) => Promise<string | null>): Promise<Map<string, string>> {
+        const found = await Promise.all(userIds.map(async (userId) => [userId, await find(userId)] as const));
+        return new Map(found.filter((entry): entry is readonly [string, string] => entry[1] !== null));
     }
 
-    private async avatars(guildId: string, userIds: string[]): Promise<Map<string, string>> {
-        const result = new Map<string, string>();
+    private displayNames(guildId: string, userIds: string[]): Promise<Map<string, string>> {
         const guild = this.discord.guild(guildId);
-        for (const userId of userIds) {
-            const member = guild?.members.cache.get(userId);
-            if (member) {
-                result.set(userId, member.displayAvatarURL({ size: 64 }));
-                continue;
-            }
+        return this.lookupUsers(userIds, async (userId) => {
+            const member = guild?.members.cache.get(userId) ?? (await guild?.members.fetch(userId).catch(() => null));
+            if (member) return member.displayName;
             const user = await this.discord.fetchUser(userId);
-            if (user) result.set(userId, user.displayAvatarURL({ size: 64 }));
-        }
-        return result;
+            return user ? user.globalName || user.username : null;
+        });
+    }
+
+    private avatars(guildId: string, userIds: string[]): Promise<Map<string, string>> {
+        const guild = this.discord.guild(guildId);
+        return this.lookupUsers(userIds, async (userId) => {
+            const member = guild?.members.cache.get(userId);
+            if (member) return member.displayAvatarURL({ size: 64 });
+            const user = await this.discord.fetchUser(userId);
+            return user ? user.displayAvatarURL({ size: 64 }) : null;
+        });
     }
 }

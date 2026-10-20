@@ -6,6 +6,10 @@ export const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
 
 export const isSnowflake = (value: unknown): value is string => typeof value === 'string' && SNOWFLAKE_RE.test(value);
 
+// รูปโปรไฟล์เริ่มต้นของ Discord (ใช้ตอนหาสมาชิก/ผู้ใช้ไม่เจอ) — เลือกจาก ID ให้คนเดิมได้รูปเดิมเสมอ
+export const defaultAvatarUrl = (userId: string): string =>
+    `https://cdn.discordapp.com/embed/avatars/${isSnowflake(userId) ? Number(BigInt(userId) % 5n) : 0}.png`;
+
 // รูปแบบ error ที่ API ตอบกลับทุกครั้ง (ข้อความภาษาไทยให้หน้าเว็บแสดงได้เลย)
 export interface ApiErrorBody {
     error: string;

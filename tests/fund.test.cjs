@@ -14,8 +14,11 @@ const {
     calculateDays,
     calculateDailyAmount,
     generateFundCsv,
+    fundCsvFilename,
+    defaultAvatarUrl,
 } = require('../packages/shared/dist');
 const { buildFundReport, progressBar } = require('../apps/backend/dist/fund/utils/fund-report');
+const { planPaidAdjustment } = require('../apps/backend/dist/fund/utils/paid-adjustment');
 
 test('roundMoney and formatBaht format currency correctly', () => {
     assert.equal(roundMoney(100.456), 100.46);
@@ -291,4 +294,33 @@ test('buildFundReport includes daily rate field when dailyRate is set', () => {
     const dailyField = summaryEmbed.data.fields.find((f) => f.name === '📅 ยอดรายวัน');
     assert.ok(dailyField);
     assert.ok(dailyField.value.includes('15 บาท/วัน'));
+});
+
+test('planPaidAdjustment edits as few payments as possible to reach the new paid total', () => {
+    const none = { deleteIds: [], updates: [], create: null };
+    // ยอดใหม่ ≤ 0 → ลบทุกรายการ
+    assert.deepEqual(planPaidAdjustment([{ id: 1, amount: 50 }, { id: 2, amount: 20 }], 0), { ...none, deleteIds: [1, 2] });
+    // ยังไม่มีรายการ → สร้างใหม่
+    assert.deepEqual(planPaidAdjustment([], 120.456), { ...none, create: 120.46 });
+    // มีรายการเดียว → แก้ยอดรายการนั้น (แม้ยอดเท่าเดิมก็อัปเดตผู้บันทึก)
+    assert.deepEqual(planPaidAdjustment([{ id: 7, amount: 30 }], 45), { ...none, updates: [{ id: 7, amount: 45 }] });
+    // ยอดเพิ่มขึ้น → บวกส่วนต่างเข้ารายการล่าสุด (ตัวแรก)
+    assert.deepEqual(planPaidAdjustment([{ id: 3, amount: 10 }, { id: 2, amount: 20 }], 50), { ...none, updates: [{ id: 3, amount: 30 }] });
+    // ยอดเท่าเดิม (หลายรายการ) → ไม่ต้องแก้อะไร
+    assert.deepEqual(planPaidAdjustment([{ id: 3, amount: 10 }, { id: 2, amount: 20 }], 30), none);
+    // ยอดลดลง → หักจากรายการล่าสุด ลบรายการที่หักหมด แล้วแก้รายการถัดไป
+    assert.deepEqual(planPaidAdjustment([{ id: 3, amount: 10 }, { id: 2, amount: 20 }, { id: 1, amount: 30 }], 35), {
+        ...none,
+        deleteIds: [3],
+        updates: [{ id: 2, amount: 5 }],
+    });
+    // หักพอดีรายการ → ลบรายการนั้นอย่างเดียว
+    assert.deepEqual(planPaidAdjustment([{ id: 3, amount: 10 }, { id: 2, amount: 20 }], 20), { ...none, deleteIds: [3] });
+});
+
+test('fundCsvFilename and defaultAvatarUrl are shared by the dashboard and API', () => {
+    assert.equal(fundCsvFilename('ค่าห้อง: ตุลา/2569', new Date('2026-10-21T12:00:00Z')), 'fund-ค่าห้อง_ ตุลา_2569-2026-10-21.csv');
+    assert.equal(fundCsvFilename('', new Date('2026-01-02T00:00:00Z')), 'fund-fund-2026-01-02.csv');
+    assert.equal(defaultAvatarUrl('123456789012345678'), `https://cdn.discordapp.com/embed/avatars/${Number(123456789012345678n % 5n)}.png`);
+    assert.equal(defaultAvatarUrl('not-an-id'), 'https://cdn.discordapp.com/embed/avatars/0.png');
 });
