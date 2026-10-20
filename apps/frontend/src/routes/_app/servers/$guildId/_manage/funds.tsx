@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { z } from 'zod';
-import { fundsQuery } from '@/api/fund';
+import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/search-input';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
@@ -19,6 +19,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/funds')({
     validateSearch: searchSchema,
+    // เริ่มโหลดรายการหัวข้อ (และหัวข้อที่เลือกอยู่ใน URL) พร้อมกับโค้ดของหน้า — ไม่รอให้หน้า render ก่อน
+    loaderDeps: ({ search }) => ({ topic: search.topic }),
+    loader: ({ context: { queryClient }, params, deps }) => {
+        void queryClient.prefetchQuery(fundsQuery(params.guildId));
+        if (deps.topic) void queryClient.prefetchQuery(fundQuery(params.guildId, deps.topic));
+    },
     component: FundsPage,
 });
 
