@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams, useRouter, useRouterState } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { useMemo } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { guildQuery } from '@/api/guilds';
 import {
@@ -18,8 +18,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
-import { canPreloadInBackground, schedulePreloads } from '@/lib/background-preload';
-import { sessionRequests } from '@/lib/session-state';
+import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { GuildSwitcher } from './guild-switcher';
 import { visibleNavGroups } from './nav-items';
 
@@ -27,7 +26,7 @@ import { visibleNavGroups } from './nav-items';
 // 🧭 เมนูซ้าย — เลือกเซิร์ฟเวอร์ด้านบน แล้วตามด้วยหน้าของเซิร์ฟเวอร์นั้น + หน้าส่วนกลาง (จอเล็กยุบเป็นลิ้นชัก)
 // ==========================================
 export function AppSidebar() {
-    const { user, isAdmin } = useAuth();
+    const { isAdmin } = useAuth();
     const router = useRouter();
     const { data: info } = useQuery(appInfoQuery);
     const { guildId } = useParams({ strict: false });
@@ -37,17 +36,20 @@ export function AppSidebar() {
     const bot = info?.bot ?? DEFAULT_BOT;
     const access = guild?.access;
 
-    useEffect(() => {
-        const items = visibleNavGroups(isAdmin, guildId && access ? { access } : null).flatMap((group) => group.items);
-        return schedulePreloads(
-            items.map((item) => async () => {
-                const active = router.state.matches.at(-1)?.fullPath?.replace(/\/$/, '');
-                if (active !== item.to) await router.preloadRoute({ to: item.to, params: item.guild ? { guildId } : {}, search: {} });
-            }),
-            sessionRequests.capture(),
-            () => canPreloadInBackground() && !router.state.isLoading,
-        );
-    }, [router, user.id, isAdmin, guildId, access]);
+    const tasks = useMemo(
+        () =>
+            visibleNavGroups(isAdmin, guildId && access ? { access } : null)
+                .flatMap((group) => group.items)
+                .map((item) => ({
+                    key: `${guildId ?? ''}:${item.to}`,
+                    run: async () => {
+                        const active = router.state.matches.at(-1)?.fullPath?.replace(/\/$/, '');
+                        if (active !== item.to) await router.preloadRoute({ to: item.to, params: item.guild ? { guildId } : {}, search: {} });
+                    },
+                })),
+        [router, isAdmin, guildId, access],
+    );
+    const prioritize = usePreloadTasks(tasks);
 
     return (
         <Sidebar collapsible="icon">
@@ -56,7 +58,11 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/servers">
-                                <img src={bot.avatar} alt="" className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]" />
+                                <img
+                                    src={bot.avatar}
+                                    alt=""
+                                    className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]"
+                                />
                                 <div className="grid min-w-0 flex-1 text-left leading-tight">
                                     <span className="truncate font-semibold text-indigo-300">{bot.name}</span>
                                     <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
@@ -77,7 +83,15 @@ export function AppSidebar() {
                                 {group.items.map((item) => (
                                     <SidebarMenuItem key={item.to}>
                                         <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={item.label}>
-                                            <Link to={item.to} params={item.guild ? { guildId } : {}} onClick={() => isMobile && setOpenMobile(false)}>
+                                            <Link
+                                                to={item.to}
+                                                params={item.guild ? { guildId } : {}}
+                                                preload={false}
+                                                onMouseEnter={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onFocus={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onTouchStart={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onClick={() => isMobile && setOpenMobile(false)}
+                                            >
                                                 <item.icon />
                                                 <span>{item.label}</span>
                                             </Link>

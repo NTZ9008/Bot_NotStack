@@ -3,6 +3,7 @@ import { createRouter } from '@tanstack/react-router';
 import { RouteSkeleton } from '@/components/skeleton/route-skeleton';
 import { replaceSession } from '@/lib/session';
 import { setUnauthorizedHandler } from '@/lib/api';
+import { pausePreloads } from '@/lib/background-preload';
 import { routeTree } from './routeTree.gen';
 
 export interface RouterContext {
@@ -33,6 +34,9 @@ export const router = createRouter({
     defaultPendingMinMs: 0,
     scrollRestoration: true,
 });
+
+router.subscribe('onBeforeLoad', () => pausePreloads(true));
+router.subscribe('onResolved', () => pausePreloads(false));
 
 // session หมดอายุ (refresh ไม่ผ่าน) → ล้างข้อมูลผู้ใช้แล้วพาไปหน้า login
 setUnauthorizedHandler(() => {

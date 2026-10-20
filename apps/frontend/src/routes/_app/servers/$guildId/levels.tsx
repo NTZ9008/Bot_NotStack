@@ -1,7 +1,7 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { createFileRoute } from '@tanstack/react-router';
+import { useMemo, useState } from 'react';
 import { levelsQuery } from '@/api/bot';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { xpHistoryQuery, xpSettingsQuery } from '@/api/levels';
@@ -22,8 +22,7 @@ import { RankThemePanel } from '@/features/levels/rank-theme-editor';
 import { XpSettingsPanel } from '@/features/levels/settings';
 import { useAuth } from '@/hooks/use-auth';
 import { useGuild } from '@/hooks/use-guild';
-import { canPreloadInBackground, schedulePreloads } from '@/lib/background-preload';
-import { sessionRequests } from '@/lib/session-state';
+import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 
 export const Route = createFileRoute('/_app/servers/$guildId/levels')({
     loader: ({ context, params }) => context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25 })),
@@ -81,9 +80,7 @@ function Leaderboard({ guildId }: { guildId: string }) {
                         </Button>
                     )}
                 </form>
-                {query.data?.searchLimited && (
-                    <p className="text-sm text-amber-500">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>
-                )}
+                {query.data?.searchLimited && <p className="text-sm text-amber-500">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>}
                 {query.isLoading ? (
                     <LeaderboardTableSkeleton />
                 ) : query.error ? (
@@ -165,49 +162,58 @@ function Leaderboard({ guildId }: { guildId: string }) {
 function LevelsPage() {
     const guild = useGuild();
     const queryClient = useQueryClient();
-    const router = useRouter();
     const manage = guild.access === 'manage';
     const guildId = guild.id;
 
-    useEffect(
-        () =>
-            schedulePreloads(
-                [
-                    () => queryClient.prefetchQuery(rankMetaQuery(guildId)),
-                    () => queryClient.prefetchQuery(myRankCardQuery(guildId)),
-                    ...(manage
-                        ? [
-                              () => queryClient.prefetchQuery(rankThemeQuery(guildId)),
-                              () => queryClient.prefetchQuery(welcomeMetaQuery(guildId)),
-                              () => queryClient.prefetchQuery(welcomeAssetsQuery(guildId)),
-                              () => queryClient.prefetchQuery(welcomeCardsQuery(guildId)),
-                              () => queryClient.prefetchQuery(levelUpQuery(guildId)),
-                              () => queryClient.prefetchQuery(xpSettingsQuery(guildId)),
-                              () => queryClient.prefetchQuery(guildChannelsQuery(guildId)),
-                              () => queryClient.prefetchQuery(guildRolesQuery(guildId)),
-                              () => queryClient.prefetchQuery(xpHistoryQuery(guildId)),
-                          ]
-                        : []),
-                ],
-                sessionRequests.capture(),
-                () => canPreloadInBackground() && !router.state.isLoading,
-            ),
-        [guildId, manage, queryClient, router],
-    );
+    const tasks = useMemo(() => {
+        const queries = [
+            { name: 'meta', run: () => queryClient.prefetchQuery(rankMetaQuery(guildId)) },
+            { name: 'mine', run: () => queryClient.prefetchQuery(myRankCardQuery(guildId)) },
+            ...(manage
+                ? [
+                      { name: 'theme', run: () => queryClient.prefetchQuery(rankThemeQuery(guildId)) },
+                      { name: 'welcome-meta', run: () => queryClient.prefetchQuery(welcomeMetaQuery(guildId)) },
+                      { name: 'assets', run: () => queryClient.prefetchQuery(welcomeAssetsQuery(guildId)) },
+                      { name: 'cards', run: () => queryClient.prefetchQuery(welcomeCardsQuery(guildId)) },
+                      { name: 'level-up', run: () => queryClient.prefetchQuery(levelUpQuery(guildId)) },
+                      { name: 'settings', run: () => queryClient.prefetchQuery(xpSettingsQuery(guildId)) },
+                      { name: 'channels', run: () => queryClient.prefetchQuery(guildChannelsQuery(guildId)) },
+                      { name: 'roles', run: () => queryClient.prefetchQuery(guildRolesQuery(guildId)) },
+                      { name: 'history', run: () => queryClient.prefetchQuery(xpHistoryQuery(guildId)) },
+                  ]
+                : []),
+        ];
+        return queries.map(({ name, run }) => ({ key: `${guildId}:levels:${name}`, run }));
+    }, [guildId, manage, queryClient]);
+    const prioritize = usePreloadTasks(tasks);
+    const intent = (names: string[]) => {
+        const preload = () => prioritize(names.map((name) => `${guildId}:levels:${name}`));
+        return { onMouseEnter: preload, onFocus: preload, onTouchStart: preload };
+    };
     return (
         <>
             <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList className="mb-4 flex h-auto flex-wrap">
                     <TabsTrigger value="leaderboard">อันดับสมาชิก</TabsTrigger>
-                    <TabsTrigger value="my-card">การ์ดของฉัน</TabsTrigger>
+                    <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
+                        การ์ดของฉัน
+                    </TabsTrigger>
                     {manage && (
                         <>
-                            <TabsTrigger value="card-theme">ธีมการ์ด</TabsTrigger>
-                            <TabsTrigger value="level-up">เลเวลอัป & ยศรางวัล</TabsTrigger>
-                            <TabsTrigger value="settings">กฎและอัตรา XP</TabsTrigger>
+                            <TabsTrigger value="card-theme" {...intent(['meta', 'theme', 'welcome-meta', 'assets', 'cards'])}>
+                                ธีมการ์ด
+                            </TabsTrigger>
+                            <TabsTrigger value="level-up" {...intent(['meta', 'theme', 'level-up', 'channels', 'roles'])}>
+                                เลเวลอัป & ยศรางวัล
+                            </TabsTrigger>
+                            <TabsTrigger value="settings" {...intent(['settings', 'channels', 'roles'])}>
+                                กฎและอัตรา XP
+                            </TabsTrigger>
                             <TabsTrigger value="members">จัดการสมาชิก</TabsTrigger>
-                            <TabsTrigger value="history">ประวัติ</TabsTrigger>
+                            <TabsTrigger value="history" {...intent(['history'])}>
+                                ประวัติ
+                            </TabsTrigger>
                         </>
                     )}
                 </TabsList>

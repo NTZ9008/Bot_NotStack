@@ -91,60 +91,61 @@ test('Thai labels retain English search terms and breadcrumb matching', () => {
     assert.equal(findNavItem('/missing'), undefined);
 });
 
-const { schedulePreloads, canPreloadInBackground } = require('../apps/frontend/src/lib/background-preload.ts');
-
-// Flush the promise continuation after each simulated timer tick.
+const { PreloadQueue, canPreloadInBackground } = require('../apps/frontend/src/lib/background-preload.ts');
 const flushPreloads = async () => {
     await Promise.resolve();
     await Promise.resolve();
 };
 
-test('background preload waits between pages and never overlaps pending work', async (t) => {
+test('preloads share two slots and intent promotes a queued task without duplication', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    const calls = [];
-    let finish;
-    schedulePreloads(
-        [
-            () => {
-                calls.push('first');
-                return new Promise((resolve) => {
-                    finish = resolve;
-                });
-            },
-            async () => {
-                calls.push('second');
-            },
-        ],
-        new AbortController().signal,
-    );
-    assert.deepEqual(calls, []);
-    t.mock.timers.tick(300);
-    assert.deepEqual(calls, ['first']);
-    t.mock.timers.tick(3000);
-    assert.deepEqual(calls, ['first']);
-    finish();
+    const queue = new PreloadQueue(() => true);
+    const signal = new AbortController().signal;
+    const calls = [],
+        releases = [];
+    const task = (key) => ({
+        key,
+        run: () => {
+            calls.push(key);
+            return new Promise((resolve) => releases.push(resolve));
+        },
+    });
+    for (const key of ['a', 'b', 'c', 'd']) queue.enqueue(task(key), signal);
+    t.mock.timers.tick(50);
+    assert.deepEqual(calls, ['a', 'b']);
+    queue.enqueue(task('d'), signal, true);
+    queue.enqueue(task('a'), signal, true);
+    t.mock.timers.tick(1000);
+    assert.deepEqual(calls, ['a', 'b']);
+    releases[0]();
     await flushPreloads();
-    t.mock.timers.tick(299);
-    assert.deepEqual(calls, ['first']);
-    t.mock.timers.tick(1);
+    t.mock.timers.tick(0);
+    assert.deepEqual(calls, ['a', 'b', 'd']);
+    releases[1]();
     await flushPreloads();
-    assert.deepEqual(calls, ['first', 'second']);
+    t.mock.timers.tick(0);
+    assert.deepEqual(calls, ['a', 'b', 'd', 'c']);
+    releases[2]();
+    releases[3]();
+    await flushPreloads();
 });
 
-test('background preload pauses during navigation and resumes without dropping a page', async (t) => {
+test('paused preloads resume without dropping queued intent', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    let ready = false;
-    let calls = 0;
-    schedulePreloads(
-        [
-            async () => {
+    let ready = false,
+        calls = 0;
+    const queue = new PreloadQueue(() => ready);
+    queue.enqueue(
+        {
+            key: 'page',
+            run: async () => {
                 calls++;
             },
-        ],
+        },
         new AbortController().signal,
-        () => ready,
+        true,
     );
-    t.mock.timers.tick(300);
+    t.mock.timers.tick(0);
     assert.equal(calls, 0);
     ready = true;
     t.mock.timers.tick(300);
@@ -152,67 +153,109 @@ test('background preload pauses during navigation and resumes without dropping a
     assert.equal(calls, 1);
 });
 
-test('a failed speculative load does not prevent the next page from warming', async (t) => {
+test('failure releases a preload slot and can be retried', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
+    const queue = new PreloadQueue(() => true, 1),
+        signal = new AbortController().signal;
     let calls = 0;
-    schedulePreloads(
-        [
-            async () => {
+    queue.enqueue(
+        {
+            key: 'bad',
+            run: async () => {
                 throw new Error('offline');
             },
-            async () => {
+        },
+        signal,
+    );
+    queue.enqueue(
+        {
+            key: 'next',
+            run: async () => {
                 calls++;
             },
-        ],
-        new AbortController().signal,
+        },
+        signal,
     );
-    t.mock.timers.tick(300);
+    t.mock.timers.tick(50);
     await flushPreloads();
-    t.mock.timers.tick(300);
+    t.mock.timers.tick(0);
     await flushPreloads();
-    assert.equal(calls, 1);
+    queue.enqueue(
+        {
+            key: 'bad',
+            run: async () => {
+                calls++;
+            },
+        },
+        signal,
+    );
+    t.mock.timers.tick(50);
+    await flushPreloads();
+    assert.equal(calls, 2);
 });
 
-for (const cancel of ['session change', 'unmount']) {
-    test(`background preload stops queued work on ${cancel}, even after an in-flight load resolves`, async (t) => {
-        t.mock.timers.enable({ apis: ['setTimeout'] });
-        const controller = new AbortController();
-        let finish;
-        let calls = 0;
-        const stop = schedulePreloads(
-            [
-                () =>
-                    new Promise((resolve) => {
-                        finish = resolve;
-                    }),
-                async () => {
-                    calls++;
-                },
-            ],
-            controller.signal,
-        );
-        t.mock.timers.tick(300);
-        if (cancel === 'session change') controller.abort();
-        else stop();
-        finish();
-        await flushPreloads();
-        t.mock.timers.tick(3000);
-        assert.equal(calls, 0);
-    });
-}
-
-test('an already expired session never starts a preload', (t) => {
+test('scope cancellation preserves work owned by another mounted scope', async (t) => {
     t.mock.timers.enable({ apis: ['setTimeout'] });
-    let calls = 0;
-    schedulePreloads(
-        [
-            async () => {
+    const queue = new PreloadQueue(() => true),
+        first = new AbortController(),
+        second = new AbortController();
+    const calls = [];
+    const task = (key) => ({
+        key,
+        run: async () => {
+            calls.push(key);
+        },
+    });
+    queue.enqueue(task('shared'), first.signal);
+    queue.enqueue(task('shared'), second.signal);
+    queue.enqueue(task('old-guild'), first.signal);
+    first.abort();
+    queue.cancel(first.signal);
+    t.mock.timers.tick(50);
+    await flushPreloads();
+    assert.deepEqual(calls, ['shared']);
+});
+
+test('expired sessions and cancellation while a load runs cannot start queued work', async (t) => {
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const queue = new PreloadQueue(() => true, 1),
+        controller = new AbortController();
+    let finish,
+        calls = 0;
+    queue.enqueue(
+        {
+            key: 'expired',
+            run: async () => {
                 calls++;
             },
-        ],
+        },
         AbortSignal.abort(),
     );
-    t.mock.timers.tick(3000);
+    queue.enqueue(
+        {
+            key: 'running',
+            run: () =>
+                new Promise((resolve) => {
+                    finish = resolve;
+                }),
+        },
+        controller.signal,
+    );
+    queue.enqueue(
+        {
+            key: 'queued',
+            run: async () => {
+                calls++;
+            },
+        },
+        controller.signal,
+    );
+    t.mock.timers.tick(50);
+    controller.abort();
+    queue.cancel(controller.signal);
+    finish();
+    await flushPreloads();
+    t.mock.timers.tick(1000);
     assert.equal(calls, 0);
 });
 
