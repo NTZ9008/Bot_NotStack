@@ -13,7 +13,7 @@ export function stringSearch<K extends string>(search: Record<string, unknown>, 
 export function positiveSearchId(value: unknown): number | undefined {
     try {
         const number = Number(value);
-        return Number.isInteger(number) && number > 0 ? number : undefined;
+        return Number.isSafeInteger(number) && number > 0 ? number : undefined;
     } catch {
         return undefined;
     }

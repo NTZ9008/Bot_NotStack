@@ -291,7 +291,8 @@ test('URL parsers preserve optional strings and reject invalid search values wit
     assert.deepEqual(stringSearch({ error: 'denied', extra: 'ignored' }, ['error', 'redirect']), { error: 'denied' });
     assert.deepEqual(stringSearch({ redirect: '' }, ['error', 'redirect']), { redirect: '' });
     for (const bad of [true, 12, null, [], {}]) assert.throws(() => stringSearch({ error: bad }, ['error']), /Invalid search/);
-    for (const bad of [undefined, null, '', 'bad', -1, 0, 1.5, Infinity, Symbol('id')]) assert.equal(positiveSearchId(bad), undefined);
+    for (const bad of [undefined, null, '', 'bad', -1, 0, 1.5, Number.MAX_SAFE_INTEGER + 1, '100000000000000000000', Infinity, Symbol('id')])
+        assert.equal(positiveSearchId(bad), undefined);
     assert.equal(positiveSearchId('12'), 12);
 });
 
