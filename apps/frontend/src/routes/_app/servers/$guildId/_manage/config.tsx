@@ -7,7 +7,8 @@ import { configQuery, updateConfig } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';
 import { ChannelSelect } from '@/components/channel-select';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { ConfigBodySkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -91,7 +92,7 @@ function ConfigPage() {
         <>
             <PageHeader help="config" title="ตั้งค่าบอท" description="ห้องที่บอทใช้ และความสามารถของบอทในเซิร์ฟเวอร์นี้ — บันทึกทันทีที่เปลี่ยน" />
             {isLoading ? (
-                <LoadingState />
+                <ConfigBodySkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (

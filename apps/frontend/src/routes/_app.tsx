@@ -9,7 +9,7 @@ import { ProfileMenu } from '@/components/layout/profile-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ChevronRight } from 'lucide-react';
-import { ConnectingScreen } from '@/components/states';
+import { SplashScreen } from '@/components/splash-screen';
 
 // ==========================================
 // 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ค้นหาหน้า / เมนูโปรไฟล์)
@@ -21,7 +21,9 @@ export const Route = createFileRoute('/_app')({
         return { me };
     },
     component: AppLayout,
-    pendingComponent: ConnectingScreen,
+    // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
+    pendingComponent: () => <SplashScreen />,
+    pendingMs: 0,
 });
 
 function AppLayout() {

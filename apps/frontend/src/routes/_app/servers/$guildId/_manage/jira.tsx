@@ -9,7 +9,8 @@ import { jiraApi, jiraSettingsQuery } from '@/api/jira';
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { JiraPageSkeleton } from '@/components/skeleton/editor-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -141,10 +142,10 @@ function JiraPage() {
         }
     };
 
-    if (settings.isLoading) return <LoadingState />;
+    if (settings.isLoading) return <JiraPageSkeleton />;
     if (settings.error) return <ErrorState error={settings.error} title="โหลดการตั้งค่า Jira ไม่สำเร็จ" />;
     const current = settings.data!;
-    if (!draft) return <LoadingState />;
+    if (!draft) return <JiraPageSkeleton />;
 
     return (
         <>

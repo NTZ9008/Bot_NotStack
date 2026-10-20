@@ -10,7 +10,8 @@ import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -261,7 +262,7 @@ function PrBotPage() {
                 description="ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo"
             />
             {isLoading ? (
-                <LoadingState />
+                <PrBotBodySkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (

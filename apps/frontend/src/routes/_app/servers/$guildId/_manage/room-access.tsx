@@ -12,7 +12,8 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { RoomAccessTableSkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -301,7 +302,7 @@ function RoomAccessPage() {
                 </CardHeader>
                 <CardContent>
                     {list.isLoading ? (
-                        <LoadingState />
+                        <RoomAccessTableSkeleton />
                     ) : list.error ? (
                         <ErrorState error={list.error} />
                     ) : (

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { xpApi, xpHistoryQuery, xpKey } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
-import { ErrorState, LoadingState } from '@/components/states';
+import { XpHistoryTableSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -231,7 +232,7 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                     <UserPicker value={user} onSelect={pick} onClear={() => pick(null)} placeholder="กรองประวัติของสมาชิก..." />
                 </div>
                 {query.isLoading ? (
-                    <LoadingState />
+                    <XpHistoryTableSkeleton />
                 ) : query.error ? (
                     <ErrorState error={query.error} />
                 ) : (

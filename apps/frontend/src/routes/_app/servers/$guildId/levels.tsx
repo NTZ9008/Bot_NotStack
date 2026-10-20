@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { levelsQuery } from '@/api/bot';
 import { PageHeader } from '@/components/page-header';
 import { RankBadge } from '@/components/rank-badge';
-import { ErrorState, LoadingState } from '@/components/states';
+import { LeaderboardTableSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -78,7 +79,7 @@ function Leaderboard({ guildId }: { guildId: string }) {
                     <p className="text-sm text-amber-500">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>
                 )}
                 {query.isLoading ? (
-                    <LoadingState />
+                    <LeaderboardTableSkeleton />
                 ) : query.error ? (
                     <ErrorState error={query.error} />
                 ) : (

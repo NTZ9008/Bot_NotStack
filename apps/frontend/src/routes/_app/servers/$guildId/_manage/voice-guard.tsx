@@ -10,7 +10,8 @@ import { voiceGuardApi, voiceGuardQuery } from '@/api/bot';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { VoiceGuardCardsSkeleton } from '@/components/skeleton/guild-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { UserPicker } from '@/components/user-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -200,7 +201,7 @@ function VoiceGuardPage() {
             </Card>
 
             {list.isLoading ? (
-                <LoadingState />
+                <VoiceGuardCardsSkeleton />
             ) : list.error ? (
                 <ErrorState error={list.error} />
             ) : list.data?.length ? (

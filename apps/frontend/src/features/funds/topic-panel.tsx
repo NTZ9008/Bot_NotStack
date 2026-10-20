@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi, fundQuery } from '@/api/fund';
 import { useConfirm } from '@/components/confirm-dialog';
-import { ErrorState, LoadingState } from '@/components/states';
+import { FundTopicPanelSkeleton } from '@/components/skeleton/editor-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +47,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
         onError: onFundError,
     });
 
-    if (query.isLoading) return <LoadingState />;
+    if (query.isLoading) return <FundTopicPanelSkeleton />;
     if (query.error) return <ErrorState error={query.error} />;
     const topic = query.data;
     if (!topic) return null;

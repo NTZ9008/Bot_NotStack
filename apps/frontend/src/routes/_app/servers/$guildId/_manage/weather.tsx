@@ -9,7 +9,8 @@ import { weatherApi, weatherMetaQuery, weatherSettingsQuery } from '@/api/weathe
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { WeatherPageSkeleton } from '@/components/skeleton/editor-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -146,10 +147,10 @@ function WeatherPage() {
         }
     };
 
-    if (meta.isLoading || settings.isLoading) return <LoadingState />;
+    if (meta.isLoading || settings.isLoading) return <WeatherPageSkeleton />;
     if (meta.error || settings.error) return <ErrorState error={meta.error ?? settings.error} title="โหลดข้อมูล Weather ไม่สำเร็จ" />;
     const current = settings.data!;
-    if (!draft || !meta.data) return <LoadingState />;
+    if (!draft || !meta.data) return <WeatherPageSkeleton />;
 
     return (
         <>

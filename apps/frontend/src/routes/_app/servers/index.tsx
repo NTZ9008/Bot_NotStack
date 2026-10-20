@@ -6,7 +6,8 @@ import { guildsQuery } from '@/api/guilds';
 import { DiscordIcon } from '@/components/discord-icon';
 import { GuildIcon } from '@/components/guild-icon';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { GuildListSkeleton } from '@/components/skeleton/app-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,7 +108,7 @@ function ServersPage() {
             )}
 
             {isLoading ? (
-                <LoadingState />
+                <GuildListSkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (
