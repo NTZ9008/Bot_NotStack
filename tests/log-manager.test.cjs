@@ -166,3 +166,53 @@ test('dispatcher uses saved appearance for queued and attached logs without chan
     assert.equal(sent.length, 2);
     assert.equal(recorded.length, 3);
 });
+
+const { bucketLabels, buildDatasets, computeVoiceTime } = require('../apps/backend/dist/log-manager/utils/activity-stats.util');
+const { activityEventLabel, humanizeMentions } = require('../apps/backend/dist/log-manager/utils/activity-humanize.util');
+
+test('activity buckets cover the whole range in the selected time zone without gaps', () => {
+    const from = new Date('2026-10-20T15:30:00Z'); // 22:30 เวลาไทย
+    const to = new Date('2026-10-20T18:10:00Z'); // 01:10 ของวันถัดไป
+    assert.deepEqual(bucketLabels(from, to, 'hour', 'Asia/Bangkok'), ['2026-10-20 22:00', '2026-10-20 23:00', '2026-10-21 00:00', '2026-10-21 01:00']);
+    assert.deepEqual(bucketLabels(from, to, 'day', 'Asia/Bangkok'), ['2026-10-20 00:00', '2026-10-21 00:00']);
+
+    const datasets = buildDatasets(['2026-10-20 00:00', '2026-10-21 00:00'], [
+        { bucket: '2026-10-20 00:00', eventKey: 'memberJoin', total: 2 },
+        { bucket: '2026-10-21 00:00', eventKey: 'memberBan', total: 1 },
+        { bucket: '2026-10-21 00:00', eventKey: 'voiceDisconnected', total: 3 },
+        { bucket: '2026-10-21 00:00', eventKey: 'messageSent', total: 5 },
+        { bucket: 'not-in-range', eventKey: 'memberJoin', total: 9 },
+    ]);
+    assert.deepEqual(datasets, { serverJoin: [2, 0], serverLeave: [0, 1], voiceJoin: [0, 0], voiceLeave: [0, 3], total: [2, 9] });
+});
+
+test('voice time pairs join/switch/leave per user and counts open sessions up to the end of range', () => {
+    const min = 60000;
+    const ev = (userId, eventKey, at, channelId) => ({ userId, userName: `name-${userId}`, channelId, channelName: `room-${channelId}`, eventKey, at });
+    const { users, channels } = computeVoiceTime(
+        [
+            ev('u1', 'voiceJoin', 0, 'a'),
+            ev('u1', 'voiceSwitch', 10 * min, 'b'), // 10 นาทีในห้อง a
+            ev('u2', 'voiceJoin', 15 * min, 'a'),
+            ev('u1', 'voiceLeave', 30 * min, 'b'), // 20 นาทีในห้อง b
+            ev('u3', 'voiceLeave', 31 * min, 'a'), // ออกโดยไม่เคยเห็นตอนเข้า → ไม่นับ
+        ],
+        45 * min, // u2 ยังอยู่ในห้อง a → นับถึงตรงนี้ 30 นาที
+    );
+    assert.deepEqual(users, [
+        { userId: 'u1', userName: 'name-u1', minutes: 30, sessions: 2 },
+        { userId: 'u2', userName: 'name-u2', minutes: 30, sessions: 1 },
+    ]);
+    assert.deepEqual(channels, [
+        { channelId: 'a', channelName: 'room-a', minutes: 40 },
+        { channelId: 'b', channelName: 'room-b', minutes: 20 },
+    ]);
+});
+
+test('activity text turns Discord mentions into readable names', () => {
+    const resolvers = { user: (id) => (id === '1' ? 'Boat' : null), role: () => 'Mod', channel: (id) => (id === '3' ? 'general' : null) };
+    assert.equal(humanizeMentions('<@1> ให้ <@&2> ใน <#3>\n<@9>', resolvers), '@Boat ให้ @Mod ใน #general · @9');
+    assert.equal(humanizeMentions('', resolvers), '');
+    assert.deepEqual(activityEventLabel('memberJoin'), { label: LOG_EVENTS.find((e) => e.key === 'memberJoin').label, group: LOG_EVENTS.find((e) => e.key === 'memberJoin').group });
+    assert.deepEqual(activityEventLabel('unknownEvent'), { label: 'unknownEvent', group: 'อื่นๆ' });
+});
