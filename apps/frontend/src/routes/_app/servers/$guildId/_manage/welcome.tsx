@@ -10,7 +10,8 @@ import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { WelcomePageSkeleton } from '@/components/skeleton/editor-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -214,7 +215,7 @@ function WelcomePage() {
         setDraft((d) => (d?.backgroundId === assetId ? { ...d, backgroundId: null } : d));
     };
 
-    if (meta.isLoading || cards.isLoading || assets.isLoading) return <LoadingState />;
+    if (meta.isLoading || cards.isLoading || assets.isLoading) return <WelcomePageSkeleton />;
     if (meta.error || cards.error || assets.error) return <ErrorState error={meta.error ?? cards.error ?? assets.error} title="โหลดข้อมูล Welcome ไม่สำเร็จ" />;
     const cardList = cards.data ?? [];
     const current = cardList.find((c) => c.id === draft?.id);

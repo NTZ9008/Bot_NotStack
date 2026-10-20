@@ -6,7 +6,8 @@ import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';
 import { guildKey } from '@/api/guilds';
 import { useConfirm } from '@/components/confirm-dialog';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { JiraTicketsBodySkeleton } from '@/components/skeleton/editor-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,7 +89,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                 </Tabs>
 
                 {isLoading ? (
-                    <LoadingState />
+                    <JiraTicketsBodySkeleton />
                 ) : error ? (
                     <ErrorState error={error} />
                 ) : !data?.items.length ? (

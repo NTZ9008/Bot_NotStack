@@ -6,7 +6,8 @@ import { z } from 'zod';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/search-input';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { FundsBodySkeleton } from '@/components/skeleton/editor-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { FundsOverviewSummary, TopicListItem } from '@/features/funds/funds-overview';
 import { TopicDialog } from '@/features/funds/topic-dialog';
@@ -64,7 +65,7 @@ function FundsPage() {
             />
 
             {list.isLoading ? (
-                <LoadingState />
+                <FundsBodySkeleton />
             ) : list.error ? (
                 <ErrorState error={list.error} />
             ) : topics.length === 0 ? (

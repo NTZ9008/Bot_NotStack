@@ -8,7 +8,8 @@ import { assetImageUrl, welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery 
 import { ColorField } from '@/components/color-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
-import { ErrorState, LoadingState } from '@/components/states';
+import { RankEditorSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AssetGallery } from '@/features/welcome/asset-gallery';
@@ -67,7 +68,7 @@ export function RankThemePanel({ guildId }: { guildId: string }) {
     const queries = [meta, theme, welcomeMeta, assets, cards];
     const failed = queries.find((q) => q.error);
     if (failed) return <ErrorState error={failed.error} />;
-    if (!meta.data || !theme.data || !welcomeMeta.data || !assets.data || !cards.data) return <LoadingState />;
+    if (!meta.data || !theme.data || !welcomeMeta.data || !assets.data || !cards.data) return <RankEditorSkeleton />;
     return (
         <ThemeEditor
             key={guildId}

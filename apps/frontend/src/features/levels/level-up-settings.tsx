@@ -16,7 +16,8 @@ import { ChannelSelect } from '@/components/channel-select';
 import { DiscordMessage } from '@/components/discord-message';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
-import { ErrorState, LoadingState } from '@/components/states';
+import { RankEditorSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ export function LevelUpPanel({ guildId }: { guildId: string }) {
     const theme = useQuery(rankThemeQuery(guildId));
     const failed = [meta, settings, theme].find((q) => q.error);
     if (failed) return <ErrorState error={failed.error} />;
-    if (!meta.data || !settings.data || !theme.data) return <LoadingState />;
+    if (!meta.data || !settings.data || !theme.data) return <RankEditorSkeleton cards={2} />;
     return <LevelUpEditor key={guildId} guildId={guildId} meta={meta.data} initial={settings.data} theme={theme.data} />;
 }
 

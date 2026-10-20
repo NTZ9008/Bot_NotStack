@@ -5,7 +5,8 @@ import { Loader2, Search } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery, type ActivityFilters, type AuditFilters } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
-import { ErrorState, LoadingState } from '@/components/states';
+import { AuditTableSkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -193,7 +194,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             </form>
 
             {logs.isLoading ? (
-                <LoadingState />
+                <AuditTableSkeleton />
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
@@ -336,7 +337,7 @@ export function DiscordActivity({ guildId }: { guildId: string }) {
             </form>
 
             {logs.isLoading ? (
-                <LoadingState />
+                <AuditTableSkeleton />
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (

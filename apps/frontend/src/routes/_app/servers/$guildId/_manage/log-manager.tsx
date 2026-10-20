@@ -4,7 +4,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { logSettingsApi, logSettingsQuery } from '@/api/bot';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { LogManagerBodySkeleton } from '@/components/skeleton/editor-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -62,7 +63,7 @@ function LogManagerPage() {
                 }
             />
             {isLoading ? (
-                <LoadingState />
+                <LogManagerBodySkeleton />
             ) : error ? (
                 <ErrorState error={error} title="โหลดการตั้งค่า Log ไม่สำเร็จ" />
             ) : (

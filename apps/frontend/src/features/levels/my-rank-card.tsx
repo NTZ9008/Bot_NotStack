@@ -7,7 +7,8 @@ import { memberBackgroundUrl, myRankCardQuery, rankCardApi, rankCardKey, rankMet
 import { ColorField } from '@/components/color-field';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
-import { ErrorState, LoadingState } from '@/components/states';
+import { RankEditorSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Segmented } from '@/features/welcome/form-controls';
@@ -23,7 +24,7 @@ export function MyRankCardPanel({ guildId }: { guildId: string }) {
     const meta = useQuery(rankMetaQuery(guildId));
     const mine = useQuery(myRankCardQuery(guildId));
     if (meta.error || mine.error) return <ErrorState error={meta.error ?? mine.error} />;
-    if (!meta.data || !mine.data) return <LoadingState />;
+    if (!meta.data || !mine.data) return <RankEditorSkeleton />;
     if (!mine.data.available) {
         return (
             <Card>

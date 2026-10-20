@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { DiscordIcon } from '@/components/discord-icon';
 import { apiUrl, errorMessage } from '@/lib/api';
-import { ConnectingScreen } from '@/components/states';
+import { SplashScreen } from '@/components/splash-screen';
 
 const searchSchema = z.object({
     error: z.string().optional(),
@@ -32,7 +32,9 @@ export const Route = createFileRoute('/login')({
         if (me) throw redirect({ to: '/' });
     },
     component: LoginPage,
-    pendingComponent: ConnectingScreen,
+    // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
+    pendingComponent: () => <SplashScreen />,
+    pendingMs: 0,
 });
 
 function LoginPage() {

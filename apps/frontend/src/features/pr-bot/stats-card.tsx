@@ -4,7 +4,8 @@ import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { prBotStatsQuery } from '@/api/bot';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { PrStatsBodySkeleton } from '@/components/skeleton/guild-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
@@ -66,7 +67,7 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                     </div>
                 </div>
                 {isLoading ? (
-                    <LoadingState />
+                    <PrStatsBodySkeleton />
                 ) : error ? (
                     <ErrorState error={error} />
                 ) : (

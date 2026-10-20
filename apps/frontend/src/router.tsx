@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query';
 import { createRouter } from '@tanstack/react-router';
+import { RouteSkeleton } from '@/components/skeleton/route-skeleton';
 import { replaceSession } from '@/lib/session';
 import { setUnauthorizedHandler } from '@/lib/api';
 import { routeTree } from './routeTree.gen';
@@ -24,6 +25,10 @@ export const router = createRouter({
     defaultPreload: 'intent',
     // ข้อมูลของหน้าให้ TanStack Query เป็นคนดูแล cache
     defaultPreloadStaleTime: 0,
+    // ระหว่างรอโค้ดของหน้า + ข้อมูลจาก loader แสดงโครงร่างของหน้านั้น (ขึ้นหลัง 150ms และค้างอย่างน้อย 300ms กันกระพริบ)
+    defaultPendingComponent: RouteSkeleton,
+    defaultPendingMs: 150,
+    defaultPendingMinMs: 300,
     scrollRestoration: true,
 });
 

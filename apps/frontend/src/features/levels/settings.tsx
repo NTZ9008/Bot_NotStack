@@ -15,7 +15,8 @@ import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { xpApi, xpKey, xpSettingsQuery } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
-import { ErrorState, LoadingState } from '@/components/states';
+import { XpSettingsSkeleton } from '@/components/skeleton/levels';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -67,7 +68,7 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 }
 export function XpSettingsPanel({ guildId }: { guildId: string }) {
     const query = useQuery(xpSettingsQuery(guildId));
-    if (query.isLoading) return <LoadingState />;
+    if (query.isLoading) return <XpSettingsSkeleton />;
     if (query.error) return <ErrorState error={query.error} />;
     return query.data ? <SettingsEditor key={guildId} initial={query.data} guildId={guildId} /> : null;
 }

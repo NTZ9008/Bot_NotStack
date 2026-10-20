@@ -10,7 +10,8 @@ import { DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { GettingStarted } from '@/components/getting-started';
 import { RankBadge } from '@/components/rank-badge';
-import { ErrorState, LoadingState } from '@/components/states';
+import { OverviewStatsSkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -327,7 +328,7 @@ function OverviewPage() {
             </Card>
 
             {isLoading ? (
-                <LoadingState />
+                <OverviewStatsSkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (

@@ -13,7 +13,8 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { UsersTableSkeleton } from '@/components/skeleton/app-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -362,7 +363,7 @@ function UsersPage() {
             <Card>
                 <CardContent>
                     {isLoading ? (
-                        <LoadingState />
+                        <UsersTableSkeleton />
                     ) : error ? (
                         <ErrorState error={error} />
                     ) : (

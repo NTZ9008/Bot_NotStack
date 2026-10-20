@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { logFileQuery, logFilesQuery } from '@/api/bot';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { LogContentSkeleton } from '@/components/skeleton/app-pages';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,7 +60,7 @@ function LogsPage() {
                         {!file ? (
                             <span className="text-muted-foreground">เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา</span>
                         ) : content.isLoading ? (
-                            <LoadingState />
+                            <LogContentSkeleton />
                         ) : content.error ? (
                             <span className="text-destructive">โหลดเนื้อหาไฟล์บันทึกไม่สำเร็จ</span>
                         ) : (
