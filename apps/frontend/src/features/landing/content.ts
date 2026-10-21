@@ -22,7 +22,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
         features: [
             {
                 title: 'Voice Monitor',
-                description: 'ใครเปลี่ยน bitrate หรือ region ของห้องเสียง บอทจะแจ้งห้อง security พร้อมชื่อคนทำ (อ่านจาก audit log)',
+                description: 'ใครเปลี่ยน bitrate หรือ region ของห้องเสียง บอทจะแจ้งห้อง security พร้อมบอกว่าใครเป็นคนเปลี่ยน (อ่านจาก audit log)',
             },
             {
                 title: 'Voice Guard',
