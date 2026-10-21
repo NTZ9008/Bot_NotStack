@@ -9,11 +9,12 @@ import {
 import { PermissionFlagsBits, type SendableChannels } from 'discord.js';
 import { BotConfigService } from '../bot-config/bot-config.service';
 import { DiscordService } from '../discord/discord.service';
-import type { Prisma, WeatherSetting } from '../generated/prisma/client';
+import type { WeatherSetting } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { OpenWeatherClient } from './clients/openweather.client';
 import { WeatherException } from './exceptions/weather.exception';
 import { buildWeatherReport, toMessagePayload, type WeatherReport } from './report/weather-report.builder';
+import { toJsonValue } from '../prisma/json.util';
 
 export interface StoredWeatherSettings {
     enabled: boolean;
@@ -75,7 +76,7 @@ export class WeatherService {
                     enabled: this.discord.isHome(guildId) && Boolean(channelId),
                     channelId,
                     content: WEATHER_DEFAULT_CONTENT,
-                    options: defaultWeatherOptions() as unknown as Prisma.InputJsonValue,
+                    options: toJsonValue(defaultWeatherOptions()),
                 },
             ],
             skipDuplicates: true,
@@ -93,7 +94,7 @@ export class WeatherService {
         const { options, ...rest } = data;
         const row = await this.prisma.weatherSetting.update({
             where: { guildId },
-            data: { ...rest, ...(options ? { options: options as unknown as Prisma.InputJsonValue } : {}) },
+            data: { ...rest, ...(options ? { options: toJsonValue(options) } : {}) },
         });
         return toSettings(row);
     }

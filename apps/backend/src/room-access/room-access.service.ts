@@ -1,6 +1,6 @@
 import { HttpStatus, Injectable } from '@nestjs/common';
 import { ALL_ROOMS, type AccessRoom, type GrantAccessResponse, type RoomAccessItem } from '@notstack/shared';
-import { OverwriteType, type GuildChannel } from 'discord.js';
+import { OverwriteType, PermissionsBitField, type GuildChannel } from 'discord.js';
 import { ApiException, badRequest } from '../common/exceptions/api.exception';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -8,6 +8,24 @@ import type { GrantAccessDto } from './dto/grant-access.dto';
 
 export const isGuildChannel = (channel: unknown): channel is GuildChannel =>
     typeof channel === 'object' && channel !== null && 'permissionOverwrites' in channel;
+
+// สิทธิ์ที่ตั๋วเข้าห้องให้ — ตอนถอน/หมดเวลาจะคืนเฉพาะสิทธิ์เหล่านี้
+const ROOM_ACCESS_PERMISSIONS = ['ViewChannel', 'ReadMessageHistory', 'Connect', 'Speak', 'SendMessages'] as const;
+
+// ถอนตั๋วเข้าห้อง: สิทธิ์อื่นที่แอดมินตั้งให้คนนั้นไว้เอง (เช่นห้ามแนบไฟล์) ยังอยู่
+// ไม่เหลือสิทธิ์อื่นแล้ว = ลบ overwrite ของคนนั้นทิ้งทั้งอัน
+export async function revokeRoomAccess(channel: GuildChannel, userId: string): Promise<void> {
+    const overwrite = channel.permissionOverwrites.cache.get(userId);
+    if (!overwrite) return;
+    const remaining = new PermissionsBitField(overwrite.allow.bitfield).remove(ROOM_ACCESS_PERMISSIONS);
+    if (remaining.bitfield === 0n && overwrite.deny.bitfield === 0n) {
+        await channel.permissionOverwrites.delete(userId);
+        return;
+    }
+    await channel.permissionOverwrites.edit(userId, Object.fromEntries(ROOM_ACCESS_PERMISSIONS.map((name) => [name, null])), {
+        type: OverwriteType.Member,
+    });
+}
 
 // ==========================================
 // 🎫 ROOM ACCESS — ให้สิทธิ์เห็นห้องพิเศษ (ถาวร / จำกัดเวลา)
@@ -64,11 +82,9 @@ export class RoomAccessService {
                 }
 
                 if (input.action === 'grant') {
-                    await channel.permissionOverwrites.edit(
-                        input.userId,
-                        { ViewChannel: true, ReadMessageHistory: true, Connect: true, Speak: true, SendMessages: true },
-                        { type: OverwriteType.Member },
-                    );
+                    await channel.permissionOverwrites.edit(input.userId, Object.fromEntries(ROOM_ACCESS_PERMISSIONS.map((name) => [name, true])), {
+                        type: OverwriteType.Member,
+                    });
 
                     // ล้างสิทธิ์ชั่วคราวเดิม (ถ้ามี) แล้วบันทึกเวลาหมดอายุใหม่ถ้าเป็นแบบจำกัดเวลา
                     await this.prisma.roomAccess.deleteMany({ where: { userId: input.userId, roomId: id } });
@@ -81,7 +97,7 @@ export class RoomAccessService {
                         await user?.send(`🎫 คุณได้รับตั๋วเข้าห้อง **${channel.name}** แล้ว (หมดเวลา: <t:${Math.floor(expireAt / 1000)}:R>)`).catch(() => {});
                     }
                 } else {
-                    await channel.permissionOverwrites.delete(input.userId);
+                    await revokeRoomAccess(channel, input.userId);
                     await this.prisma.roomAccess.deleteMany({ where: { userId: input.userId, roomId: id } });
                 }
                 successCount++;

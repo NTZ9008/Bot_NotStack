@@ -9,7 +9,7 @@ import { ProfileMenu } from '@/components/layout/profile-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { ChevronRight } from 'lucide-react';
-import { ConnectingScreen } from '@/components/states';
+import { SplashScreen } from '@/components/splash-screen';
 
 // ==========================================
 // 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ค้นหาหน้า / เมนูโปรไฟล์)
@@ -21,10 +21,13 @@ export const Route = createFileRoute('/_app')({
         return { me };
     },
     component: AppLayout,
-    pendingComponent: ConnectingScreen,
+    // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
+    pendingComponent: () => <SplashScreen />,
+    pendingMs: 0,
 });
 
 function AppLayout() {
+    const isNavigating = useRouterState({ select: (state) => state.isLoading });
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath });
     const current = findNavItem(routePath);
     const { guildId } = useParams({ strict: false });
@@ -35,6 +38,7 @@ function AppLayout() {
             <AppSidebar />
             <SidebarInset className="min-w-0 bg-transparent">
                 <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
+                    {isNavigating && <div role="progressbar" aria-label="กำลังเปิดหน้า" className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
                     <SidebarTrigger />
                     <Separator orientation="vertical" className="mx-1 h-5" />
                     <div className="flex min-w-0 items-center gap-1.5 text-sm">
@@ -43,9 +47,7 @@ function AppLayout() {
                         <h1 className="truncate font-medium">{current?.label ?? 'Dashboard'}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <div className="hidden md:block">
-                            <PageSearch />
-                        </div>
+                        <PageSearch />
                         <ProfileMenu />
                     </div>
                 </header>

@@ -1,6 +1,6 @@
 import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useBlocker } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -10,7 +10,8 @@ import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { WelcomePageSkeleton } from '@/components/skeleton/editor-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,10 +25,13 @@ import { isDirty, pickDraft, type CardDraft, type Section } from '@/features/wel
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useGuildId } from '@/hooks/use-guild';
+import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     loader: ({ context, params }) =>
         Promise.all([
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
             context.queryClient.ensureQueryData(welcomeMetaQuery(params.guildId)),
             context.queryClient.ensureQueryData(welcomeCardsQuery(params.guildId)),
             context.queryClient.ensureQueryData(welcomeAssetsQuery(params.guildId)),
@@ -92,20 +96,16 @@ function WelcomePage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cards.data]);
 
-    const confirmDiscard = async () =>
-        !dirty ||
-        confirm({
-            title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-            description: `การ์ด "${draft?.name}" มีการแก้ไขที่ยังไม่ได้กดบันทึก`,
-            confirmText: 'ทิ้งการแก้ไข',
-            destructive: true,
-        });
+    const discardDialog = {
+        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
+        description: `การ์ด "${draft?.name}" มีการแก้ไขที่ยังไม่ได้กดบันทึก`,
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
+    };
+    const confirmDiscard = async () => !dirty || confirm(discardDialog);
 
     // ออกจากหน้านี้ (หรือปิดแท็บ) ตอนมีการแก้ไขค้างอยู่ → ถามก่อน
-    useBlocker({
-        shouldBlockFn: async () => !(await confirmDiscard()),
-        enableBeforeUnload: () => dirty,
-    });
+    useUnsavedChangesGuard(dirty, discardDialog);
 
     const select = async (id: number) => {
         if (id === draft?.id || !(await confirmDiscard())) return;
@@ -130,17 +130,7 @@ function WelcomePage() {
         }
     };
 
-    // Ctrl/⌘ + S = บันทึก
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                void save();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    });
+    useSaveShortcut(() => void save());
 
     // เปิด/ปิดบันทึกทันที (ทั้งสวิตช์ในรายการและบนหัวตัวแก้ไข) — ไม่กระทบการแก้ไขอื่นที่ค้างอยู่
     const toggle = async (card: WelcomeCard, enabled: boolean) => {
@@ -227,7 +217,7 @@ function WelcomePage() {
         setDraft((d) => (d?.backgroundId === assetId ? { ...d, backgroundId: null } : d));
     };
 
-    if (meta.isLoading || cards.isLoading || assets.isLoading) return <LoadingState />;
+    if (meta.isLoading || cards.isLoading || assets.isLoading) return <WelcomePageSkeleton />;
     if (meta.error || cards.error || assets.error) return <ErrorState error={meta.error ?? cards.error ?? assets.error} title="โหลดข้อมูล Welcome ไม่สำเร็จ" />;
     const cardList = cards.data ?? [];
     const current = cardList.find((c) => c.id === draft?.id);
@@ -235,7 +225,8 @@ function WelcomePage() {
     return (
         <>
             <PageHeader
-                title="Welcome Announcement"
+                help="welcome"
+                title="ต้อนรับสมาชิกใหม่"
                 description="การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง"
                 actions={
                     <Button onClick={() => void create()}>

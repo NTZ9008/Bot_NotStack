@@ -33,7 +33,8 @@ export class AuthConfig {
         this.isProduction = config.get('NODE_ENV', { infer: true }) === 'production';
         this.jwtSecret = this.resolveJwtSecret(config.get('JWT_SECRET', { infer: true }) ?? config.get('SESSION_SECRET', { infer: true }));
         this.dashboardUrl = config.get('DASHBOARD_URL', { infer: true }) ?? null;
-        this.allowsHost = allowedOrigins([this.dashboardUrl ?? 'https://notstackutdash.arlifzs.site', ...config.get('CORS_ORIGINS', { infer: true })]).allowsHost;
+        // ไม่ตั้ง DASHBOARD_URL / CORS_ORIGINS = รับเฉพาะหน้าเว็บที่อยู่ host เดียวกับ API
+        this.allowsHost = allowedOrigins([...(this.dashboardUrl ? [this.dashboardUrl] : []), ...config.get('CORS_ORIGINS', { infer: true })]).allowsHost;
         this.adminSeed = {
             username: config.get('ADMIN_USERNAME', { infer: true }),
             password: config.get('ADMIN_PASSWORD', { infer: true }),
@@ -62,10 +63,15 @@ export class AuthConfig {
         return this.dashboardUrl ? new URL(path, this.dashboardUrl).toString() : path;
     }
 
-    // JWT_SECRET ควรยาว 32 ตัวอักษรขึ้นไป — ถ้าไม่ได้ตั้ง (หรือสั้นเกิน) จะสุ่ม secret ชั่วคราวแทน
-    // (ยังปลอดภัย แต่ทุกคนต้อง login ใหม่ทุกครั้งที่รีสตาร์ทบอท)
+    // JWT_SECRET ควรยาว 32 ตัวอักษรขึ้นไป — production (NODE_ENV=production) ต้องตั้งเสมอ ไม่งั้นไม่เปิดเซิร์ฟเวอร์
+    // dev ที่ไม่ได้ตั้ง (หรือสั้นเกิน) จะสุ่ม secret ชั่วคราวแทน (ยังปลอดภัย แต่ทุกคนต้อง login ใหม่ทุกครั้งที่รีสตาร์ทบอท)
     private resolveJwtSecret(secret: string | undefined): string {
         if (secret && secret.length >= 32) return secret;
+        if (this.isProduction) {
+            throw new Error(
+                'ยังไม่ได้ตั้ง JWT_SECRET (หรือสั้นกว่า 32 ตัวอักษร) ใน .env — สร้างด้วย: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"',
+            );
+        }
         this.logger.warn('⚠️ ยังไม่ได้ตั้ง JWT_SECRET (หรือสั้นกว่า 32 ตัวอักษร) — ใช้ secret สุ่มชั่วคราว ทุกคนจะต้อง login ใหม่เมื่อรีสตาร์ท');
         return crypto.randomBytes(48).toString('base64url');
     }

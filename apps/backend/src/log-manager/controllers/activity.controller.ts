@@ -1,9 +1,13 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import type { Response } from 'express';
+import { ResultCache } from '../../common/utils/result-cache';
+import { withServerTiming } from '../../common/utils/server-timing';
+import { Controller, Get, Query, Res } from '@nestjs/common';
 import type { ActivityInterval, ActivityMeta, ActivityPage, ActivityStats } from '@notstack/shared';
 import { GuildId } from '../../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../../guilds/decorators/guild-route.decorator';
 import { ActivityQueryDto } from '../dto/activity-query.dto';
 import { ActivityStatsQueryDto } from '../dto/activity-stats-query.dto';
+import { ActivityStatsService } from '../services/activity-stats.service';
 import { ActivityService } from '../services/activity.service';
 import { LogSettingsService } from '../services/log-settings.service';
 
@@ -28,14 +32,31 @@ function resolveRange(query: { from?: Date; to?: Date; interval?: ActivityInterv
 @GuildRoute()
 @Controller('guilds/:guildId/activity')
 export class ActivityController {
+    private readonly statsCache = new ResultCache<ActivityStats>(15_000, 64, 4 * 1024 * 1024, (value) => Buffer.byteLength(JSON.stringify(value)));
     constructor(
         private readonly activity: ActivityService,
+        private readonly activityStats: ActivityStatsService,
         private readonly settings: LogSettingsService,
     ) {}
 
     @Get('stats')
-    stats(@GuildId() guildId: string, @Query() query: ActivityStatsQueryDto): Promise<ActivityStats> {
-        return this.activity.stats({ guildId, ...resolveRange(query), timeZone: query.tz ?? 'Asia/Bangkok', limit: query.limit });
+    stats(@GuildId() guildId: string, @Query() query: ActivityStatsQueryDto, @Res({ passthrough: true }) res: Response): Promise<ActivityStats> {
+        // Rolling presets share a short bucket; explicit custom boundaries remain exact.
+        const to = query.to ?? new Date(Math.floor(Date.now() / 15_000) * 15_000);
+        const from = query.from ?? (query.hours ? new Date(to.getTime() - query.hours * 3600000) : undefined);
+        const input = { guildId, ...resolveRange({ ...query, from, to }), timeZone: query.tz ?? 'Asia/Bangkok', limit: query.limit };
+        const key = JSON.stringify(input);
+        const load = () =>
+            this.activityStats.stats(
+                query.fresh && !query.to
+                    ? {
+                          ...input,
+                          ...resolveRange({ ...query, to: new Date(), from: query.from ?? new Date(Date.now() - (query.hours ?? 168) * 3600000) }),
+                      }
+                    : input,
+            );
+        res.set('Cache-Control', 'no-store');
+        return withServerTiming(res, () => this.statsCache.get(key, load, query.fresh));
     }
 
     @Get()

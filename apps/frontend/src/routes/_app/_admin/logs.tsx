@@ -5,12 +5,14 @@ import { useEffect, useRef, useState } from 'react';
 import { logFileQuery, logFilesQuery } from '@/api/bot';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { LogContentSkeleton } from '@/components/skeleton/app-pages';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Route = createFileRoute('/_app/_admin/logs')({
+    loader: ({ context }) => context.queryClient.ensureQueryData(logFilesQuery),
     component: LogsPage,
 });
 
@@ -27,14 +29,16 @@ function LogsPage() {
 
     return (
         <>
-            <PageHeader title="System Logs" description="ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท (ข้อความแชท / เข้า-ออกห้องเสียง)" />
+            <PageHeader help="logs" title="ไฟล์บันทึกของบอท" description="ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท (ข้อความแชท / เข้า-ออกห้องเสียง)" />
             <Card>
                 <CardContent className="space-y-4">
                     <div className="flex items-end gap-2">
-                        <Field label="Select Log File" className="w-full max-w-sm">
+                        <Field label="เลือกไฟล์บันทึก" className="w-full max-w-sm">
                             <Select value={file} onValueChange={setFile} disabled={!files.data?.length}>
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={files.isLoading ? 'Loading files...' : files.data?.length ? '-- Select a log file --' : 'No logs found'} />
+                                    <SelectValue
+                                        placeholder={files.isLoading ? 'กำลังโหลดไฟล์...' : files.data?.length ? 'เลือกไฟล์บันทึก' : 'ยังไม่มีไฟล์บันทึก'}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
                                     {files.data?.map((name) => (
@@ -55,13 +59,13 @@ function LogsPage() {
                         className="h-[60vh] overflow-auto rounded-lg border bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-300"
                     >
                         {!file ? (
-                            <span className="text-muted-foreground">Select a log file to view its contents.</span>
+                            <span className="text-muted-foreground">เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา</span>
                         ) : content.isLoading ? (
-                            <LoadingState />
+                            <LogContentSkeleton />
                         ) : content.error ? (
-                            <span className="text-destructive">Error loading log file content.</span>
+                            <span className="text-destructive">โหลดเนื้อหาไฟล์บันทึกไม่สำเร็จ</span>
                         ) : (
-                            content.data || '(Empty file)'
+                            content.data || '(ไฟล์ว่าง)'
                         )}
                     </pre>
                 </CardContent>

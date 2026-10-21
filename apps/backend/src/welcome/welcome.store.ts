@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { normalizeDesign, type WelcomeAsset, type WelcomeCard, type WelcomeDesign } from '@notstack/shared';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { toJsonValue } from '../prisma/json.util';
 
 const CARD_FIELDS = {
     id: true,
@@ -77,7 +78,7 @@ export class WelcomeStore {
     }
 
     async createCard(guildId: string, data: CardData): Promise<WelcomeCard> {
-        return toCard(await this.prisma.welcomeCard.create({ data: { ...data, guildId, design: data.design as unknown as Prisma.InputJsonValue }, select: CARD_FIELDS }));
+        return toCard(await this.prisma.welcomeCard.create({ data: { ...data, guildId, design: toJsonValue(data.design) }, select: CARD_FIELDS }));
     }
 
     // คืน null ถ้าไม่มีการ์ดนี้ (ถูกลบไปแล้วจากอีกแท็บ)
@@ -85,7 +86,7 @@ export class WelcomeStore {
         const { design, ...rest } = data;
         const { count } = await this.prisma.welcomeCard.updateMany({
             where: { id, guildId },
-            data: { ...rest, ...(design ? { design: design as unknown as Prisma.InputJsonValue } : {}) },
+            data: { ...rest, ...(design ? { design: toJsonValue(design) } : {}) },
         });
         return count ? this.getCard(guildId, id) : null;
     }

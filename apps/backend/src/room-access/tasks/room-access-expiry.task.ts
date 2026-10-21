@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import { DiscordService } from '../../discord/discord.service';
 import { PrismaService } from '../../prisma/prisma.service';
-import { isGuildChannel } from '../room-access.service';
+import { isGuildChannel, revokeRoomAccess } from '../room-access.service';
 
 const NOTIFY_BEFORE_MS = 5 * 60 * 1000;
 
 // เช็คทุก 5 วินาที (ทุกเซิร์ฟเวอร์): หมดเวลา → ถอนสิทธิ์ + DM แจ้ง, ใกล้หมด (5 นาที) → เตือนครั้งเดียว
+// (ส่ง DM ไม่ได้ เช่นผู้ใช้ปิด DM ก็ถือว่าเตือนแล้ว — ไม่ลองซ้ำทุก 5 วินาที)
 @Injectable()
 export class RoomAccessExpiryTask {
     private readonly logger = new Logger('RoomAccess');
@@ -31,7 +32,7 @@ export class RoomAccessExpiryTask {
                     try {
                         const channel = await this.discord.fetchGuildChannelStrict(record.guildId, record.roomId);
                         if (isGuildChannel(channel)) {
-                            await channel.permissionOverwrites.delete(record.userId);
+                            await revokeRoomAccess(channel, record.userId);
                             const user = await this.discord.fetchUser(record.userId);
                             user?.send(`❌ ตั๋วเข้าห้อง **${channel.name}** ของคุณหมดเวลาแล้ว`).catch(() => {});
                         }
@@ -41,12 +42,13 @@ export class RoomAccessExpiryTask {
                     }
                 } else if (!record.notified) {
                     try {
+                        // error ตอนหาห้อง (Discord ล่มชั่วคราว) → ลองใหม่รอบหน้า
                         const channel = await this.discord.fetchGuildChannelStrict(record.guildId, record.roomId);
-                        const user = await this.discord.fetchUser(record.userId);
-                        if (user && isGuildChannel(channel)) {
-                            await user.send(`⚠️ ตั๋วเข้าห้อง **${channel.name}** ของคุณกำลังจะหมดเวลา!`);
-                            await this.prisma.roomAccess.updateMany({ where: { id: record.id }, data: { notified: true } });
+                        if (isGuildChannel(channel)) {
+                            const user = await this.discord.fetchUser(record.userId);
+                            await user?.send(`⚠️ ตั๋วเข้าห้อง **${channel.name}** ของคุณกำลังจะหมดเวลา!`).catch(() => {});
                         }
+                        await this.prisma.roomAccess.updateMany({ where: { id: record.id }, data: { notified: true } });
                     } catch (err) {
                         this.logger.error(`Error notifying room access expiry: ${(err as Error).message}`);
                     }

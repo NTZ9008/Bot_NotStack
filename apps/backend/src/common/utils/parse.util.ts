@@ -16,3 +16,6 @@ export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(r
 
 // วันเวลาแบบไทยที่ใช้ในไฟล์ log เดิม
 export const thaiTimestamp = (date = new Date()) => date.toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+
+// วันที่ตามเวลาไทย (YYYY-MM-DD) — ใช้เป็นชื่อไฟล์ log รายวัน / ตัดรอบโควตาต่อวัน
+export const bangkokDay = (date = new Date()): string => new Date(date.getTime() + 7 * 3600000).toISOString().slice(0, 10);

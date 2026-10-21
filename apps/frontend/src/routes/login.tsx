@@ -1,3 +1,4 @@
+import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
@@ -6,7 +7,6 @@ import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { authApi, meQuery, providersQuery } from '@/api/auth';
 import { Field } from '@/components/field';
@@ -15,22 +15,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { DiscordIcon } from '@/components/discord-icon';
 import { apiUrl, errorMessage } from '@/lib/api';
-import { ConnectingScreen } from '@/components/states';
-
-const searchSchema = z.object({
-    error: z.string().optional(),
-    redirect: z.string().optional(),
-});
+import { SplashScreen } from '@/components/splash-screen';
 
 export const Route = createFileRoute('/login')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>) => stringSearch(search, ['error', 'redirect']),
     // มี session ค้างอยู่ (เช่นเปิดลิงก์จากที่อื่นแล้ว access token หมดอายุ) → ต่ออายุแล้วเข้า Dashboard เลย
     beforeLoad: async ({ context }) => {
+        // เริ่มโหลดช่องทาง login ไปพร้อมกัน ปุ่ม Discord จะได้ขึ้นเร็ว (ไม่สำเร็จ useQuery ในหน้าจะลองใหม่เอง)
+        void context.queryClient.prefetchQuery(providersQuery);
         const me = await context.queryClient.ensureQueryData(meQuery);
         if (me) throw redirect({ to: '/' });
     },
     component: LoginPage,
-    pendingComponent: ConnectingScreen,
+    // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
+    pendingComponent: () => <SplashScreen />,
+    pendingMs: 0,
 });
 
 function LoginPage() {

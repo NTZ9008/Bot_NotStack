@@ -19,15 +19,15 @@ export interface ConfigKeyDefinition {
 export const CONFIG_GROUPS = ['ห้อง', 'ความสามารถในแชท'] as const;
 
 export const CONFIG_KEYS: readonly ConfigKeyDefinition[] = [
-    { key: 'LOG_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้อง Log ทั่วไป', description: 'ประวัติเข้า/ออก/ย้ายห้องเสียง', defaultValue: '', homeValue: '1369338812819312731' },
+    { key: 'LOG_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้อง Log ทั่วไป', description: 'ประวัติเข้า/ออก/ย้ายห้องเสียงแบบข้อความสั้น (ถ้าเปิด log ห้องเสียงในหน้า Log Manager ไว้ ห้องนี้จะไม่ได้รับซ้ำ)', defaultValue: '', homeValue: '1369338812819312731' },
     { key: 'ALERT_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้องแจ้งเตือนความปลอดภัย', description: 'Anti-Spam และการแก้ Bitrate / Region ของห้องเสียง', defaultValue: '', homeValue: '1333089825376436295' },
     { key: 'WELCOME_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้อง Welcome', description: 'ข้อความต้อนรับสมาชิกใหม่ (ข้อความธรรมดา — การ์ดรูปภาพตั้งที่หน้า Welcome)', defaultValue: '', homeValue: '1403025308512157746' },
     { key: 'GOODBYE_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้อง Goodbye', description: 'แจ้งเมื่อมีสมาชิกออกจากเซิร์ฟเวอร์', defaultValue: '', homeValue: '1403025414447956019' },
     { key: 'NEWS_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้องประกาศข่าวสาร', description: 'ห้องที่หน้า News ส่งประกาศเข้าไป', defaultValue: '', homeValue: '' },
     { key: 'GENERAL_CHANNEL_ID', type: 'channel', group: 'ห้อง', label: 'ห้องทั่วไป', description: 'ห้องเริ่มต้นของรายงานสภาพอากาศ (ตั้งห้องจริงที่หน้า Weather)', defaultValue: '', homeValue: '1273939427575595184' },
     { key: 'ANTI_SPAM_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'Anti-Spam', description: 'ลบข้อความเมื่อส่งเกิน 6 ข้อความใน 5 วินาที และแจ้งเตือนห้องความปลอดภัย', defaultValue: 'false', homeValue: 'true' },
-    { key: 'BAD_WORD_FILTER_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'กรองคำหยาบ (ภาษาไทย + AI)', description: 'ลบข้อความหยาบคาย — คำที่ต้องสงสัยให้ AI ดูบริบทก่อน (ใช้โควตา AI ร่วมกันทุกเซิร์ฟเวอร์)', defaultValue: 'false', homeValue: 'true' },
-    { key: 'AI_CHAT_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'AI Chat', description: 'ตอบคำถามเมื่อมีคนแท็กบอท (Gemini — โควตาต่อวันใช้ร่วมกันทุกเซิร์ฟเวอร์)', defaultValue: 'false', homeValue: 'true' },
+    { key: 'BAD_WORD_FILTER_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'กรองคำหยาบ (ภาษาไทย + AI)', description: 'ลบข้อความหยาบคาย — คำที่ต้องสงสัยให้ AI ดูบริบทก่อน (นับโควตา AI ต่อวัน — AI ใช้ไม่ได้หรือโควตาหมดจะปล่อยผ่าน)', defaultValue: 'false', homeValue: 'true' },
+    { key: 'AI_CHAT_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'AI Chat', description: 'ตอบคำถามเมื่อมีคนแท็กบอท (Gemini — มีโควตาต่อวันของแต่ละเซิร์ฟเวอร์)', defaultValue: 'false', homeValue: 'true' },
     { key: 'AUTO_REPLY_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'ตอบกลับอัตโนมัติ', description: 'ตอบข้อความเช่น "สวัสดีบอท" / "หิวข้าว" / "ขอกำลังใจ"', defaultValue: 'false', homeValue: 'true' },
     { key: 'SECURITY_MONITOR_ENABLED', type: 'boolean', group: 'ความสามารถในแชท', label: 'เฝ้าระวังห้องเสียง', description: 'แจ้งเตือนเมื่อมีคนแก้ Bitrate / Region ของห้องเสียง', defaultValue: 'true', homeValue: 'true' },
 ];

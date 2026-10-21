@@ -5,7 +5,8 @@ import { Loader2, Search } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery, type ActivityFilters, type AuditFilters } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
-import { ErrorState, LoadingState } from '@/components/states';
+import { AuditTableSkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -34,6 +35,7 @@ const GROUP_TONE: Record<string, string> = {
     pr_bot: 'bg-fuchsia-500/15 text-fuchsia-300',
     welcome: 'bg-pink-500/15 text-pink-300',
     weather: 'bg-orange-500/15 text-orange-300',
+    jira: 'bg-blue-500/15 text-blue-300',
 };
 
 // สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager
@@ -192,7 +194,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             </form>
 
             {logs.isLoading ? (
-                <LoadingState />
+                <AuditTableSkeleton />
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
@@ -335,7 +337,7 @@ export function DiscordActivity({ guildId }: { guildId: string }) {
             </form>
 
             {logs.isLoading ? (
-                <LoadingState />
+                <AuditTableSkeleton />
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (

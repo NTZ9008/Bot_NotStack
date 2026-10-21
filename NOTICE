@@ -1,0 +1,26 @@
+Bot_NotStack
+Copyright 2026 Arlif Thongrakjan (AT Tech) and the Bot_NotStack contributors
+
+This product includes software developed by:
+  - Arlif Thongrakjan (AT Tech) - creator - https://github.com/NTZ9008
+  - Thanapat Julakarn - core contributor - https://github.com/boatngin
+  - and the Bot_NotStack contributors
+    https://github.com/NTZ9008/Bot_NotStack/graphs/contributors
+
+Original project: https://github.com/NTZ9008/Bot_NotStack
+
+Licensed under the Apache License, Version 2.0 (see the LICENSE file).
+Any redistribution of this project or of a work derived from it must keep
+this NOTICE file, as required by section 4(d) of the License.
+
+-------------------------------------------------------------------------------
+Third-party material
+-------------------------------------------------------------------------------
+
+apps/frontend/src/components/ui contains components generated from shadcn/ui
+(https://ui.shadcn.com), MIT License, Copyright (c) 2023 shadcn.
+
+Rain radar images rendered by the bot contain map data
+(c) OpenStreetMap contributors (ODbL, https://www.openstreetmap.org/copyright)
+and radar data from RainViewer (https://www.rainviewer.com). These credits are
+drawn on the images and must not be removed.

@@ -19,10 +19,14 @@ export const meQuery = queryOptions({
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
 });
 
+// ช่องทาง login ที่เปิดใช้ (หน้า login ใช้ตัดสินใจว่าจะแสดงปุ่ม Discord หรือไม่)
 export const providersQuery = queryOptions({
     queryKey: ['auth', 'providers'],
-    queryFn: () => api<AuthProviders>('/auth/providers'),
+    queryFn: () => api<AuthProviders>('/auth/providers', { sessionless: true }),
     staleTime: Infinity,
+    // โหลดไม่สำเร็จ (backend เพิ่งรีสตาร์ท / เน็ตสะดุด) → ลองใหม่ ไม่งั้นปุ่ม Discord จะไม่ขึ้นจนกว่าจะรีเฟรชหน้า
+    retry: 4,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 4000),
 });
 
 export const authApi = {

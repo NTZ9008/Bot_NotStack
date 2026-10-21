@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams, useRouterState } from '@tanstack/react-router';
+import { Link, useParams, useRouter, useRouterState } from '@tanstack/react-router';
+import { useMemo } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { guildQuery } from '@/api/guilds';
 import {
@@ -17,6 +18,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
+import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { GuildSwitcher } from './guild-switcher';
 import { visibleNavGroups } from './nav-items';
 
@@ -25,12 +27,29 @@ import { visibleNavGroups } from './nav-items';
 // ==========================================
 export function AppSidebar() {
     const { isAdmin } = useAuth();
+    const router = useRouter();
     const { data: info } = useQuery(appInfoQuery);
     const { guildId } = useParams({ strict: false });
     const { data: guild } = useQuery({ ...guildQuery(guildId ?? ''), enabled: Boolean(guildId) });
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath?.replace(/\/$/, '') });
     const { isMobile, setOpenMobile } = useSidebar();
     const bot = info?.bot ?? DEFAULT_BOT;
+    const access = guild?.access;
+
+    const tasks = useMemo(
+        () =>
+            visibleNavGroups(isAdmin, guildId && access ? { access } : null)
+                .flatMap((group) => group.items)
+                .map((item) => ({
+                    key: `${guildId ?? ''}:${item.to}`,
+                    run: async () => {
+                        const active = router.state.matches.at(-1)?.fullPath?.replace(/\/$/, '');
+                        if (active !== item.to) await router.preloadRoute({ to: item.to, params: item.guild ? { guildId } : {}, search: {} });
+                    },
+                })),
+        [router, isAdmin, guildId, access],
+    );
+    const prioritize = usePreloadTasks(tasks);
 
     return (
         <Sidebar collapsible="icon">
@@ -39,7 +58,11 @@ export function AppSidebar() {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link to="/servers">
-                                <img src={bot.avatar} alt="" className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]" />
+                                <img
+                                    src={bot.avatar}
+                                    alt=""
+                                    className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]"
+                                />
                                 <div className="grid min-w-0 flex-1 text-left leading-tight">
                                     <span className="truncate font-semibold text-indigo-300">{bot.name}</span>
                                     <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
@@ -60,7 +83,15 @@ export function AppSidebar() {
                                 {group.items.map((item) => (
                                     <SidebarMenuItem key={item.to}>
                                         <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={item.label}>
-                                            <Link to={item.to} params={item.guild ? { guildId } : {}} onClick={() => isMobile && setOpenMobile(false)}>
+                                            <Link
+                                                to={item.to}
+                                                params={item.guild ? { guildId } : {}}
+                                                preload={false}
+                                                onMouseEnter={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onFocus={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onTouchStart={() => prioritize(`${guildId ?? ''}:${item.to}`)}
+                                                onClick={() => isMobile && setOpenMobile(false)}
+                                            >
                                                 <item.icon />
                                                 <span>{item.label}</span>
                                             </Link>

@@ -10,15 +10,21 @@ import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { API_BASE, errorMessage } from '@/lib/api';
+import { PrBotStatsCard } from '@/features/pr-bot/stats-card';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/pr-bot')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(prBotQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(prBotQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: PrBotPage,
 });
 
@@ -109,11 +115,11 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>ห้อง Default</CardTitle>
+                    <CardTitle>ห้องเริ่มต้น</CardTitle>
                     <CardDescription>ใช้กับ organization/repo ที่ไม่ได้ระบุไว้ด้านล่าง</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Field hint="เลือก &quot;ไม่ส่ง&quot; = ปิดการแจ้งเตือนของ organization ที่ไม่ได้ระบุห้องไว้">
+                    <Field hint='เลือก "ไม่ส่ง" = ปิดการแจ้งเตือนของ organization ที่ไม่ได้ระบุห้องไว้'>
                         <form
                             className="flex gap-2"
                             onSubmit={(e) => {
@@ -128,7 +134,7 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                                 noneLabel="— ไม่ส่ง —"
                             />
                             <Button type="submit" disabled={saveDefault.isPending}>
-                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} Save
+                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} บันทึก
                             </Button>
                         </form>
                     </Field>
@@ -193,7 +199,9 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
             <CardHeader>
                 <CardTitle>GitHub Webhook</CardTitle>
                 <CardDescription>
-                    ที่ GitHub: Settings → Webhooks → Add webhook — Content type <code>application/json</code>, เลือก event <b>Pull requests</b>
+                    ที่ GitHub: Settings → Webhooks → Add webhook — Content type <code>application/json</code>, เลือก “Let me select individual events” แล้วติ๊ก{' '}
+                    <b>Pull requests</b>, <b>Pull request reviews</b>, <b>Pull request review comments</b>, <b>Issue comments</b>, <b>Check runs</b> และ{' '}
+                    <b>Statuses</b> — ข้อความใน Discord จะอัปเดตเองเมื่อมีคน approve / ขอแก้ / comment และเมื่อ check ผ่านหรือไม่ผ่าน
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -207,7 +215,13 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                 </Field>
                 <Field label="Secret" hint="ใครรู้ secret นี้ส่งแจ้งเตือนปลอมเข้าเซิร์ฟเวอร์นี้ได้ — ถ้าหลุดให้กดสร้างใหม่แล้วแก้ใน GitHub">
                     <div className="flex flex-wrap gap-2">
-                        <Input readOnly className="min-w-0 flex-1 font-mono text-xs" type={reveal ? 'text' : 'password'} value={settings.webhookSecret} onFocus={(e) => e.target.select()} />
+                        <Input
+                            readOnly
+                            className="min-w-0 flex-1 font-mono text-xs"
+                            type={reveal ? 'text' : 'password'}
+                            value={settings.webhookSecret}
+                            onFocus={(e) => e.target.select()}
+                        />
                         <Button variant="outline" size="icon" aria-label={reveal ? 'ซ่อน secret' : 'แสดง secret'} onClick={() => setReveal((value) => !value)}>
                             {reveal ? <EyeOff /> : <Eye />}
                         </Button>
@@ -246,14 +260,19 @@ function PrBotPage() {
     const { data, isLoading, error } = useQuery(prBotQuery(guildId));
     return (
         <>
-            <PageHeader title="PR Bot — GitHub Notifications" description="ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo" />
+            <PageHeader
+                help="prBot"
+                title="แจ้งเตือน GitHub PR"
+                description="ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo"
+            />
             {isLoading ? (
-                <LoadingState />
+                <PrBotBodySkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (
                 data && (
                     <>
+                        <PrBotStatsCard guildId={guildId} />
                         <WebhookCard settings={data} />
                         <PrBotForm settings={data} />
                     </>

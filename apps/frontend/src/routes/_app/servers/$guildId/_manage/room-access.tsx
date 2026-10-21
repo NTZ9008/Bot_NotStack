@@ -12,7 +12,8 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { RoomAccessTableSkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,15 @@ import { DEFAULT_AVATAR, formatCountdown } from '@/lib/format';
 import { useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/room-access')({
+    // เริ่มโหลดข้อมูลพร้อมกับโค้ดของหน้า (และตอนเอาเมาส์ชี้ลิงก์) — ไม่รอให้หน้า render ก่อน
+    loader: ({ context: { queryClient }, params, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(roomAccessQuery(params.guildId)),
+            queryClient.prefetchQuery(accessRoomsQuery(params.guildId)),
+            queryClient.prefetchQuery(guildChannelsQuery(params.guildId)),
+        ]);
+        return preload ? loading : undefined;
+    },
     component: RoomAccessPage,
 });
 
@@ -235,7 +245,11 @@ function RoomAccessPage() {
 
     return (
         <>
-            <PageHeader title="Grant Room Access" description="ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)" />
+            <PageHeader
+                help="roomAccess"
+                title="ให้สิทธิ์เข้าห้อง"
+                description="ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)"
+            />
             <RoomsCard rooms={rooms} />
             <Card>
                 <CardContent className="grid gap-4 md:max-w-xl">
@@ -291,7 +305,7 @@ function RoomAccessPage() {
                 </CardHeader>
                 <CardContent>
                     {list.isLoading ? (
-                        <LoadingState />
+                        <RoomAccessTableSkeleton />
                     ) : list.error ? (
                         <ErrorState error={list.error} />
                     ) : (

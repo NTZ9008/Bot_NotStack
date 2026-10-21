@@ -24,3 +24,9 @@ export function executorLine(info: { executor?: { id: string } | null; entry?: {
 }
 
 export const unixSeconds = (ms: number) => Math.floor(ms / 1000);
+
+// วันเวลาเต็ม + "อีกกี่นาที/กี่วันก่อน" (Discord แสดงตามเขตเวลาของคนอ่าน)
+export function fullTimestamp(ms: number): string {
+    const seconds = unixSeconds(ms);
+    return `<t:${seconds}:F>\n(<t:${seconds}:R>)`;
+}

@@ -8,5 +8,7 @@ import { WelcomeStore } from './welcome.store';
 @Module({
     controllers: [WelcomeController],
     providers: [WelcomeStore, WelcomeRenderer, WelcomeService, MemberJoinListener],
+    // คลังรูปพื้นหลัง + ตัวโหลดรูปใช้ร่วมกับการ์ด Rank
+    exports: [WelcomeStore, WelcomeRenderer],
 })
 export class WelcomeModule {}

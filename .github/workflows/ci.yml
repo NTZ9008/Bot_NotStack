@@ -32,7 +32,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
-      - run: pnpm test
+      - run: pnpm lint
+      # build ทั้ง backend และหน้าเว็บ (เทสต์ใช้ dist ของ backend / หน้าเว็บต้อง build ผ่านก่อน deploy)
+      - run: pnpm build
+      - run: pnpm test:unit
       - run: pnpm db:migrate
       - run: pnpm --filter @notstack/backend exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
       - run: node --test tests/xp-database.test.cjs

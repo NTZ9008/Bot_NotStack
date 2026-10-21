@@ -6,7 +6,8 @@ import { guildsQuery } from '@/api/guilds';
 import { DiscordIcon } from '@/components/discord-icon';
 import { GuildIcon } from '@/components/guild-icon';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { GuildListSkeleton } from '@/components/skeleton/app-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,7 @@ import { formatNumber } from '@/lib/format';
 
 // ?denied=true → เพิ่งถูกพากลับมาเพราะไม่มีสิทธิ์ในเซิร์ฟเวอร์ที่เปิด
 export const Route = createFileRoute('/_app/servers/')({
+    loader: ({ context }) => context.queryClient.ensureQueryData(guildsQuery),
     validateSearch: (search: Record<string, unknown>): { denied?: boolean } => (search.denied === true || search.denied === 'true' ? { denied: true } : {}),
     component: ServersPage,
 });
@@ -62,6 +64,7 @@ function ServersPage() {
     return (
         <>
             <PageHeader
+                help="servers"
                 title="เซิร์ฟเวอร์ของคุณ"
                 description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — เห็นเฉพาะเซิร์ฟเวอร์ที่บอทอยู่และคุณเป็นสมาชิก (ต้องมีสิทธิ์ Manage Server ถึงจะตั้งค่าได้)"
                 actions={
@@ -106,12 +109,14 @@ function ServersPage() {
             )}
 
             {isLoading ? (
-                <LoadingState />
+                <GuildListSkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (
                 <div className="grid gap-3 md:grid-cols-2">
-                    {data?.guilds.map((guild) => <GuildCard key={guild.id} guild={guild} />)}
+                    {data?.guilds.map((guild) => (
+                        <GuildCard key={guild.id} guild={guild} />
+                    ))}
 
                     {/* เชิญบอทเข้าเซิร์ฟเวอร์ใหม่ — Discord ให้เลือกได้เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้มีสิทธิ์ Manage Server */}
                     <div className="flex items-center gap-4 rounded-xl border border-dashed p-4">

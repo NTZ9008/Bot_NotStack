@@ -1,6 +1,4 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import {
     defaultXpSettings,
@@ -10,6 +8,8 @@ import {
     MAX_XP,
     rollXp,
     xpSettingsSchema,
+    type XpRule,
+    type XpSettings,
     type LevelPage,
     type LevelQuery,
     type LevelRow,
@@ -21,47 +21,51 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import type { Message } from 'discord.js';
+import { Subject } from 'rxjs';
 import { badRequest, conflict } from '../common/exceptions/api.exception';
-import { REPO_ROOT } from '../config/paths';
+import { bangkokDay } from '../common/utils/parse.util';
 import { DiscordService } from '../discord/discord.service';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { toJsonValue } from '../prisma/json.util';
 
 type Tx = Prisma.TransactionClient;
-const dayInBangkok = (now: Date): string => new Date(now.getTime() + 7 * 3600000).toISOString().slice(0, 10);
+
+// เลเวลของสมาชิกเปลี่ยน (หลัง transaction commit แล้ว) — ระบบประกาศเลเวลอัป / ยศรางวัลฟังจากตรงนี้
+export interface LevelChange {
+    guildId: string;
+    userId: string;
+    previousLevel: number;
+    level: number;
+    xp: number;
+    // message / voice / command = ได้จากกิจกรรม, admin.* = แอดมินแก้จาก Dashboard
+    source: string;
+    // ห้องที่เกิดกิจกรรม (ห้องข้อความ / ห้องเสียง) — null เมื่อแอดมินแก้
+    channelId: string | null;
+}
+
+// Settings are read on every message/voice tick; edits through this service refresh the cache at once.
+const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
+const cooldownKey = (guildId: string, userId: string, ruleId: string) => `${guildId}:${userId}:${ruleId}`;
 
 @Injectable()
-export class LevelsService implements OnModuleInit {
+export class LevelsService {
     private readonly logger = new Logger('Levels');
-    private loaded = false;
+    private readonly settingsCache = new Map<string, { value: XpSettingsResponse; at: number }>();
+    // Last attempt per guild/user/rule, mirrored from xp_progress after each committed award.
+    // Only used to skip transactions that would certainly be in cooldown; the database stays authoritative.
+    private readonly cooldowns = new Map<string, number>();
+    // แจ้งเมื่อเลเวลเปลี่ยนจากการได้ XP หรือแอดมินแก้ XP (ไม่รวมรีเซ็ตทั้งเซิร์ฟเวอร์ / เปลี่ยนสูตรเลเวล)
+    readonly levelChanges = new Subject<LevelChange>();
     constructor(
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
     ) {}
 
-    async onModuleInit(): Promise<void> {
-        const file = path.join(REPO_ROOT, 'levels.json');
-        if (fs.existsSync(file)) {
-            const data = JSON.parse(fs.readFileSync(file, 'utf8')) as Record<string, { xp: number }>;
-            const settings = defaultXpSettings();
-            await this.prisma.level.createMany({
-                data: Object.entries(data).map(([userId, d]) => {
-                    if (!Number.isInteger(d.xp) || d.xp < 0 || d.xp > MAX_XP) throw new Error(`Invalid legacy XP for ${userId}`);
-                    return { guildId: this.discord.homeGuildId, userId, xp: d.xp, level: levelForXp(d.xp, settings) };
-                }),
-                skipDuplicates: true,
-            });
-            fs.renameSync(file, path.join(REPO_ROOT, 'levels_migrated.json'));
-        }
-        this.loaded = true;
-    }
-    isLoaded(): boolean {
-        return this.loaded;
-    }
-
-    // All XP/config mutations share a PostgreSQL transaction lock per guild.
-    // No buffered absolute writes; concurrent awards/admin edits cannot overwrite one another.
-    private locked<T>(guildId: string, work: (tx: Tx) => Promise<T>): Promise<T> {
+    // Guild-wide changes (settings, reset all) take the guild lock exclusively.
+    // Per-member work takes it shared plus an exclusive member lock, so different members are awarded in parallel
+    // while two writes to the same member (award vs admin edit) still serialize. Lock order is always guild → member.
+    private lockedGuild<T>(guildId: string, work: (tx: Tx) => Promise<T>): Promise<T> {
         return this.prisma.$transaction(
             async (tx) => {
                 await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`xp:${guildId}`}))`;
@@ -69,6 +73,38 @@ export class LevelsService implements OnModuleInit {
             },
             { timeout: 15000 },
         );
+    }
+    private lockedMember<T>(guildId: string, userId: string, work: (tx: Tx) => Promise<T>): Promise<T> {
+        return this.prisma.$transaction(
+            async (tx) => {
+                await tx.$executeRaw`SELECT pg_advisory_xact_lock_shared(hashtext(${`xp:${guildId}`}))`;
+                await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`xp:${guildId}:${userId}`}))`;
+                return work(tx);
+            },
+            { timeout: 15000 },
+        );
+    }
+
+    private async cachedSettings(guildId: string): Promise<XpSettings> {
+        const hit = this.settingsCache.get(guildId);
+        if (hit && Date.now() - hit.at < SETTINGS_CACHE_TTL_MS) return hit.value.settings;
+        const value = await this.readSettings(this.prisma, guildId);
+        this.settingsCache.set(guildId, { value, at: Date.now() });
+        return value.settings;
+    }
+
+    private inCooldown(guildId: string, userId: string, rule: XpRule, now: number): boolean {
+        const last = this.cooldowns.get(cooldownKey(guildId, userId, rule.id));
+        return last !== undefined && now - last < rule.cooldownSeconds * 1000;
+    }
+
+    private rememberAttempts(attempts: [string, number][]): void {
+        const now = Date.now();
+        for (const [key, at] of attempts) this.cooldowns.set(key, at);
+        if (this.cooldowns.size > 20000) {
+            // Forgetting an entry only costs one extra transaction; it never grants extra XP.
+            for (const [key, at] of this.cooldowns) if (now - at > 3600000) this.cooldowns.delete(key);
+        }
     }
     private async readSettings(db: Pick<Tx, 'xpSetting'>, guildId: string): Promise<XpSettingsResponse> {
         const row = await db.xpSetting.findUnique({ where: { guildId } });
@@ -78,12 +114,12 @@ export class LevelsService implements OnModuleInit {
         return this.readSettings(this.prisma, guildId);
     }
 
-    updateSettings(guildId: string, input: XpSettingsResponse): Promise<XpSettingsResponse> {
-        return this.locked(guildId, async (tx) => {
+    async updateSettings(guildId: string, input: XpSettingsResponse): Promise<XpSettingsResponse> {
+        const result = await this.lockedGuild(guildId, async (tx) => {
             const previous = await this.readSettings(tx, guildId);
             if (previous.revision !== input.revision) throw conflict('การตั้งค่าถูกแก้จากที่อื่นแล้ว กรุณาโหลดใหม่ก่อนบันทึก');
             const settings = xpSettingsSchema.parse(input.settings);
-            const data = { settings: settings as unknown as Prisma.InputJsonValue, revision: previous.revision + 1 };
+            const data = { settings: toJsonValue(settings), revision: previous.revision + 1 };
             await tx.xpSetting.upsert({ where: { guildId }, create: { guildId, ...data }, update: data });
             // Levels are derived from total XP; a curve change never destroys XP.
             if (settings.curveBase !== previous.settings.curveBase || settings.curveExponent !== previous.settings.curveExponent) {
@@ -107,6 +143,8 @@ export class LevelsService implements OnModuleInit {
             }
             return { revision: data.revision, settings };
         });
+        this.settingsCache.set(guildId, { value: result, at: Date.now() });
+        return result;
     }
 
     async list(guildId: string, query: LevelQuery = { page: 1, pageSize: 25 }): Promise<LevelPage> {
@@ -161,13 +199,19 @@ export class LevelsService implements OnModuleInit {
     }
 
     async award(guildId: string, userId: string, context: XpContext): Promise<number> {
-        if (!this.loaded) return 0;
-        return this.locked(guildId, async (tx) => {
+        // Cheap pre-check without a transaction: XP off / no matching rule / every matching rule still cooling down.
+        const startedAt = Date.now();
+        const candidates = matchingXpRules(await this.cachedSettings(guildId), context);
+        if (!candidates.length || candidates.every((rule) => this.inCooldown(guildId, userId, rule, startedAt))) return 0;
+
+        const attempts: [string, number][] = [];
+        let change = null as LevelChange | null;
+        const total = await this.lockedMember(guildId, userId, async (tx) => {
             const { settings } = await this.readSettings(tx, guildId);
             const rules = matchingXpRules(settings, context);
             if (!rules.length) return 0;
             const now = new Date(),
-                day = dayInBangkok(now);
+                day = bangkokDay(now);
             const levelKey = { guildId_userId: { guildId, userId } };
             const current = await tx.level.findUnique({ where: levelKey });
             const dailyKey = { guildId_userId_day: { guildId, userId, day } };
@@ -179,7 +223,11 @@ export class LevelsService implements OnModuleInit {
             for (const rule of rules) {
                 const key = { guildId_userId_ruleId: { guildId, userId, ruleId: rule.id } };
                 const progress = await tx.xpProgress.findUnique({ where: key });
-                if (progress && now.getTime() - progress.lastAttemptAt.getTime() < rule.cooldownSeconds * 1000) continue;
+                if (progress && now.getTime() - progress.lastAttemptAt.getTime() < rule.cooldownSeconds * 1000) {
+                    attempts.push([cooldownKey(guildId, userId, rule.id), progress.lastAttemptAt.getTime()]);
+                    continue;
+                }
+                attempts.push([cooldownKey(guildId, userId, rule.id), now.getTime()]);
                 const ruleEarned = progress?.day === day ? progress.earned : 0;
                 const amount = Math.max(
                     0,
@@ -201,6 +249,11 @@ export class LevelsService implements OnModuleInit {
                 await tx.xpHistory.create({ data: { guildId, userId, source: context.source, delta: amount, balance, reason: rule.name } });
             }
             if (total) {
+                const previousLevel = levelForXp(current?.xp ?? 0, settings);
+                const level = levelForXp(balance, settings);
+                if (level !== previousLevel) {
+                    change = { guildId, userId, previousLevel, level, xp: balance, source: context.source, channelId: context.channelId ?? null };
+                }
                 await tx.level.upsert({
                     where: levelKey,
                     create: { guildId, userId, xp: balance, level: levelForXp(balance, settings) },
@@ -210,6 +263,10 @@ export class LevelsService implements OnModuleInit {
             }
             return total;
         });
+        // Only after commit: a rolled-back attempt must not block the next one.
+        this.rememberAttempts(attempts);
+        if (change) this.levelChanges.next(change);
+        return total;
     }
 
     async awardMessageXp(message: Message): Promise<void> {
@@ -228,8 +285,9 @@ export class LevelsService implements OnModuleInit {
         }
     }
 
-    mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<XpMemberMutationResult> {
-        return this.locked(guildId, async (tx) => {
+    async mutateMember(guildId: string, input: XpMemberMutation, actorId: number): Promise<XpMemberMutationResult> {
+        let change = null as LevelChange | null;
+        const result = await this.lockedMember(guildId, input.userId, async (tx) => {
             const { settings } = await this.readSettings(tx, guildId);
             const where = { guildId_userId: { guildId, userId: input.userId } };
             const old = await tx.level.findUnique({ where });
@@ -262,12 +320,19 @@ export class LevelsService implements OnModuleInit {
                     actorId,
                 },
             });
-            return { success: true, userId: input.userId, action: input.action, beforeXp: before, afterXp: after, delta: after - before };
+            const previousLevel = levelForXp(before, settings);
+            const level = levelForXp(after, settings);
+            if (level !== previousLevel) {
+                change = { guildId, userId: input.userId, previousLevel, level, xp: after, source: `admin.${input.action}`, channelId: null };
+            }
+            return { success: true as const, userId: input.userId, action: input.action, beforeXp: before, afterXp: after, delta: after - before };
         });
+        if (change) this.levelChanges.next(change);
+        return result;
     }
 
     resetGuild(guildId: string, reason: string, actorId: number): Promise<XpResetGuildResult> {
-        return this.locked(guildId, async (tx) => {
+        return this.lockedGuild(guildId, async (tx) => {
             const totals = await tx.level.aggregate({ where: { guildId }, _sum: { xp: true }, _count: true });
             const beforeXp = totals._sum.xp ?? 0;
             await tx.$executeRaw`INSERT INTO xp_history (guild_id, user_id, source, delta, balance, reason, actor_id)
@@ -275,6 +340,15 @@ export class LevelsService implements OnModuleInit {
             await tx.level.deleteMany({ where: { guildId } });
             return { success: true, affectedMembers: totals._count, beforeXp, afterXp: 0, delta: 0 - beforeXp };
         });
+    }
+
+    // XP ที่ได้วันนี้ (ตัดวันตามเวลาไทย) เทียบกับเพดานต่อวันของเซิร์ฟเวอร์ (0 = ไม่จำกัด)
+    async today(guildId: string, userId: string): Promise<{ earned: number; dailyCap: number }> {
+        const [daily, { settings }] = await Promise.all([
+            this.prisma.xpDaily.findUnique({ where: { guildId_userId_day: { guildId, userId, day: bangkokDay() } } }),
+            this.settings(guildId),
+        ]);
+        return { earned: daily?.earned ?? 0, dailyCap: settings.dailyCap };
     }
 
     async history(guildId: string, query: { userId?: string; cursor?: number }): Promise<XpHistoryPage> {
@@ -292,7 +366,7 @@ export class LevelsService implements OnModuleInit {
         try {
             const cutoff = new Date(Date.now() - 90 * 86400000);
             await this.prisma.xpHistory.deleteMany({ where: { createdAt: { lt: cutoff } } });
-            await this.prisma.xpDaily.deleteMany({ where: { day: { lt: dayInBangkok(new Date(Date.now() - 2 * 86400000)) } } });
+            await this.prisma.xpDaily.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - 2 * 86400000)) } } });
             await this.prisma.xpProgress.deleteMany({ where: { lastAttemptAt: { lt: cutoff } } });
         } catch (err) {
             this.logger.error(`XP cleanup failed: ${(err as Error).message}`);

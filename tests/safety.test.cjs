@@ -3,6 +3,13 @@ const assert = require('node:assert/strict');
 const { SpamWindow } = require('../apps/backend/dist/chat/spam-window');
 const { RoomAccessExpiryTask } = require('../apps/backend/dist/room-access/tasks/room-access-expiry.task');
 const { DiscordService } = require('../apps/backend/dist/discord/discord.service');
+const { revokeRoomAccess } = require('../apps/backend/dist/room-access/room-access.service');
+const { PermissionsBitField } = require('../apps/backend/node_modules/discord.js');
+
+// overwrite ของผู้ใช้ 'u' ที่ได้จากตั๋วเข้าห้อง (+ สิทธิ์อื่นที่แอดมินตั้งไว้เอง ถ้ามี)
+const TICKET_BITS = ['ViewChannel', 'ReadMessageHistory', 'Connect', 'Speak', 'SendMessages'];
+const ticketOverwrite = (extraAllow = [], deny = []) =>
+    new Map([['u', { allow: new PermissionsBitField([...TICKET_BITS, ...extraAllow]), deny: new PermissionsBitField(deny) }]]);
 
 test('sliding spam window allows messages every 4 seconds indefinitely', () => {
     const window = new SpamWindow(6, 5000);
@@ -17,9 +24,9 @@ test('burst blocks seventh message, warns once, isolates users/guilds and recove
     assert.equal(window.check('g:other', 700).blocked, false);
     assert.equal(window.check('g:u', 5600).blocked, false);
 });
-function ticketFixture(fetchChannel) {
-    const state = { deleted: false, messages: [], errors: [] };
-    const record = { id: 1, guildId: 'g', roomId: 'r', userId: 'u', expireAt: new Date(0) };
+function ticketFixture(fetchChannel, { expireAt = new Date(0), send } = {}) {
+    const state = { deleted: false, notified: false, messages: [], errors: [] };
+    const record = { id: 1, guildId: 'g', roomId: 'r', userId: 'u', expireAt, notified: false };
     const task = new RoomAccessExpiryTask(
         {
             roomAccess: {
@@ -27,9 +34,17 @@ function ticketFixture(fetchChannel) {
                 deleteMany: async () => {
                     state.deleted = true;
                 },
+                updateMany: async () => {
+                    state.notified = true;
+                    record.notified = true;
+                },
             },
         },
-        { ready: true, fetchGuildChannelStrict: fetchChannel, fetchUser: async () => ({ send: async (message) => state.messages.push(message) }) },
+        {
+            ready: true,
+            fetchGuildChannelStrict: fetchChannel,
+            fetchUser: async () => ({ send: send ?? (async (message) => state.messages.push(message)) }),
+        },
     );
     task.logger = { error: (message) => state.errors.push(message) };
     return { task, state };
@@ -40,6 +55,7 @@ test('failed revocation retains ticket and retries successfully before notifying
     const { task, state } = ticketFixture(async () => ({
         name: 'room',
         permissionOverwrites: {
+            cache: ticketOverwrite(),
             delete: async () => {
                 attempts++;
                 if (fail) throw Error('Missing Permissions');
@@ -65,6 +81,39 @@ test('transient channel lookup failure retains ticket; confirmed deleted channel
     const deleted = ticketFixture(async () => null);
     await deleted.task.checkExpiry();
     assert.equal(deleted.state.deleted, true);
+});
+test('revoking a ticket keeps permissions the admin set separately', async () => {
+    const calls = [];
+    const channel = (cache) => ({
+        permissionOverwrites: {
+            cache,
+            delete: async (id) => calls.push(['delete', id]),
+            edit: async (id, perms) => calls.push(['edit', id, perms]),
+        },
+    });
+    await revokeRoomAccess(channel(ticketOverwrite()), 'u');
+    assert.deepEqual(calls.pop(), ['delete', 'u']);
+    await revokeRoomAccess(channel(ticketOverwrite(['AttachFiles'])), 'u');
+    assert.deepEqual(calls.pop(), ['edit', 'u', Object.fromEntries(TICKET_BITS.map((name) => [name, null]))]);
+    await revokeRoomAccess(channel(ticketOverwrite([], ['AddReactions'])), 'u');
+    assert.equal(calls.pop()[0], 'edit');
+    await revokeRoomAccess(channel(new Map()), 'u');
+    assert.equal(calls.length, 0);
+});
+test('expiry warning is sent once even when the user blocks DMs', async () => {
+    let attempts = 0;
+    const { task, state } = ticketFixture(async () => ({ name: 'room', permissionOverwrites: { cache: ticketOverwrite() } }), {
+        expireAt: new Date(Date.now() + 60000),
+        send: async () => {
+            attempts++;
+            throw Error('Cannot send messages to this user');
+        },
+    });
+    await task.checkExpiry();
+    await task.checkExpiry();
+    assert.equal(state.notified, true);
+    assert.equal(attempts, 1);
+    assert.equal(state.errors.length, 0);
 });
 test('strict channel fetch only treats Unknown Channel as deleted', async () => {
     const method = DiscordService.prototype.fetchGuildChannelStrict;

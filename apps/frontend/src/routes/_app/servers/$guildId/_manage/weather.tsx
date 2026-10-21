@@ -1,6 +1,6 @@
 import type { WeatherSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, useBlocker } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { AlertTriangle, Loader2, RotateCcw, Save, Send } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -9,7 +9,8 @@ import { weatherApi, weatherMetaQuery, weatherSettingsQuery } from '@/api/weathe
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { WeatherPageSkeleton } from '@/components/skeleton/editor-pages';
+import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -20,11 +21,14 @@ import { isDirty, toDraft, type PatchWeather, type WeatherDraft } from '@/featur
 import { WEATHER_SECTIONS, WeatherForm, type WeatherSection } from '@/features/weather/weather-form';
 import { WeatherPreview } from '@/features/weather/weather-preview';
 import { useGuildId } from '@/hooks/use-guild';
+import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/weather')({
     loader: ({ context, params }) =>
         Promise.all([
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+            context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
             context.queryClient.ensureQueryData(weatherMetaQuery(params.guildId)),
             context.queryClient.ensureQueryData(weatherSettingsQuery(params.guildId)),
         ]),
@@ -85,16 +89,11 @@ function WeatherPage() {
     }, []);
 
     // ออกจากหน้านี้ (หรือปิดแท็บ) ตอนมีการแก้ไขค้างอยู่ → ถามก่อน
-    useBlocker({
-        shouldBlockFn: async () =>
-            dirty &&
-            !(await confirm({
-                title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-                description: 'การตั้งค่ารายงานสภาพอากาศมีการแก้ไขที่ยังไม่ได้กดบันทึก',
-                confirmText: 'ทิ้งการแก้ไข',
-                destructive: true,
-            })),
-        enableBeforeUnload: () => dirty,
+    useUnsavedChangesGuard(dirty, {
+        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
+        description: 'การตั้งค่ารายงานสภาพอากาศมีการแก้ไขที่ยังไม่ได้กดบันทึก',
+        confirmText: 'ทิ้งการแก้ไข',
+        destructive: true,
     });
 
     const save = async () => {
@@ -112,17 +111,7 @@ function WeatherPage() {
         }
     };
 
-    // Ctrl/⌘ + S = บันทึก
-    useEffect(() => {
-        const onKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
-                e.preventDefault();
-                void save();
-            }
-        };
-        document.addEventListener('keydown', onKeyDown);
-        return () => document.removeEventListener('keydown', onKeyDown);
-    });
+    useSaveShortcut(() => void save());
 
     // สวิตช์บันทึกทันที — ใช้ค่าที่บันทึกไว้ (การแก้ไขที่ค้างอยู่ยังอยู่ ไม่ถูกบันทึกไปด้วย)
     const toggle = async (enabled: boolean) => {
@@ -160,15 +149,16 @@ function WeatherPage() {
         }
     };
 
-    if (meta.isLoading || settings.isLoading) return <LoadingState />;
+    if (meta.isLoading || settings.isLoading) return <WeatherPageSkeleton />;
     if (meta.error || settings.error) return <ErrorState error={meta.error ?? settings.error} title="โหลดข้อมูล Weather ไม่สำเร็จ" />;
     const current = settings.data!;
-    if (!draft || !meta.data) return <LoadingState />;
+    if (!draft || !meta.data) return <WeatherPageSkeleton />;
 
     return (
         <>
             <PageHeader
-                title="Daily Weather Report"
+                help="weather"
+                title="รายงานสภาพอากาศ"
                 description="รายงานสภาพอากาศประจำวันแบบ embed พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝน — ตั้งเวลา ห้อง สถานที่ และข้อมูลที่จะแสดงได้ที่นี่"
             />
 

@@ -20,3 +20,11 @@ createRoot(document.getElementById('root')!).render(
         </QueryClientProvider>
     </StrictMode>,
 );
+
+try {
+    if (import.meta.env.DEV || localStorage.getItem('notstack:performance') === '1') {
+        void import('./lib/performance').then(({ observePerformance }) => observePerformance(router)).catch(() => undefined);
+    }
+} catch {
+    // Storage can be unavailable in restricted browser contexts; diagnostics are optional.
+}

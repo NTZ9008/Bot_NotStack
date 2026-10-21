@@ -1,0 +1,14 @@
+# สร้างอัตโนมัติ / ของ build
+node_modules
+dist
+.turbo
+.wrangler
+pnpm-lock.yaml
+apps/backend/src/generated
+apps/backend/prisma/migrations
+apps/frontend/src/routeTree.gen.ts
+# คอมโพเนนต์ที่ได้จาก shadcn CLI — คงรูปแบบต้นฉบับไว้ ให้ update จาก CLI ได้ตรงๆ
+apps/frontend/src/components/ui
+# เอกสาร / ข้อมูล
+*.md
+logs

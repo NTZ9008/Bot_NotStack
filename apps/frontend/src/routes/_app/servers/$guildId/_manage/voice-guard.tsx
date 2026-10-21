@@ -4,13 +4,13 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { z } from 'zod';
 import { voiceChannelsQuery } from '@/api/guilds';
 import { voiceGuardApi, voiceGuardQuery } from '@/api/bot';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
-import { EmptyState, ErrorState, LoadingState } from '@/components/states';
+import { VoiceGuardCardsSkeleton } from '@/components/skeleton/guild-pages';
+import { EmptyState, ErrorState } from '@/components/states';
 import { UserPicker } from '@/components/user-picker';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,12 +22,19 @@ import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useGuildId } from '@/hooks/use-guild';
 
-const searchSchema = z.object({
-    mode: z.enum(['whitelist', 'blacklist']).catch('whitelist').default('whitelist'),
-});
-
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/voice-guard')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>): { mode?: 'whitelist' | 'blacklist' } => ({
+        mode: search.mode === 'blacklist' ? 'blacklist' : 'whitelist',
+    }),
+    // เริ่มโหลดข้อมูลพร้อมกับโค้ดของหน้า (และตอนเอาเมาส์ชี้ลิงก์) — ไม่รอให้หน้า render ก่อน
+    loaderDeps: ({ search }) => ({ mode: search.mode ?? 'whitelist' }),
+    loader: ({ context: { queryClient }, params, deps, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(voiceGuardQuery(params.guildId, deps.mode)),
+            queryClient.prefetchQuery(voiceChannelsQuery(params.guildId)),
+        ]);
+        return preload ? loading : undefined;
+    },
     component: VoiceGuardPage,
 });
 
@@ -41,7 +48,11 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
         void refresh();
     };
 
-    const update = useMutation({ mutationFn: (patch: { enabled?: boolean; notify?: boolean }) => voiceGuardApi.updateChannel(guildId, mode, { channelId: channel.channelId, ...patch }), onError, onSuccess: refresh });
+    const update = useMutation({
+        mutationFn: (patch: { enabled?: boolean; notify?: boolean }) => voiceGuardApi.updateChannel(guildId, mode, { channelId: channel.channelId, ...patch }),
+        onError,
+        onSuccess: refresh,
+    });
     const addUser = useMutation({
         mutationFn: (userId: string) => voiceGuardApi.addUser(guildId, mode, { channelId: channel.channelId, userId }),
         onSuccess: () => {
@@ -60,7 +71,12 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
     });
 
     const remove = async () => {
-        const ok = await confirm({ title: 'ยืนยันการลบ', description: `ลบห้อง ${channel.channelName} ออกจาก ${mode} ใช่หรือไม่?`, confirmText: 'ลบ', destructive: true });
+        const ok = await confirm({
+            title: 'ยืนยันการลบ',
+            description: `ลบห้อง ${channel.channelName} ออกจาก ${mode} ใช่หรือไม่?`,
+            confirmText: 'ลบ',
+            destructive: true,
+        });
         if (!ok) return;
         try {
             await voiceGuardApi.deleteChannel(guildId, mode, channel.channelId);
@@ -118,7 +134,7 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
 
 function VoiceGuardPage() {
     const guildId = useGuildId();
-    const { mode } = Route.useSearch();
+    const { mode = 'whitelist' } = Route.useSearch();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [channelId, setChannelId] = useState('');
@@ -138,22 +154,30 @@ function VoiceGuardPage() {
     return (
         <>
             <PageHeader
-                title="Voice Guard"
+                help="voiceGuard"
+                title="ดูแลห้องเสียง"
                 description="จัดการ Whitelist / Blacklist สำหรับห้องเสียง — คนที่ไม่มีสิทธิ์จะถูกเตะออกจากห้องทันทีที่เข้า"
                 actions={
                     <ToggleGroup
                         type="single"
                         variant="outline"
                         value={mode}
-                        onValueChange={(value) => value && void navigate({ to: '/servers/$guildId/voice-guard', params: { guildId }, search: { mode: value as VoiceGuardMode } })}
+                        onValueChange={(value) =>
+                            value && void navigate({ to: '/servers/$guildId/voice-guard', params: { guildId }, search: { mode: value as VoiceGuardMode } })
+                        }
                     >
-                        <ToggleGroupItem value="whitelist">Whitelist</ToggleGroupItem>
+                        <ToggleGroupItem value="whitelist">อนุญาตเฉพาะ</ToggleGroupItem>
                         <ToggleGroupItem value="blacklist" className="data-[state=on]:text-destructive">
-                            Blacklist
+                            ห้ามเข้า
                         </ToggleGroupItem>
                     </ToggleGroup>
                 }
             />
+            <p className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed" role="status">
+                {mode === 'whitelist'
+                    ? 'อนุญาตเฉพาะ (Whitelist): สมาชิกที่ไม่อยู่ในรายการจะถูกเตะออก ห้องที่เพิ่มจะเปิดใช้งานทันที แม้ยังไม่มีสมาชิกในรายการ'
+                    : 'ห้ามเข้า (Blacklist): เฉพาะสมาชิกในรายการจะถูกเตะออก หากเปิด Whitelist ด้วย สมาชิกต้องอยู่ใน Whitelist จึงจะเข้าได้'}
+            </p>
             <Card>
                 <CardContent>
                     <Field label={`เพิ่มห้องเสียงเข้า ${mode}`}>
@@ -179,7 +203,7 @@ function VoiceGuardPage() {
             </Card>
 
             {list.isLoading ? (
-                <LoadingState />
+                <VoiceGuardCardsSkeleton />
             ) : list.error ? (
                 <ErrorState error={list.error} />
             ) : list.data?.length ? (

@@ -144,16 +144,21 @@ model LogOption {
   @@map("log_options")
 }
 
-// PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมตอน PR ถูกปิด
+// PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมเมื่อมี review / check / comment หรือ PR ถูกปิด
 // repo เดียวกันแจ้งหลายเซิร์ฟเวอร์ได้ (แต่ละเซิร์ฟเวอร์ตั้ง webhook ของตัวเอง)
 model PrMessage {
-  guildId      String @map("guild_id")
-  repoFullName String @map("repo_full_name")
-  prNumber     Int    @map("pr_number")
-  channelId    String @map("channel_id")
-  messageId    String @map("message_id")
+  guildId      String  @map("guild_id")
+  repoFullName String  @map("repo_full_name")
+  prNumber     Int     @map("pr_number")
+  channelId    String  @map("channel_id")
+  messageId    String  @map("message_id")
+  // commit ล่าสุดของ PR — event check_run/status ไม่บอกเลข PR จึงต้องหาจาก sha
+  headSha      String? @map("head_sha")
+  // สถานะที่สะสมจาก webhook (ข้อมูล PR, review, check, comment) — ใช้วาด embed ใหม่ทุกครั้งที่มี event
+  activity     Json    @default("{}")
 
   @@id([guildId, repoFullName, prNumber])
+  @@index([guildId, repoFullName, headSha])
   @@map("pr_messages")
 }
 
@@ -382,4 +387,170 @@ model XpHistory {
   @@index([guildId, userId, id])
   @@index([createdAt])
   @@map("xp_history")
+}
+
+// ==========================================
+// 🧠 AI USAGE — จำนวนครั้งที่เรียก Gemini ต่อวัน (เวลาไทย) แยกตามเซิร์ฟเวอร์
+// นับทั้ง AI Chat และตัวกรองคำหยาบ ใช้คุมโควตาให้ตรงแม้บอทรีสตาร์ท (เก็บย้อนหลังแค่ไม่กี่วัน)
+// ==========================================
+model AiUsage {
+  day     String
+  guildId String @map("guild_id")
+  count   Int    @default(0)
+
+  @@id([day, guildId])
+  @@map("ai_usage")
+}
+
+// ==========================================
+// 🏆 RANK CARD — รูปการ์ด /rank /leaderboard และการ์ดเลเวลอัป (รูปแบบตรวจใน packages/shared/src/rank-card.ts)
+// ==========================================
+
+// ธีมของเซิร์ฟเวอร์ (แอดมินตั้ง) + สิทธิ์ที่ให้สมาชิกแต่งการ์ดตัวเอง — ไม่มีแถว = ธีมเริ่มต้น
+model RankCardSetting {
+  guildId   String   @id @map("guild_id")
+  theme     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("rank_card_settings")
+}
+
+// การ์ดที่สมาชิกแต่งเอง (เก็บเฉพาะค่าที่แต่งทับธีม)
+model RankCardMember {
+  guildId   String   @map("guild_id")
+  userId    String   @map("user_id")
+  style     Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([guildId, userId])
+  @@map("rank_card_members")
+}
+
+// ประกาศเลเวลอัป + ยศรางวัลตามเลเวล — ไม่มีแถว = ปิดประกาศ ไม่มียศรางวัล
+model LevelUpSetting {
+  guildId   String   @id @map("guild_id")
+  settings  Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("level_up_settings")
+}
+
+// Successful PR notifications/updates. A repeated close delivery is counted once per message.
+model PrNotification {
+  guildId   String   @map("guild_id")
+  messageId String   @map("message_id")
+  kind      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  @@id([guildId, messageId, kind])
+  @@index([guildId, createdAt])
+  @@map("pr_notifications")
+}
+
+// ==========================================
+// 🎫 JIRA TICKET — เปิด Jira card จากห้องแผงใน Discord (รูปแบบ options ตรวจใน packages/shared/src/jira.ts)
+// ==========================================
+
+// เซิร์ฟเวอร์ละ 1 แถว — apiToken เข้ารหัส (AES-256-GCM, กุญแจจาก JWT_SECRET) ไม่เคยส่งกลับไปหน้าเว็บ
+model JiraSetting {
+  guildId        String   @id @map("guild_id")
+  enabled        Boolean  @default(false)
+  siteUrl        String   @default("") @map("site_url")
+  email          String   @default("")
+  apiToken       String   @default("") @map("api_token")
+  projectKey     String   @default("") @map("project_key")
+  panelChannelId String   @default("") @map("panel_channel_id")
+  panelMessageId String   @default("") @map("panel_message_id")
+  logChannelId   String   @default("") @map("log_channel_id")
+  categoryId     String   @default("") @map("category_id")
+  // ประเภท card ที่เปิดได้ / ยศทีมงาน / หน้าตาแผง
+  options        Json
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("jira_settings")
+}
+
+// ห้องส่วนตัว 1 ห้อง = card 1 ใบ — issueKey ว่าง = ยังไม่ได้สร้าง card, closedAt = ปิดห้องแล้ว
+model JiraTicket {
+  id            Int       @id @default(autoincrement())
+  guildId       String    @map("guild_id")
+  userId        String    @map("user_id")
+  userName      String    @map("user_name")
+  channelId     String?   @map("channel_id")
+  issueKey      String?   @map("issue_key")
+  issueUrl      String?   @map("issue_url")
+  issueType     String?   @map("issue_type")
+  title         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  cardCreatedAt DateTime? @map("card_created_at") @db.Timestamptz(3)
+  closedAt      DateTime? @map("closed_at") @db.Timestamptz(3)
+
+  @@index([guildId, createdAt])
+  @@index([guildId, userId, closedAt])
+  @@index([channelId])
+  @@map("jira_tickets")
+}
+
+// ==========================================
+// 💰 FUND — เก็บเงินตามเป้า (หลายหัวข้อต่อเซิร์ฟเวอร์) + ส่งรายงานเข้าห้องที่กำหนด
+// ==========================================
+
+// หัวข้อการเก็บเงิน 1 เรื่อง — amountPerMember = ยอดเก็บต่อคนเริ่มต้น (สมาชิกตั้งยอดเฉพาะตัวได้)
+model FundTopic {
+  id              Int       @id @default(autoincrement())
+  guildId         String    @map("guild_id")
+  name            String
+  description     String    @default("")
+  amountPerMember Decimal   @default(0) @map("amount_per_member") @db.Decimal(12, 2)
+  // ห้องที่ส่งรายงาน ('' = ยังไม่ได้เลือก)
+  reportChannelId String    @default("") @map("report_channel_id")
+  startDate       DateTime? @map("start_date") @db.Timestamptz(3)
+  dueDate         DateTime? @map("due_date") @db.Timestamptz(3)
+  dailyRate       Decimal?  @map("daily_rate") @db.Decimal(12, 2)
+  closed          Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  members  FundMember[]
+  payments FundPayment[]
+
+  @@index([guildId])
+  @@map("fund_topics")
+}
+
+// คนที่ต้องจ่ายในหัวข้อนั้น — targetAmount null = ใช้ยอดต่อคนของหัวข้อ
+model FundMember {
+  id           Int      @id @default(autoincrement())
+  topicId      Int      @map("topic_id")
+  userId       String   @map("user_id")
+  displayName  String   @map("display_name")
+  targetAmount Decimal? @map("target_amount") @db.Decimal(12, 2)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  topic    FundTopic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  payments FundPayment[]
+
+  @@unique([topicId, userId])
+  @@map("fund_members")
+}
+
+// รายการรับเงิน 1 ครั้ง (จ่ายทีละส่วนได้)
+model FundPayment {
+  id          Int       @id @default(autoincrement())
+  topicId     Int       @map("topic_id")
+  memberId    Int       @map("member_id")
+  amount      Decimal   @db.Decimal(12, 2)
+  note        String    @default("")
+  paidAt      DateTime  @default(now()) @map("paid_at") @db.Timestamptz(3)
+  periodStart DateTime? @map("period_start") @db.Timestamptz(3)
+  periodEnd   DateTime? @map("period_end") @db.Timestamptz(3)
+  recordedBy  String    @default("") @map("recorded_by")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  topic  FundTopic  @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  member FundMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([topicId])
+  @@index([memberId])
+  @@map("fund_payments")
 }

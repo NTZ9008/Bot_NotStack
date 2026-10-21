@@ -7,7 +7,8 @@ import { configQuery, updateConfig } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';
 import { ChannelSelect } from '@/components/channel-select';
 import { PageHeader } from '@/components/page-header';
-import { ErrorState, LoadingState } from '@/components/states';
+import { ConfigBodySkeleton } from '@/components/skeleton/guild-pages';
+import { ErrorState } from '@/components/states';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -15,7 +16,11 @@ import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/config')({
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(configQuery(params.guildId)),
+    loader: ({ context, params }) =>
+        Promise.all([
+            context.queryClient.ensureQueryData(configQuery(params.guildId)),
+            context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
+        ]),
     component: ConfigPage,
 });
 
@@ -44,11 +49,20 @@ function ConfigField({ row }: { row: ConfigRow }) {
             <div className="flex items-start justify-between gap-4 rounded-lg border p-3">
                 <div className="space-y-0.5">
                     <Label htmlFor={row.key}>{row.label}</Label>
-                    <p className="text-xs text-muted-foreground">{row.description}</p>
+                    <p id={`${row.key}-hint`} className="text-xs text-muted-foreground">
+                        {row.description}
+                    </p>
                 </div>
                 <div className="flex items-center gap-2">
                     {mutation.isPending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-                    <Switch id={row.key} checked={value === 'true'} disabled={mutation.isPending} onCheckedChange={(checked) => mutation.mutate(String(checked))} />
+                    <span className="text-xs text-muted-foreground">{value === 'true' ? 'เปิดอยู่' : 'ปิดอยู่'}</span>
+                    <Switch
+                        aria-describedby={`${row.key}-hint`}
+                        id={row.key}
+                        checked={value === 'true'}
+                        disabled={mutation.isPending}
+                        onCheckedChange={(checked) => mutation.mutate(String(checked))}
+                    />
                 </div>
             </div>
         );
@@ -80,9 +94,9 @@ function ConfigPage() {
     const { data, isLoading, error } = useQuery(configQuery(guildId));
     return (
         <>
-            <PageHeader title="Configuration" description="ห้องที่บอทใช้ และความสามารถของบอทในเซิร์ฟเวอร์นี้ — บันทึกทันทีที่เปลี่ยน" />
+            <PageHeader help="config" title="ตั้งค่าบอท" description="ห้องที่บอทใช้ และความสามารถของบอทในเซิร์ฟเวอร์นี้ — บันทึกทันทีที่เปลี่ยน" />
             {isLoading ? (
-                <LoadingState />
+                <ConfigBodySkeleton />
             ) : error ? (
                 <ErrorState error={error} />
             ) : (
@@ -93,7 +107,11 @@ function ConfigPage() {
                             <CardDescription>{GROUP_DESCRIPTIONS[group]}</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4">
-                            {data?.filter((row) => row.group === group).map((row) => <ConfigField key={row.key} row={row} />)}
+                            {data
+                                ?.filter((row) => row.group === group)
+                                .map((row) => (
+                                    <ConfigField key={row.key} row={row} />
+                                ))}
                         </CardContent>
                     </Card>
                 ))

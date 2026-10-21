@@ -5,7 +5,11 @@ import { guildKey } from './guilds';
 const path = (guild: string, suffix: string) => `/guilds/${guild}/levels/${suffix}`;
 export const xpKey = (guild: string) => [...guildKey(guild), 'levels'];
 export const xpSettingsQuery = (guild: string) =>
-    queryOptions({ queryKey: [...xpKey(guild), 'settings'], queryFn: ({ signal }) => api<XpSettingsResponse>(path(guild, 'settings'), { signal }) });
+    queryOptions({
+        staleTime: 120_000,
+        queryKey: [...xpKey(guild), 'settings'],
+        queryFn: ({ signal }) => api<XpSettingsResponse>(path(guild, 'settings'), { signal }),
+    });
 export const xpHistoryQuery = (guild: string, userId?: string, cursor?: number) =>
     queryOptions({
         queryKey: [...xpKey(guild), 'history', userId, cursor],

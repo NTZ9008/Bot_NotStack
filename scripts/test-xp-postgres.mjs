@@ -43,7 +43,14 @@ try {
             stdio: 'inherit',
         },
     );
-    const result = spawnSync(process.execPath, ['--test', 'tests/xp-database.test.cjs'], {
+    const result = spawnSync(process.execPath, [
+            '--test',
+            'tests/xp-database.test.cjs',
+            'tests/pr-bot-database.test.cjs',
+            'tests/jira-database.test.cjs',
+            'tests/fund-database.test.cjs',
+            'tests/activity-database.test.cjs',
+        ], {
         cwd: root,
         env: { ...process.env, XP_TEST_DATABASE_URL: url },
         stdio: 'inherit',

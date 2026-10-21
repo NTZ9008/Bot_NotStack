@@ -54,6 +54,9 @@ export class DiscordService implements OnApplicationBootstrap, OnApplicationShut
             GatewayIntentBits.AutoModerationExecution, // Log Manager: AutoMod ทำงาน
         ],
         partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+        // ค่าเริ่มต้นของทุกข้อความ: แท็กได้เฉพาะผู้ใช้ — ข้อความที่มีส่วนที่ผู้ใช้/AI พิมพ์มา (เช่น /random, AI Chat) จะแท็ก @everyone / ยศไม่ได้
+        // ข้อความที่แอดมินตั้งใจแท็กยศ (การ์ดต้อนรับ / รายงานอากาศ / PR Bot) ระบุ allowedMentions เองทุกครั้ง
+        allowedMentions: { parse: ['users'], repliedUser: true },
     });
 
     // เซิร์ฟเวอร์หลัก (DISCORD_GUILD_ID) — คำสั่งเฉพาะของ NotStack และค่าเริ่มต้นแบบเดิม

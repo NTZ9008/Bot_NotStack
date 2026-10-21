@@ -8,7 +8,7 @@ import { LevelsService } from '../../levels/levels.service';
 import { LogFilesService } from '../../log-files/log-files.service';
 import { LogDispatcher } from '../../log-manager/services/log-dispatcher.service';
 import badWords from '../data/bad-words.json';
-import { AI_DAILY_LIMIT, GeminiService } from '../gemini.service';
+import { GeminiService, type ModerationVerdict } from '../gemini.service';
 import { SpamWindow } from '../spam-window';
 
 // 🛡️ Anti-Spam: ส่งได้ไม่เกิน 6 ข้อความ ภายใน 5 วินาที
@@ -18,7 +18,7 @@ const SPAM_TIME = 5000;
 // คำรุนแรงชัดเจน 100% (ต้องตรงทั้งข้อความ) — ลบเลยไม่ต้องถาม AI (ประหยัดโควตา)
 const HARD_BAD_WORDS = ['ค', 'ดอ', 'เย็ด'];
 // คำที่ต้องสงสัย (มีโอกาสเป็นคำหยาบ แต่ต้องดูบริบท) — ให้ AI ช่วยตัดสิน
-const SUSPICIOUS_WORDS = (badWords as string[]).map((word) => word.toLowerCase());
+const SUSPICIOUS_WORDS = [...new Set((badWords as string[]).map((word) => word.toLowerCase()))];
 
 const ENCOURAGEMENTS = [
     'ทำทุกอย่างให้ดีที่สุด แล้วความสำเร็จจะตามมาเองครับ 😊',
@@ -59,10 +59,10 @@ export class MessageListener {
     @OnDiscord(Events.MessageCreate)
     async onMessage(msg: Message): Promise<void> {
         if (msg.author.bot) return;
+        // ข้อความใน DM ไม่ผ่านระบบของเซิร์ฟเวอร์
+        if (!msg.inGuild()) return;
 
         this.writeLog(msg);
-        // ข้อความใน DM ไม่ผ่านระบบของเซิร์ฟเวอร์
-        if (!msg.guildId) return;
         const features = await this.features(msg.guildId);
 
         if (features.antiSpam && (await this.checkSpam(msg))) return;
@@ -74,7 +74,7 @@ export class MessageListener {
         // AI Chat: ต้องแท็กบอท (@Bot) และไม่ใช่การแท็กทุกคน
         const me = this.discord.client.user;
         if (me && msg.mentions.has(me) && !msg.mentions.everyone) {
-            if (features.aiChat) await this.aiChat(msg);
+            if (features.aiChat) await this.aiChat(msg, me.id);
             return;
         }
         if (features.autoReply) this.autoReply(msg);
@@ -103,13 +103,13 @@ export class MessageListener {
         if (msg.channel.isSendable()) await msg.channel.send(content).catch(() => {});
     }
 
-    // --- 1) ไฟล์ log รายวัน + Activity Log (เก็บแค่ว่าใครส่งที่ห้องไหนเมื่อไหร่ ไม่เก็บเนื้อหาข้อความ) ---
+    // --- 1) ไฟล์ log รายวัน + Activity Log ---
+    // ไฟล์ log เก็บเนื้อหาข้อความเฉพาะเซิร์ฟเวอร์หลัก (เซิร์ฟเวอร์อื่นที่เชิญบอทไปไม่ได้ตกลงให้เก็บแชท) และลบเองตาม LOG_RETENTION_DAYS
+    // Activity Log เก็บทุกเซิร์ฟเวอร์ แต่เก็บแค่ว่าใครส่งที่ห้องไหนเมื่อไหร่ ไม่เก็บเนื้อหาข้อความ
     private writeLog(msg: Message): void {
-        // ไฟล์ log รวมทุกเซิร์ฟเวอร์ — เซิร์ฟเวอร์อื่นนอกจากเซิร์ฟเวอร์หลักมีชื่อเซิร์ฟเวอร์กำกับ
-        const where = msg.guild && !this.discord.isHome(msg.guild.id) ? `[${msg.guild.name}] ` : '';
-        const line = `[${thaiTimestamp()}] ${where}#${this.channelName(msg)} (${msg.author.tag}): ${msg.content}\n`;
-        this.logFiles.appendMessage(line);
-        this.logger.log(line.trim());
+        if (this.discord.isHome(msg.guildId)) {
+            this.logFiles.appendMessage(`[${thaiTimestamp()}] #${this.channelName(msg)} (${msg.author.tag}): ${msg.content}\n`);
+        }
 
         this.logs.recordActivity(msg.guild, 'messageSent', {
             title: '💬 ส่งข้อความ',
@@ -145,7 +145,7 @@ export class MessageListener {
     }
 
     // --- 4) กรองคำหยาบ — คืน true ถ้าลบข้อความแล้ว ---
-    private async filterBadWords(msg: Message): Promise<boolean> {
+    private async filterBadWords(msg: Message<true>): Promise<boolean> {
         const contentLower = msg.content.toLowerCase();
         const isHardcodedBad = HARD_BAD_WORDS.some((word) => contentLower === word.toLowerCase());
         const isSuspicious = SUSPICIOUS_WORDS.some((word) => contentLower.includes(word));
@@ -163,61 +163,51 @@ export class MessageListener {
             return true;
         }
 
-        // คำต้องสงสัย ให้ AI วิเคราะห์บริบท
-        try {
-            const prompt = `
-            วิเคราะห์ข้อความต่อไปนี้ว่าเป็นการด่าทอ, คุกคาม, หรือใช้คำหยาบคายในบริบทที่รุนแรงหรือไม่?
-            ข้อความ: "${msg.content}"
-
-            กติกา:
-            - ถ้าเป็นการด่าทอ คุกคาม หรือหยาบคายรุนแรง ให้ตอบแค่คำว่า "BAD"
-            - ถ้าเป็นคำหยาบแต่ใช้คุยเล่นกับเพื่อน (เช่น กู มึง บ้าบอ) หรือเป็นบริบทปกติ ให้ตอบแค่คำว่า "PASS"
-
-            ตอบแค่ BAD หรือ PASS เท่านั้น ห้ามพิมพ์คำอื่น:
-            `;
-            const analysis = (await this.gemini.generate(prompt)).trim().toUpperCase();
-            if (analysis === 'BAD') {
-                remove(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`, 'Smart Filter (AI ตรวจพบเนื้อหารุนแรง)');
-                return true;
-            }
-            // AI ตอบ PASS (หรือตอบอย่างอื่น) → ปล่อยผ่าน
-            return false;
-        } catch (err) {
-            // AI พัง → ยึดตามระบบเดิมไปก่อน (เผื่อเหนียว)
-            this.logger.error(`AI Smart Filter Error: ${(err as Error).message}`);
-            remove(`⚠️ แชทนี้จะสุดยอดเมื่อมีคุณอยู่ (กรุณาสุภาพครับ) <@${msg.author.id}>`, 'Bad Words Filter (AI ไม่พร้อมใช้งาน — ใช้ระบบสำรอง)');
+        // คำต้องสงสัย ให้ AI วิเคราะห์บริบท — AI ใช้ไม่ได้ (ไม่มี key / โควตาหมด / error) = ปล่อยผ่าน
+        // เพราะรายการคำต้องสงสัยจับแบบ "มีคำนี้อยู่ในข้อความ" ซึ่งภาษาไทยไม่มีเว้นวรรค ข้อความปกติจึงติดได้ง่าย (เช่น สีแสด / ขยะ / มึง)
+        if ((await this.judge(msg)) === 'BAD') {
+            remove(`⚠️ ข้อความของคุณดูรุนแรงไปนิดนึงนะครับ <@${msg.author.id}>`, 'Smart Filter (AI ตรวจพบเนื้อหารุนแรง)');
             return true;
+        }
+        return false;
+    }
+
+    // null = AI ตัดสินไม่ได้
+    private async judge(msg: Message<true>): Promise<ModerationVerdict | null> {
+        if ((await this.gemini.reserve(msg.guildId)) !== 'ok') return null;
+        try {
+            return await this.gemini.moderate(msg.content);
+        } catch (err) {
+            this.logger.error(`AI Smart Filter Error: ${(err as Error).message}`);
+            return null;
         }
     }
 
     // --- 6) AI Chat (Gemini) + โควตาต่อวัน ---
-    private async aiChat(msg: Message): Promise<void> {
-        if (this.gemini.quotaExhausted()) {
+    private async aiChat(msg: Message<true>, botId: string): Promise<void> {
+        // ตัดการแท็กชื่อบอทออก ให้เหลือแต่คำถาม
+        const question = msg.content.replace(new RegExp(`<@!?${botId}>`, 'g'), '').trim();
+        if (!question) {
+            await msg.reply('ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖').catch(() => {});
+            return;
+        }
+
+        const quota = await this.gemini.reserve(msg.guildId);
+        if (quota === 'global' || quota === 'guild') {
+            const limit = quota === 'global' ? this.gemini.dailyLimit : this.gemini.guildDailyLimit;
+            const scope = quota === 'global' ? 'ประจำวัน' : 'ของเซิร์ฟเวอร์นี้วันนี้';
             await msg
-                .reply(`🚫 **โควตา AI ประจำวันหมดแล้วครับ!** (${AI_DAILY_LIMIT}/${AI_DAILY_LIMIT})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`)
+                .reply(`🚫 **โควตา AI ${scope}หมดแล้วครับ!** (${limit}/${limit})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`)
                 .catch(() => {});
             return;
         }
 
         if (msg.channel.isSendable()) await msg.channel.sendTyping().catch(() => {}); // ขึ้นสถานะ "กำลังพิมพ์..."
         try {
-            // ตัดการแท็กชื่อบอทออก ให้เหลือแต่คำถาม
-            const question = msg.content.replace(/<@!?[0-9]+>/, '').trim();
-            if (!question) {
-                await msg.reply('ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖');
-                return;
-            }
-
-            const prompt = `
-            คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์
-            บุคลิก: กวนนิดๆ, เป็นกันเอง, ตอบสั้นกระชับ, ใช้ Emoji บ้าง
-            ห้ามตอบเรื่องผิดกฎหมาย หรือเรื่อง 18+ เด็ดขาด
-            User ถามว่า: "${question}"
-            `;
-            const text = await this.gemini.generate(prompt);
-            // Discord จำกัด 2000 ตัวอักษร
-            await msg.reply(text.length > 2000 ? `${text.substring(0, 1990)}...` : text);
-            this.gemini.countUsage();
+            if (quota === 'disabled') throw new Error('ยังไม่ได้ตั้ง GEMINI_KEY');
+            const text = await this.gemini.chat(question);
+            // Discord จำกัด 2000 ตัวอักษร — คำตอบจาก AI ห้ามแท็กใครหรือยศไหน (แท็กแค่คนที่ถาม)
+            await msg.reply({ content: text.length > 2000 ? `${text.substring(0, 1990)}...` : text, allowedMentions: { parse: [], repliedUser: true } });
         } catch (err) {
             this.logger.error(`AI Error: ${(err as Error).message}`);
             await msg.reply('❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ').catch(() => {});

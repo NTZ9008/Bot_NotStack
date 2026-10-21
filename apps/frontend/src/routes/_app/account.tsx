@@ -1,3 +1,4 @@
+import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
@@ -19,13 +20,8 @@ import { useAuth } from '@/hooks/use-auth';
 import { apiUrl, errorMessage } from '@/lib/api';
 import { DEFAULT_AVATAR, formatDateTime } from '@/lib/format';
 
-const searchSchema = z.object({
-    discord: z.string().optional(),
-    discord_error: z.string().optional(),
-});
-
 export const Route = createFileRoute('/_app/account')({
-    validateSearch: searchSchema,
+    validateSearch: (search: Record<string, unknown>) => stringSearch(search, ['discord', 'discord_error']),
     component: AccountPage,
 });
 
@@ -36,7 +32,6 @@ const passwordFormSchema = z
         confirm: z.string(),
     })
     .refine((value) => value.newPassword === value.confirm, { message: 'รหัสผ่านใหม่ไม่ตรงกัน', path: ['confirm'] });
-
 
 function PasswordForm() {
     const queryClient = useQueryClient();
@@ -140,7 +135,7 @@ function AccountPage() {
 
     return (
         <>
-            <PageHeader title="My Account" description="ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย" />
+            <PageHeader help="account" title="บัญชีของฉัน" description="ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย" />
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
@@ -191,7 +186,9 @@ function AccountPage() {
                                     <Unlink /> ยกเลิกการเชื่อมต่อ
                                 </Button>
                             ) : (
-                                <p className="text-sm text-muted-foreground">บัญชีนี้ไม่มีรหัสผ่าน จึงยกเลิกการเชื่อมต่อไม่ได้ (จะไม่เหลือช่องทางเข้าสู่ระบบ)</p>
+                                <p className="text-sm text-muted-foreground">
+                                    บัญชีนี้ไม่มีรหัสผ่าน จึงยกเลิกการเชื่อมต่อไม่ได้ (จะไม่เหลือช่องทางเข้าสู่ระบบ)
+                                </p>
                             )
                         ) : discordEnabled ? (
                             <Button asChild className="bg-[#5865F2] text-white hover:bg-[#4752C4]">
@@ -221,7 +218,9 @@ function AccountPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Sessions</CardTitle>
-                        <CardDescription>ลืมออกจากระบบที่เครื่องอื่น หรือสงสัยว่ามีคนแอบใช้บัญชี? ออกจากระบบทุกอุปกรณ์ได้ที่นี่ (รวมเครื่องนี้)</CardDescription>
+                        <CardDescription>
+                            ลืมออกจากระบบที่เครื่องอื่น หรือสงสัยว่ามีคนแอบใช้บัญชี? ออกจากระบบทุกอุปกรณ์ได้ที่นี่ (รวมเครื่องนี้)
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button variant="destructive" onClick={() => void logoutAll()}>

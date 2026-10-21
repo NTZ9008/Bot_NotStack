@@ -29,6 +29,13 @@ const authLimiter = createLimiter({
     message: 'เรียกใช้งานบ่อยเกินไป กรุณารอสักครู่',
 });
 
+// รูปตัวอย่างที่วาดใหม่ทุกครั้ง (การ์ด Rank) — หน้าเว็บรอให้หยุดแก้ก่อนค่อยขอ ใช้จริงไม่ถึงลิมิตนี้ แต่กันการยิงรัวให้เซิร์ฟเวอร์วาดรูปไม่หยุด
+const renderLimiter = createLimiter({
+    windowMs: 60 * 1000,
+    limit: 90,
+    message: 'ขอรูปตัวอย่างบ่อยเกินไป กรุณารอสักครู่',
+});
+
 // เรียก middleware ของ express-rate-limit จากใน guard (ใช้ store ร่วมกันทุก route ที่ใช้ guard เดียวกัน)
 function runLimiter(limiter: RateLimitRequestHandler, context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
@@ -48,5 +55,12 @@ export class LoginRateLimitGuard implements CanActivate {
 export class AuthRateLimitGuard implements CanActivate {
     canActivate(context: ExecutionContext): Promise<boolean> {
         return runLimiter(authLimiter, context);
+    }
+}
+
+@Injectable()
+export class RenderRateLimitGuard implements CanActivate {
+    canActivate(context: ExecutionContext): Promise<boolean> {
+        return runLimiter(renderLimiter, context);
     }
 }

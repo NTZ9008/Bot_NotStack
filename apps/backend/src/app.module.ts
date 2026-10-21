@@ -16,13 +16,17 @@ import { ZodValidationPipe } from './common/pipes/zod-validation.pipe';
 import { validateEnv, type Env } from './config/env.validation';
 import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
+import { FundModule } from './fund/fund.module';
 import { GuildsModule } from './guilds/guilds.module';
+import { HealthController } from './health/health.controller';
+import { JiraModule } from './jira/jira.module';
 import { LevelsModule } from './levels/levels.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
 import { NewsModule } from './news/news.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RankModule } from './rank/rank.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
@@ -75,16 +79,19 @@ import { WelcomeModule } from './welcome/welcome.module';
         LogManagerModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,
+        RankModule,
         NewsModule,
         RoomAccessModule,
         VoiceGuardModule,
         WelcomeModule,
         WeatherModule,
         PrBotModule,
+        JiraModule,
+        FundModule,
         ChatModule,
         CommandsModule,
     ],
-    controllers: [AppController],
+    controllers: [AppController, HealthController],
     providers: [
         { provide: APP_FILTER, useClass: HttpExceptionFilter },
         { provide: APP_PIPE, useClass: ZodValidationPipe },

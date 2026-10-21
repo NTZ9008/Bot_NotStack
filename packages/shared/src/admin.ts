@@ -94,6 +94,20 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'pr_bot.secret_rotate': 'สร้าง Webhook Secret ใหม่',
     'room_access.room_add': 'เพิ่มห้อง Room Access',
     'room_access.room_remove': 'เอาห้องออกจาก Room Access',
+    'jira.settings_update': 'ตั้งค่า Jira card',
+    'jira.panel_send': 'ส่งแผงเปิด Jira card',
+    'jira.ticket_close': 'ปิดห้อง Jira card',
+    'fund.topic_create': 'สร้างหัวข้อเก็บเงิน',
+    'fund.topic_update': 'แก้ไขหัวข้อเก็บเงิน',
+    'fund.topic_delete': 'ลบหัวข้อเก็บเงิน',
+    'fund.member_add': 'เพิ่มคนในหัวข้อเก็บเงิน',
+    'fund.member_update': 'แก้ไขยอดสมาชิก',
+    'fund.member_remove': 'ลบคนออกจากหัวข้อเก็บเงิน',
+    'fund.payment_add': 'บันทึกการรับเงิน',
+    'fund.payment_batch': 'บันทึกการรับเงินเป็นกลุ่ม',
+    'fund.payment_update': 'แก้ไขรายการรับเงิน',
+    'fund.payment_delete': 'ลบรายการรับเงิน',
+    'fund.report_send': 'ส่งรายงานการเก็บเงิน',
     'weather.settings_update': 'ตั้งค่ารายงานสภาพอากาศ',
     'weather.test_send': 'ส่งรายงานสภาพอากาศทดสอบ',
     'welcome.card_create': 'สร้างการ์ดต้อนรับ',
@@ -103,6 +117,11 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'welcome.asset_upload': 'อัปโหลดรูปพื้นหลัง',
     'welcome.asset_rename': 'เปลี่ยนชื่อรูปพื้นหลัง',
     'welcome.asset_delete': 'ลบรูปพื้นหลัง',
+    'rank.theme_update': 'แก้ไขธีมการ์ด Rank',
+    'rank.my_card_update': 'แต่งการ์ด Rank ของตัวเอง',
+    'rank.my_card_reset': 'รีเซ็ตการ์ด Rank ของตัวเอง',
+    'rank.level_up_update': 'ตั้งค่าประกาศเลเวลอัป / ยศรางวัล',
+    'rank.rewards_sync': 'ปรับยศรางวัลให้สมาชิกเดิม',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -116,6 +135,8 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     pr_bot: 'PR Bot',
     welcome: 'Welcome Announcement',
     weather: 'Weather',
+    rank: 'การ์ด Rank & เลเวลอัป',
+    fund: 'เก็บเงินตามเป้า',
 };
 
 export function auditLabel(action: string): string {
@@ -171,6 +192,11 @@ const rangeQuery = {
 
 export const activityStatsQuerySchema = z.object({
     ...rangeQuery,
+    hours: z.coerce.number().int().min(1).max(8760).optional(),
+    fresh: z
+        .unknown()
+        .transform((value) => value === 'true')
+        .optional(),
     tz: optionalText(64),
     limit: optionalId.transform((value) => Math.min(value ?? 10, 50)),
 });
@@ -188,7 +214,11 @@ export const activityQuerySchema = z.object({
         .unknown()
         .transform((value) =>
             typeof value === 'string' && value
-                ? value.split(',').map((key) => key.trim()).filter(Boolean).slice(0, 50)
+                ? value
+                      .split(',')
+                      .map((key) => key.trim())
+                      .filter(Boolean)
+                      .slice(0, 50)
                 : undefined,
         )
         .optional(),

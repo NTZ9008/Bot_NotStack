@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { WELCOME_MAX_UPLOAD_BYTES } from '@notstack/shared';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
@@ -37,16 +38,25 @@ async function bootstrap(): Promise<void> {
                     objectSrc: ["'none'"],
                 },
             },
-            // หน้าเว็บที่อยู่คนละ origin (CORS_ORIGINS) ต้องโหลดรูปจาก API ได้ (รูปพื้นหลังการ์ด / เรดาร์)
-            crossOriginResourcePolicy: { policy: 'same-site' },
+            // หน้าเว็บที่อยู่คนละ origin (CORS_ORIGINS รวมถึง Cloudflare Workers) ต้องโหลดรูปจาก API ได้ (รูปพื้นหลังการ์ด / เรดาร์)
+            crossOriginResourcePolicy: { policy: 'cross-origin' },
         }),
     );
 
-    // หน้าเว็บอยู่คนละ origin กับ API (เช่น dashboard.example.com → api.example.com) — ต้องอยู่ domain เดียวกัน (same-site)
-    // เพราะ cookie ของ session เป็น SameSite=Lax/Strict — ใส่ https://*.example.com เพื่อเปิดให้ทุก subdomain ได้
     const corsOrigins = config.get('CORS_ORIGINS', { infer: true });
-    if (corsOrigins.length) app.enableCors({ origin: allowedOrigins(corsOrigins).cors, credentials: true, methods: ['GET', 'POST'] });
+    if (corsOrigins.length) {
+        app.enableCors({
+            origin: allowedOrigins(corsOrigins).cors,
+            credentials: true,
+            methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+            allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+            exposedHeaders: ['Content-Disposition', 'X-Preview-Vars', 'Server-Timing'],
+            maxAge: 600,
+        });
+    }
 
+    // บีบอัดคำตอบ (JSON / CSV / ไฟล์หน้าเว็บ) ที่ใหญ่กว่า 1KB — รูปภาพบีบซ้ำไม่ได้จึงถูกข้ามอัตโนมัติ
+    app.use(compression({ threshold: 1024 }));
     app.use(cookieParser());
 
     // GitHub webhook: ต้องใช้ raw body ตรวจลายเซ็น HMAC
