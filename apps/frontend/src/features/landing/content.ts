@@ -242,7 +242,7 @@ export const TEAM: TeamMember[] = [
         description: 'เริ่มทำบอทตัวนี้',
     },
     {
-        name: 'Thanapat Julakarn',
+        name: 'โปรแกรมเมอร์แต่งของแทร่ลู่ๆกันอยู่',
         github: 'boatngin',
         role: 'ร่วมพัฒนา',
         description: 'ทำฟีเจอร์และ Dashboard',

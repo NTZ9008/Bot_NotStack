@@ -694,7 +694,7 @@ See [Insights → Pulse](https://github.com/NTZ9008/Bot_NotStack/pulse) for the 
 </a>
 
 - **Arlif Thongrakjan** ([@NTZ9008](https://github.com/NTZ9008)): creator, AT Tech
-- **Thanapat Julakarn** ([@boatngin](https://github.com/boatngin)): core contributor
+- **โปรแกรมเมอร์แต่งของแทร่ลู่ๆกันอยู่** ([@boatngin](https://github.com/boatngin)): core contributor
 - Everyone in the [contributors list](https://github.com/NTZ9008/Bot_NotStack/graphs/contributors)
 
 ---
