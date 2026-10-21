@@ -76,8 +76,7 @@ export interface FundTopicDetail extends FundTopicSummary {
 // ปัดเป็นทศนิยม 2 ตำแหน่ง (สตางค์) กันเลขทศนิยมลอย
 export const roundMoney = (value: number): number => Math.round((Number(value) || 0) * 100) / 100;
 
-export const formatBaht = (value: number): string =>
-    `${roundMoney(value).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} บาท`;
+export const formatBaht = (value: number): string => `${roundMoney(value).toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} บาท`;
 
 export function fundMemberStatus(target: number, paid: number): FundMemberStatus {
     if (paid <= 0) return target <= 0 ? 'paid' : 'unpaid';
@@ -103,13 +102,14 @@ export function calculateDailyAmount(dailyRate: number, from: string | Date, to:
 // สร้างไฟล์ CSV พร้อม UTF-8 BOM สำหรับเปิดใน Excel ได้ภาษาไทยไม่เพี้ยน
 function escapeCsv(cell: unknown): string {
     let str = String(cell ?? '');
-    // ป้องกัน CSV Formula Injection ใน Microsoft Excel / LibreOffice
-    if (/^[=+\-@]/.test(str)) {
+    // ป้องกัน CSV Formula Injection ใน Microsoft Excel / LibreOffice — ข้ามช่องว่าง/อักขระควบคุมนำหน้าก่อนดูตัวแรก
+    let start = 0;
+    while (start < str.length && (str.charCodeAt(start) <= 0x20 || /\s/.test(str[start]))) start++;
+    const first = str[start];
+    if ((first && '=+-@'.includes(first)) || /^[\t\r\n]/.test(str)) {
         str = `'${str}`;
     }
-    return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')
-        ? `"${str.replace(/"/g, '""')}"`
-        : str;
+    return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r') ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
 const formatCsvDate = (val: string | Date | null | undefined): string => {
@@ -137,10 +137,7 @@ export function generateFundCsv(topic: FundTopicDetail): string {
     // --- ส่วนสรุปหัวข้อ ---
     pushRow('หัวข้อการเก็บเงิน', topic.name);
     if (topic.description) pushRow('รายละเอียด', topic.description);
-    pushRow(
-        'รูปแบบการเก็บ',
-        topic.dailyRate && topic.dailyRate > 0 ? `รายวัน (วันละ ${formatBaht(topic.dailyRate)})` : 'ยอดคงที่',
-    );
+    pushRow('รูปแบบการเก็บ', topic.dailyRate && topic.dailyRate > 0 ? `รายวัน (วันละ ${formatBaht(topic.dailyRate)})` : 'ยอดคงที่');
     if (topic.startDate) pushRow('วันที่เริ่มเก็บ', formatCsvDate(topic.startDate));
     if (topic.dueDate) pushRow('วันครบกำหนด', formatCsvDate(topic.dueDate));
     pushRow('สถานะ', topic.closed ? 'ปิดการเก็บเงินแล้ว' : 'กำลังเปิดรับเงิน');
@@ -194,20 +191,22 @@ const snowflake = z.string().regex(SNOWFLAKE_RE, 'รหัส Discord ไม่
 const channelId = z.union([z.literal(''), snowflake]);
 
 // วันที่: ISO string / '' / null (= ไม่กำหนด)
-const dateField = z
-    .union([z.string(), z.null()])
-    .transform((value, ctx) => {
-        if (!value) return null;
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            ctx.addIssue({ code: 'custom', message: 'วันที่ไม่ถูกต้อง' });
-            return z.NEVER;
-        }
-        return date.toISOString();
-    });
+const dateField = z.union([z.string(), z.null()]).transform((value, ctx) => {
+    if (!value) return null;
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        ctx.addIssue({ code: 'custom', message: 'วันที่ไม่ถูกต้อง' });
+        return z.NEVER;
+    }
+    return date.toISOString();
+});
 
 export const createFundTopicSchema = z.object({
-    name: z.string({ error: 'กรุณาตั้งชื่อหัวข้อ' }).trim().min(1, 'กรุณาตั้งชื่อหัวข้อ').max(FUND_LIMITS.name, `ชื่อหัวข้อยาวได้ไม่เกิน ${FUND_LIMITS.name} ตัวอักษร`),
+    name: z
+        .string({ error: 'กรุณาตั้งชื่อหัวข้อ' })
+        .trim()
+        .min(1, 'กรุณาตั้งชื่อหัวข้อ')
+        .max(FUND_LIMITS.name, `ชื่อหัวข้อยาวได้ไม่เกิน ${FUND_LIMITS.name} ตัวอักษร`),
     description: z.string().trim().max(FUND_LIMITS.description, `รายละเอียดยาวได้ไม่เกิน ${FUND_LIMITS.description} ตัวอักษร`).optional(),
     amountPerMember: money('ยอดเก็บต่อคน'),
     dailyRate: money('ยอดรายวัน').nullable().optional(),
@@ -258,7 +257,9 @@ export type CreateFundPaymentData = z.output<typeof createFundPaymentSchema>;
 
 export const updateFundPaymentSchema = z.object({
     memberId: z.coerce.number().int().positive('กรุณาเลือกคนที่จ่าย').optional(),
-    amount: money('จำนวนเงิน').refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0').optional(),
+    amount: money('จำนวนเงิน')
+        .refine((value) => value > 0, 'จำนวนเงินต้องมากกว่า 0')
+        .optional(),
     note: z.string().trim().max(FUND_LIMITS.note, `หมายเหตุยาวได้ไม่เกิน ${FUND_LIMITS.note} ตัวอักษร`).optional(),
     paidAt: dateField.optional(),
     periodStart: dateField.optional(),

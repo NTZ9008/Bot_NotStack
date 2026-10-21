@@ -1,3 +1,5 @@
+import { RenderRateLimitGuard, UploadRateLimitGuard } from '../auth/guards/rate-limit.guard';
+import { UseGuards } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { ResultCache } from '../common/utils/result-cache';
 import { timeOperation, withServerTiming } from '../common/utils/server-timing';
@@ -192,6 +194,7 @@ export class WelcomeController {
 
     // วาดรูปตัวอย่างอย่างเดียว ไม่ได้แก้ข้อมูล — ไม่ต้องลง audit log (ถูกเรียกทุกครั้งที่ขยับ slider)
     @SkipAudit()
+    @UseGuards(RenderRateLimitGuard)
     @Post('preview')
     @HttpCode(HttpStatus.OK)
     async preview(
@@ -228,6 +231,7 @@ export class WelcomeController {
     }
 
     @Audit('welcome.test_send')
+    @UseGuards(RenderRateLimitGuard)
     @Post('test')
     @HttpCode(HttpStatus.OK)
     async testSend(@GuildId() guildId: string, @Body() body: WelcomeTestDto, @CurrentUser() user: User): Promise<SuccessResponse> {
@@ -286,6 +290,7 @@ export class WelcomeController {
 
     // อัปโหลดเป็นไฟล์ดิบ (body = ตัวไฟล์รูป, ชื่อไฟล์อยู่ใน ?name=) — ไม่ต้องพึ่ง library multipart
     @Audit('welcome.asset_upload')
+    @UseGuards(UploadRateLimitGuard)
     @Post('assets')
     async uploadAsset(
         @GuildId() guildId: string,

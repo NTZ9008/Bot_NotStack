@@ -16,7 +16,7 @@ export class AuthConfig {
     // URL หน้า Dashboard — ปลายทาง redirect หลัง login ด้วย Discord (ไม่ตั้ง = path เฉยๆ บน origin เดียวกับ API)
     readonly dashboardUrl: string | null;
     // host ที่อนุญาตให้ยิง POST เข้ามา (กัน CSRF) — นอกเหนือจาก Host header ของ request เอง (รองรับ *.example.com)
-    readonly allowsHost: (host: string) => boolean;
+    readonly allowsOrigin: (origin: string) => boolean;
     readonly adminSeed: { username?: string; password?: string };
     readonly discord: {
         enabled: boolean;
@@ -34,7 +34,11 @@ export class AuthConfig {
         this.jwtSecret = this.resolveJwtSecret(config.get('JWT_SECRET', { infer: true }) ?? config.get('SESSION_SECRET', { infer: true }));
         this.dashboardUrl = config.get('DASHBOARD_URL', { infer: true }) ?? null;
         // ไม่ตั้ง DASHBOARD_URL / CORS_ORIGINS = รับเฉพาะหน้าเว็บที่อยู่ host เดียวกับ API
-        this.allowsHost = allowedOrigins([...(this.dashboardUrl ? [this.dashboardUrl] : []), ...config.get('CORS_ORIGINS', { infer: true })]).allowsHost;
+        this.allowsOrigin = allowedOrigins([
+            ...(this.dashboardUrl ? [this.dashboardUrl] : []),
+            ...config.get('CORS_ORIGINS', { infer: true }),
+            ...(!this.isProduction ? ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3035', 'http://127.0.0.1:3035'] : []),
+        ]).allowsOrigin;
         this.adminSeed = {
             username: config.get('ADMIN_USERNAME', { infer: true }),
             password: config.get('ADMIN_PASSWORD', { infer: true }),
@@ -69,7 +73,7 @@ export class AuthConfig {
         if (secret && secret.length >= 32) return secret;
         if (this.isProduction) {
             throw new Error(
-                'ยังไม่ได้ตั้ง JWT_SECRET (หรือสั้นกว่า 32 ตัวอักษร) ใน .env — สร้างด้วย: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'base64url\'))"',
+                "ยังไม่ได้ตั้ง JWT_SECRET (หรือสั้นกว่า 32 ตัวอักษร) ใน .env — สร้างด้วย: node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\"",
             );
         }
         this.logger.warn('⚠️ ยังไม่ได้ตั้ง JWT_SECRET (หรือสั้นกว่า 32 ตัวอักษร) — ใช้ secret สุ่มชั่วคราว ทุกคนจะต้อง login ใหม่เมื่อรีสตาร์ท');

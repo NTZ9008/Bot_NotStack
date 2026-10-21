@@ -30,6 +30,8 @@ const authLimiter = createLimiter({
 });
 
 // รูปตัวอย่างที่วาดใหม่ทุกครั้ง (การ์ด Rank) — หน้าเว็บรอให้หยุดแก้ก่อนค่อยขอ ใช้จริงไม่ถึงลิมิตนี้ แต่กันการยิงรัวให้เซิร์ฟเวอร์วาดรูปไม่หยุด
+const uploadLimiter = createLimiter({ windowMs: 60_000, limit: 10, message: 'อัปโหลดบ่อยเกินไป กรุณารอสักครู่' });
+
 const renderLimiter = createLimiter({
     windowMs: 60 * 1000,
     limit: 90,
@@ -62,5 +64,12 @@ export class AuthRateLimitGuard implements CanActivate {
 export class RenderRateLimitGuard implements CanActivate {
     canActivate(context: ExecutionContext): Promise<boolean> {
         return runLimiter(renderLimiter, context);
+    }
+}
+
+@Injectable()
+export class UploadRateLimitGuard implements CanActivate {
+    canActivate(context: ExecutionContext): Promise<boolean> {
+        return runLimiter(uploadLimiter, context);
     }
 }

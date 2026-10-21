@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Events, type Client, type Guild, type GuildMember, type PartialGuildMember } from 'discord.js';
+import { Events, type Client, type Guild, type GuildMember, type Role, type PartialGuildMember } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import { GuildAccessService } from '../guild-access.service';
 import { GuildsService } from '../guilds.service';
@@ -45,6 +45,16 @@ export class GuildSyncListener {
     @OnDiscord(Events.GuildMemberUpdate)
     onMemberUpdate(_old: GuildMember | PartialGuildMember, member: GuildMember): void {
         this.access.forget(member.id, member.guild.id);
+    }
+
+    @OnDiscord(Events.GuildRoleUpdate)
+    onRoleUpdate(_old: Role, role: Role): void {
+        this.access.forgetGuild(role.guild.id);
+    }
+
+    @OnDiscord(Events.GuildRoleDelete)
+    onRoleDelete(role: Role): void {
+        this.access.forgetGuild(role.guild.id);
     }
 
     @OnDiscord(Events.GuildMemberRemove)

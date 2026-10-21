@@ -6,6 +6,7 @@ export const AUTH = {
     JWT_AUDIENCE: 'botnotstack-dashboard',
     OAUTH_STATE_AUDIENCE: 'botnotstack-discord-oauth',
 
+    ABSOLUTE_SESSION_TTL_MS: 30 * 24 * 60 * 60 * 1000,
     ACCESS_TOKEN_TTL_SEC: 15 * 60, // access token (JWT) อายุสั้น 15 นาที
     REFRESH_TOKEN_TTL_MS: 7 * 24 * 60 * 60 * 1000, // refresh token 7 วัน (ต่ออายุทุกครั้งที่ใช้)
     REFRESH_REUSE_GRACE_MS: 30 * 1000, // refresh พร้อมกันหลายแท็บภายใน 30 วิ ไม่นับว่าโดนขโมย

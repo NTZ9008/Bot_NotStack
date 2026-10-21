@@ -3,7 +3,8 @@ import { PassportStrategy } from '@nestjs/passport';
 import type { Request } from 'express';
 import { Strategy } from 'passport-jwt';
 import type { User } from '../../generated/prisma/client';
-import { UsersService } from '../../users/users.service';
+import { TokensService } from '../tokens.service';
+import type { AppRequest } from '../../common/interfaces/app-request.interface';
 import { AuthConfig } from '../auth.config';
 import { AUTH, JWT_STRATEGY } from '../auth.constants';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface';
@@ -16,10 +17,11 @@ import type { JwtPayload } from '../interfaces/jwt-payload.interface';
 export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {
     constructor(
         cfg: AuthConfig,
-        private readonly users: UsersService,
+        private readonly tokens: TokensService,
     ) {
         super({
             jwtFromRequest: (req: Request) => (req.cookies as Record<string, string> | undefined)?.[cfg.cookie.access] ?? null,
+            passReqToCallback: true,
             secretOrKey: cfg.jwtSecret,
             algorithms: ['HS256'],
             issuer: AUTH.JWT_ISSUER,
@@ -27,9 +29,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, JWT_STRATEGY) {
         });
     }
 
-    async validate(payload: JwtPayload): Promise<User | false> {
-        const user = await this.users.getCached(Number(payload.sub));
-        if (!user || !user.isActive || user.tokenVersion !== payload.tv) return false;
+    async validate(req: AppRequest, payload: JwtPayload): Promise<User | false> {
+        const user = await this.tokens.validateSession(payload.sid, Number(payload.sub), payload.tv);
+        if (user) req.authSessionId = payload.sid;
         return user;
     }
 }

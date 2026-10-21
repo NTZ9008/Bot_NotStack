@@ -14,8 +14,7 @@ const BCRYPT_HASH_RE = /^\$2[aby]\$\d{2}\$.{53}$/;
 const CACHE_TTL_MS = 30 * 1000;
 
 export type PasswordLoginResult =
-    | { ok: true; user: User }
-    | { ok: false; reason: 'invalid' | 'locked' | 'disabled'; user?: User; lockedUntil?: Date; justLocked?: boolean };
+    { ok: true; user: User } | { ok: false; reason: 'invalid' | 'locked' | 'disabled'; user?: User; lockedUntil?: Date; justLocked?: boolean };
 
 // ==========================================
 // 👤 USERS — บัญชีผู้ใช้ Dashboard (username/password และ Discord OAuth)
@@ -78,15 +77,15 @@ export class UsersService {
         const username = normalizeUsername(rawUsername);
         const user = isValidUsername(username) ? await this.prisma.user.findUnique({ where: { username } }) : null;
 
+        const matches = await this.comparePassword(password, user?.passwordHash || DUMMY_HASH);
         if (!user || !user.passwordHash) {
-            await bcrypt.compare(password, DUMMY_HASH);
             return { ok: false, reason: 'invalid' };
         }
         if (user.lockedUntil && user.lockedUntil > new Date()) {
             return { ok: false, reason: 'locked', user, lockedUntil: user.lockedUntil };
         }
 
-        if (!(await bcrypt.compare(password, user.passwordHash))) {
+        if (!matches) {
             const updated = await this.update(user.id, { failedLogins: { increment: 1 } });
             if (updated.failedLogins >= AUTH.MAX_FAILED_LOGINS) {
                 const lockedUntil = new Date(Date.now() + AUTH.LOCK_DURATION_MS);
@@ -99,7 +98,15 @@ export class UsersService {
         // บอกว่าบัญชีถูกปิดเฉพาะคนที่ใส่รหัสถูกเท่านั้น
         if (!user.isActive) return { ok: false, reason: 'disabled', user };
 
-        return { ok: true, user: await this.recordLogin(user.id) };
+        const lastLoginAt = new Date();
+        const { count } = await this.prisma.user.updateMany({
+            where: { id: user.id, tokenVersion: user.tokenVersion, passwordHash: user.passwordHash, isActive: true },
+            data: { failedLogins: 0, lockedUntil: null, lastLoginAt },
+        });
+        this.cache.delete(user.id);
+        if (!count) return { ok: false, reason: 'invalid' };
+        // Keep the authenticated version even if a password reset races the DB write.
+        return { ok: true, user: { ...user, failedLogins: 0, lockedUntil: null, lastLoginAt } };
     }
 
     recordLogin(id: number): Promise<User> {

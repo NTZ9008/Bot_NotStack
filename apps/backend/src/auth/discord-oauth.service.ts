@@ -27,10 +27,15 @@ export class DiscordOAuthService {
 
     // state สุ่มใหม่ทุกครั้ง: เก็บคู่กับโหมด (login / link) ใน cookie ที่เซ็นด้วย JWT_SECRET
     // ตอน callback ต้องตรงกับ ?state= ที่ Discord ส่งกลับมา — กันคนอื่นหลอกให้เรา login เป็นบัญชีของเขา
-    createState(mode: OAuthMode, userId: number | null = null): { state: string; cookie: string } {
+    createState(
+        mode: OAuthMode,
+        userId: number | null = null,
+        sessionId: string | null = null,
+        tokenVersion: number | null = null,
+    ): { state: string; cookie: string } {
         const state = crypto.randomBytes(24).toString('base64url');
         const cookie = this.jwt.sign(
-            { s: state, m: mode, uid: userId },
+            { s: state, m: mode, uid: userId, sid: sessionId, tv: tokenVersion },
             {
                 secret: this.cfg.jwtSecret,
                 algorithm: 'HS256',
@@ -60,7 +65,7 @@ export class DiscordOAuthService {
         const actual = Buffer.from(state);
         if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) return null;
         if (!this.markStateUsed(payload.s, (payload.exp ?? 0) * 1000)) return null;
-        return { mode: payload.m, userId: payload.uid };
+        return { mode: payload.m, userId: payload.uid, sessionId: payload.sid, tokenVersion: payload.tv };
     }
 
     private markStateUsed(state: string, expiresAtMs: number): boolean {
@@ -96,10 +101,9 @@ export class DiscordOAuthService {
                 redirect_uri: this.cfg.discord.redirectUri ?? '',
             }),
         });
-        const user = await this.request<{ id: string; username: string; global_name?: string | null; avatar?: string | null }>(
-            `${DISCORD_API}/users/@me`,
-            { headers: { Authorization: `Bearer ${token.access_token}` } },
-        );
+        const user = await this.request<{ id: string; username: string; global_name?: string | null; avatar?: string | null }>(`${DISCORD_API}/users/@me`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
         return {
             id: user.id,
             username: user.username,

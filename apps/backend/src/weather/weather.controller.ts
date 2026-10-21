@@ -1,3 +1,5 @@
+import { UseGuards } from '@nestjs/common';
+import { RenderRateLimitGuard } from '../auth/guards/rate-limit.guard';
 import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Param, Post, Query, Res } from '@nestjs/common';
 import {
     defaultWeatherOptions,
@@ -119,9 +121,10 @@ export class WeatherController {
             // เตือน (แต่ไม่ห้ามบันทึก) ถ้าห้องที่เลือกบอทส่งเข้าไปไม่ได้ — แอดมินอาจไปแก้สิทธิ์ใน Discord ทีหลัง
             let warning: string | null = null;
             if (settings.enabled && this.discord.ready) {
-                warning = await this.weather
-                    .resolveReportChannel(guildId, settings.channelId, weatherAttachesFiles(settings.options))
-                    .then(() => null, (err: Error) => err.message);
+                warning = await this.weather.resolveReportChannel(guildId, settings.channelId, weatherAttachesFiles(settings.options)).then(
+                    () => null,
+                    (err: Error) => err.message,
+                );
             }
             return { success: true, settings: this.view(guildId, settings), warning };
         } catch (err) {
@@ -140,6 +143,7 @@ export class WeatherController {
 
     // POST ที่แค่สร้างตัวอย่าง ไม่ได้แก้ข้อมูล — ไม่ต้องลง audit log (ถูกเรียกทุกครั้งที่แก้ค่าในฟอร์ม)
     @SkipAudit()
+    @UseGuards(RenderRateLimitGuard)
     @Post('preview')
     @HttpCode(HttpStatus.OK)
     async preview(@GuildId() guildId: string, @Body() body: WeatherPreviewDto, @Res({ passthrough: true }) res: Response): Promise<WeatherPreviewResponse> {
