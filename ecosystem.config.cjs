@@ -7,6 +7,7 @@ module.exports = {
     apps: [
         {
             name: 'BotNotStack',
+            env: { NODE_ENV: 'production' },
             cwd: './apps/backend',
             script: 'dist/main.js',
             // Nest ปิดตัวอย่างนุ่มนวล (เขียน Activity Log ที่ค้างอยู่ + ตัดการเชื่อมต่อ Discord/DB) ก่อนโดนฆ่า

@@ -63,7 +63,14 @@ export class GuildsService {
             const rows = user.role === 'ADMIN' ? await this.prisma.guild.findMany({ where: { leftAt: null } }) : [];
             return {
                 guilds: this.sort(
-                    rows.map((row) => ({ id: row.id, name: row.name || row.id, iconUrl: row.iconUrl, memberCount: 0, access: 'manage', isHome: this.discord.isHome(row.id) })),
+                    rows.map((row) => ({
+                        id: row.id,
+                        name: row.name || row.id,
+                        iconUrl: row.iconUrl,
+                        memberCount: 0,
+                        access: 'manage',
+                        isHome: this.discord.isHome(row.id),
+                    })),
                 ),
                 inviteUrl: null,
                 needsDiscordLink,

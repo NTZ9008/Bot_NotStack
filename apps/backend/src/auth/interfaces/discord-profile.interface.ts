@@ -11,6 +11,8 @@ export interface DiscordProfile {
 export interface OAuthFlow {
     mode: OAuthMode;
     userId: number | null;
+    sessionId: string | null;
+    tokenVersion: number | null;
 }
 
 // ผลของ DiscordStrategy (ใส่ไว้ที่ req.discordAuth)

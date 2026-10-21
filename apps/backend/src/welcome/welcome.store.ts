@@ -1,3 +1,4 @@
+import { badRequest } from '../common/exceptions/api.exception';
 import { Injectable } from '@nestjs/common';
 import { normalizeDesign, type WelcomeAsset, type WelcomeCard, type WelcomeDesign } from '@notstack/shared';
 import type { Prisma } from '../generated/prisma/client';
@@ -115,8 +116,17 @@ export class WelcomeStore {
         return this.prisma.welcomeAsset.findFirst({ where: { id, guildId }, select: { id: true, mimeType: true, data: true } });
     }
 
-    async createAsset(guildId: string, data: { name: string; mimeType: string; width: number; height: number; size: number; data: Buffer }): Promise<WelcomeAsset> {
-        return toAsset(await this.prisma.welcomeAsset.create({ data: { ...data, guildId, data: new Uint8Array(data.data) }, select: ASSET_FIELDS }));
+    async createAsset(
+        guildId: string,
+        data: { name: string; mimeType: string; width: number; height: number; size: number; data: Buffer },
+    ): Promise<WelcomeAsset> {
+        return this.prisma.$transaction(async (tx) => {
+            await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`assets:${guildId}`}))`;
+            const usage = await tx.welcomeAsset.aggregate({ where: { guildId }, _count: true, _sum: { size: true } });
+            if (usage._count >= 200 || (usage._sum.size ?? 0) + data.size > 64 * 1024 * 1024)
+                throw badRequest('คลังรูปเต็ม (สูงสุด 200 รูป / 64 MB ต่อเซิร์ฟเวอร์)');
+            return toAsset(await tx.welcomeAsset.create({ data: { ...data, guildId, data: new Uint8Array(data.data) }, select: ASSET_FIELDS }));
+        });
     }
 
     async renameAsset(guildId: string, id: number, name: string): Promise<WelcomeAsset | null> {

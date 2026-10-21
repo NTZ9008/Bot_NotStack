@@ -2,6 +2,8 @@ import { Body, Controller, Headers, HttpStatus, Logger, Param, Post, Res } from 
 import { isSnowflake } from '@notstack/shared';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
+import { SignedWebhook } from '../../auth/guards/csrf.guard';
+import { WebhookQueueService } from '../webhook-queue.service';
 import { PrBotService } from '../pr-bot.service';
 
 // ==========================================
@@ -11,15 +13,25 @@ import { PrBotService } from '../pr-bot.service';
 // body เป็น Buffer ดิบ (main.ts ตั้ง express.raw ให้ /webhook) เพื่อให้ verify signature ได้
 // ==========================================
 @Public()
+@SignedWebhook()
 @Controller('webhook/github')
 export class GithubWebhookController {
     private readonly logger = new Logger('PrBot');
 
-    constructor(private readonly prBot: PrBotService) {}
+    constructor(
+        private readonly prBot: PrBotService,
+        private readonly queue: WebhookQueueService,
+    ) {}
 
     @Post()
-    legacy(@Body() rawBody: unknown, @Headers('x-hub-signature-256') signature: unknown, @Headers('x-github-event') event: unknown, @Res() res: Response) {
-        return this.receive(this.prBot.homeGuildId, true, rawBody, signature, event, res);
+    legacy(
+        @Body() rawBody: unknown,
+        @Headers('x-hub-signature-256') signature: unknown,
+        @Headers('x-github-event') event: unknown,
+        @Headers('x-github-delivery') delivery: unknown,
+        @Res() res: Response,
+    ) {
+        return this.receive(this.prBot.homeGuildId, true, rawBody, signature, event, delivery, res);
     }
 
     @Post(':guildId')
@@ -28,26 +40,28 @@ export class GithubWebhookController {
         @Body() rawBody: unknown,
         @Headers('x-hub-signature-256') signature: unknown,
         @Headers('x-github-event') event: unknown,
+        @Headers('x-github-delivery') delivery: unknown,
         @Res() res: Response,
     ) {
         if (!isSnowflake(guildId)) return void res.sendStatus(HttpStatus.NOT_FOUND);
-        return this.receive(guildId, false, rawBody, signature, event, res);
+        return this.receive(guildId, false, rawBody, signature, event, delivery, res);
     }
 
-    private async receive(guildId: string, legacy: boolean, rawBody: unknown, signature: unknown, event: unknown, res: Response): Promise<void> {
+    private async receive(
+        guildId: string,
+        legacy: boolean,
+        rawBody: unknown,
+        signature: unknown,
+        event: unknown,
+        delivery: unknown,
+        res: Response,
+    ): Promise<void> {
         if (!Buffer.isBuffer(rawBody) || !(await this.prBot.verifySignature(guildId, rawBody, signature, legacy))) {
+            this.logger.warn(JSON.stringify({ event: 'webhook_signature_rejected', guildId }));
             res.sendStatus(HttpStatus.UNAUTHORIZED);
             return;
         }
-        let payload: unknown;
-        try {
-            payload = JSON.parse(rawBody.toString('utf8'));
-        } catch {
-            res.sendStatus(HttpStatus.BAD_REQUEST);
-            return;
-        }
-
-        res.sendStatus(HttpStatus.ACCEPTED); // ตอบก่อน แล้วค่อยทำงาน (GitHub timeout 10s)
-        this.prBot.handle(guildId, String(event ?? ''), payload).catch((err: Error) => this.logger.error(`handler error: ${err.stack ?? err.message}`));
+        await this.queue.enqueue(guildId, delivery, event, rawBody);
+        res.sendStatus(HttpStatus.ACCEPTED);
     }
 }

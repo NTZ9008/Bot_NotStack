@@ -3,6 +3,7 @@ export interface JwtPayload {
     sub: string;
     role: string;
     tv: number;
+    sid: string;
     jti?: string;
     exp?: number;
 }
@@ -12,6 +13,8 @@ export interface OAuthStatePayload {
     s: string;
     m: OAuthMode;
     uid: number | null;
+    sid: string | null;
+    tv: number | null;
     exp?: number;
 }
 

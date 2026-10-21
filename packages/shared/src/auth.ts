@@ -46,8 +46,8 @@ export const passwordFieldSchema = z.string().superRefine((value, ctx) => {
 });
 
 export const loginSchema = z.object({
-    username: z.string({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }).min(1, 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'),
-    password: z.string({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }).min(1, 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน'),
+    username: z.string({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }).min(1, 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน').max(256, 'ข้อมูลยาวเกินกำหนด'),
+    password: z.string({ error: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' }).min(1, 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน').max(256, 'ข้อมูลยาวเกินกำหนด'),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 

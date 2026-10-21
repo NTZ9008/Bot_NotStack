@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isIP } from 'node:net';
 
 // ==========================================
 // ⚙️ ENV — ตัวแปรจาก .env ทั้งหมดที่ backend ใช้ (ตรวจครั้งเดียวตอนเปิดเซิร์ฟเวอร์)
@@ -35,7 +36,25 @@ const stringList = z
     );
 
 export const envSchema = z.object({
-    NODE_ENV: z.string().optional(),
+    NODE_ENV: z.enum(['development', 'dev', 'test', 'production']).default('production'),
+    HOST: z.string().default('127.0.0.1'),
+    TRUST_PROXY: z
+        .string()
+        .default('loopback')
+        .transform((v) =>
+            v
+                .split(',')
+                .map((x) => x.trim())
+                .filter(Boolean),
+        )
+        .refine((items) =>
+            items.every((x) => {
+                if (['loopback', 'linklocal', 'uniquelocal'].includes(x)) return true;
+                const [ip, bits] = x.split('/');
+                const family = isIP(ip ?? '');
+                return !!family && (bits === undefined || (/^\d+$/.test(bits) && Number(bits) <= (family === 4 ? 32 : 128)));
+            }),
+        ),
     PORT: positiveInt(3035),
 
     DATABASE_URL: z
@@ -93,5 +112,15 @@ export function validateEnv(raw: Record<string, unknown>): Env {
         const messages = result.error.issues.map((issue) => `- ${issue.path.join('.')}: ${issue.message}`);
         throw new Error(`ค่าใน .env ไม่ถูกต้อง:\n${messages.join('\n')}`);
     }
-    return result.data;
+    const env = result.data;
+    if (env.NODE_ENV === 'production') {
+        if ((env.JWT_SECRET ?? env.SESSION_SECRET ?? '').length < 32) throw new Error('Production requires JWT_SECRET (at least 32 characters)');
+        if (!env.DASHBOARD_URL) throw new Error('Production requires an HTTPS DASHBOARD_URL');
+        for (const value of [env.DASHBOARD_URL, ...env.CORS_ORIGINS, env.DISCORD_REDIRECT_URI].filter((v): v is string => !!v)) {
+            const url = new URL(value);
+            if (url.protocol !== 'https:' || url.username || url.password || value.includes('*'))
+                throw new Error('Production origins must be explicit HTTPS URLs without credentials or wildcards');
+        }
+    }
+    return env;
 }

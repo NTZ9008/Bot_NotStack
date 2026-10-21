@@ -28,13 +28,21 @@ const quiet = (target) => {
 // --- Gemini quota ---
 function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {}) {
     const writes = [];
+    const counts = new Map(stored.map((row) => [row.guildId, row.count]));
     const prisma = {
+        $executeRaw: async () => {},
         aiUsage: {
-            findMany: async () => stored,
+            aggregate: async () => ({ _sum: { count: [...counts.values()].reduce((a, b) => a + b, 0) } }),
+            findUnique: async ({ where }) => ({ count: counts.get(where.day_guildId.guildId) ?? 0 }),
             deleteMany: async () => {},
-            upsert: async (args) => writes.push(args),
+            upsert: async (args) => {
+                writes.push(args);
+                const id = args.where.day_guildId.guildId;
+                counts.set(id, (counts.get(id) ?? 0) + 1);
+            },
         },
     };
+    prisma.$transaction = async (fn) => fn(prisma);
     const service = quiet(
         new GeminiService(config({ GEMINI_KEY: key, AI_DAILY_LIMIT: daily, AI_GUILD_DAILY_LIMIT: perGuild }), prisma, { isHome: (id) => id === 'home' }),
     );
@@ -53,7 +61,12 @@ test('AI quota caps other servers per day while the home server only shares the 
     assert.deepEqual(writes[0].where, { day_guildId: { day: bangkokDay(), guildId: 'other' } });
 });
 test('AI quota survives a restart by loading today’s counts and is disabled without a key', async () => {
-    const { service } = gemini({ stored: [{ guildId: 'other', count: 2 }, { guildId: 'home', count: 2 }] });
+    const { service } = gemini({
+        stored: [
+            { guildId: 'other', count: 2 },
+            { guildId: 'home', count: 2 },
+        ],
+    });
     assert.equal(await service.reserve('other'), 'guild');
     assert.equal(await service.reserve('home'), 'ok');
     assert.equal(await service.reserve('home'), 'global');
@@ -278,7 +291,12 @@ test('log files are pruned by the date in their name and large files are read fr
         fs.writeFileSync(path.join(dir, 'big.log'), line.repeat(Math.ceil((LOG_READ_MAX_BYTES * 1.5) / Buffer.byteLength(line))));
         const text = service.read('big.log');
         assert.match(text.split('\n')[0], /แสดงเฉพาะ/);
-        assert(text.split('\n').slice(1, -1).every((l) => l === line.trim()));
+        assert(
+            text
+                .split('\n')
+                .slice(1, -1)
+                .every((l) => l === line.trim()),
+        );
         assert(Buffer.byteLength(text) <= LOG_READ_MAX_BYTES + 200);
     } finally {
         fs.rmSync(dir, { recursive: true, force: true });

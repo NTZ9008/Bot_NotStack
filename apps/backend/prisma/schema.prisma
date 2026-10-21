@@ -54,8 +54,8 @@ model Level {
   level   Int    @default(0)
 
   @@id([guildId, userId])
-  @@map("levels")
   @@index([guildId, xp(sort: Desc), userId])
+  @@map("levels")
 }
 
 // ห้องที่เปิดให้ใช้ระบบตั๋วเข้าห้อง (Room Access) ของแต่ละเซิร์ฟเวอร์
@@ -147,15 +147,16 @@ model LogOption {
 // PR Bot — จำว่า PR ไหนส่งข้อความไปที่ไหน เพื่อแก้ข้อความเดิมเมื่อมี review / check / comment หรือ PR ถูกปิด
 // repo เดียวกันแจ้งหลายเซิร์ฟเวอร์ได้ (แต่ละเซิร์ฟเวอร์ตั้ง webhook ของตัวเอง)
 model PrMessage {
-  guildId      String  @map("guild_id")
-  repoFullName String  @map("repo_full_name")
-  prNumber     Int     @map("pr_number")
-  channelId    String  @map("channel_id")
-  messageId    String  @map("message_id")
+  lastDeliveryId String? @map("last_delivery_id")
+  guildId        String  @map("guild_id")
+  repoFullName   String  @map("repo_full_name")
+  prNumber       Int     @map("pr_number")
+  channelId      String  @map("channel_id")
+  messageId      String  @map("message_id")
   // commit ล่าสุดของ PR — event check_run/status ไม่บอกเลข PR จึงต้องหาจาก sha
-  headSha      String? @map("head_sha")
+  headSha        String? @map("head_sha")
   // สถานะที่สะสมจาก webhook (ข้อมูล PR, review, check, comment) — ใช้วาด embed ใหม่ทุกครั้งที่มี event
-  activity     Json    @default("{}")
+  activity       Json    @default("{}")
 
   @@id([guildId, repoFullName, prNumber])
   @@index([guildId, repoFullName, headSha])
@@ -193,6 +194,7 @@ model User {
   createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
 
+  sessions      AuthSession[]
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
 
@@ -345,44 +347,48 @@ model WeatherSetting {
 
 // Configurable XP rules, isolated by guild. Level XP remains cumulative.
 model XpSetting {
-  guildId String @id @map("guild_id")
-  revision Int @default(1)
+  guildId  String @id @map("guild_id")
+  revision Int    @default(1)
   settings Json
+
   @@map("xp_settings")
 }
 
 // Persistent attempt cooldown and rule cap (including unsuccessful chance rolls).
 model XpProgress {
-  guildId String @map("guild_id")
-  userId String @map("user_id")
-  ruleId String @map("rule_id")
+  guildId       String   @map("guild_id")
+  userId        String   @map("user_id")
+  ruleId        String   @map("rule_id")
   lastAttemptAt DateTime @map("last_attempt_at") @db.Timestamptz(3)
-  day String
-  earned Int @default(0)
+  day           String
+  earned        Int      @default(0)
+
   @@id([guildId, userId, ruleId])
   @@map("xp_progress")
 }
 
 model XpDaily {
   guildId String @map("guild_id")
-  userId String @map("user_id")
-  day String
-  earned Int @default(0)
+  userId  String @map("user_id")
+  day     String
+  earned  Int    @default(0)
+
   @@id([guildId, userId, day])
   @@index([day])
   @@map("xp_daily")
 }
 
 model XpHistory {
-  id Int @id @default(autoincrement())
-  guildId String @map("guild_id")
-  userId String @map("user_id")
-  source String
-  delta Int
-  balance Int
-  reason String
-  actorId Int? @map("actor_id")
+  id        Int      @id @default(autoincrement())
+  guildId   String   @map("guild_id")
+  userId    String   @map("user_id")
+  source    String
+  delta     Int
+  balance   Int
+  reason    String
+  actorId   Int?     @map("actor_id")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
   @@index([guildId, id])
   @@index([guildId, userId, id])
   @@index([createdAt])
@@ -553,4 +559,39 @@ model FundPayment {
   @@index([topicId])
   @@index([memberId])
   @@map("fund_payments")
+}
+
+// A durable revocation boundary shared by access tokens, refresh rotation and OAuth linking.
+model AuthSession {
+  id                String    @id @default(uuid())
+  userId            Int       @map("user_id")
+  tokenVersion      Int       @map("token_version")
+  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  expiresAt         DateTime  @map("expires_at") @db.Timestamptz(3)
+  absoluteExpiresAt DateTime  @map("absolute_expires_at") @db.Timestamptz(3)
+  revokedAt         DateTime? @map("revoked_at") @db.Timestamptz(3)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_sessions")
+}
+
+model WebhookDelivery {
+  id          String    @id @default(uuid())
+  guildId     String    @map("guild_id")
+  deliveryId  String    @map("delivery_id")
+  digest      String
+  event       String
+  payload     Json
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  availableAt DateTime  @default(now()) @map("available_at") @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  completedAt DateTime? @map("completed_at") @db.Timestamptz(3)
+
+  @@unique([guildId, deliveryId])
+  @@unique([guildId, digest])
+  @@index([status, availableAt])
+  @@map("webhook_deliveries")
 }

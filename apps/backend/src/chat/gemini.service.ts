@@ -26,14 +26,6 @@ export type ModerationVerdict = 'BAD' | 'PASS';
 // ok = จองโควตาแล้ว เรียก Gemini ได้ / global = โควตารวมของวันหมด / guild = โควตาของเซิร์ฟเวอร์นี้หมด / disabled = ไม่ได้ตั้ง GEMINI_KEY
 export type AiQuota = 'ok' | 'global' | 'guild' | 'disabled';
 
-interface DailyUsage {
-    day: string;
-    total: number;
-    guilds: Map<string, number>;
-    // เตือนใน log แค่ครั้งแรกที่โควตาแต่ละแบบหมดในวันนั้น
-    warned: Set<string>;
-}
-
 // ==========================================
 // 🧠 GEMINI — ใช้ทั้ง AI Chat (แท็กบอท) และตัวช่วยตัดสินคำหยาบตามบริบท
 // โควตาต่อวัน (เวลาไทย) นับทุกครั้งที่เรียก Gemini ไม่ว่าจะมาจากระบบไหน และเก็บลงตาราง ai_usage (รีสตาร์ทแล้วไม่รีเซ็ต)
@@ -47,8 +39,6 @@ export class GeminiService {
     private readonly moderationModel: GenerativeModel | null;
     readonly dailyLimit: number;
     readonly guildDailyLimit: number;
-    private usage: DailyUsage | null = null;
-    private loading: Promise<DailyUsage> | null = null;
 
     constructor(
         config: ConfigService<Env, true>,
@@ -87,55 +77,22 @@ export class GeminiService {
     // จองโควตา 1 ครั้งก่อนเรียก Gemini (นับตอนเรียก ไม่ใช่ตอนสำเร็จ — Google ก็นับแบบนั้น)
     async reserve(guildId: string): Promise<AiQuota> {
         if (!this.available) return 'disabled';
-        const usage = await this.today();
-        const used = usage.guilds.get(guildId) ?? 0;
-        const limited: AiQuota | null =
-            usage.total >= this.dailyLimit ? 'global' : !this.discord.isHome(guildId) && used >= this.guildDailyLimit ? 'guild' : null;
-        if (limited) {
-            const key = limited === 'global' ? 'global' : guildId;
-            if (!usage.warned.has(key)) {
-                usage.warned.add(key);
-                this.logger.warn(limited === 'global' ? `โควตา AI ของวันนี้หมดแล้ว (${this.dailyLimit})` : `โควตา AI ของเซิร์ฟเวอร์ ${guildId} หมดแล้ว (${this.guildDailyLimit})`);
-            }
-            return limited;
-        }
-
-        usage.total++;
-        usage.guilds.set(guildId, used + 1);
-        this.logger.log(`🧠 AI Used: ${usage.total}/${this.dailyLimit}`);
-        this.prisma.aiUsage
-            .upsert({
-                where: { day_guildId: { day: usage.day, guildId } },
-                create: { day: usage.day, guildId, count: 1 },
-                update: { count: { increment: 1 } },
-            })
-            .catch((err: Error) => this.logger.error(`บันทึกโควตา AI ไม่สำเร็จ: ${err.message}`));
-        return 'ok';
-    }
-
-    // ยอดใช้ของวันนี้ — ขึ้นวันใหม่ (เวลาไทย) โหลดจากฐานข้อมูลใหม่ 1 ครั้ง
-    private today(): Promise<DailyUsage> {
         const day = bangkokDay();
-        if (this.usage?.day === day) return Promise.resolve(this.usage);
-        this.loading ??= this.load(day).finally(() => (this.loading = null));
-        return this.loading;
-    }
-
-    private async load(day: string): Promise<DailyUsage> {
-        const usage: DailyUsage = { day, total: 0, guilds: new Map(), warned: new Set() };
         try {
-            for (const row of await this.prisma.aiUsage.findMany({ where: { day } })) {
-                usage.guilds.set(row.guildId, row.count);
-                usage.total += row.count;
-            }
-            const cutoff = bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000));
-            await this.prisma.aiUsage.deleteMany({ where: { day: { lt: cutoff } } });
-        } catch (err) {
-            this.logger.error(`โหลดยอดใช้ AI ของวันนี้ไม่สำเร็จ (นับใหม่จาก 0): ${(err as Error).message}`);
+            return await this.prisma.$transaction(async (tx): Promise<AiQuota> => {
+                await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ai-quota:${day}`}))`;
+                const total = await tx.aiUsage.aggregate({ where: { day }, _sum: { count: true } });
+                if ((total._sum.count ?? 0) >= this.dailyLimit) return 'global';
+                const row = await tx.aiUsage.findUnique({ where: { day_guildId: { day, guildId } } });
+                if (!this.discord.isHome(guildId) && (row?.count ?? 0) >= this.guildDailyLimit) return 'guild';
+                await tx.aiUsage.upsert({ where: { day_guildId: { day, guildId } }, create: { day, guildId, count: 1 }, update: { count: { increment: 1 } } });
+                await tx.aiUsage.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000)) } } });
+                return 'ok';
+            });
+        } catch {
+            this.logger.error(JSON.stringify({ event: 'ai_quota_unavailable', guildId }));
+            return 'disabled';
         }
-        this.usage = usage;
-        this.logger.log(`🔄 โควตา AI ของวันที่ ${day}: ใช้ไปแล้ว ${usage.total}/${this.dailyLimit}`);
-        return usage;
     }
 
     // ตอบคำถามจากการแท็กบอท — เรียก reserve() ก่อนเสมอ
