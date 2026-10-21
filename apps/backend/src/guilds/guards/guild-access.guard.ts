@@ -25,7 +25,8 @@ export class GuildAccessGuard implements CanActivate {
         if (!isSnowflake(guildId)) throw notFound('ไม่พบเซิร์ฟเวอร์นี้');
         if (!req.user) return false;
 
-        const required = this.reflector.getAllAndOverride<GuildAccessLevel | undefined>(GUILD_ACCESS_KEY, [context.getHandler(), context.getClass()]) ?? 'manage';
+        const required =
+            this.reflector.getAllAndOverride<GuildAccessLevel | undefined>(GUILD_ACCESS_KEY, [context.getHandler(), context.getClass()]) ?? 'manage';
         const level = await this.access.resolve(req.user, guildId);
         if (!level) {
             throw new ApiException(HttpStatus.FORBIDDEN, 'คุณไม่ได้อยู่ในเซิร์ฟเวอร์นี้ หรือบอทไม่ได้อยู่ในเซิร์ฟเวอร์นี้แล้ว', AUTH_ERROR_CODES.forbidden);

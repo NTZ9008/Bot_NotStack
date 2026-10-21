@@ -43,18 +43,23 @@ try {
             stdio: 'inherit',
         },
     );
-    const result = spawnSync(process.execPath, [
+    const result = spawnSync(
+        process.execPath,
+        [
             '--test',
             'tests/xp-database.test.cjs',
+            'tests/security-database.test.cjs',
             'tests/pr-bot-database.test.cjs',
             'tests/jira-database.test.cjs',
             'tests/fund-database.test.cjs',
             'tests/activity-database.test.cjs',
-        ], {
-        cwd: root,
-        env: { ...process.env, XP_TEST_DATABASE_URL: url },
-        stdio: 'inherit',
-    });
+        ],
+        {
+            cwd: root,
+            env: { ...process.env, XP_TEST_DATABASE_URL: url },
+            stdio: 'inherit',
+        },
+    );
     process.exitCode = result.status ?? 1;
 } finally {
     if (started) execFileSync('pg_ctl', ['-D', `${dir}/data`, '-m', 'immediate', '-w', 'stop'], { stdio: 'pipe' });

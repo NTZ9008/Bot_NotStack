@@ -41,11 +41,16 @@ export class PrBotSettingsService implements OnApplicationBootstrap {
             { mapKey: PR_CONFIG_KEYS.orgChannelMap, legacyKey: 'PR_CHANNEL_PEGASUS', legacyMapKeyName: LEGACY_PEGASUS_ORG },
             { mapKey: PR_CONFIG_KEYS.repoMentionMap, legacyKey: 'PR_MENTION_PEGASUS_TCG_WEB', legacyMapKeyName: LEGACY_PEGASUS_TCG_WEB_REPO },
         ]) {
-            this.migrateSingleKeyToMap(guildId, entry).catch((err: Error) => this.logger.error(`ไม่สามารถย้าย ${entry.legacyKey} ไป ${entry.mapKey} ได้: ${err.message}`));
+            this.migrateSingleKeyToMap(guildId, entry).catch((err: Error) =>
+                this.logger.error(`ไม่สามารถย้าย ${entry.legacyKey} ไป ${entry.mapKey} ได้: ${err.message}`),
+            );
         }
     }
 
-    private async migrateSingleKeyToMap(guildId: string, { mapKey, legacyKey, legacyMapKeyName }: { mapKey: string; legacyKey: string; legacyMapKeyName: string }) {
+    private async migrateSingleKeyToMap(
+        guildId: string,
+        { mapKey, legacyKey, legacyMapKeyName }: { mapKey: string; legacyKey: string; legacyMapKeyName: string },
+    ) {
         if (await this.prisma.config.findUnique({ where: { guildId_key: { guildId, key: mapKey } } })) return;
         const legacyValue = await this.config.get(guildId, legacyKey);
         if (!legacyValue) return;
@@ -85,7 +90,8 @@ export class PrBotSettingsService implements OnApplicationBootstrap {
 
     // secret ของ webhook ของเซิร์ฟเวอร์นี้ — สร้างให้เองครั้งแรก
     async getWebhookSecret(guildId: string, { create = false } = {}): Promise<string | null> {
-        const secret = await this.config.get(guildId, PR_CONFIG_KEYS.webhookSecret);
+        const row = await this.prisma.config.findUnique({ where: { guildId_key: { guildId, key: PR_CONFIG_KEYS.webhookSecret } }, select: { value: true } });
+        const secret = row?.value ?? null;
         if (secret || !create) return secret;
         return this.rotateWebhookSecret(guildId);
     }
@@ -107,7 +113,10 @@ export class PrBotSettingsService implements OnApplicationBootstrap {
     }
 
     // บันทึกเฉพาะส่วนที่ส่งมา
-    async update(guildId: string, input: { defaultChannelId?: string; orgChannels?: Record<string, string>; repoMentions?: Record<string, string> }): Promise<PrBotSettings> {
+    async update(
+        guildId: string,
+        input: { defaultChannelId?: string; orgChannels?: Record<string, string>; repoMentions?: Record<string, string> },
+    ): Promise<PrBotSettings> {
         const assertChannel = async (channelId: string, label: string) => {
             if (!SNOWFLAKE_RE.test(channelId)) throw badRequest(`Channel ID ของ ${label} ไม่ถูกต้อง`);
             if (this.discord.ready && !(await this.discord.fetchGuildChannel(guildId, channelId))) throw badRequest(`ไม่พบห้องของ ${label} ในเซิร์ฟเวอร์นี้`);

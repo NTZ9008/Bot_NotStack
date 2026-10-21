@@ -18,8 +18,7 @@ function findUp(start: string, predicate: (dir: string) => boolean): string | nu
 export const BACKEND_ROOT = findUp(__dirname, (dir) => fs.existsSync(path.join(dir, 'package.json'))) ?? process.cwd();
 
 // root ของ monorepo (มี pnpm-workspace.yaml) — .env / logs เดิมอยู่ที่นี่
-export const REPO_ROOT =
-    findUp(BACKEND_ROOT, (dir) => fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) ?? path.resolve(BACKEND_ROOT, '..', '..');
+export const REPO_ROOT = findUp(BACKEND_ROOT, (dir) => fs.existsSync(path.join(dir, 'pnpm-workspace.yaml'))) ?? path.resolve(BACKEND_ROOT, '..', '..');
 
 export const DEFAULT_LOG_DIR = path.join(REPO_ROOT, 'logs');
 

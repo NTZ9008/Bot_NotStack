@@ -49,6 +49,10 @@ export class GuildAccessService {
         return guild.ownerId === discordId || member.permissions.has(PermissionFlagsBits.ManageGuild) ? 'manage' : 'view';
     }
 
+    forgetGuild(guildId: string): void {
+        for (const key of this.cache.keys()) if (key.endsWith(`:${guildId}`)) this.cache.delete(key);
+    }
+
     // เรียกเมื่อสิทธิ์ของสมาชิกเปลี่ยน (ยศ / ออกจากเซิร์ฟเวอร์) ให้ตรวจใหม่ทันที
     forget(discordId: string, guildId: string): void {
         this.cache.delete(`${discordId}:${guildId}`);

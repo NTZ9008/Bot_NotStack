@@ -17,5 +17,6 @@ export interface AuditContext {
 // req.user ถูกใส่โดย JwtStrategy (ไม่มี = ยังไม่ได้ login)
 export interface AppRequest extends Request {
     user?: User;
+    authSessionId?: string;
     audit: AuditContext;
 }

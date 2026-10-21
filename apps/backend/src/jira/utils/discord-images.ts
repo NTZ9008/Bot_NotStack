@@ -1,3 +1,4 @@
+import { readBoundedResponse } from '../../common/utils/safe-image';
 import { JIRA_LIMITS } from '@notstack/shared';
 import type { UploadFile } from '../clients/jira.client';
 
@@ -76,14 +77,18 @@ export async function downloadDiscordImages(
         try {
             const res = await fetchImpl(url, { redirect: 'error', signal: AbortSignal.timeout(TIMEOUT_MS) });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = Buffer.from(await res.arrayBuffer());
+            const data = await readBoundedResponse(res, maxBytes);
             if (data.length > maxBytes) {
                 skipped.push(`${image.name} (ใหญ่เกิน ${limitMb}MB)`);
                 continue;
             }
             files.push({ name: safeName(image.name, index, used), contentType, data });
-        } catch {
-            skipped.push(`${image.name} (ดาวน์โหลดจาก Discord ไม่ได้)`);
+        } catch (err) {
+            skipped.push(
+                err instanceof Error && err.message === 'Image too large'
+                    ? `${image.name} (ใหญ่เกิน ${limitMb}MB)`
+                    : `${image.name} (ดาวน์โหลดจาก Discord ไม่ได้)`,
+            );
         }
     }
     return { files, skipped };

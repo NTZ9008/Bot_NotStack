@@ -97,7 +97,7 @@ export class AuthController {
     discordLink(@Req() req: AppRequest, @Res() res: Response): void {
         if (!req.user) return res.redirect(this.cfg.dashboardPath('/login'));
         if (!this.cfg.discord.enabled) return res.redirect(this.cfg.dashboardPath('/account?discord_error=discord_disabled'));
-        this.auth.startDiscordFlow(res, 'link', req.user.id);
+        this.auth.startDiscordFlow(res, 'link', req.user.id, req.authSessionId, req.user.tokenVersion);
     }
 
     @Public()
