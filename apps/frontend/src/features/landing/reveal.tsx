@@ -85,3 +85,40 @@ export function useSteps(active: boolean, total: number, intervalMs: number, sta
     }, [active, total, intervalMs, startDelayMs]);
     return step;
 }
+
+// ความคืบหน้าการเลื่อนผ่าน element (0 → 1) — ใช้กับ section ที่สูงกว่าจอแล้วมีของข้างใน sticky
+// 0 = ขอบบนของ element ชนขอบบนจอ, 1 = ขอบล่างของ element ชนขอบล่างจอ
+export function useScrollProgress<T extends HTMLElement>(): [RefObject<T | null>, number] {
+    const ref = useRef<T>(null);
+    const [progress, setProgress] = useState(0);
+
+    useEffect(() => {
+        if (prefersReducedMotion()) {
+            setProgress(1);
+            return;
+        }
+        let frame = 0;
+        const update = () => {
+            frame = 0;
+            const element = ref.current;
+            if (!element) return;
+            const rect = element.getBoundingClientRect();
+            const distance = rect.height - window.innerHeight;
+            const value = distance <= 0 ? (rect.top <= 0 ? 1 : 0) : -rect.top / distance;
+            setProgress(Math.min(1, Math.max(0, value)));
+        };
+        const schedule = () => {
+            if (!frame) frame = requestAnimationFrame(update);
+        };
+        update();
+        window.addEventListener('scroll', schedule, { passive: true });
+        window.addEventListener('resize', schedule);
+        return () => {
+            cancelAnimationFrame(frame);
+            window.removeEventListener('scroll', schedule);
+            window.removeEventListener('resize', schedule);
+        };
+    }, []);
+
+    return [ref, progress];
+}
