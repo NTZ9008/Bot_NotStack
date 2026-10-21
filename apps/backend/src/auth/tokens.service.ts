@@ -14,6 +14,14 @@ const hashToken = (raw: string) => crypto.createHash('sha256').update(raw).diges
 const newRawToken = () => crypto.randomBytes(32).toString('base64url');
 const truncate = (value: string | undefined, max: number) => (typeof value === 'string' ? value.slice(0, max) : null);
 
+// ==========================================
+// 🎟️ TOKENS — session + JWT access token + refresh token แบบหมุนเวียน (rotation)
+// - session (auth_sessions): หนึ่งแถวต่อการ login หนึ่งครั้ง — logout / ยกเลิก session = access และ refresh token ของ session นั้นใช้ไม่ได้ทันที
+//   อายุต่อได้เรื่อยๆ ทีละ 7 วันเมื่อใช้งาน แต่ไม่เกิน 30 วันนับจาก login (absoluteExpiresAt)
+// - access token: JWT (HS256) อายุ 15 นาที มี sid ของ session อยู่ใน httpOnly cookie ไม่มี JS ตัวไหนอ่านได้ (ตรวจใน JwtStrategy)
+// - refresh token: ค่าสุ่ม 256 บิต เก็บใน DB แค่ SHA-256 — ใช้แล้วออกใบใหม่ทุกครั้ง (familyId = id ของ session)
+//   ถ้าใบเก่าที่ถูกแทนไปแล้วถูกนำกลับมาใช้ = โดนขโมย → ยกเลิกทั้ง session ทันที
+// ==========================================
 @Injectable()
 export class TokensService {
     constructor(
@@ -22,6 +30,7 @@ export class TokensService {
         private readonly cfg: AuthConfig,
     ) {}
 
+    // tv (token version) ต้องตรงกับใน DB — เพิ่มค่าเมื่อไหร่ access token เก่าทุกใบของผู้ใช้นั้นใช้ไม่ได้ทันที
     signAccessToken(user: User, sessionId: string): string {
         return this.jwt.sign(
             { role: user.role, tv: user.tokenVersion, sid: sessionId },
@@ -78,6 +87,7 @@ export class TokensService {
         return session.user;
     }
 
+    // แลก refresh token ใบเดิมเป็นใบใหม่
     async rotateRefreshToken(raw: string, { ip, userAgent }: RequestContext = {}): Promise<RotateResult> {
         if (!/^[A-Za-z0-9_-]{43}$/.test(raw)) return { status: 'invalid' };
         const record = await this.prisma.refreshToken.findUnique({ where: { tokenHash: hashToken(raw) } });
@@ -99,7 +109,9 @@ export class TokensService {
             )
                 return { status: 'invalid' };
             if (current.revokedAt) {
+                // ใบที่ถูก logout ไปแล้ว (ไม่มีใบใหม่มาแทน) — แค่หมดอายุ ไม่ใช่การขโมย
                 if (!current.replacedById) return { status: 'invalid' };
+                // เพิ่งถูกแทนไม่กี่วินาที (เช่นเปิดหลายแท็บแล้ว refresh พร้อมกัน) — ให้ฝั่งเว็บใช้ cookie ใบใหม่ที่อีกแท็บได้ไป
                 if (now - current.revokedAt.getTime() < AUTH.REFRESH_REUSE_GRACE_MS) return { status: 'rotated' };
                 await tx.authSession.update({ where: { id: session.id }, data: { revokedAt: new Date(now) } });
                 return { status: 'reused', user: session.user };
@@ -135,16 +147,20 @@ export class TokensService {
     revokeAllForUser(userId: number) {
         return this.prisma.authSession.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } });
     }
+    // ใบ / session ที่หมดอายุแล้วเก็บไว้ก็ไม่มีประโยชน์ (ตรวจการใช้ซ้ำได้แค่ช่วงที่ยังไม่หมดอายุ)
     async deleteExpired() {
         await this.prisma.refreshToken.deleteMany({ where: { expiresAt: { lt: new Date() } } });
         return this.prisma.authSession.deleteMany({ where: { expiresAt: { lt: new Date() } } });
     }
+    // --- Cookies ---
     get cookieBase(): CookieOptions {
         return { httpOnly: true, secure: this.cfg.isProduction };
     }
+    // Lax: ส่งไปกับการเปิดลิงก์ Dashboard จากที่อื่น (เช่นกดจาก Discord / redirect กลับจาก OAuth) ได้ แต่ไม่ส่งกับ POST ข้ามเว็บ
     private get accessCookie(): CookieOptions {
         return { ...this.cookieBase, sameSite: 'lax', path: '/' };
     }
+    // Strict + จำกัด path: refresh token ถูกส่งเฉพาะตอนหน้าเว็บของเราเองเรียก /api/auth/* เท่านั้น
     private get refreshCookie(): CookieOptions {
         return { ...this.cookieBase, sameSite: 'strict', path: '/api/auth' };
     }

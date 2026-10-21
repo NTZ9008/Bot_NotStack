@@ -9,6 +9,7 @@ const { WebhookQueueService } = require('../apps/backend/dist/pr-bot/webhook-que
 const { GeminiService } = require('../apps/backend/dist/chat/gemini.service');
 const { WelcomeStore } = require('../apps/backend/dist/welcome/welcome.store');
 const { JwtService } = require('../apps/backend/node_modules/@nestjs/jwt');
+const bcrypt = require('../apps/backend/node_modules/bcryptjs');
 const url = process.env.XP_TEST_DATABASE_URL;
 if (!url || new URL(url).pathname !== '/notstack_xp_test') throw Error('Use pnpm test:integration');
 const prisma = new PrismaService({ get: () => url });
@@ -31,7 +32,8 @@ beforeEach(async () => {
     await prisma.authSession.deleteMany();
     await prisma.user.deleteMany({ where: { username: { startsWith: 'security-fixture' } } });
     await prisma.webhookDelivery.deleteMany();
-    user = await prisma.user.create({ data: { username: 'security-fixture', tokenVersion: 0 } });
+    // users_login_method_check: บัญชีต้องมีรหัสผ่านหรือ Discord อย่างน้อยหนึ่งอย่าง
+    user = await prisma.user.create({ data: { username: 'security-fixture', passwordHash: await bcrypt.hash('fixture-password', 4), tokenVersion: 0 } });
 });
 after(async () => prisma.$disconnect());
 

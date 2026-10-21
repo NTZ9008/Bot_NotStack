@@ -38,7 +38,8 @@ export class BotConfigService {
                 .then((rows) => {
                     const values = new Map(rows.map((row) => [row.key, row.value]));
                     if (this.cache.size >= 1000) this.cache.delete(this.cache.keys().next().value!);
-                    if (rows.length) this.cache.set(guildId, { values, at: Date.now() });
+                    // เซิร์ฟเวอร์ที่ยังไม่มีการตั้งค่าก็ต้องแคช ไม่งั้นทุก event ของบอทจะ query ซ้ำ (webhook ที่ยังไม่ยืนยันตัวตนไม่ผ่านแคชนี้แล้ว)
+                    this.cache.set(guildId, { values, at: Date.now() });
                     return values;
                 })
                 .finally(() => this.loading.delete(guildId));

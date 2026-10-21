@@ -49,3 +49,13 @@ CREATE UNIQUE INDEX "webhook_deliveries_guild_id_digest_key" ON "webhook_deliver
 -- AddForeignKey
 ALTER TABLE "auth_sessions" ADD CONSTRAINT "auth_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+
+-- Backfill: login ที่ยังใช้งานอยู่ (refresh token ยังไม่หมดอายุ/ไม่ถูกยกเลิก) ได้ session ของตัวเอง
+-- ผู้ใช้จึงไม่หลุดจากระบบหลัง deploy — access token เดิมไม่มี sid จะ 401 ครั้งเดียวแล้วหน้าเว็บ refresh ต่อให้เอง
+INSERT INTO "auth_sessions" ("id", "user_id", "token_version", "created_at", "expires_at", "absolute_expires_at")
+SELECT rt."family_id", rt."user_id", u."token_version", MIN(rt."created_at"), MAX(rt."expires_at"), NOW() + INTERVAL '30 days'
+FROM "refresh_tokens" rt
+JOIN "users" u ON u."id" = rt."user_id"
+WHERE rt."revoked_at" IS NULL AND rt."expires_at" > NOW()
+GROUP BY rt."family_id", rt."user_id", u."token_version"
+ON CONFLICT ("id") DO NOTHING;

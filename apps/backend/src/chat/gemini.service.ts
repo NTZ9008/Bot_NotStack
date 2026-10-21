@@ -35,6 +35,8 @@ export type AiQuota = 'ok' | 'global' | 'guild' | 'disabled';
 @Injectable()
 export class GeminiService {
     private readonly logger = new Logger('AI');
+    // วันที่ล้างยอดใช้ AI เก่าไปแล้ว (ล้างวันละครั้ง)
+    private cleanedDay: string | null = null;
     private readonly chatModel: GenerativeModel | null;
     private readonly moderationModel: GenerativeModel | null;
     readonly dailyLimit: number;
@@ -86,7 +88,11 @@ export class GeminiService {
                 const row = await tx.aiUsage.findUnique({ where: { day_guildId: { day, guildId } } });
                 if (!this.discord.isHome(guildId) && (row?.count ?? 0) >= this.guildDailyLimit) return 'guild';
                 await tx.aiUsage.upsert({ where: { day_guildId: { day, guildId } }, create: { day, guildId, count: 1 }, update: { count: { increment: 1 } } });
-                await tx.aiUsage.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000)) } } });
+                // ลบยอดเก่าวันละครั้งพอ ไม่ต้องทำทุกครั้งที่เรียก AI
+                if (this.cleanedDay !== day) {
+                    await tx.aiUsage.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000)) } } });
+                    this.cleanedDay = day;
+                }
                 return 'ok';
             });
         } catch {

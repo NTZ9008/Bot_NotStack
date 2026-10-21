@@ -102,8 +102,11 @@ export function calculateDailyAmount(dailyRate: number, from: string | Date, to:
 // สร้างไฟล์ CSV พร้อม UTF-8 BOM สำหรับเปิดใน Excel ได้ภาษาไทยไม่เพี้ยน
 function escapeCsv(cell: unknown): string {
     let str = String(cell ?? '');
-    // ป้องกัน CSV Formula Injection ใน Microsoft Excel / LibreOffice
-    if (/^[\s\u0000-\u001f]*[=+\-@]/.test(str) || /^[\t\r\n]/.test(str)) {
+    // ป้องกัน CSV Formula Injection ใน Microsoft Excel / LibreOffice — ข้ามช่องว่าง/อักขระควบคุมนำหน้าก่อนดูตัวแรก
+    let start = 0;
+    while (start < str.length && (str.charCodeAt(start) <= 0x20 || /\s/.test(str[start]))) start++;
+    const first = str[start];
+    if ((first && '=+-@'.includes(first)) || /^[\t\r\n]/.test(str)) {
         str = `'${str}`;
     }
     return str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r') ? `"${str.replace(/"/g, '""')}"` : str;

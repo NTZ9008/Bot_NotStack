@@ -17,6 +17,7 @@ const { allowedOrigins } = require('../apps/backend/dist/config/allowed-origins'
 const { validateEnv } = require('../apps/backend/dist/config/env.validation');
 const { safeImage, readBoundedResponse } = require('../apps/backend/dist/common/utils/safe-image');
 const { GeminiService } = require('../apps/backend/dist/chat/gemini.service');
+const { WebhookQueueService } = require('../apps/backend/dist/pr-bot/webhook-queue.service');
 const { JwtService } = req('@nestjs/jwt');
 const quiet = (target) => {
     target.logger = { log() {}, warn() {}, error() {} };
@@ -124,7 +125,7 @@ test('cookies retain HttpOnly/Secure/SameSite and logout clears pending OAuth st
     assert(cleared.includes('__Secure-ns_oauth'));
 });
 
-test('invalid webhook signatures never populate configuration cache; unknown guilds are rejected', async () => {
+test('invalid webhook signatures never read secrets or settings; configuration cache stays bounded', async () => {
     let lookups = 0;
     const bot = new PrBotService(
         {
@@ -148,9 +149,24 @@ test('invalid webhook signatures never populate configuration cache; unknown gui
     assert.equal(lookups, 0);
     assert.equal(await bot.verifySignature('12345', Buffer.from('{}'), 'sha256=' + '0'.repeat(64), false), false);
     assert.equal(lookups, 1);
-    const config = new BotConfigService({ config: { findMany: async () => [] } }, { isHome: () => false });
-    for (let i = 0; i < 100; i++) await config.get(String(i), 'missing');
-    assert.equal(config.cache.size, 0);
+    // เซิร์ฟเวอร์ที่ยังไม่มีการตั้งค่าก็แคช (ไม่ query ทุก event) แต่จำนวน entry ต้องไม่โตเกินเพดาน
+    let queries = 0;
+    const config = new BotConfigService(
+        {
+            config: {
+                findMany: async () => {
+                    queries++;
+                    return [];
+                },
+            },
+        },
+        { isHome: () => false },
+    );
+    await config.get('1', 'missing');
+    await config.get('1', 'missing');
+    assert.equal(queries, 1);
+    for (let i = 0; i < 1100; i++) await config.get(String(1000 + i), 'missing');
+    assert(config.cache.size <= 1000);
 });
 
 test('webhook controller ACKs only after durable enqueue succeeds', async () => {
@@ -200,7 +216,47 @@ test('image processing rejects vector input, excessive dimensions and oversized 
     assert(cancelled);
 });
 
-test('production startup requires HTTPS origins and a strong secret; proxy hop counts/wildcards are rejected', () => {
+test('image processing queues bursts (leaderboard avatars) instead of failing, keeps photo formats and reads GIF first frame', async () => {
+    const sharp = req('sharp');
+    const png = await sharp({ create: { width: 64, height: 64, channels: 4, background: '#336699' } })
+        .png()
+        .toBuffer();
+    const results = await Promise.all(Array.from({ length: 11 }, () => safeImage(png, 32)));
+    assert(results.every((r) => r.width === 32 && r.mimeType === 'image/png'));
+    const jpeg = await sharp({ create: { width: 8, height: 8, channels: 3, background: '#ff0000' } })
+        .jpeg()
+        .toBuffer();
+    assert.equal((await safeImage(jpeg)).mimeType, 'image/jpeg');
+    const gif = await sharp({ create: { width: 4, height: 4, channels: 4, background: '#00ff00' } })
+        .gif()
+        .toBuffer();
+    assert.equal((await safeImage(gif)).mimeType, 'image/png');
+});
+
+test('webhook queue acknowledges unused events without storing them and drains bursts in one pass', async () => {
+    let stored = 0;
+    const queue = quiet(new WebhookQueueService({ $transaction: async () => stored++ }, {}));
+    const delivery = '12345678-1234-1234-1234-123456789abc';
+    await queue.enqueue('12345', delivery, 'push', Buffer.from('{}'));
+    await queue.enqueue('12345', delivery, 'ping', Buffer.from('{}'));
+    assert.equal(stored, 0);
+
+    const jobs = Array.from({ length: 30 }, (_, i) => ({ id: `job-${i}`, guildId: '12345', event: 'status', payload: {}, attempts: 1 }));
+    const handled = [];
+    const prisma = {
+        webhookDelivery: { updateMany: async () => ({ count: 0 }), update: async () => ({}) },
+        $transaction: async (fn) =>
+            fn({
+                $queryRaw: async () => (jobs.length ? [{ id: jobs[0].id }] : []),
+                webhookDelivery: { update: async () => jobs.shift() },
+            }),
+    };
+    const worker = quiet(new WebhookQueueService(prisma, { handle: async (_g, _e, _p, id) => handled.push(id) }));
+    await worker.drain();
+    assert.equal(handled.length, 30);
+});
+
+test('production startup requires HTTPS origins and a strong secret; proxy settings are validated', () => {
     const base = { DATABASE_URL: 'postgresql://fixture/fixture' };
     assert.throws(() => validateEnv(base));
     const prod = { ...base, JWT_SECRET: 'x'.repeat(48), DASHBOARD_URL: 'https://dashboard.example.com' };
@@ -208,13 +264,24 @@ test('production startup requires HTTPS origins and a strong secret; proxy hop c
     for (const patch of [
         { NODE_ENV: 'prod' },
         { DASHBOARD_URL: 'http://dashboard.example.com' },
-        { CORS_ORIGINS: 'https://*.example.com' },
-        { TRUST_PROXY: '1' },
+        { DASHBOARD_URL: 'https://*.example.com' },
+        { CORS_ORIGINS: 'http://*.example.com' },
+        { CORS_ORIGINS: '*.example.com' },
+        { CORS_ORIGINS: 'https://user:pass@dash.example.com' },
         { TRUST_PROXY: 'true' },
+        { TRUST_PROXY: '10.0.0.0/99' },
     ]) {
-        assert.throws(() => validateEnv({ ...prod, ...patch }));
+        assert.throws(() => validateEnv({ ...prod, ...patch }), undefined, JSON.stringify(patch));
     }
-    assert.equal(validateEnv(prod).HOST, '127.0.0.1');
+    // preview ของ Cloudflare Workers ใช้ * แทน subdomain ได้ถ้าเป็น https
+    assert.deepEqual(validateEnv({ ...prod, CORS_ORIGINS: 'https://*-bot-notstack.example.workers.dev' }).CORS_ORIGINS, [
+        'https://*-bot-notstack.example.workers.dev',
+    ]);
+    assert.deepEqual(validateEnv(prod).TRUST_PROXY, ['loopback']);
+    assert.equal(validateEnv({ ...prod, TRUST_PROXY: '1' }).TRUST_PROXY, 1);
+    assert.deepEqual(validateEnv({ ...prod, TRUST_PROXY: 'loopback, 10.0.0.0/8' }).TRUST_PROXY, ['loopback', '10.0.0.0/8']);
+    // ไม่ตั้ง HOST = รับทุก interface แบบเดิม
+    assert.equal(validateEnv(prod).HOST, undefined);
 });
 
 test('AI requests fail closed when durable quota reservation fails', async () => {

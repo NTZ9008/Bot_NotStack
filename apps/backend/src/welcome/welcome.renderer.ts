@@ -1,13 +1,15 @@
 import { safeImage, readBoundedResponse } from '../common/utils/safe-image';
 import { renderSurface } from '../common/utils/render-surface';
 import { Injectable, Logger } from '@nestjs/common';
-import { createCanvas, loadImage, type Image, type SKRSContext2D } from '@napi-rs/canvas';
+import { loadImage, type Image, type SKRSContext2D } from '@napi-rs/canvas';
 import { fillPlaceholders, WELCOME_MAX_UPLOAD_BYTES, type WelcomeDesign, type WelcomeTextLayer, type WelcomeVars } from '@notstack/shared';
 import type { User } from 'discord.js';
 import { fontString, registerFonts } from '../common/canvas/fonts';
 import { WelcomeStore } from './welcome.store';
 
 const AVATAR_TIMEOUT_MS = 5000;
+// รูปโปรไฟล์ที่ขอจาก Discord (ไม่เกิน 512px) ไม่ควรใหญ่เกินนี้
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 // รูปที่ใหญ่กว่านี้จะถูกย่อก่อนเก็บลงฐานข้อมูล (การ์ดกว้างได้สูงสุด 2000px อยู่แล้ว)
 const ASSET_CACHE_SIZE = 8;
 // /leaderboard โหลดทีละ 10 คน + ไอคอนเซิร์ฟเวอร์
@@ -56,7 +58,8 @@ export class WelcomeRenderer {
         }
         const file = await this.store.getAssetFile(assetId);
         if (!file) return null;
-        const image = await loadImage((await safeImage(Buffer.from(file.data))).data);
+        // รูปในคลังผ่าน safeImage (ตรวจพิกเซล + ย่อไม่เกิน 2400px) ตั้งแต่ตอนอัปโหลดแล้ว — เปิดตรงได้เลย ไม่ต้องรอคิวประมวลผลซ้ำ
+        const image = await loadImage(Buffer.from(file.data));
         remember(this.assetCache, assetId, image, ASSET_CACHE_SIZE);
         return image;
     }
@@ -89,7 +92,7 @@ export class WelcomeRenderer {
                 throw new Error('Unsupported image host');
             const res = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(AVATAR_TIMEOUT_MS) });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const image = await loadImage((await safeImage(await readBoundedResponse(res), 512)).data);
+            const image = await loadImage((await safeImage(await readBoundedResponse(res, AVATAR_MAX_BYTES), 512)).data);
             remember(this.avatarCache, url, image, AVATAR_CACHE_SIZE);
             return image;
         } catch (err) {

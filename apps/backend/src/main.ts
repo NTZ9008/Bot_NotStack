@@ -101,7 +101,9 @@ async function bootstrap(): Promise<void> {
     app.enableShutdownHooks();
 
     const port = config.get('PORT', { infer: true });
-    await app.listen(port, config.get('HOST', { infer: true }));
+    const host = config.get('HOST', { infer: true });
+    if (host) await app.listen(port, host);
+    else await app.listen(port);
     logger.log(`🚀 API running on http://localhost:${port}`);
 }
 
