@@ -64,7 +64,7 @@ export function StatusLine() {
     return (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Dot ok={online} />
-            {online === undefined ? 'กำลังเช็คสถานะ…' : online ? `บอทออนไลน์อยู่${days > 0 ? ` · ออนไลน์ต่อเนื่อง ${days} วัน` : ''}` : 'ตอนนี้บอทออฟไลน์'}
+            {online === undefined ? 'กำลังเช็ค…' : online ? `บอทออนไลน์${days > 0 ? ` · ต่อเนื่อง ${days} วัน` : ''}` : 'บอทออฟไลน์'}
             <a href="#status" className="underline decoration-dotted underline-offset-4 hover:text-foreground">
                 ดูสถานะ
             </a>

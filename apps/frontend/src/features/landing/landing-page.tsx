@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowUpRight } from 'lucide-react';
-import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
+import type { MouseEvent, ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { CommandSearch } from './command-search';
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
+import { HeroShowcase } from './hero-showcase';
 import { prefersReducedMotion, Reveal } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 
@@ -16,8 +17,10 @@ import { StatusLine, SystemStatus } from './system-status';
 // 🏠 หน้า landing (สาธารณะ) — แนะนำบอท ค้นหาคำสั่ง สถานะระบบ และทีมผู้พัฒนา
 // ==========================================
 
+// ลำดับเดียวกับ section ในหน้า: รู้จัก → เริ่มใช้ → ใช้งาน → ความน่าเชื่อถือ → คนทำ
 const NAV_LINKS = [
     { href: '#features', label: 'ทำอะไรได้' },
+    { href: '#start', label: 'เริ่มใช้' },
     { href: '#commands', label: 'คำสั่ง' },
     { href: '#status', label: 'สถานะ' },
     { href: '#growth', label: 'การเติบโต' },
@@ -43,93 +46,34 @@ function InviteButton({ inviteUrl, className = '' }: { inviteUrl?: string | null
     );
 }
 
-function Section({ id, title, aside, children, className = '' }: { id: string; title: string; aside?: ReactNode; children: ReactNode; className?: string }) {
+function Section({
+    id,
+    step,
+    title,
+    aside,
+    children,
+    band,
+}: {
+    id: string;
+    step: number;
+    title: string;
+    aside?: ReactNode;
+    children: ReactNode;
+    band?: boolean;
+}) {
     return (
-        <section id={id} className={`mx-auto max-w-5xl scroll-mt-20 px-4 py-16 sm:py-20 ${className}`}>
-            <Reveal className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
-                {aside && <div className="max-w-md text-sm text-muted-foreground sm:text-right">{aside}</div>}
-            </Reveal>
-            {children}
-        </section>
-    );
-}
-
-// ตัวอย่างแชทใน Discord (ข้อความจำลอง) — เล่นทีละจังหวะ: ถาม → บอทกำลังพิมพ์ → ตอบ → เลเวลอัป
-function useChatStep() {
-    const [step, setStep] = useState(0);
-    useEffect(() => {
-        if (prefersReducedMotion()) {
-            setStep(4);
-            return;
-        }
-        const timers = [400, 1100, 2500, 3400].map((at, index) => setTimeout(() => setStep(index + 1), at));
-        return () => timers.forEach(clearTimeout);
-    }, []);
-    return step;
-}
-
-function ChatMessage({ show, children }: { show: boolean; children: ReactNode }) {
-    return (
-        <div
-            className={`transition-[opacity,translate] duration-500 ease-out motion-reduce:transition-none ${show ? 'translate-none opacity-100' : 'translate-y-2 opacity-0'}`}
-        >
-            {children}
+        <div className={band ? 'border-y bg-card/30' : undefined}>
+            <section id={id} className="mx-auto max-w-5xl scroll-mt-20 px-4 py-16 sm:py-20">
+                <Reveal className="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <h2 className="flex items-baseline gap-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+                        <span className="font-mono text-sm font-normal text-indigo-300">{step}</span>
+                        {title}
+                    </h2>
+                    {aside && <div className="max-w-md text-sm text-muted-foreground sm:text-right">{aside}</div>}
+                </Reveal>
+                {children}
+            </section>
         </div>
-    );
-}
-
-function ChatPreview({ botName, botAvatar }: { botName: string; botAvatar: string }) {
-    const step = useChatStep();
-    return (
-        <figure className="w-full max-w-md rotate-[0.6deg] overflow-hidden rounded-lg border border-black/40 bg-[#313338] text-[15px] shadow-xl transition-transform duration-500 hover:rotate-0">
-            <div className="flex items-center gap-2 border-b border-black/30 px-4 py-2.5 text-sm font-semibold text-slate-200">
-                <span className="text-lg leading-none text-slate-500">#</span> คุยเล่น
-            </div>
-            <div className="min-h-64 space-y-4 p-4">
-                <ChatMessage show={step >= 1}>
-                    <div className="flex gap-3">
-                        <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-sm font-semibold text-white">ม</div>
-                        <div className="min-w-0">
-                            <p className="text-sm">
-                                <span className="font-medium text-emerald-300">มายด์</span> <span className="text-xs text-slate-500">วันนี้ เวลา 17:42</span>
-                            </p>
-                            <p className="text-slate-200">
-                                <span className="rounded bg-indigo-500/30 px-0.5 text-indigo-200">@{botName}</span> เย็นนี้ฝนตกปะ จะออกไปกินหมูกระทะ
-                            </p>
-                        </div>
-                    </div>
-                </ChatMessage>
-                {step === 2 && (
-                    <p className="flex items-center gap-2 text-xs text-slate-400">
-                        <span className="flex gap-0.5">
-                            {[0, 150, 300].map((delay) => (
-                                <span key={delay} className="size-1.5 animate-bounce rounded-full bg-slate-400" style={{ animationDelay: `${delay}ms` }} />
-                            ))}
-                        </span>
-                        <span className="font-medium text-slate-300">{botName}</span> กำลังพิมพ์…
-                    </p>
-                )}
-                <ChatMessage show={step >= 3}>
-                    <div className="flex gap-3">
-                        <img src={botAvatar} alt="" className="size-10 shrink-0 rounded-full" />
-                        <div className="min-w-0 space-y-1">
-                            <p className="flex items-center gap-1.5 text-sm">
-                                <span className="font-medium text-indigo-300">{botName}</span>
-                                <span className="rounded bg-[#5865F2] px-1 text-[10px] font-semibold text-white">APP</span>
-                                <span className="text-xs text-slate-500">วันนี้ เวลา 17:42</span>
-                            </p>
-                            <p className="text-slate-200">ช่วงหัวค่ำมีลุ้นฝนประมาณ 60% เลย พกร่มไปด้วยดีกว่า ☔ อยากดูเรดาร์ฝนพิมพ์ /weather ได้นะ</p>
-                        </div>
-                    </div>
-                </ChatMessage>
-                <ChatMessage show={step >= 4}>
-                    <p className="border-t border-white/5 pt-3 text-sm text-slate-400">
-                        🎉 <span className="text-slate-200">มายด์</span> เลเวลอัปเป็น <span className="font-semibold text-amber-300">Lv. 12</span> แล้ว!
-                    </p>
-                </ChatMessage>
-            </div>
-        </figure>
     );
 }
 
@@ -189,13 +133,14 @@ export function LandingPage() {
                                 บอทประจำเซิร์ฟ
                                 <br />
                                 NotStackOverflow
-                                <span className="mt-2 block text-2xl font-medium text-muted-foreground sm:text-3xl">ที่ตอนนี้เซิร์ฟคุณก็ใช้ได้</span>
+                                <span className="mt-2 block text-2xl font-medium text-muted-foreground sm:text-3xl">ตอนนี้เซิร์ฟคุณก็ใช้ได้</span>
                             </h1>
                         </Reveal>
                         <Reveal delay={200}>
                             <p className="max-w-lg text-pretty text-slate-300">
-                                เริ่มจากทำไว้กันคนแกล้งในห้องเสียง แล้วก็เพิ่มของที่พวกเราอยากใช้ไปเรื่อยๆ — ระบบเลเวล การ์ดต้อนรับ แจ้งเตือน PR รายงานอากาศ
-                                จนตอนนี้เปิดให้เซิร์ฟอื่นเอาไปใช้ด้วย ตั้งค่าทุกอย่างผ่านหน้าเว็บ ไม่ต้องจำคำสั่ง
+                                กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล แจ้งอากาศทุกเช้า
+                                <br />
+                                ตั้งค่าผ่านเว็บได้หมด ไม่ต้องจำคำสั่ง
                             </p>
                         </Reveal>
                         <Reveal delay={300} className="flex flex-wrap items-center gap-3">
@@ -206,20 +151,19 @@ export function LandingPage() {
                         </Reveal>
                     </div>
                     <Reveal delay={200} from="right" className="flex justify-center lg:justify-end">
-                        <ChatPreview botName={bot.name} botAvatar={bot.avatar} />
+                        <HeroShowcase botName={bot.name} botAvatar={bot.avatar} />
                     </Reveal>
                 </section>
 
                 {/* ความสามารถ */}
-                <Section id="features" title="บอทตัวนี้ทำอะไรได้บ้าง" aside="ทุกอย่างเปิด/ปิดได้แยกกัน ในหน้าตั้งค่าของแต่ละเซิร์ฟ">
+                <Section id="features" step={1} title="ทำอะไรได้บ้าง" aside="เปิด / ปิดแต่ละอย่างได้เอง">
                     <div className="space-y-20 sm:space-y-28">
                         {FEATURE_GROUPS.map((group, index) => {
                             const flipped = index % 2 === 1;
                             return (
                                 <div key={group.id} className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
                                     <Reveal from={flipped ? 'right' : 'left'} className={flipped ? 'lg:order-2' : undefined}>
-                                        <p className="font-mono text-xs text-indigo-300">{String(index + 1).padStart(2, '0')}</p>
-                                        <h3 className="mt-1 text-xl font-semibold sm:text-2xl">{group.label}</h3>
+                                        <h3 className="text-xl font-semibold sm:text-2xl">{group.label}</h3>
                                         <p className="mt-2 text-sm text-pretty text-muted-foreground">{group.intro}</p>
                                         <dl className="mt-6 space-y-4 border-l border-white/10 pl-4">
                                             {group.features.map((feature) => (
@@ -240,64 +184,52 @@ export function LandingPage() {
                     </div>
                 </Section>
 
+                {/* เริ่มใช้งาน */}
+                <Section id="start" step={2} band title="เริ่มใช้ใน 3 ขั้น">
+                    <ol className="grid gap-8 sm:grid-cols-3">
+                        {[
+                            { title: 'เชิญบอท', text: 'กด “เพิ่มเข้า Discord” แล้วเลือกเซิร์ฟ' },
+                            { title: 'Login', text: 'เข้า Dashboard ด้วยบัญชี Discord' },
+                            { title: 'ตั้งค่า', text: 'เลือกห้อง แล้วเปิดสิ่งที่อยากใช้' },
+                        ].map((step, index) => (
+                            <Reveal as="li" key={step.title} delay={index * 120} className="border-l-2 border-indigo-400/40 pl-4">
+                                <p className="font-mono text-xs text-indigo-300">ขั้นที่ {index + 1}</p>
+                                <p className="mt-1 font-medium">{step.title}</p>
+                                <p className="mt-1 text-sm text-muted-foreground">{step.text}</p>
+                            </Reveal>
+                        ))}
+                    </ol>
+                    <Reveal delay={300} className="mt-10 flex flex-wrap gap-3">
+                        <InviteButton inviteUrl={inviteUrl} className="h-10 px-4" />
+                        <Button asChild variant="outline" className="h-10 px-4">
+                            <Link to="/dashboard">เข้า Dashboard</Link>
+                        </Button>
+                    </Reveal>
+                </Section>
+
                 {/* คำสั่ง */}
-                <div className="border-y bg-card/30">
-                    <Section
-                        id="commands"
-                        title="คำสั่งทั้งหมด"
-                        aside={
-                            <>
-                                กดที่คำสั่งเพื่อดูวิธีใช้ — ใน Discord พิมพ์ <code className="font-mono text-foreground">/</code> แล้วเลือกได้เลย
-                            </>
-                        }
-                    >
-                        <Reveal delay={100}>
-                            <CommandSearch />
-                        </Reveal>
-                    </Section>
-                </div>
+                <Section id="commands" step={3} title="คำสั่ง" aside="ค้นหา แล้วกดดูวิธีใช้">
+                    <Reveal delay={100}>
+                        <CommandSearch />
+                    </Reveal>
+                </Section>
 
                 {/* สถานะระบบ */}
-                <Section id="status" title="สถานะระบบ" aside="ข้อมูลจริงจากเซิร์ฟเวอร์ที่บอทรันอยู่">
+                <Section id="status" step={4} band title="สถานะระบบ" aside="ข้อมูลสด อัปเดตทุกนาที">
                     <Reveal delay={100}>
                         <SystemStatus />
                     </Reveal>
                 </Section>
 
-                {/* เริ่มใช้งาน */}
-                <div className="border-y bg-card/30">
-                    <Section id="start" title="เริ่มใช้ในเซิร์ฟคุณ">
-                        <ol className="grid gap-8 sm:grid-cols-3">
-                            {[
-                                { title: 'เชิญบอท', text: 'กด “เพิ่มเข้า Discord” แล้วเลือกเซิร์ฟที่คุณมีสิทธิ์ Manage Server' },
-                                { title: 'Login ด้วย Discord', text: 'เข้า Dashboard แล้วจะเห็นเฉพาะเซิร์ฟที่คุณจัดการได้' },
-                                { title: 'เลือกห้อง เปิดสิ่งที่อยากใช้', text: 'ไม่ต้องเปิดทุกอย่าง ค่อยๆ เปิดทีละอันก็ได้ ปรับได้ตลอด' },
-                            ].map((step, index) => (
-                                <Reveal as="li" key={step.title} delay={index * 120} className="border-l-2 border-indigo-400/40 pl-4">
-                                    <p className="font-mono text-xs text-indigo-300">ขั้นที่ {index + 1}</p>
-                                    <p className="mt-1 font-medium">{step.title}</p>
-                                    <p className="mt-1 text-sm text-muted-foreground">{step.text}</p>
-                                </Reveal>
-                            ))}
-                        </ol>
-                        <Reveal delay={300} className="mt-10 flex flex-wrap gap-3">
-                            <InviteButton inviteUrl={inviteUrl} className="h-10 px-4" />
-                            <Button asChild variant="outline" className="h-10 px-4">
-                                <Link to="/dashboard">เข้า Dashboard</Link>
-                            </Button>
-                        </Reveal>
-                    </Section>
-                </div>
-
                 {/* การเติบโตของโปรเจกต์ */}
-                <Section id="growth" title="โปรเจกต์โตขึ้นแค่ไหน" aside="นับจาก commit และ pull request จริงตั้งแต่วันแรก อัปเดตทุกชั่วโมง">
+                <Section id="growth" step={5} title="การเติบโต" aside="commit และ PR ตั้งแต่วันแรก">
                     <Reveal delay={100}>
                         <GrowthSection />
                     </Reveal>
                 </Section>
 
                 {/* ทีมผู้พัฒนา */}
-                <Section id="team" title="ผู้พัฒนา" aside="ทำกันในเวลาว่าง เจอบั๊กหรืออยากได้อะไรเพิ่ม ทักมาในเซิร์ฟได้เลย">
+                <Section id="team" step={6} band title="ผู้พัฒนา" aside="เจอบั๊ก ทักมาในเซิร์ฟได้เลย">
                     <ul className="grid gap-4 sm:grid-cols-2">
                         {TEAM.map((member, index) => (
                             <Reveal

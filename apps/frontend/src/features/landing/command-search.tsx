@@ -122,7 +122,7 @@ export function CommandSearch() {
                             if (event.key === 'Escape') setQuery('');
                             if (event.key === 'Enter' && results[0]) setOpen(results[0].name);
                         }}
-                        placeholder="ลองพิมพ์ rank, อากาศ, โพล…"
+                        placeholder="ค้นหา เช่น rank, อากาศ, โพล"
                         className="h-11 w-full rounded-lg border bg-background pr-16 pl-9 text-sm outline-none placeholder:text-muted-foreground/70 focus:border-indigo-400/60 focus:ring-3 focus:ring-indigo-500/20"
                     />
                     {query ? (
@@ -189,7 +189,7 @@ export function CommandSearch() {
                 )}
             </div>
             <p className="text-xs text-muted-foreground">
-                {results.length} จาก {COMMANDS.length} คำสั่ง · คำสั่ง “เฉพาะเซิร์ฟหลัก” ใช้ได้แค่ในเซิร์ฟ NotStackOverflow
+                {results.length} จาก {COMMANDS.length} คำสั่ง
             </p>
         </div>
     );
