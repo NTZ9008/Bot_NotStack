@@ -3,8 +3,8 @@ import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
@@ -64,14 +64,23 @@ function LoginPage() {
     });
 
     return (
-        <div className="flex min-h-svh items-center justify-center p-4">
+        <div className="relative flex min-h-svh items-center justify-center p-4">
+            <Link
+                to="/"
+                className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+                <ArrowLeft className="size-4" />
+                กลับหน้าแรก
+            </Link>
             <div className="w-full max-w-sm space-y-6">
                 <div className="flex justify-center">
-                    <img
-                        src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
-                        alt="Bot Logo"
-                        className="size-18 rounded-full border-2 border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.4)]"
-                    />
+                    <Link to="/" aria-label="กลับหน้าแรก">
+                        <img
+                            src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
+                            alt="Bot Logo"
+                            className="size-18 rounded-full border-2 border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                        />
+                    </Link>
                 </div>
                 <Card>
                     <CardHeader className="text-center">
