@@ -1,210 +1,282 @@
-import type { LucideIcon } from 'lucide-react';
-import {
-    Bot,
-    CloudSun,
-    Coins,
-    GitPullRequest,
-    Image,
-    LineChart,
-    Lock,
-    Megaphone,
-    MessageSquareWarning,
-    Mic,
-    ScrollText,
-    ShieldAlert,
-    Sparkles,
-    Ticket,
-    Trophy,
-    Vote,
-} from 'lucide-react';
-
 // ==========================================
-// 📄 เนื้อหาหน้า landing — ความสามารถ / คำสั่ง / ทีมผู้พัฒนา (อัปเดตที่นี่ที่เดียวเมื่อเพิ่มฟีเจอร์ใหม่)
+// 📄 เนื้อหาหน้า landing — ความสามารถ / คำสั่ง / ทีมผู้พัฒนา (อัปเดตที่นี่ที่เดียวเมื่อเพิ่มฟีเจอร์หรือคำสั่งใหม่)
 // ==========================================
-
-export const REPO_URL = 'https://github.com/NTZ9008/Bot_NotStack';
 
 export interface Feature {
-    icon: LucideIcon;
     title: string;
     description: string;
-    points: string[];
 }
 
 export interface FeatureGroup {
     id: string;
     label: string;
-    tagline: string;
+    intro: string;
     features: Feature[];
 }
 
 export const FEATURE_GROUPS: FeatureGroup[] = [
     {
         id: 'security',
-        label: 'ความปลอดภัยและดูแลเซิร์ฟเวอร์',
-        tagline: 'กันคนป่วน กันสแปม และคุมสิทธิ์ห้องได้ละเอียด',
+        label: 'กันคนป่วน',
+        intro: 'จุดเริ่มต้นของบอทตัวนี้จริงๆ — เซิร์ฟเราเคยโดนแกล้งเปลี่ยน bitrate ห้องเสียงจนคุยกันไม่รู้เรื่อง',
         features: [
             {
-                icon: ShieldAlert,
                 title: 'Voice Monitor',
-                description: 'แจ้งห้อง security ทันทีเมื่อมีคนเปลี่ยน bitrate หรือ region ของห้องเสียง พร้อมบอกว่าใครเป็นคนทำ',
-                points: ['อ่านชื่อผู้ทำจาก audit log', 'จับคนแกล้งทำให้เสียงแลค'],
+                description: 'ใครเปลี่ยน bitrate หรือ region ของห้องเสียง บอทจะแจ้งห้อง security พร้อมชื่อคนทำ (อ่านจาก audit log)',
             },
             {
-                icon: Mic,
                 title: 'Voice Guard',
-                description: 'ตั้ง whitelist / blacklist แยกรายห้องเสียง คนที่ไม่มีสิทธิ์จะถูกตัดออกจากห้องทันที',
-                points: ['เลือกได้ทั้งสมาชิกและยศ', 'ส่งข้อความบอกเหตุผลให้คนที่ถูกตัด'],
+                description: 'ตั้ง whitelist / blacklist แยกรายห้องเสียง คนที่ไม่มีสิทธิ์เข้าไปจะถูกตัดออก และบอทจะบอกเหตุผลให้',
             },
             {
-                icon: MessageSquareWarning,
-                title: 'Anti-spam และกรองคำหยาบ',
-                description: 'ลบข้อความเมื่อส่งเกิน 6 ข้อความใน 5 วินาที และกรองคำหยาบภาษาไทยโดยให้ AI ช่วยตัดสินคำที่กำกวม',
-                points: ['คำหยาบชัดเจนลบทันที', 'คำก้ำกึ่งให้ Gemini ดูบริบทก่อน'],
+                title: 'Anti-spam',
+                description: 'ส่งเกิน 6 ข้อความใน 5 วินาที ข้อความจะถูกลบและแจ้งห้อง security',
             },
             {
-                icon: Lock,
+                title: 'กรองคำหยาบ',
+                description: 'คำที่หยาบชัดๆ ลบทันที ส่วนคำที่ก้ำกึ่งจะให้ Gemini ดูบริบทก่อน เพราะภาษาไทยเขียนติดกัน ถ้าจับแค่คำจะโดนคำธรรมดาไปเยอะ',
+            },
+            {
                 title: 'Room Access',
-                description: 'ให้สมาชิกเข้าห้องส่วนตัวแบบถาวรหรือจำกัดเวลา แล้วถอนสิทธิ์ให้อัตโนมัติเมื่อหมดเวลา',
-                points: ['DM เตือนก่อนหมดเวลา 5 นาที', 'ถอนเฉพาะสิทธิ์ที่บอทให้ไป'],
+                description: 'ให้สิทธิ์เข้าห้องส่วนตัวแบบถาวรหรือมีวันหมดอายุ บอท DM เตือนก่อนหมด 5 นาที แล้วถอนสิทธิ์ให้เอง',
             },
         ],
     },
     {
         id: 'community',
-        label: 'สร้างชุมชนให้คึกคัก',
-        tagline: 'ให้สมาชิกอยากคุย อยากเข้าห้องเสียง และกลับมาบ่อยๆ',
+        label: 'ทำให้เซิร์ฟมีชีวิต',
+        intro: 'ของที่ทำให้คนอยากเข้ามาคุยและเข้าห้องเสียงบ่อยขึ้น',
         features: [
             {
-                icon: Sparkles,
-                title: 'AI Chat (Google Gemini)',
-                description: 'แท็กบอทแล้วถามได้ทุกเรื่อง ตอบเป็นภาษาไทยแบบเป็นกันเอง ไม่ตอบเนื้อหาผิดกฎหมายหรือ 18+',
-                points: ['มีโควตาต่อวันแยกรายเซิร์ฟเวอร์', 'คำตอบของ AI แท็กใครไม่ได้'],
-            },
-            {
-                icon: Trophy,
                 title: 'เลเวลและการ์ดอันดับ',
-                description: 'สะสม XP จากการพิมพ์ เข้าห้องเสียง และใช้คำสั่ง พร้อมการ์ดอันดับและ leaderboard แบบรูปภาพ',
-                points: ['ตั้งตัวคูณ คูลดาวน์ และเพดานต่อวันได้', 'ยศรางวัลตามเลเวลสูงสุด 25 ยศ', 'สมาชิกแต่งการ์ดของตัวเองได้'],
+                description:
+                    'ได้ XP จากการพิมพ์ เข้าห้องเสียง และใช้คำสั่ง แอดมินปรับตัวคูณ คูลดาวน์ เพดานต่อวัน และยศรางวัลได้ (สูงสุด 25 ยศ) สมาชิกแต่งการ์ด /rank ของตัวเองได้',
             },
             {
-                icon: Image,
-                title: 'การ์ดต้อนรับสมาชิกใหม่',
-                description: 'ข้อความต้อนรับ / ลาก่อน และการ์ดรูปภาพที่ใส่พื้นหลัง รูปโปรไฟล์ และข้อความได้ถึง 12 ชั้น',
-                points: ['ดูตัวอย่างจริงก่อนบันทึก', 'มีคลังรูปพื้นหลังของแต่ละเซิร์ฟเวอร์'],
+                title: 'แชทกับ AI',
+                description: 'แท็กบอทแล้วถามได้เลย ตอบแบบเพื่อนคุยกัน มีโควตาต่อวันแยกแต่ละเซิร์ฟ คำตอบของ AI แท็กใครไม่ได้',
             },
             {
-                icon: Megaphone,
-                title: 'ประกาศข่าว',
-                description: 'เขียนประกาศด้วย Discord markdown ในรูปแบบ embed เห็นหน้าตาก่อนส่งเข้าห้องจริง',
-                points: ['ใส่รูป สี และลิงก์ได้', 'พรีวิวแบบเดียวกับใน Discord'],
+                title: 'การ์ดต้อนรับ',
+                description: 'ข้อความต้อนรับ / ลาก่อน และการ์ดรูปที่ใส่พื้นหลังกับข้อความได้ถึง 12 ชั้น ดูตัวอย่างจริงจากเซิร์ฟเวอร์ก่อนบันทึก',
             },
             {
-                icon: Vote,
-                title: 'โพล สุ่ม และยศอัตโนมัติ',
-                description: 'โพลแบบไม่เปิดเผยชื่อ คำสั่งสุ่ม reaction roles และคำตอบอัตโนมัติ',
-                points: ['โหวตใหม่ = เปลี่ยนคำตอบ', 'รับยศด้วยการกด reaction'],
+                title: 'ประกาศ',
+                description: 'เขียนประกาศเป็น embed ด้วย Discord markdown เห็นหน้าตาก่อนกดส่ง',
             },
             {
-                icon: CloudSun,
-                title: 'รายงานสภาพอากาศรายวัน',
-                description: 'ส่งรายงานอากาศตามเวลาที่ตั้ง มีอุณหภูมิ โอกาสฝน PM2.5 กราฟพยากรณ์ และเรดาร์ฝนแบบเคลื่อนไหว',
-                points: ['ข้อมูลจาก OpenWeatherMap', 'เรียกดูเองได้ด้วย /weather'],
+                title: 'รายงานอากาศ',
+                description: 'ส่งรายงานอากาศทุกวันตามเวลาที่ตั้ง มีกราฟพยากรณ์ PM2.5 และเรดาร์ฝน หรือเรียกเองด้วย /weather',
+            },
+            {
+                title: 'โพล สุ่ม ยศจาก reaction',
+                description: 'ของเล็กๆ ที่ใช้บ่อย — โพลไม่เปิดเผยชื่อ สุ่มของ และรับยศด้วยการกด reaction',
             },
         ],
     },
     {
         id: 'team',
-        label: 'เครื่องมือสำหรับทีม',
-        tagline: 'ใช้ Discord เป็นศูนย์กลางของทีมพัฒนาและกลุ่มเพื่อน',
+        label: 'ใช้ทำงานกับทีม',
+        intro: 'พวกเราใช้ Discord ทำโปรเจกต์ด้วยกัน เลยใส่ของที่ทีมเราใช้จริงเข้าไป',
         features: [
             {
-                icon: GitPullRequest,
                 title: 'แจ้งเตือน GitHub PR',
-                description: 'ส่ง Pull Request เข้า Discord แล้วอัปเดตข้อความเดิมเมื่อมีคน approve, ขอแก้ไข, CI ผ่าน/ไม่ผ่าน หรือ merge',
-                points: ['ข้อความเดียวต่อ PR ไม่รก', 'webhook และ secret แยกรายเซิร์ฟเวอร์'],
+                description: 'PR หนึ่งอัน = ข้อความเดียว บอทแก้ข้อความเดิมเรื่อยๆ ว่าใคร approve ใครขอแก้ CI ผ่านไหม และ merge หรือยัง',
             },
             {
-                icon: Ticket,
                 title: 'เปิด Jira card',
-                description: 'สมาชิกเปิด card ใน Jira จาก Discord ผ่านห้องส่วนตัวแบบระบบ ticket',
-                points: ['แนบรูปจาก Discord ได้', 'ไม่ต้องให้ทุกคนมีบัญชี Jira'],
+                description: 'สมาชิกเปิด card ใน Jira จาก Discord ผ่านห้อง ticket ส่วนตัว ไม่ต้องให้ทุกคนมีบัญชี Jira',
             },
             {
-                icon: Coins,
-                title: 'เก็บเงินตามเป้า',
-                description: 'สร้างหัวข้อเก็บเงิน ตั้งยอดต่อคน บันทึกการรับเงิน และส่งรายงานความคืบหน้าเข้า Discord',
-                points: ['ดูได้ว่าใครจ่ายแล้ว ใครยังค้าง', 'เพิ่ม / ลบคนได้ตลอด'],
+                title: 'เก็บเงิน',
+                description: 'ตั้งหัวข้อและยอดต่อคน บันทึกว่าใครจ่ายแล้ว แล้วส่งสรุปเข้าห้อง — ไม่ต้องทวงกันในแชทอีก',
             },
         ],
     },
     {
-        id: 'insight',
-        label: 'บันทึกและสถิติ',
-        tagline: 'รู้ว่าเกิดอะไรขึ้นในเซิร์ฟเวอร์ ย้อนดูได้ทุกเมื่อ',
+        id: 'logs',
+        label: 'ย้อนดูได้ว่าเกิดอะไรขึ้น',
+        intro: 'เวลามีเรื่อง จะได้ไม่ต้องเดา',
         features: [
             {
-                icon: ScrollText,
                 title: 'Log Manager',
-                description: 'เลือกเหตุการณ์ที่จะบันทึกและห้องที่รับ เช่น เข้า/ออก ห้องเสียง แบน แก้/ลบข้อความ ยศ ห้อง และ AutoMod',
-                points: ['ปรับหน้าตาข้อความ log ได้', 'กรองบอทหรือห้องที่ไม่ต้องการ'],
+                description: 'เลือกเองว่าจะเก็บเหตุการณ์ไหนไปห้องไหน เช่น เข้า/ออก ห้องเสียง แบน แก้/ลบข้อความ ยศ ห้อง AutoMod',
             },
             {
-                icon: LineChart,
                 title: 'ภาพรวมเซิร์ฟเวอร์',
-                description: 'กราฟคนเข้า/ออก กิจกรรมในห้องเสียง สมาชิกที่แอคทีฟที่สุด และเวลาที่ใช้ในห้องเสียง',
-                points: ['เก็บข้อมูลไว้ในฐานข้อมูล', 'เลือกช่วงเวลาที่ต้องการดูได้'],
+                description: 'กราฟคนเข้า/ออก ใครแอคทีฟที่สุด และใครอยู่ห้องเสียงนานที่สุด',
             },
             {
-                icon: Bot,
                 title: 'ประวัติการตั้งค่า',
-                description: 'บันทึกว่าใครเปลี่ยนการตั้งค่าอะไร เมื่อไร และจาก IP ไหน ตรวจย้อนหลังได้ครบ',
-                points: ['แยกตามเซิร์ฟเวอร์', 'แอดมินระบบดูได้ทุกเซิร์ฟเวอร์'],
+                description: 'ใครเปลี่ยนอะไรใน Dashboard เมื่อไร บันทึกไว้หมด',
             },
         ],
     },
 ];
 
+export type CommandCategory = 'level' | 'tool' | 'info' | 'home';
+
+export const COMMAND_CATEGORIES: { id: CommandCategory; label: string }[] = [
+    { id: 'level', label: 'เลเวล' },
+    { id: 'tool', label: 'ของใช้' },
+    { id: 'info', label: 'ข้อมูล' },
+    { id: 'home', label: 'เฉพาะเซิร์ฟหลัก' },
+];
+
+export interface CommandOption {
+    name: string;
+    required?: boolean;
+    description: string;
+}
+
 export interface Command {
     name: string;
-    description: string;
-    homeOnly?: boolean;
+    category: CommandCategory;
+    summary: string;
+    detail: string;
+    options?: CommandOption[];
+    example?: string;
+    notes?: string[];
+    // คำค้นเพิ่ม (ไทย/อังกฤษ) ที่ไม่ได้อยู่ในชื่อหรือคำอธิบาย
+    keywords?: string;
 }
 
 export const COMMANDS: Command[] = [
-    { name: '/gethelp', description: 'ดูคำสั่งทั้งหมดที่ใช้ได้ในเซิร์ฟเวอร์นี้' },
-    { name: '/rank [target]', description: 'การ์ดอันดับ: เลเวล XP และหลอดความคืบหน้า' },
-    { name: '/leaderboard [page]', description: 'ตารางอันดับแบบรูปภาพ หน้าละ 10 คน' },
-    { name: '/rankcard', description: 'แต่งการ์ดอันดับของคุณ: แบบการ์ด สี และพื้นหลัง' },
-    { name: '/xp history [member]', description: 'ประวัติ XP 10 รายการล่าสุด และ XP วันนี้' },
-    { name: '/weather [city]', description: 'รายงานอากาศ พร้อมกราฟพยากรณ์และเรดาร์ฝน' },
-    { name: '/poll question choices', description: 'สร้างโพลแบบไม่เปิดเผยชื่อ' },
-    { name: '/random items', description: 'สุ่มเลือกหนึ่งอย่างจากรายการ' },
-    { name: '/userinfo [target]', description: 'วันสร้างบัญชี วันเข้าเซิร์ฟเวอร์ และยศ' },
-    { name: '/serverinfo', description: 'ข้อมูลของเซิร์ฟเวอร์นี้' },
-    { name: '/botinfo', description: 'สถานะบอท: uptime, RAM, CPU และ OS' },
-    { name: '/ping', description: 'เช็คความเร็วการตอบสนอง' },
-    { name: '/verify', description: 'ยืนยันตัวตนด้วยรหัสผ่านของรุ่น', homeOnly: true },
-    { name: '/addroles', description: 'รับยศพิเศษด้วยรหัสผ่าน', homeOnly: true },
-    { name: '/setuproles', description: 'ส่งข้อความรับยศด้วย reaction', homeOnly: true },
-    { name: '/admininfo', description: 'ข้อมูลผู้พัฒนา', homeOnly: true },
-];
-
-// เมนูใน Dashboard ที่โชว์บนหน้า landing (ตรงกับหน้าใน nav-items)
-export const DASHBOARD_PAGES = [
-    'ภาพรวมเซิร์ฟเวอร์',
-    'ตั้งค่าบอท',
-    'ส่งประกาศ',
-    'ต้อนรับสมาชิกใหม่',
-    'รายงานสภาพอากาศ',
-    'ให้สิทธิ์เข้าห้อง',
-    'ดูแลห้องเสียง',
-    'ตั้งค่าบันทึกเหตุการณ์',
-    'แจ้งเตือน GitHub PR',
-    'เปิด Jira card',
-    'เก็บเงินตามเป้า',
-    'อันดับและเลเวล',
-    'ประวัติเซิร์ฟเวอร์',
+    {
+        name: 'rank',
+        category: 'level',
+        summary: 'ดูการ์ดเลเวลของตัวเองหรือเพื่อน',
+        detail: 'ส่งการ์ดรูปภาพที่มีรูปโปรไฟล์ อันดับในเซิร์ฟ เลเวล XP และหลอดความคืบหน้าไปเลเวลถัดไป',
+        options: [{ name: 'target', description: 'สมาชิกที่อยากดู เว้นว่าง = ของตัวเอง' }],
+        example: '/rank target:@เพื่อน',
+        keywords: 'level xp การ์ด อันดับ',
+    },
+    {
+        name: 'leaderboard',
+        category: 'level',
+        summary: 'ตารางอันดับ XP ของเซิร์ฟ',
+        detail: 'ส่งรูปตารางอันดับหน้าละ 10 คน มีปุ่ม ◀ ▶ ให้เลื่อนดูหน้าอื่น',
+        options: [{ name: 'page', description: 'หน้าที่อยากเปิด (เริ่มที่ 1)' }],
+        example: '/leaderboard page:2',
+        notes: ['กดเปลี่ยนหน้าได้ทุก 3 วินาทีต่อคน'],
+        keywords: 'top ranking อันดับ',
+    },
+    {
+        name: 'rankcard',
+        category: 'level',
+        summary: 'แต่งการ์ด /rank ของตัวเอง',
+        detail: 'เปิดเมนูให้เลือกแบบการ์ด สีหลัก และพื้นหลัง เห็นตัวอย่างก่อนบันทึก เมนูนี้เห็นแค่คุณคนเดียว',
+        notes: ['สีต้องเป็นรหัสแบบ #RRGGBB เช่น #818CF8', 'ถ้าแอดมินปิดการแต่งการ์ดเอง ทุกคนจะใช้ธีมของเซิร์ฟ'],
+        keywords: 'theme สี พื้นหลัง customize',
+    },
+    {
+        name: 'xp history',
+        category: 'level',
+        summary: 'ดูว่า XP ได้มา/หายไปจากอะไร',
+        detail: 'แสดง XP 10 รายการล่าสุด พร้อม XP ที่ได้วันนี้เทียบกับเพดานต่อวัน เห็นแค่คุณคนเดียว',
+        options: [{ name: 'member', description: 'ดูของคนอื่น (ต้องมีสิทธิ์ Manage Server)' }],
+        example: '/xp history',
+        notes: ['เก็บประวัติย้อนหลัง 90 วัน'],
+        keywords: 'ประวัติ log',
+    },
+    {
+        name: 'weather',
+        category: 'tool',
+        summary: 'รายงานอากาศ กราฟพยากรณ์ และเรดาร์ฝน',
+        detail: 'บอกอุณหภูมิ โอกาสฝน ความชื้น ลม และ PM2.5 พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝนแบบเคลื่อนไหว',
+        options: [{ name: 'city', description: 'ชื่อเมือง สถานที่ หรือพิกัด เว้นว่าง = ใช้สถานที่เดียวกับรายงานประจำวันของเซิร์ฟ' }],
+        example: '/weather city:เชียงใหม่',
+        notes: ['ใช้ได้คนละครั้งทุก 30 วินาที'],
+        keywords: 'อากาศ ฝน pm2.5 ฝุ่น forecast rain',
+    },
+    {
+        name: 'poll',
+        category: 'tool',
+        summary: 'โพลแบบไม่เปิดเผยชื่อคนโหวต',
+        detail: 'สร้างโพลพร้อมปุ่มให้กด หนึ่งคนหนึ่งเสียง กดใหม่ = เปลี่ยนคำตอบ ไม่มีใครเห็นว่าใครโหวตอะไร',
+        options: [
+            { name: 'question', required: true, description: 'คำถาม (ไม่เกิน 200 ตัวอักษร)' },
+            { name: 'choices', required: true, description: 'ตัวเลือก 2–5 ข้อ คั่นด้วยจุลภาค' },
+        ],
+        example: '/poll question:เย็นนี้กินอะไร choices:กะเพรา,ส้มตำ,ชาบู',
+        keywords: 'vote โหวต',
+    },
+    {
+        name: 'random',
+        category: 'tool',
+        summary: 'สุ่มเลือกหนึ่งอย่างจากรายการ',
+        detail: 'พิมพ์ตัวเลือกคั่นด้วยจุลภาค บอทจะสุ่มมาให้หนึ่งอย่าง เหมาะกับเวลาตกลงกันไม่ได้',
+        options: [{ name: 'items', required: true, description: 'ตัวเลือกอย่างน้อย 2 อย่าง คั่นด้วยจุลภาค' }],
+        example: '/random items:แดง,น้ำเงิน,เขียว',
+        keywords: 'สุ่ม random pick',
+    },
+    {
+        name: 'gethelp',
+        category: 'info',
+        summary: 'ดูคำสั่งที่ใช้ได้ในเซิร์ฟนี้',
+        detail: 'แสดงรายการคำสั่งทั้งหมดที่ใช้ได้ในเซิร์ฟที่พิมพ์ เซิร์ฟหลักจะเห็นคำสั่งพิเศษเพิ่มมา',
+        keywords: 'help ช่วยเหลือ คำสั่ง',
+    },
+    {
+        name: 'userinfo',
+        category: 'info',
+        summary: 'ข้อมูลบัญชีของสมาชิก',
+        detail: 'บอกวันที่สร้างบัญชี วันที่เข้าเซิร์ฟ และยศที่มี',
+        options: [{ name: 'target', description: 'สมาชิกที่อยากดู เว้นว่าง = ของตัวเอง' }],
+        example: '/userinfo target:@เพื่อน',
+        keywords: 'user profile',
+    },
+    {
+        name: 'serverinfo',
+        category: 'info',
+        summary: 'ข้อมูลของเซิร์ฟนี้',
+        detail: 'สรุปข้อมูลของเซิร์ฟที่พิมพ์คำสั่ง',
+        keywords: 'server guild',
+    },
+    {
+        name: 'botinfo',
+        category: 'info',
+        summary: 'สถานะของบอท',
+        detail: 'บอทเปิดมานานเท่าไร ใช้ RAM / CPU เท่าไร และรันบน OS อะไร',
+        keywords: 'uptime status ram cpu',
+    },
+    {
+        name: 'ping',
+        category: 'info',
+        summary: 'เช็คว่าบอทตอบช้าแค่ไหน',
+        detail: 'วัดเวลาตอบสนองของบอทและการเชื่อมต่อกับ Discord',
+        keywords: 'latency lag แลค',
+    },
+    {
+        name: 'verify',
+        category: 'home',
+        summary: 'ยืนยันรุ่นเพื่อรับยศ',
+        detail: 'เลือกรุ่นของตัวเองแล้วใส่รหัสผ่านที่ได้จากแอดมิน ถ้ารหัสถูกจะได้ยศรุ่นนั้น',
+        notes: ['ใส่รหัสผิด 5 ครั้งใน 15 นาที ต้องรอก่อนลองใหม่'],
+        keywords: 'ยืนยันตัวตน รุ่น',
+    },
+    {
+        name: 'addroles',
+        category: 'home',
+        summary: 'รับยศพิเศษด้วยรหัสผ่าน',
+        detail: 'รับยศพิเศษ (บัตร VIP) ด้วยรหัสผ่าน ถ้ามียศอยู่แล้ว ใส่รหัสอีกรอบจะเป็นการถอดยศออก',
+        notes: ['ใส่รหัสผิด 5 ครั้งใน 15 นาที ต้องรอก่อนลองใหม่'],
+        keywords: 'vip ยศ role',
+    },
+    {
+        name: 'setuproles',
+        category: 'home',
+        summary: 'ส่งข้อความรับยศด้วย reaction',
+        detail: 'ส่งข้อความพร้อม reaction ในห้องที่พิมพ์ สมาชิกกด reaction เพื่อรับหรือเอายศรุ่นออก',
+        keywords: 'reaction role ยศ',
+    },
+    {
+        name: 'admininfo',
+        category: 'home',
+        summary: 'ข้อมูลผู้สร้างบอท',
+        detail: 'แสดงข้อมูลของผู้สร้างบอท',
+        keywords: 'admin ผู้สร้าง',
+    },
 ];
 
 export interface TeamMember {
@@ -218,13 +290,13 @@ export const TEAM: TeamMember[] = [
     {
         name: 'Arlif Thongrakjan',
         github: 'NTZ9008',
-        role: 'ผู้สร้างโปรเจกต์ · AT Tech',
-        description: 'เริ่มต้น Bot_NotStack เป็นบอทประจำชุมชน NotStackOverflow และดูแลโครงสร้างหลักของระบบ',
+        role: 'คนเริ่มโปรเจกต์ · AT Tech',
+        description: 'เขียนบอทตัวแรกไว้ใช้ในเซิร์ฟ NotStackOverflow แล้วค่อยๆ โตมาเป็นแบบที่เห็น',
     },
     {
         name: 'Thanapat Julakarn',
         github: 'boatngin',
-        role: 'Core contributor',
-        description: 'ร่วมพัฒนาความสามารถของบอทและ Dashboard',
+        role: 'ร่วมพัฒนา',
+        description: 'ช่วยทำความสามารถของบอทและหน้า Dashboard',
     },
 ];
