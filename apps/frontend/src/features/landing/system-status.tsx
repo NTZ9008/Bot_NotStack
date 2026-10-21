@@ -64,7 +64,7 @@ export function StatusLine() {
     return (
         <p className="flex items-center gap-2 text-sm text-muted-foreground">
             <Dot ok={online} />
-            {online === undefined ? 'กำลังเช็คสถานะ…' : online ? `บอทออนไลน์อยู่${days > 0 ? ` · ไม่ได้รีสตาร์ทมา ${days} วัน` : ''}` : 'ตอนนี้บอทออฟไลน์'}
+            {online === undefined ? 'กำลังเช็คสถานะ…' : online ? `บอทออนไลน์อยู่${days > 0 ? ` · ออนไลน์ต่อเนื่อง ${days} วัน` : ''}` : 'ตอนนี้บอทออฟไลน์'}
             <a href="#status" className="underline decoration-dotted underline-offset-4 hover:text-foreground">
                 ดูสถานะ
             </a>
@@ -101,7 +101,7 @@ export function SystemStatus() {
                 ) : (
                     <p className="font-mono text-4xl text-slate-600">{isError ? '—' : '··'}</p>
                 )}
-                <p className="text-xs text-muted-foreground">นับจากรีสตาร์ทหรือ deploy ครั้งล่าสุด</p>
+                <p className="text-xs text-muted-foreground">นับจากเปิดระบบครั้งล่าสุด</p>
             </div>
             <div className="flex flex-col">
                 <ul className="flex-1 divide-y">

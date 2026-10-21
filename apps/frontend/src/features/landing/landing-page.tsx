@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowUpRight } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type MouseEvent, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { Button } from '@/components/ui/button';
 import { CommandSearch } from './command-search';
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
+import { GrowthSection } from './growth-chart';
 import { prefersReducedMotion, Reveal } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 
@@ -19,6 +20,7 @@ const NAV_LINKS = [
     { href: '#features', label: 'ทำอะไรได้' },
     { href: '#commands', label: 'คำสั่ง' },
     { href: '#status', label: 'สถานะ' },
+    { href: '#growth', label: 'การเติบโต' },
     { href: '#team', label: 'ผู้พัฒนา' },
 ];
 
@@ -131,13 +133,28 @@ function ChatPreview({ botName, botAvatar }: { botName: string; botAvatar: strin
     );
 }
 
+// คลิกลิงก์ #section (เมนูบน / โลโก้ / "ดูสถานะ") → เลื่อนแบบ smooth ไปหาเนื้อหา (คนที่ปิด animation จะกระโดดไปทันที)
+// ไม่แก้ #hash ใน URL เพราะ router จะกระโดดไปที่ section ทันทีแล้วตัด smooth scroll ทิ้ง
+function scrollToSection(event: MouseEvent<HTMLElement>) {
+    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
+    const id = link?.getAttribute('href')?.slice(1);
+    if (!id) return;
+    const target = id === 'top' ? null : document.getElementById(id);
+    if (id !== 'top' && !target) return;
+    event.preventDefault();
+    const behavior = prefersReducedMotion() ? 'auto' : 'smooth';
+    if (target) target.scrollIntoView({ behavior, block: 'start' });
+    else window.scrollTo({ top: 0, behavior });
+}
+
 export function LandingPage() {
     const { data: info } = useQuery(appInfoQuery);
     const bot = info?.bot ?? DEFAULT_BOT;
     const inviteUrl = info?.inviteUrl;
 
     return (
-        <div className="min-h-svh overflow-x-clip bg-background text-foreground">
+        <div className="min-h-svh overflow-x-clip bg-background text-foreground" onClick={scrollToSection}>
             <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
                 <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
                     <a href="#top" className="flex min-w-0 items-center gap-2 font-semibold">
@@ -271,6 +288,13 @@ export function LandingPage() {
                         </Reveal>
                     </Section>
                 </div>
+
+                {/* การเติบโตของโปรเจกต์ */}
+                <Section id="growth" title="โปรเจกต์โตขึ้นแค่ไหน" aside="นับจาก commit และ pull request จริงตั้งแต่วันแรก อัปเดตทุกชั่วโมง">
+                    <Reveal delay={100}>
+                        <GrowthSection />
+                    </Reveal>
+                </Section>
 
                 {/* ทีมผู้พัฒนา */}
                 <Section id="team" title="ผู้พัฒนา" aside="ทำกันในเวลาว่าง เจอบั๊กหรืออยากได้อะไรเพิ่ม ทักมาในเซิร์ฟได้เลย">
