@@ -18,6 +18,8 @@ import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
 import { FundModule } from './fund/fund.module';
 import { GuildsModule } from './guilds/guilds.module';
+import { GrowthController } from './growth/growth.controller';
+import { GrowthService } from './growth/growth.service';
 import { HealthController } from './health/health.controller';
 import { JiraModule } from './jira/jira.module';
 import { LevelsModule } from './levels/levels.module';
@@ -91,10 +93,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         ChatModule,
         CommandsModule,
     ],
-    controllers: [AppController, HealthController],
-    providers: [
-        { provide: APP_FILTER, useClass: HttpExceptionFilter },
-        { provide: APP_PIPE, useClass: ZodValidationPipe },
-    ],
+    controllers: [AppController, HealthController, GrowthController],
+    providers: [GrowthService, { provide: APP_FILTER, useClass: HttpExceptionFilter }, { provide: APP_PIPE, useClass: ZodValidationPipe }],
 })
 export class AppModule {}

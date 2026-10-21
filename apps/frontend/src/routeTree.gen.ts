@@ -9,11 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppAdminRouteImport } from './routes/_app/_admin'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppAdminAuditLogsRouteImport } from './routes/_app/_admin/audit-logs'
 import { Route as AppAdminLogsRouteImport } from './routes/_app/_admin/logs'
 import { Route as AppAdminUsersRouteImport } from './routes/_app/_admin/users'
@@ -35,6 +36,11 @@ import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/
 import { Route as AppServersGuildIdManageWeatherRouteImport } from './routes/_app/servers/$guildId/_manage/weather'
 import { Route as AppServersGuildIdManageWelcomeRouteImport } from './routes/_app/servers/$guildId/_manage/welcome'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -44,11 +50,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppIndexRoute = AppIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppAdminRoute = AppAdminRouteImport.update({
   id: '/_admin',
   getParentRoute: () => AppRoute,
@@ -56,6 +57,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
 const AppAccountRoute = AppAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDashboardRoute = AppDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAdminAuditLogsRoute = AppAdminAuditLogsRouteImport.update({
@@ -171,9 +177,10 @@ const AppServersGuildIdManageWelcomeRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppIndexRoute
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/account': typeof AppAccountRoute
+  '/dashboard': typeof AppDashboardRoute
   '/audit-logs': typeof AppAdminAuditLogsRoute
   '/logs': typeof AppAdminLogsRoute
   '/users': typeof AppAdminUsersRoute
@@ -195,9 +202,10 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/welcome': typeof AppServersGuildIdManageWelcomeRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/': typeof AppIndexRoute
   '/account': typeof AppAccountRoute
+  '/dashboard': typeof AppDashboardRoute
   '/audit-logs': typeof AppAdminAuditLogsRoute
   '/logs': typeof AppAdminLogsRoute
   '/users': typeof AppAdminUsersRoute
@@ -219,11 +227,12 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/_admin': typeof AppAdminRouteWithChildren
   '/_app/account': typeof AppAccountRoute
-  '/_app/': typeof AppIndexRoute
+  '/_app/dashboard': typeof AppDashboardRoute
   '/_app/_admin/audit-logs': typeof AppAdminAuditLogsRoute
   '/_app/_admin/logs': typeof AppAdminLogsRoute
   '/_app/_admin/users': typeof AppAdminUsersRoute
@@ -251,6 +260,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/account'
+    | '/dashboard'
     | '/audit-logs'
     | '/logs'
     | '/users'
@@ -272,9 +282,10 @@ export interface FileRouteTypes {
     | '/servers/$guildId/welcome'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/login'
     | '/'
+    | '/login'
     | '/account'
+    | '/dashboard'
     | '/audit-logs'
     | '/logs'
     | '/users'
@@ -295,11 +306,12 @@ export interface FileRouteTypes {
     | '/servers/$guildId/welcome'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/login'
     | '/_app/_admin'
     | '/_app/account'
-    | '/_app/'
+    | '/_app/dashboard'
     | '/_app/_admin/audit-logs'
     | '/_app/_admin/logs'
     | '/_app/_admin/users'
@@ -323,12 +335,20 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -343,13 +363,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/': {
-      id: '/_app/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/_admin': {
       id: '/_app/_admin'
       path: ''
@@ -362,6 +375,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AppAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/dashboard': {
+      id: '/_app/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/_admin/audit-logs': {
@@ -581,7 +601,7 @@ const AppServersGuildIdRouteWithChildren =
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAccountRoute: typeof AppAccountRoute
-  AppIndexRoute: typeof AppIndexRoute
+  AppDashboardRoute: typeof AppDashboardRoute
   AppServersGuildIdRoute: typeof AppServersGuildIdRouteWithChildren
   AppServersIndexRoute: typeof AppServersIndexRoute
 }
@@ -589,7 +609,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRouteWithChildren,
   AppAccountRoute: AppAccountRoute,
-  AppIndexRoute: AppIndexRoute,
+  AppDashboardRoute: AppDashboardRoute,
   AppServersGuildIdRoute: AppServersGuildIdRouteWithChildren,
   AppServersIndexRoute: AppServersIndexRoute,
 }
@@ -597,6 +617,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
 }
