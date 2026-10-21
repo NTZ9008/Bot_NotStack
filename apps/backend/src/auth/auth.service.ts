@@ -211,7 +211,7 @@ export class AuthService {
         user = await this.users.recordLogin(user.id);
         await this.startSession(req, res, user);
         await this.audit.audit(req, { action: 'auth.login', actor: user, metadata: { method: 'discord' } });
-        return '/';
+        return '/dashboard';
     }
 
     // ยกเลิกการผูก Discord — ต้องมีรหัสผ่านอยู่ ไม่อย่างนั้นจะไม่เหลือทาง login

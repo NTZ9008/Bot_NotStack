@@ -71,4 +71,6 @@ export interface BotInfo {
 export interface AppInfo {
     version: string;
     bot: BotInfo | null;
+    // ลิงก์เชิญบอท (null = บอทยังไม่ออนไลน์) — หน้า landing ใช้ตอนยังไม่ได้ login
+    inviteUrl?: string | null;
 }

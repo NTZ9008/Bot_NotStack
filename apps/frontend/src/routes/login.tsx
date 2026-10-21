@@ -24,7 +24,7 @@ export const Route = createFileRoute('/login')({
         // เริ่มโหลดช่องทาง login ไปพร้อมกัน ปุ่ม Discord จะได้ขึ้นเร็ว (ไม่สำเร็จ useQuery ในหน้าจะลองใหม่เอง)
         void context.queryClient.prefetchQuery(providersQuery);
         const me = await context.queryClient.ensureQueryData(meQuery);
-        if (me) throw redirect({ to: '/' });
+        if (me) throw redirect({ to: '/dashboard' });
     },
     component: LoginPage,
     // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
@@ -56,7 +56,7 @@ function LoginPage() {
                 replaceSession(queryClient, me);
                 await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
                 toast.success('เข้าสู่ระบบสำเร็จ!');
-                await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/' });
+                await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/dashboard' });
             } catch (err) {
                 toast.error('เข้าสู่ระบบล้มเหลว', { description: errorMessage(err) });
             }

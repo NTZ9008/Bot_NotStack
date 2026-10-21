@@ -4,7 +4,7 @@ import { Public } from './common/decorators/public.decorator';
 import { APP_VERSION } from './config/paths';
 import { DiscordService } from './discord/discord.service';
 
-// เวอร์ชันของระบบ + ชื่อ/รูปของบอท (แสดงที่เมนูซ้าย, หน้า login และกรอบข้อความจำลองแบบ Discord)
+// เวอร์ชันของระบบ + ชื่อ/รูปของบอท + ลิงก์เชิญ (แสดงที่เมนูซ้าย, หน้า landing, หน้า login และกรอบข้อความจำลองแบบ Discord)
 @Controller('version')
 export class AppController {
     constructor(private readonly discord: DiscordService) {}
@@ -17,6 +17,7 @@ export class AppController {
         return {
             version: APP_VERSION,
             bot: bot ? { name: bot.displayName || bot.username, avatar: bot.displayAvatarURL({ size: 128 }) } : null,
+            inviteUrl: this.discord.inviteUrl(),
         };
     }
 }
