@@ -504,7 +504,7 @@ export function LandingPage() {
             </main>
 
             <footer className="overflow-hidden px-4 pt-10 pb-28 sm:px-8">
-                <div className="mx-auto flex max-w-6xl flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <p>
                         {bot.name}
                         {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
@@ -523,7 +523,7 @@ export function LandingPage() {
                 </div>
                 <p
                     aria-hidden
-                    className="mt-8 text-center text-[clamp(3rem,16vw,15rem)] leading-[0.8] font-black tracking-[-0.06em] whitespace-nowrap text-white/[0.04] uppercase select-none"
+                    className="pointer-events-none mt-8 text-center text-[clamp(3rem,16vw,15rem)] leading-[0.8] font-black tracking-[-0.06em] whitespace-nowrap text-white/[0.04] uppercase select-none"
                 >
                     NotStack
                 </p>
