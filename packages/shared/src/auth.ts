@@ -4,7 +4,7 @@ import { z } from 'zod';
 // 🔐 AUTH — บัญชีผู้ใช้ Dashboard (username/password และ Discord OAuth)
 // ==========================================
 
-export const ROLES = ['USER', 'ADMIN'] as const;
+export const ROLES = ['USER', 'OWNER', 'ADMIN'] as const;
 export type UserRole = (typeof ROLES)[number];
 
 export const USERNAME_RE = /^[a-z0-9_.-]{3,32}$/;

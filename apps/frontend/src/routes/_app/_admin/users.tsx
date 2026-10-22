@@ -96,6 +96,7 @@ function CreateUserForm() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="USER">USER</SelectItem>
+                            <SelectItem value="OWNER">OWNER</SelectItem>
                             <SelectItem value="ADMIN">ADMIN</SelectItem>
                         </SelectContent>
                     </Select>
@@ -199,8 +200,11 @@ function UsersPage() {
             title: `เปลี่ยน role เป็น ${role}?`,
             description:
                 role === 'ADMIN'
-                    ? `${user.displayName} จะเข้าถึงทุกเมนู รวมถึงจัดการผู้ใช้และตั้งค่าบอทได้`
-                    : `${user.displayName} จะจัดการได้เฉพาะเซิร์ฟเวอร์ที่ตัวเองมีสิทธิ์ Manage Server ใน Discord`,
+
+                    ? `${user.displayName} จะเข้าถึงทุกเมนู รวมถึงจัดการผู้ใช้และตั้งค่าบอทได้ทุกเซิร์ฟเวอร์`
+                    : role === 'OWNER'
+                      ? `${user.displayName} จะเห็นและจัดการตั้งค่าบอทได้เฉพาะเซิร์ฟเวอร์ของตัวเอง (ไม่เห็นเซิร์ฟเวอร์ของคนอื่น)`
+                      : `${user.displayName} จะเห็นเฉพาะเซิร์ฟเวอร์ของตัวเอง แต่ดูได้เฉพาะหน้า Levels ไม่มีสิทธิ์แก้ไขการตั้งค่าบอท`,
             confirmText: 'เปลี่ยน role',
             destructive: role === 'ADMIN',
         });
@@ -291,6 +295,7 @@ function UsersPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="USER">USER</SelectItem>
+                        <SelectItem value="OWNER">OWNER</SelectItem>
                         <SelectItem value="ADMIN">ADMIN</SelectItem>
                     </SelectContent>
                 </Select>
@@ -352,7 +357,7 @@ function UsersPage() {
                 <CardHeader>
                     <CardTitle>เพิ่มผู้ใช้ (username / password)</CardTitle>
                     <CardDescription>
-                        คนที่เข้าสู่ระบบด้วย Discord ครั้งแรกจะถูกสร้างบัญชีให้อัตโนมัติด้วย role USER (จัดการได้เฉพาะเซิร์ฟเวอร์ที่ตัวเองมีสิทธิ์ Manage Server) — ADMIN
+                        เจ้าของเซิร์ฟเวอร์ที่เข้าสู่ระบบด้วย Discord ครั้งแรกจะได้ role OWNER อัตโนมัติ (เห็นและตั้งค่าได้เฉพาะเซิร์ฟเวอร์ของตัวเอง) ส่วน USER ดูได้เฉพาะหน้า Levels ของเซิร์ฟเวอร์ตัวเอง — ADMIN
                         จัดการได้ทุกเซิร์ฟเวอร์ที่บอทอยู่ รวมถึงผู้ใช้และ log ของระบบ
                     </CardDescription>
                 </CardHeader>

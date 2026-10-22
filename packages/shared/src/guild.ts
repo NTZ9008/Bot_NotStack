@@ -3,8 +3,8 @@
 // ==========================================
 
 // สิทธิ์ของผู้ใช้ Dashboard ต่อเซิร์ฟเวอร์หนึ่ง
-// - manage: ตั้งค่าบอทได้ทุกอย่าง (มีสิทธิ์ Manage Server / Administrator / เป็นเจ้าของเซิร์ฟเวอร์ หรือเป็น ADMIN ของระบบ)
-// - view:   เป็นสมาชิกของเซิร์ฟเวอร์ ดูได้เฉพาะหน้า Levels
+// - manage: ตั้งค่าบอทได้ทุกอย่าง (role OWNER ในเซิร์ฟเวอร์ของตัวเอง หรือเป็น ADMIN ของระบบ)
+// - view:   ดูได้เฉพาะหน้า Levels ไม่มีสิทธิ์แก้ค่า (role USER ในเซิร์ฟเวอร์ของตัวเอง)
 export type GuildAccessLevel = 'view' | 'manage';
 
 export interface GuildSummary {
