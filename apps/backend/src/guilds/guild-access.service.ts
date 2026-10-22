@@ -10,17 +10,21 @@ const CACHE_TTL_MS = 60 * 1000;
 
 // ==========================================
 // 🔐 สิทธิ์ของผู้ใช้ Dashboard ต่อเซิร์ฟเวอร์ — cache 1 นาที (หน้าเว็บเรียก API หลายตัวต่อการเปิดหน้าเดียว)
+// - ADMIN: จัดการได้ทุกเซิร์ฟเวอร์ที่บอทอยู่
+// - OWNER: เห็นและจัดการได้เฉพาะเซิร์ฟเวอร์ที่ตัวเองเป็นเจ้าของ (ownerId) หรือมีสิทธิ์ Manage Server / Administrator
+// - USER:  เห็นเฉพาะเซิร์ฟเวอร์ที่ตัวเองเป็นเจ้าของหรือมีสิทธิ์ Manage Server แต่ดูได้เฉพาะหน้า Levels ('view')
+// - สมาชิกทั่วไปที่ไม่มีสิทธิ์ Manage Server ในเซิร์ฟเวอร์นั้น จะไม่เห็นเซิร์ฟเวอร์ใน Dashboard เลย (null)
 // ==========================================
 @Injectable()
 export class GuildAccessService {
-    private readonly cache = new Map<string, { level: GuildAccessLevel | null; at: number }>();
+    private readonly cache = new Map<string, { canManage: boolean; at: number }>();
 
     constructor(
         private readonly discord: DiscordService,
         private readonly prisma: PrismaService,
     ) {}
 
-    // null = ไม่มีสิทธิ์ (ไม่ใช่สมาชิก / บอทไม่ได้อยู่ในเซิร์ฟเวอร์นั้น)
+    // null = ไม่มีสิทธิ์เข้าถึงเซิร์ฟเวอร์นี้ (ไม่ใช่เจ้าของ/แอดมินเซิร์ฟเวอร์ หรือบอทไม่ได้อยู่ในเซิร์ฟเวอร์นั้น)
     async resolve(user: User, guildId: string): Promise<GuildAccessLevel | null> {
         // ADMIN ของระบบจัดการได้ทุกเซิร์ฟเวอร์ที่บอทอยู่ — บอทออฟไลน์ก็ยังแก้การตั้งค่าที่เก็บไว้ได้
         if (user.role === 'ADMIN') {
@@ -33,20 +37,43 @@ export class GuildAccessService {
         const guild = this.discord.guild(guildId);
         if (!guild) return null;
 
-        const key = `${user.discordId}:${guildId}`;
-        const hit = this.cache.get(key);
-        if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.level;
-        const level = await this.memberLevel(guild, user.discordId);
-        this.cache.set(key, { level, at: Date.now() });
-        if (this.cache.size > 5000) this.cache.clear();
-        return level;
+        const canManage = await this.canManageGuild(guild, user.discordId);
+        if (!canManage) return null;
+        return user.role === 'OWNER' ? 'manage' : 'view';
     }
 
-    async memberLevel(guild: Guild, discordId: string): Promise<GuildAccessLevel | null> {
+    async canManageGuild(guild: Guild, discordId: string): Promise<boolean> {
+        const key = `${discordId}:${guild.id}`;
+        const hit = this.cache.get(key);
+        if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.canManage;
+
+        const canManage = await this.checkGuildManager(guild, discordId);
+        this.cache.set(key, { canManage, at: Date.now() });
+        if (this.cache.size > 5000) this.cache.clear();
+        return canManage;
+    }
+
+    async checkGuildManager(guild: Guild, discordId: string): Promise<boolean> {
+        if (guild.ownerId === discordId) return true;
         const member = guild.members.cache.get(discordId) ?? (await guild.members.fetch(discordId).catch(() => null));
-        if (!member) return null;
+        if (!member) return false;
         // has() นับ Administrator เป็นทุกสิทธิ์อยู่แล้ว
-        return guild.ownerId === discordId || member.permissions.has(PermissionFlagsBits.ManageGuild) ? 'manage' : 'view';
+        return member.permissions.has(PermissionFlagsBits.ManageGuild);
+    }
+
+    // ใช้ตอนสมัคร/ผูกบัญชี Discord ครั้งแรก — ถ้าเป็นเจ้าของหรือมีสิทธิ์ Manage Server ในเซิร์ฟที่บอทอยู่ ให้ได้ยศ OWNER อัตโนมัติ
+    async hasManagedGuild(discordId: string): Promise<boolean> {
+        const client = this.discord.ready;
+        if (!client) {
+            const count = await this.prisma.guild.count({ where: { ownerId: discordId, leftAt: null } });
+            return count > 0;
+        }
+        const guilds = [...client.guilds.cache.values()];
+        if (guilds.some((guild) => guild.ownerId === discordId)) return true;
+        for (const guild of guilds) {
+            if (await this.canManageGuild(guild, discordId).catch(() => false)) return true;
+        }
+        return false;
     }
 
     forgetGuild(guildId: string): void {

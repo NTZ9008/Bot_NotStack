@@ -125,7 +125,7 @@ export class UsersService {
     }
 
     // --- Discord ---
-    async createDiscordUser(profile: DiscordProfile): Promise<User> {
+    async createDiscordUser(profile: DiscordProfile, isGuildOwner = false): Promise<User> {
         try {
             return await this.prisma.user.create({
                 data: {
@@ -133,7 +133,7 @@ export class UsersService {
                     discordUsername: profile.username,
                     avatarUrl: profile.avatarUrl,
                     displayName: profile.globalName || profile.username,
-                    role: this.cfg.discord.adminIds.has(profile.id) ? 'ADMIN' : 'USER',
+                    role: this.cfg.discord.adminIds.has(profile.id) ? 'ADMIN' : isGuildOwner ? 'OWNER' : 'USER',
                 },
             });
         } catch (err) {
@@ -150,8 +150,13 @@ export class UsersService {
         return this.update(id, { discordUsername: profile.username, avatarUrl: profile.avatarUrl });
     }
 
-    linkDiscord(id: number, profile: DiscordProfile): Promise<User> {
-        return this.update(id, { discordId: profile.id, discordUsername: profile.username, avatarUrl: profile.avatarUrl });
+    linkDiscord(id: number, profile: DiscordProfile, promoteToOwner = false): Promise<User> {
+        return this.update(id, {
+            discordId: profile.id,
+            discordUsername: profile.username,
+            avatarUrl: profile.avatarUrl,
+            ...(promoteToOwner ? { role: 'OWNER' } : {}),
+        });
     }
 
     unlinkDiscord(id: number): Promise<User> {

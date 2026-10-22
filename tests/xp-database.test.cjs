@@ -351,7 +351,8 @@ test('HTTP API enforces manage permission, guild boundary and Zod validation', a
                           members: {
                               cache: new Map([
                                   ['manager', member(true)],
-                                  ['viewer', member(false)],
+                                  ['viewer', member(true)],
+                                  ['member', member(false)],
                               ]),
                               fetch: async () => {
                                   throw Error('not a member');
@@ -369,7 +370,8 @@ test('HTTP API enforces manage permission, guild boundary and Zod validation', a
     })(TestModule);
     const app = await NestFactory.create(TestModule, { logger: false });
     app.use((req, _res, next) => {
-        req.user = { id: 1, role: 'USER', discordId: req.headers['x-test-user'] ?? 'viewer' };
+        const discordId = req.headers['x-test-user'] ?? 'viewer';
+        req.user = { id: 1, role: discordId === 'manager' ? 'OWNER' : 'USER', discordId };
         next();
     });
     app.useGlobalPipes(new ZodValidationPipe());
@@ -383,6 +385,7 @@ test('HTTP API enforces manage permission, guild boundary and Zod validation', a
         });
     try {
         assert.equal((await request('11111/levels')).status, 200);
+        assert.equal((await request('11111/levels', 'member')).status, 403);
         for (const route of ['settings', 'history']) assert.equal((await request(`11111/levels/${route}`)).status, 403);
         assert.equal((await request('11111/levels/members', 'viewer', mutation('22222', 'add', 10))).status, 403);
         assert.equal((await request('99999/levels/members', 'manager', mutation('22222', 'add', 10))).status, 403);

@@ -298,3 +298,61 @@ test('AI requests fail closed when durable quota reservation fails', async () =>
     );
     assert.equal(await ai.reserve('guild'), 'disabled');
 });
+
+
+test('GuildAccessService and GuildsService isolate non-admin users to only their own managed guilds', async () => {
+    const { GuildAccessService } = require('../apps/backend/dist/guilds/guild-access.service');
+    const { GuildsService } = require('../apps/backend/dist/guilds/guilds.service');
+    const member = (manage) => ({ permissions: { has: () => manage } });
+    const makeGuild = (id, name, ownerId, membersMap) => ({
+        id,
+        name,
+        ownerId,
+        memberCount: 10,
+        iconURL: () => null,
+        members: {
+            cache: new Map(membersMap),
+            fetch: async () => null,
+        },
+    });
+    const homeGuild = makeGuild('11111', 'NotStackOverflow', 'admin-discord', [
+        ['owner-b', member(false)], // เป็นแค่สมาชิกธรรมดาในเซิร์ฟหลัก
+        ['regular-member', member(false)],
+    ]);
+    const otherGuild = makeGuild('22222', 'Server B', 'owner-b', [
+        ['owner-b', member(true)],
+        ['manager-b', member(true)],
+        ['regular-member', member(false)],
+    ]);
+    const discord = {
+        ready: { guilds: { cache: new Map([[homeGuild.id, homeGuild], [otherGuild.id, otherGuild]]) } },
+        guild: (id) => (id === homeGuild.id ? homeGuild : id === otherGuild.id ? otherGuild : null),
+        isHome: (id) => id === homeGuild.id,
+        inviteUrl: () => 'https://discord.com/oauth2/authorize',
+    };
+    const access = new GuildAccessService(discord, {});
+    const guilds = new GuildsService({}, discord, access);
+
+    // ADMIN เห็นทุกเซิร์ฟเวอร์พร้อมสิทธิ์ manage
+    const adminList = await guilds.listForUser({ id: 1, role: 'ADMIN', discordId: null });
+    assert.deepEqual(adminList.guilds.map((g) => [g.id, g.access]), [
+        ['11111', 'manage'],
+        ['22222', 'manage'],
+    ]);
+
+    // OWNER ของ Server B เห็นเฉพาะ Server B ('manage') ไม่เห็นเซิร์ฟหลักที่ตัวเองเป็นแค่สมาชิกธรรมดา
+    const ownerList = await guilds.listForUser({ id: 2, role: 'OWNER', discordId: 'owner-b' });
+    assert.deepEqual(ownerList.guilds.map((g) => [g.id, g.access]), [['22222', 'manage']]);
+    assert.equal(await access.resolve({ id: 2, role: 'OWNER', discordId: 'owner-b' }, '11111'), null);
+
+    // USER ที่เป็นเจ้าของ/แอดมิน Server B เห็นเฉพาะ Server B แต่ได้สิทธิ์ 'view' เท่านั้น
+    const userOwnerList = await guilds.listForUser({ id: 3, role: 'USER', discordId: 'manager-b' });
+    assert.deepEqual(userOwnerList.guilds.map((g) => [g.id, g.access]), [['22222', 'view']]);
+
+    // สมาชิกทั่วไปที่ไม่ได้เป็นเจ้าของหรือมีสิทธิ์ Manage Server ในเซิร์ฟไหนเลย จะไม่เห็นเซิร์ฟใดๆ
+    const regularList = await guilds.listForUser({ id: 4, role: 'USER', discordId: 'regular-member' });
+    assert.deepEqual(regularList.guilds, []);
+    assert.equal(await access.hasManagedGuild('owner-b'), true);
+    assert.equal(await access.hasManagedGuild('manager-b'), true);
+    assert.equal(await access.hasManagedGuild('regular-member'), false);
+});

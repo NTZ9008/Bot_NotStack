@@ -9,6 +9,7 @@ import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
+import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 import './landing.css';
@@ -201,7 +202,7 @@ function Hero({ botName, botAvatar, inviteUrl }: { botName: string; botAvatar: s
             {/* มุมบน (ไม่ใช่แถบ navbar) */}
             <div className="flex items-center justify-between gap-4 text-sm">
                 <a href="#top" className="flex min-w-0 items-center gap-2.5 font-semibold">
-                    <img src={botAvatar} alt="" className="size-8 rounded-full ring-1 ring-white/20" />
+                    <img src={botAvatar} alt={botName} className="size-8 rounded-full ring-1 ring-white/20" />
                     <span className="truncate">{botName}</span>
                 </a>
                 <Link to="/dashboard" className="group inline-flex items-center gap-1 text-muted-foreground hover:text-foreground">
@@ -270,7 +271,19 @@ function Manifesto() {
     );
 }
 
-function Dock({ visible, active, botAvatar, inviteUrl }: { visible: boolean; active: string | null; botAvatar: string; inviteUrl?: string | null }) {
+function Dock({
+    visible,
+    active,
+    botName,
+    botAvatar,
+    inviteUrl,
+}: {
+    visible: boolean;
+    active: string | null;
+    botName: string;
+    botAvatar: string;
+    inviteUrl?: string | null;
+}) {
     return (
         <nav
             aria-label="ส่วนของหน้า"
@@ -279,7 +292,7 @@ function Dock({ visible, active, botAvatar, inviteUrl }: { visible: boolean; act
             }`}
         >
             <a href="#top" aria-label="กลับขึ้นบนสุด" className="shrink-0 rounded-full p-0.5">
-                <img src={botAvatar} alt="" className="size-8 rounded-full" />
+                <img src={botAvatar} alt={botName} className="size-8 rounded-full" />
             </a>
             <div className="hidden items-center whitespace-nowrap lg:flex">
                 {NAV_LINKS.map((link) => (
@@ -310,6 +323,13 @@ export function LandingPage() {
     const active = useActiveSection(SECTION_IDS);
     const featureNames = FEATURE_GROUPS.flatMap((group) => group.features.map((feature) => feature.title));
     const half = Math.ceil(featureNames.length / 2);
+
+    usePageMeta({
+        title: 'Bot_NotStack — บอท Discord ภาษาไทยพร้อมเว็บ Dashboard',
+        description:
+            'Bot_NotStack บอท Discord ภาษาไทยจากเซิร์ฟ NotStackOverflow กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล XP แจ้งอากาศ เช็ค PR/Jira ตั้งค่าผ่านเว็บ Dashboard ได้หมด',
+        path: '/',
+    });
 
     return (
         <div className="min-h-svh overflow-x-clip bg-[#05060a] text-foreground" onClick={scrollToSection}>
@@ -441,7 +461,7 @@ export function LandingPage() {
                                 >
                                     <img
                                         src={`https://github.com/${member.github}.png?size=160`}
-                                        alt=""
+                                        alt={member.name}
                                         loading="lazy"
                                         className="size-20 shrink-0 rounded-2xl bg-muted object-cover grayscale transition-[filter,scale] duration-500 group-hover:scale-105 group-hover:grayscale-0"
                                     />
@@ -489,9 +509,17 @@ export function LandingPage() {
                         {bot.name}
                         {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
                     </p>
-                    <Link to="/dashboard" className="hover:text-foreground">
-                        Dashboard →
-                    </Link>
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Link to="/privacy" className="hover:text-foreground">
+                            นโยบายความเป็นส่วนตัว
+                        </Link>
+                        <Link to="/terms" className="hover:text-foreground">
+                            ข้อกำหนดการใช้งาน
+                        </Link>
+                        <Link to="/dashboard" className="hover:text-foreground">
+                            Dashboard →
+                        </Link>
+                    </div>
                 </div>
                 <p
                     aria-hidden
@@ -501,7 +529,7 @@ export function LandingPage() {
                 </p>
             </footer>
 
-            <Dock visible={pastHero} active={active} botAvatar={bot.avatar} inviteUrl={inviteUrl} />
+            <Dock visible={pastHero} active={active} botName={bot.name} botAvatar={bot.avatar} inviteUrl={inviteUrl} />
         </div>
     );
 }
