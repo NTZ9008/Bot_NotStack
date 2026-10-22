@@ -10,6 +10,7 @@ import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
+import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 
@@ -97,12 +98,19 @@ export function LandingPage() {
     const bot = info?.bot ?? DEFAULT_BOT;
     const inviteUrl = info?.inviteUrl;
 
+    usePageMeta({
+        title: 'Bot_NotStack — บอท Discord ภาษาไทย ตั้งค่าผ่านเว็บ Dashboard ครบจบในตัวเดียว',
+        description:
+            'Bot_NotStack บอทประจำเซิร์ฟ NotStackOverflow ที่ตอนนี้เซิร์ฟคุณก็ใช้ได้ กันคนป่วน ต้อนรับคนใหม่ด้วยการ์ดรูปภาพ เก็บเลเวล XP แจ้งสภาพอากาศทุกเช้า แจ้งเตือน GitHub PR เปิด Jira card และเก็บเงิน ตั้งค่าผ่านเว็บ Dashboard ได้หมด ไม่ต้องจำคำสั่ง',
+        path: '/',
+    });
+
     return (
         <div className="min-h-svh overflow-x-clip bg-background text-foreground" onClick={scrollToSection}>
             <header className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur">
                 <div className="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
                     <a href="#top" className="flex min-w-0 items-center gap-2 font-semibold">
-                        <img src={bot.avatar} alt="" className="size-7 rounded-full" />
+                        <img src={bot.avatar} alt={bot.name} className="size-7 rounded-full" />
                         <span className="truncate">{bot.name}</span>
                     </a>
                     <nav className="ml-4 hidden items-center gap-5 text-sm text-muted-foreground md:flex" aria-label="ส่วนของหน้า">
@@ -240,7 +248,7 @@ export function LandingPage() {
                             >
                                 <img
                                     src={`https://github.com/${member.github}.png?size=128`}
-                                    alt=""
+                                    alt={member.name}
                                     loading="lazy"
                                     className="size-14 shrink-0 rounded-full bg-muted transition-transform duration-300 hover:scale-105"
                                 />
@@ -269,9 +277,17 @@ export function LandingPage() {
                         {bot.name}
                         {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
                     </p>
-                    <Link to="/dashboard" className="hover:text-foreground">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <Link to="/privacy" className="hover:text-foreground">
+                            นโยบายความเป็นส่วนตัว
+                        </Link>
+                        <Link to="/terms" className="hover:text-foreground">
+                            ข้อกำหนดการใช้งาน
+                        </Link>
+                        <Link to="/dashboard" className="hover:text-foreground">
                         Dashboard →
-                    </Link>
+                        </Link>
+                    </div>
                 </div>
             </footer>
         </div>

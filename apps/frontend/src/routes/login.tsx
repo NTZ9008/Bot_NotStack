@@ -149,6 +149,16 @@ function LoginPage() {
                         )}
                     </CardContent>
                 </Card>
+                <p className="text-center text-xs text-muted-foreground">
+                    การเข้าสู่ระบบถือว่าคุณยอมรับ{' '}
+                    <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+                        ข้อกำหนดการใช้งาน
+                    </Link>{' '}
+                    และ{' '}
+                    <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+                        นโยบายความเป็นส่วนตัว
+                    </Link>
+                </p>
             </div>
         </div>
     );
