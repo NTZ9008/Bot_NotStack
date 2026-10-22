@@ -1,0 +1,18 @@
+{
+  "name": "Bot_NotStack — Discord Bot & Web Dashboard",
+  "short_name": "Bot_NotStack",
+  "description": "บอทประจำเซิร์ฟ NotStackOverflow กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล แจ้งอากาศทุกเช้า ตั้งค่าผ่านเว็บ Dashboard ได้หมด",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "th",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

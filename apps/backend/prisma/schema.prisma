@@ -170,6 +170,7 @@ model PrMessage {
 // ADMIN = ผู้ดูแลระบบ (จัดการได้ทุกเซิร์ฟเวอร์ + ผู้ใช้ + ไฟล์ log)
 // USER  = จัดการได้เฉพาะเซิร์ฟเวอร์ที่ตัวเองมีสิทธิ์ Manage Server (ดูจากบัญชี Discord ที่เชื่อมไว้)
 enum UserRole {
+  OWNER
   USER
   ADMIN
 }

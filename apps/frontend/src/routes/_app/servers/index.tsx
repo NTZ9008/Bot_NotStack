@@ -66,7 +66,7 @@ function ServersPage() {
             <PageHeader
                 help="servers"
                 title="เซิร์ฟเวอร์ของคุณ"
-                description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — เห็นเฉพาะเซิร์ฟเวอร์ที่บอทอยู่และคุณเป็นสมาชิก (ต้องมีสิทธิ์ Manage Server ถึงจะตั้งค่าได้)"
+                description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — แสดงเฉพาะเซิร์ฟเวอร์ของคุณที่บอทอยู่ (เป็นเจ้าของเซิร์ฟเวอร์หรือมีสิทธิ์ Manage Server)"
                 actions={
                     <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
                         <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> รีเฟรช

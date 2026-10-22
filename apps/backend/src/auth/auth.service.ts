@@ -9,7 +9,9 @@ import {
     type SuccessResponse,
 } from '@notstack/shared';
 import type { Response } from 'express';
+import { Optional } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
+import { GuildAccessService } from '../guilds/guild-access.service';
 import { ApiException, badRequest } from '../common/exceptions/api.exception';
 import type { AppRequest } from '../common/interfaces/app-request.interface';
 import type { User } from '../generated/prisma/client';
@@ -41,6 +43,7 @@ export class AuthService {
         private readonly users: UsersService,
         private readonly oauth: DiscordOAuthService,
         private readonly audit: AuditService,
+        @Optional() private readonly guildAccess?: GuildAccessService,
     ) {}
 
     // ออก access + refresh token ชุดใหม่ (family ใหม่ = อุปกรณ์/การ login ใหม่)
@@ -184,7 +187,8 @@ export class AuthService {
                 });
                 return '/account?discord_error=discord_taken';
             }
-            await this.users.linkDiscord(user.id, profile);
+            const promoteToOwner = user.role === 'USER' && Boolean(await this.guildAccess?.hasManagedGuild(profile.id));
+            await this.users.linkDiscord(user.id, profile, promoteToOwner);
             await this.audit.audit(req, {
                 action: 'auth.discord_link',
                 actor: user,
@@ -199,7 +203,8 @@ export class AuthService {
         if (user) {
             user = await this.users.syncDiscordProfile(user.id, profile);
         } else {
-            user = await this.users.createDiscordUser(profile);
+            const isOwner = Boolean(await this.guildAccess?.hasManagedGuild(profile.id));
+            user = await this.users.createDiscordUser(profile, isOwner);
             await this.audit.audit(req, {
                 action: 'auth.discord_register',
                 actor: user,

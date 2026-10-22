@@ -26,6 +26,7 @@ export class GuildSyncListener {
     async onJoin(guild: Guild): Promise<void> {
         this.logger.log(`➕ ถูกเชิญเข้าเซิร์ฟเวอร์ ${guild.name} (${guild.id})`);
         await this.guilds.upsert(guild);
+        await this.guilds.promoteGuildOwnerIfEligible(guild.ownerId);
     }
 
     // ถูกเตะ / เซิร์ฟเวอร์ถูกลบ (available = false คือ Discord ล่มชั่วคราว ไม่ใช่ถูกเตะ)
@@ -39,6 +40,7 @@ export class GuildSyncListener {
     @OnDiscord(Events.GuildUpdate)
     async onUpdate(_old: Guild, guild: Guild): Promise<void> {
         await this.guilds.upsert(guild);
+        await this.guilds.promoteGuildOwnerIfEligible(guild.ownerId);
     }
 
     // ยศเปลี่ยน / ออกจากเซิร์ฟเวอร์ → สิทธิ์ในหน้า Dashboard เปลี่ยนตามทันที
