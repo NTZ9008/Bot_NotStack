@@ -1,0 +1,51 @@
+/* ==========================================
+   🎬 สไตล์เฉพาะหน้า landing — ตัวหนังสือวิ่ง / ตัวอักษรเส้นขอบ / เม็ด noise
+   ========================================== */
+
+@keyframes landing-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.landing-marquee {
+    animation: landing-marquee 45s linear infinite;
+}
+
+.landing-marquee-reverse {
+    animation-direction: reverse;
+}
+
+/* ตัวอักษรกลวง (เห็นแค่เส้นขอบ) — วาดเส้นก่อนแล้วเทสีพื้นทับ (paint-order)
+   เส้นซ้อนข้างในตัวอักษรของ variable font จะได้ถูกปิดไว้ เหลือแค่ขอบนอก ; เส้นจึงต้องหนาเป็น 2 เท่า */
+.landing-outline {
+    color: #05060a;
+    paint-order: stroke fill;
+    -webkit-text-stroke: 3px rgb(255 255 255 / 0.8);
+}
+
+@media (min-width: 768px) {
+    .landing-outline {
+        -webkit-text-stroke-width: 4px;
+    }
+}
+
+/* เม็ด noise บางๆ ทับพื้นหลัง ให้ดูมีผิวสัมผัส */
+.landing-grain::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .landing-marquee {
+        animation: none;
+    }
+}
