@@ -96,7 +96,7 @@ function LegalLayout({
                 <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <p>
                         {bot.name}
-                        {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow (AT Tech)
+                        {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
                     </p>
                     <div className="flex flex-wrap items-center gap-4">
                         <Link to="/" className="hover:text-foreground">
@@ -134,7 +134,7 @@ export function PrivacyPolicyPage() {
     usePageMeta({
         title: 'นโยบายความเป็นส่วนตัว (Privacy Policy) — Bot_NotStack',
         description:
-            'นโยบายความเป็นส่วนตัวของ Bot_NotStack และเว็บ Dashboard อธิบายข้อมูลที่จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ (Role-Based Access Control) มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน',
+            'นโยบายความเป็นส่วนตัวของ Bot_NotStack และเว็บ Dashboard อธิบายข้อมูลที่จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน',
         path: '/privacy',
     });
 

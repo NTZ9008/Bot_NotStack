@@ -71,7 +71,7 @@ function BotHeader({ botName, botAvatar, time }: { botName: string; botAvatar: s
             <span className="font-medium text-indigo-300">{botName}</span>
             <span className="rounded bg-[#5865F2] px-1 text-[10px] font-semibold text-white">APP</span>
             <span className="text-xs text-slate-500">{time}</span>
-            <img src={botAvatar} alt="" className="order-first mr-1.5 size-8 rounded-full" />
+            <img src={botAvatar} alt={botName} className="order-first mr-1.5 size-8 rounded-full" />
         </p>
     );
 }

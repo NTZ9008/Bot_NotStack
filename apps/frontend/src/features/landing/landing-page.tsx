@@ -99,9 +99,9 @@ export function LandingPage() {
     const inviteUrl = info?.inviteUrl;
 
     usePageMeta({
-        title: 'Bot_NotStack — บอท Discord ภาษาไทย ตั้งค่าผ่านเว็บ Dashboard ครบจบในตัวเดียว',
+        title: 'Bot_NotStack — บอท Discord ภาษาไทยพร้อมเว็บ Dashboard',
         description:
-            'Bot_NotStack บอทประจำเซิร์ฟ NotStackOverflow ที่ตอนนี้เซิร์ฟคุณก็ใช้ได้ กันคนป่วน ต้อนรับคนใหม่ด้วยการ์ดรูปภาพ เก็บเลเวล XP แจ้งสภาพอากาศทุกเช้า แจ้งเตือน GitHub PR เปิด Jira card และเก็บเงิน ตั้งค่าผ่านเว็บ Dashboard ได้หมด ไม่ต้องจำคำสั่ง',
+            'Bot_NotStack บอท Discord ภาษาไทยจากเซิร์ฟ NotStackOverflow กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล XP แจ้งอากาศ เช็ค PR/Jira ตั้งค่าผ่านเว็บ Dashboard ได้หมด',
         path: '/',
     });
 

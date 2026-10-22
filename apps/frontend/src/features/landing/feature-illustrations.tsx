@@ -30,7 +30,7 @@ function Frame({ channel, children, tilt }: { channel: string; children: ReactNo
 function BotLine({ avatar, name }: { avatar: string; name: string }) {
     return (
         <p className="flex items-center gap-1.5">
-            <img src={avatar} alt="" className="size-5 rounded-full" />
+            <img src={avatar} alt={name} className="size-5 rounded-full" />
             <span className="font-medium text-indigo-300">{name}</span>
             <span className="rounded bg-[#5865F2] px-1 text-[10px] font-semibold text-white">APP</span>
         </p>
