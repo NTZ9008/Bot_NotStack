@@ -5,6 +5,44 @@
 เส้นทางข้อมูล: **NotStack `/api/metrics` → Prometheus → Grafana**
 Grafana ต้องใช้ Prometheus data source; URL `/api/metrics` ไม่ใช่ data source โดยตรง
 
+## ทางลัด: มี Grafana และ Prometheus อยู่แล้ว
+
+ไม่ต้องรัน Compose หรือติดตั้ง Prometheus เพิ่ม ใช้ data source เดิมได้เลย
+
+1. Deploy backend เวอร์ชันนี้ ตั้ง `METRICS_TOKEN` (สร้างด้วย `openssl rand -hex 32`) ใน `.env`
+   แล้ว restart `BotNotStack` ตาม [DEPLOY.md](DEPLOY.md)
+2. บนเครื่อง Prometheus สร้าง `/etc/prometheus/notstack-token` ใส่เฉพาะค่า token เดียวกัน
+   ให้ service user อ่านได้ ถ้า Prometheus เป็น container ต้อง mount ไฟล์เข้า path นี้ภายใน container ด้วย
+3. เพิ่มรายการนี้ใต้ `scrape_configs:` **ของไฟล์เดิม** (ไม่สร้าง key ซ้ำและไม่ลบ job เดิม):
+
+```yaml
+scrape_configs:
+  # ... jobs เดิม ...
+  - job_name: notstack
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    metrics_path: /api/metrics
+    authorization:
+      type: Bearer
+      credentials_file: /etc/prometheus/notstack-token
+    static_configs:
+      - targets: ['BOT_PRIVATE_IP:3035']
+```
+
+แทน `BOT_PRIVATE_IP` ด้วย IP/hostname ของ backend ที่ Prometheus เข้าถึงได้จริง
+ถ้าใช้ HTTPS ผ่าน reverse proxy ให้เพิ่ม `scheme: https` และเปลี่ยน target เป็น `bot.example.com:443`
+ถ้า backend bind `127.0.0.1` จะเข้าจากอีกเครื่องไม่ได้ ต้องใช้ private interface/reverse proxy ที่เปิดให้ Prometheus เข้าถึง
+
+4. ตรวจ config ด้วย `promtool check config /etc/prometheus/prometheus.yml` (ปรับ path ตามระบบ)
+   แล้ว reload/restart **Prometheus เดิม** ตามวิธีที่ติดตั้งไว้
+5. เปิดหน้า Prometheus `/targets` → job `notstack` ต้องเป็น **UP**
+6. Grafana → **Dashboards → New → Import** → อัปโหลด [grafana-dashboard.json](grafana-dashboard.json)
+   → เลือก Prometheus data source เดิม → **Import**
+7. รอประมาณ 30–60 วินาทีแล้วเปิด API/dashboard ของบอทเพื่อสร้าง traffic
+
+Grafana data source ยังชี้ URL ของ Prometheus เหมือนเดิม **ไม่ต้องเปลี่ยนเป็น `/api/metrics`**
+หากไม่ขึ้นข้อมูล ให้ลอง query `up{job="notstack"}` ใน Explore ของ Grafana: ต้องได้ 1
+
 ## 1. เปิด metrics ของ backend
 
 ติดตั้ง dependencies และ build ตามปกติ (`pnpm install`, `pnpm build`) แล้วสร้าง token:
