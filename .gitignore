@@ -19,3 +19,6 @@ levels_migrated.json
 database.sqlite
 notstackutdash-le-ssl.conf
 .DS_Store
+
+# Monitoring scrape credential
+/monitoring/metrics-token

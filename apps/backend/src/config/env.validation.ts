@@ -63,6 +63,8 @@ export const envSchema = z.object({
         )
         .transform((items) => (items.length === 1 && /^\d{1,2}$/.test(items[0]!) ? Number(items[0]) : items)),
     PORT: positiveInt(3035),
+    // ไม่ตั้ง = ปิด metrics; ใช้ Bearer token แยกจาก JWT/Discord
+    METRICS_TOKEN: optionalString.pipe(z.string().min(32).optional()),
 
     DATABASE_URL: z
         .string({ error: 'ยังไม่ได้ตั้งค่า DATABASE_URL ในไฟล์ .env (เช่น postgresql://user:password@host:5432/dbname)' })

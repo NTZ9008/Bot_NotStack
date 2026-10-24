@@ -718,3 +718,7 @@ Third-party credits:
 - UI components generated from [shadcn/ui](https://ui.shadcn.com) (MIT).
 - Map data © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright) and radar data from [RainViewer](https://www.rainviewer.com).
 - Fonts Kanit, Prompt, Noto Sans Thai and Noto Color Emoji (SIL Open Font License) via `@expo-google-fonts`.
+
+## Grafana monitoring
+
+Export protected Prometheus metrics at `/api/metrics` by setting `METRICS_TOKEN` (32+ characters). Use the [monitoring setup guide](monitoring/README.md) to connect your existing Grafana, import the supplied dashboard, and configure Prometheus scrape/alert rules. Metrics cover backend CPU/memory, HTTP traffic/errors/latency, database connectivity and Discord readiness.
