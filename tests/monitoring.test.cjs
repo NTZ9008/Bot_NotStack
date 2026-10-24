@@ -11,8 +11,24 @@ const token = 'test-monitoring-secret-with-at-least-32-characters';
 function fixture(enabled = true, failDb = false) {
     let queries = 0;
     const config = { get: (key) => ({ METRICS_TOKEN: enabled ? token : undefined, TOKEN: 'configured' })[key] };
-    const discord = { ready: { ws: { ping: 42 } }, client: { guilds: { cache: { size: 3 } } } };
+    const handlers = {};
+    const voiceStates = [{ channelId: 'voice' }, { channelId: null }];
+    const guild = { memberCount: 120, voiceStates: { cache: { filter: (fn) => ({ size: voiceStates.filter(fn).length }) } } };
+    const client = {
+        guilds: { cache: { size: 3, values: () => [guild, guild, guild] } },
+        channels: { cache: { size: 40 } },
+        users: { cache: { size: 75 } },
+        on: (event, fn) => (handlers[event] = fn),
+        rest: { on: (event, fn) => (handlers[`rest:${event}`] = fn) },
+    };
+    const discord = { ready: { ws: { ping: 42 } }, client };
+    const count = async () => (failDb ? Promise.reject(new Error('private database error')) : 7);
     const prisma = {
+        guild: { count },
+        user: { count },
+        authSession: { count },
+        webhookDelivery: { groupBy: async () => [{ status: 'failed', _count: { _all: 2 } }] },
+        activityEvent: { groupBy: async () => [{ eventKey: 'messageSent', _count: { _all: 9 } }] },
         $transaction: async (fn) => {
             queries++;
             if (failDb) throw new Error('private database error');
@@ -21,7 +37,7 @@ function fixture(enabled = true, failDb = false) {
         },
     };
     const metrics = new MetricsService(config, discord, prisma);
-    return { metrics, discord, queries: () => queries };
+    return { metrics, discord, handlers, queries: () => queries };
 }
 
 async function serve(metrics, run) {
@@ -101,4 +117,40 @@ test('metrics configuration accepts disabled state and rejects weak credentials'
     assert.equal(validateEnv({ ...base, METRICS_TOKEN: '  ' }).METRICS_TOKEN, undefined);
     assert.throws(() => validateEnv({ ...base, METRICS_TOKEN: 'short' }), /METRICS_TOKEN/);
     assert.equal(validateEnv({ ...base, METRICS_TOKEN: token }).METRICS_TOKEN, token);
+});
+
+test('Discord activity, cache sizes and business stats are exported', async () => {
+    const f = fixture();
+    const is = (type) =>
+        Object.fromEntries(
+            ['ChatInputCommand', 'Autocomplete', 'Button', 'AnySelectMenu', 'ModalSubmit', 'ContextMenuCommand'].map((k) => [`is${k}`, () => k === type]),
+        );
+    f.handlers.interactionCreate({ ...is('ChatInputCommand'), commandName: 'rank' });
+    f.handlers.interactionCreate({ ...is('Button') });
+    f.handlers.messageCreate({ inGuild: () => true, author: { bot: false } });
+    f.handlers.messageCreate({ inGuild: () => false, author: { bot: false } });
+    f.handlers.guildMemberAdd();
+    f.handlers.shardDisconnect();
+    f.handlers['rest:rateLimited']({ global: false });
+    const body = await f.metrics.scrape();
+    for (const line of [
+        /notstack_discord_interactions_total\{type="command"\} 1/,
+        /notstack_discord_interactions_total\{type="button"\} 1/,
+        /notstack_discord_commands_total\{command="rank"\} 1/,
+        /notstack_discord_messages_total\{author="user"\} 1\n/,
+        /notstack_discord_member_events_total\{event="join"\} 1/,
+        /notstack_discord_gateway_events_total\{event="disconnect"\} 1/,
+        /notstack_discord_rate_limits_total\{global="false"\} 1/,
+        /notstack_discord_members 360/,
+        /notstack_discord_voice_users 3/,
+        /notstack_discord_channels 40/,
+        /notstack_db_users 7/,
+        /notstack_db_webhook_deliveries\{status="failed"\} 2/,
+        /notstack_db_webhook_deliveries\{status="pending"\} 0/,
+        /notstack_db_activity_events_24h\{event="messageSent"\} 9/,
+        /notstack_db_stats_up 1/,
+    ])
+        assert.match(body, line);
+    const failed = await fixture(true, true).metrics.scrape();
+    assert.match(failed, /notstack_db_stats_up 0/);
 });
