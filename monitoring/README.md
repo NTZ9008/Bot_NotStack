@@ -108,8 +108,9 @@ Prometheus เปิดไว้ที่ `127.0.0.1:9090` และเก็บ
 3. เลือก Prometheus data source ตอน import แล้วเลือก instance ด้านบนของ dashboard
 4. รออย่างน้อยสองรอบ scrape; กราฟ rate ใช้ข้อมูลหลาย sample และ HTTP metrics จะปรากฏหลังมี API/webhook traffic
 
-มี 14 panels: scrape/database health, Discord ready/guild count/ping, uptime, process CPU/RAM, Node heap,
-HTTP rate/5xx/p95 latency, event loop lag และ database probe duration
+แบ่งเป็น 6 หมวด: Overview (สถานะ UP/DOWN), HTTP traffic (แยก status class, p50/p95/p99, top routes),
+Discord activity (สมาชิก, คนใน voice, ข้อความ/interaction ต่อนาที, top commands, join/leave, gateway events, rate limit),
+Business stats (guild ที่ active, ผู้ใช้ dashboard, session, คิว PR webhook, activity 24 ชม.), Node.js runtime และ Dependencies
 CPU 100% หมายถึงหนึ่ง CPU core; memory/CPU เป็นของ backend process ไม่ใช่ทั้งเครื่อง
 ยังไม่ได้เก็บ frontend browser performance, system logs หรือ PostgreSQL internals
 
@@ -120,6 +121,8 @@ CPU 100% หมายถึงหนึ่ง CPU core; memory/CPU เป็น�
 - Request ที่ยังไม่ถึง router รวมเป็น `unmatched` เพื่อจำกัดจำนวน series
 - Database probe ใช้ transaction อ่าน `SELECT 1` พร้อม pool/statement/transaction timeouts; concurrent scrapes แชร์ probe เดียว
 - Database ล่มยังได้ HTTP 200 พร้อม `notstack_database_up 0` เพื่อให้เห็น metrics อื่น; backend ล่มดู `up = 0`
+- Discord counters นับจาก gateway events เฉพาะตอนตั้ง `METRICS_TOKEN`; label มีแค่ชื่อคำสั่ง/ชนิด ไม่มี user, guild หรือเนื้อหาข้อความ
+- Business stats (`notstack_db_*`) query อย่างมากนาทีละครั้งและไม่ทำให้ scrape ล้ม; ดู `notstack_db_stats_up` ถ้า query พัง
 - ค่าจะเริ่มใหม่เมื่อ restart process; Prometheus เก็บประวัติและ `rate()` จัดการ counter reset
 - ถ้ามีหลาย replica ให้ scrape แต่ละ instance โดยตรง ไม่ผ่าน load balancer ที่สุ่ม backend
 - Alert rules เป็นตัวอย่าง: down 2 นาที, DB fail 1 นาที, Discord หลุด 5 นาที (เฉพาะเปิดบอท), HTTP 5xx >5% เมื่อมีอย่างน้อย 20 requests/5 นาที
