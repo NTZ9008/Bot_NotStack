@@ -12,6 +12,7 @@ import { rateLimit } from 'express-rate-limit';
 import { AppModule } from './app.module';
 import { allowedOrigins } from './config/allowed-origins';
 import type { Env } from './config/env.validation';
+import { MetricsService } from './monitoring/metrics.service';
 
 // ==========================================
 // 🚀 BOOTSTRAP — API (/api/*) + GitHub webhook (/webhook/github*) และบอท Discord ในโปรเซสเดียวกัน
@@ -23,6 +24,7 @@ async function bootstrap(): Promise<void> {
     const logger = new Logger('Server');
     const config = app.get<ConfigService<Env, true>>(ConfigService);
 
+    app.use(app.get(MetricsService).middleware);
     app.set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
     app.use('/api', (_req: Request, res: Response, next: NextFunction) => {
         res.setHeader('Cache-Control', 'no-store');

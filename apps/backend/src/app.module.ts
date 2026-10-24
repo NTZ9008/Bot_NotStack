@@ -25,6 +25,7 @@ import { JiraModule } from './jira/jira.module';
 import { LevelsModule } from './levels/levels.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
+import { MetricsService } from './monitoring/metrics.service';
 import { NewsModule } from './news/news.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -94,6 +95,6 @@ import { WelcomeModule } from './welcome/welcome.module';
         CommandsModule,
     ],
     controllers: [AppController, HealthController, GrowthController],
-    providers: [GrowthService, { provide: APP_FILTER, useClass: HttpExceptionFilter }, { provide: APP_PIPE, useClass: ZodValidationPipe }],
+    providers: [MetricsService, GrowthService, { provide: APP_FILTER, useClass: HttpExceptionFilter }, { provide: APP_PIPE, useClass: ZodValidationPipe }],
 })
 export class AppModule {}
