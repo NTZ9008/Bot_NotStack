@@ -58,13 +58,24 @@ export function cleanTarget(raw: string): string {
     return raw.trim().replace(/^@+/, '').trim();
 }
 
-export function parseCommand(input: string): ParsedCommand | null {
+export const XP_ACTION_LABEL: Record<XpCommandAction, string> = {
+    add: 'ให้',
+    subtract: 'หัก',
+    set: 'ตั้ง',
+    reset: 'รีเซ็ต',
+};
+
+interface XpDraft {
+    hasXpWord: boolean;
+    action: XpCommandAction | null;
+    target: string;
+    amount: { value: number; sign: '+' | '-' | null } | null;
+    reason?: string;
+}
+
+// แยกส่วนของคำสั่ง XP ที่พิมพ์มาแล้ว (อาจยังไม่ครบ) — ใช้ทั้งตอนแปลงเป็นคำสั่งและตอนแสดงคำแนะนำทีละขั้น
+function analyzeXp(input: string): XpDraft {
     let text = input.trim().replace(/\s+/g, ' ');
-    if (!text) return null;
-
-    const activity = ACTIVITY_RE.exec(text);
-    if (activity) return { type: 'activity', query: activity[1]!.trim() };
-
     let reason: string | undefined;
     const reasonMatch = REASON_RE.exec(text);
     if (reasonMatch) {
@@ -81,7 +92,7 @@ export function parseCommand(input: string): ParsedCommand | null {
 
     let action: XpCommandAction | null = null;
     let hasXpWord = false;
-    let amount: { value: number; sign: '+' | '-' | null } | null = null;
+    let amount: XpDraft['amount'] = null;
     const rest: string[] = [];
 
     for (const token of tokens) {
@@ -105,27 +116,95 @@ export function parseCommand(input: string): ParsedCommand | null {
         rest.push(token);
     }
 
+    if (!action && amount?.sign) action = amount.sign === '-' ? 'subtract' : 'add';
+    else if (amount?.sign === '-' && action === 'add') action = 'subtract';
+    return { hasXpWord, action, target: cleanTarget(rest.join(' ')), amount, ...(reason ? { reason } : {}) };
+}
+
+export function parseCommand(input: string): ParsedCommand | null {
+    const text = input.trim().replace(/\s+/g, ' ');
+    if (!text) return null;
+
+    const activity = ACTIVITY_RE.exec(text);
+    if (activity) return { type: 'activity', query: activity[1]!.trim() };
+
+    const { hasXpWord, action, target, amount, reason } = analyzeXp(text);
     // ต้องมีคำว่า xp เสมอ — กันพิมพ์ชื่อเมนูธรรมดาแล้วกลายเป็นคำสั่ง
-    if (!hasXpWord) return null;
-    if (!action) {
-        if (!amount?.sign) return null;
-        action = amount.sign === '-' ? 'subtract' : 'add';
-    } else if (amount?.sign === '-' && action === 'add') {
-        action = 'subtract';
-    }
-    const target = cleanTarget(rest.join(' '));
-    if (!target) return null;
+    if (!hasXpWord || !action || !target) return null;
     if (action === 'reset') return { type: 'xp', action, target, amount: 0, ...(reason ? { reason } : {}) };
     if (!amount || (amount.value === 0 && action !== 'set')) return null;
     return { type: 'xp', action, target, amount: amount.value, ...(reason ? { reason } : {}) };
 }
 
-export const XP_ACTION_LABEL: Record<XpCommandAction, string> = {
-    add: 'ให้',
-    subtract: 'หัก',
-    set: 'ตั้ง',
-    reset: 'รีเซ็ต',
-};
+// ==========================================
+// 🧭 คำแนะนำระหว่างพิมพ์คำสั่ง — บอกว่าพิมพ์อะไรไปแล้ว และต้องพิมพ์อะไรต่อ
+// ==========================================
+export interface CommandGuideStep {
+    label: string;
+    // ค่าที่พิมพ์ไว้แล้ว (ไม่มี = ยังไม่ได้พิมพ์)
+    value?: string;
+    optional?: boolean;
+}
+
+export interface CommandGuide {
+    title: string;
+    // สิ่งที่ต้องพิมพ์ต่อ (ครบแล้ว = null)
+    next: string | null;
+    example: string;
+    steps: CommandGuideStep[];
+}
+
+const LOG_START_RE = /^(?:(?:ค้นหา|หา|search|find)\s+)?(?:log|logs|activity|ล็อก|ล็อค|กิจกรรม)\s*$/i;
+
+export function commandGuide(input: string): CommandGuide | null {
+    const text = input.trim().replace(/\s+/g, ' ');
+    if (!text) return null;
+
+    if (LOG_START_RE.test(text)) {
+        return {
+            title: 'ค้นหาในประวัติเซิร์ฟเวอร์',
+            next: 'พิมพ์คำที่จะค้น เช่น ชื่อสมาชิก ชื่อห้อง หรือ “ห้องเสียง”',
+            example: 'log boat',
+            steps: [{ label: 'คำค้น' }],
+        };
+    }
+
+    if (text === '@') {
+        return {
+            title: 'ค้นหาสมาชิก',
+            next: 'พิมพ์ชื่อหรือ username ต่อจาก @ แล้วเลือกสมาชิก เพื่อดูสิ่งที่ทำได้ (ให้ XP, ดูอันดับ, ดูกิจกรรม)',
+            example: '@boat',
+            steps: [{ label: 'ชื่อสมาชิก' }],
+        };
+    }
+
+    // ต้องพิมพ์คำว่า xp แล้วถึงแนะนำ — พิมพ์ “ตั้งค่า” เพื่อหาหน้าเฉยๆ จะไม่ขึ้น
+    const draft = analyzeXp(text);
+    if (!draft.hasXpWord) return null;
+
+    const action = draft.action;
+    const needsAmount = action !== 'reset';
+    const steps: CommandGuideStep[] = [
+        { label: 'ทำอะไร', value: action ? XP_ACTION_LABEL[action] : undefined },
+        { label: 'สมาชิก', value: draft.target ? `@${draft.target}` : undefined },
+        ...(needsAmount ? [{ label: 'จำนวน XP', value: draft.amount ? draft.amount.value.toLocaleString('th-TH') : undefined }] : []),
+        { label: 'เหตุผล', value: draft.reason, optional: true },
+    ];
+
+    let next: string | null = null;
+    if (!action) next = 'เริ่มด้วยคำสั่ง ให้ / หัก / ตั้ง / รีเซ็ต';
+    else if (!draft.target) next = 'พิมพ์ชื่อสมาชิกหลัง @ (หรือวาง User ID)';
+    else if (needsAmount && !draft.amount) next = 'พิมพ์จำนวน XP เช่น 500 หรือ 1.5k';
+    else if (!draft.reason) next = 'ใส่เหตุผลได้ด้วยคำว่า “เพราะ…” (ไม่บังคับ) แล้วเลือกสมาชิกด้านล่าง';
+
+    const verb = action ? XP_ACTION_LABEL[action] : 'ให้';
+    return {
+        title: action === 'reset' ? 'รีเซ็ต XP ของสมาชิก' : `${verb} XP สมาชิก`,
+        next,
+        example: action === 'reset' ? 'รีเซ็ต xp @boat เพราะเริ่มฤดูกาลใหม่' : `${verb} xp @boat 500 เพราะช่วยตอบคำถาม`,
+        steps,
+    };
+}
 
 // "ให้ 500 XP" / "รีเซ็ต XP"
 export function describeXpCommand(action: XpCommandAction, amount: number): string {

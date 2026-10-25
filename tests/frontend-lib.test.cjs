@@ -313,7 +313,7 @@ test('preview decoder accepts binary responses and old JSON APIs during rolling 
     await assert.rejects(decodePreviewResponse(new Response('<html>error</html>')));
 });
 
-const { parseCommand, cleanTarget, previewXp, describeXpCommand, matchScore } = require('../apps/frontend/src/lib/command-parser.ts');
+const { parseCommand, cleanTarget, previewXp, describeXpCommand, matchScore, commandGuide } = require('../apps/frontend/src/lib/command-parser.ts');
 const { createSseParser } = require('../apps/frontend/src/lib/sse-parser.ts');
 
 test('command palette understands Thai and English XP commands', () => {
@@ -369,4 +369,27 @@ test('SSE parser handles split chunks, CRLF, comments and multi-line data', () =
         { event: 'batch', data: 'line1\nline2' },
         { event: 'message', data: 'no-event' },
     ]);
+});
+
+test('command palette guide walks through a partial XP command step by step', () => {
+    const filled = (guide) => guide.steps.filter((step) => step.value).map((step) => step.label);
+    let guide = commandGuide('ให้ xp @');
+    assert.equal(guide.title, 'ให้ XP สมาชิก');
+    assert.deepEqual(filled(guide), ['ทำอะไร']);
+    assert.match(guide.next, /ชื่อสมาชิก/);
+    guide = commandGuide('ให้ xp @boat');
+    assert.deepEqual(filled(guide), ['ทำอะไร', 'สมาชิก']);
+    assert.match(guide.next, /จำนวน XP/);
+    guide = commandGuide('ให้ xp @boat 500');
+    assert.match(guide.next, /เหตุผล/);
+    guide = commandGuide('ให้ xp @boat 500 เพราะช่วยงาน');
+    assert.deepEqual(filled(guide), ['ทำอะไร', 'สมาชิก', 'จำนวน XP', 'เหตุผล']);
+    assert.equal(guide.next, null);
+    // รีเซ็ตไม่มีขั้นจำนวน XP
+    assert.deepEqual(commandGuide('รีเซ็ต xp @boat').steps.map((step) => step.label), ['ทำอะไร', 'สมาชิก', 'เหตุผล']);
+    assert.match(commandGuide('xp').next, /ให้ \/ หัก/);
+    assert.match(commandGuide('log').next, /คำที่จะค้น/);
+    assert.match(commandGuide('@').next, /ชื่อ/);
+    // ค้นหาหน้าธรรมดาไม่ขึ้นคำแนะนำ
+    for (const text of ['', 'ตั้งค่า', 'ให้', 'voice', 'log boat']) assert.equal(commandGuide(text), null, text);
 });

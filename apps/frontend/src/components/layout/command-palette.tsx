@@ -4,11 +4,14 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import {
     Activity,
     ArrowLeft,
+    Check,
+    Circle,
     Clock,
     Copy,
     CornerDownLeft,
     Globe,
     History,
+    Lightbulb,
     Loader2,
     LogOut,
     Minus,
@@ -32,9 +35,10 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/use-auth';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
-import { cleanTarget, describeXpCommand, matchScore, parseCommand, type XpCommandAction } from '@/lib/command-parser';
+import { cleanTarget, commandGuide, describeXpCommand, matchScore, parseCommand, type CommandGuide, type XpCommandAction } from '@/lib/command-parser';
 import { DEFAULT_AVATAR } from '@/lib/format';
 import { PAGE_GUIDES } from '@/lib/page-guides';
+import { cn } from '@/lib/utils';
 import { visibleNavGroups, type NavItem } from './nav-items';
 import { useLogout } from './profile-menu';
 import { XpCommandDialog, type XpCommandRequest, type XpCommandTarget } from './xp-command-dialog';
@@ -101,6 +105,37 @@ function MemberAvatar({ member }: { member: Pick<MemberSearchResult, 'avatar' | 
     );
 }
 
+// คำแนะนำระหว่างพิมพ์คำสั่ง: ขั้นที่พิมพ์แล้ว (✓) / ยังไม่ได้พิมพ์ + สิ่งที่ต้องพิมพ์ต่อ + ตัวอย่าง
+function GuideCard({ guide }: { guide: CommandGuide }) {
+    return (
+        <div className="mx-1 mt-1 mb-1.5 rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm" aria-live="polite">
+            <p className="flex items-center gap-1.5 font-medium">
+                <Lightbulb className="size-4 text-primary" /> {guide.title}
+            </p>
+            <ol className="mt-2 flex flex-wrap gap-1.5">
+                {guide.steps.map((step) => (
+                    <li
+                        key={step.label}
+                        className={cn(
+                            'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs',
+                            step.value ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-border text-muted-foreground',
+                        )}
+                    >
+                        {step.value ? <Check className="size-3" /> : <Circle className="size-3" />}
+                        {step.label}
+                        {step.value && <span className="max-w-32 truncate font-medium text-foreground">{step.value}</span>}
+                        {step.optional && !step.value && <span className="opacity-70">(ไม่บังคับ)</span>}
+                    </li>
+                ))}
+            </ol>
+            {guide.next && <p className="mt-2 text-xs text-foreground/90">👉 {guide.next}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">
+                ตัวอย่าง: <code className="rounded bg-muted px-1 py-0.5 font-mono">{guide.example}</code>
+            </p>
+        </div>
+    );
+}
+
 const toTarget = (member: MemberSearchResult): XpCommandTarget => ({
     userId: member.userId,
     username: member.nickname || member.username,
@@ -153,6 +188,7 @@ export function CommandPalette() {
     }, [open]);
 
     const parsed = useMemo(() => parseCommand(query), [query]);
+    const guide = useMemo(() => (member ? null : commandGuide(query)), [query, member]);
     const trimmed = query.trim();
     // ชื่อสมาชิกที่จะค้น: เป้าหมายของคำสั่ง XP / ข้อความหลัง @ / ข้อความที่พิมพ์ (อย่างน้อย 2 ตัวอักษร)
     const memberQuery = parsed?.type === 'xp' ? parsed.target : trimmed.startsWith('@') ? cleanTarget(trimmed) : !parsed && trimmed.length >= 2 ? trimmed : '';
@@ -540,7 +576,8 @@ export function CommandPalette() {
                             }}
                         />
                         <CommandList>
-                            <CommandEmpty>ไม่พบสิ่งที่ตรงกับ “{trimmed}”</CommandEmpty>
+                            {guide && <GuideCard guide={guide} />}
+                            {!guide && <CommandEmpty>ไม่พบสิ่งที่ตรงกับ “{trimmed}”</CommandEmpty>}
                             {memberPage || rootPage}
                         </CommandList>
                         <div className="flex items-center gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground">
