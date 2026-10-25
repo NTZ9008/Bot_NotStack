@@ -65,20 +65,21 @@ export class LiveController {
             this.release(key);
             throw err;
         }
-        let recheck: NodeJS.Timeout | undefined;
-        const sink = this.open(req, res, 'private', guildIds, () => {
+        // สิทธิ์ในเซิร์ฟเวอร์เปลี่ยนได้ระหว่างที่เปิดหน้าค้างไว้ (ถูกถอดยศ / บอทออกจากเซิร์ฟเวอร์)
+        let sink: LiveSink | null = null;
+        const recheck = setInterval(() => {
+            if (!sink) return;
+            const target = sink;
+            void this.managedGuilds(user, only)
+                .then((ids) => this.live.updateScope(target, ids))
+                // ตรวจไม่ผ่าน (ถูกถอดสิทธิ์) → หยุดส่งจนกว่าจะตรวจผ่านอีกครั้ง
+                .catch(() => this.live.updateScope(target, new Set()));
+        }, ACCESS_RECHECK_MS);
+        recheck.unref?.();
+        sink = this.open(req, res, 'private', guildIds, () => {
             clearInterval(recheck);
             this.release(key);
         });
-        if (!sink) return;
-        // สิทธิ์ในเซิร์ฟเวอร์เปลี่ยนได้ระหว่างที่เปิดหน้าค้างไว้ (ถูกถอดยศ / บอทออกจากเซิร์ฟเวอร์)
-        recheck = setInterval(() => {
-            void this.managedGuilds(user, only)
-                .then((ids) => this.live.updateScope(sink, ids))
-                // ตรวจไม่ผ่าน (ถูกถอดสิทธิ์) → หยุดส่งจนกว่าจะตรวจผ่านอีกครั้ง
-                .catch(() => this.live.updateScope(sink, new Set()));
-        }, ACCESS_RECHECK_MS);
-        recheck.unref?.();
     }
 
     // null = ทุกเซิร์ฟเวอร์ (ADMIN) ; only = ดูเซิร์ฟเวอร์เดียว (ต้องจัดการเซิร์ฟเวอร์นั้นได้)

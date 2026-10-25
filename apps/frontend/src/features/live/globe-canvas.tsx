@@ -241,7 +241,8 @@ export default function GlobeCanvas({
         const globe = globeRef.current;
         const map = hubsRef.current;
         const next = new Map<string, HubDatum>();
-        for (const hub of hubs) next.set(hub.key, { key: hub.key, lat: hub.lat, lng: hub.lon, name: hub.name, iconUrl: hub.iconUrl, heat: map.get(hub.key)?.heat ?? 0 });
+        for (const hub of hubs)
+            next.set(hub.key, { key: hub.key, lat: hub.lat, lng: hub.lon, name: hub.name, iconUrl: hub.iconUrl, heat: map.get(hub.key)?.heat ?? 0 });
         hubsRef.current = next;
         if (!globe) return;
         const data = [...next.values()];

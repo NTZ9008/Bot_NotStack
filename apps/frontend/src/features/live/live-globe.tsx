@@ -28,13 +28,16 @@ function useReducedMotion(): boolean {
     return reduced;
 }
 
+// เปิดโหมดประหยัดเน็ต (Save-Data) — ไม่โหลด three.js (~340 KB) ใช้ลูกโลกภาพนิ่งแทน
+const saveData = () => Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData);
+
 // โหลด three.js เมื่อกล่องเข้ามาใกล้จอ และเบราว์เซอร์ว่างแล้ว — ไม่แย่งเวลาโหลดหน้าแรก
 function useMountWhenNear<T extends Element>(): [React.RefObject<T | null>, boolean] {
     const ref = useRef<T>(null);
     const [ready, setReady] = useState(false);
     useEffect(() => {
         const element = ref.current;
-        if (!element || ready) return;
+        if (!element || ready || saveData()) return;
         let idle: number | undefined;
         const start = () => {
             const schedule = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 200));
@@ -97,7 +100,10 @@ function Legend({ stats, compact }: { stats: LiveStats; compact?: boolean }) {
         <ul className={cn('flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400', compact && 'gap-x-2.5 text-[11px]')}>
             {kinds.map((kind) => (
                 <li key={kind} className="inline-flex items-center gap-1.5">
-                    <span className="size-2 rounded-full" style={{ backgroundColor: LIVE_KIND_META[kind].color, boxShadow: `0 0 8px ${LIVE_KIND_META[kind].color}` }} />
+                    <span
+                        className="size-2 rounded-full"
+                        style={{ backgroundColor: LIVE_KIND_META[kind].color, boxShadow: `0 0 8px ${LIVE_KIND_META[kind].color}` }}
+                    />
                     {LIVE_KIND_META[kind].label}
                     {stats.perMinute[kind] > 0 && <span className="font-mono text-slate-200 tabular-nums">{formatNumber(stats.perMinute[kind])}</span>}
                 </li>
@@ -183,15 +189,10 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudCla
                             />
                         </Suspense>
                     ) : (
-                        <GlobePlaceholder loading={!failed} />
+                        <GlobePlaceholder loading={!failed && !saveData()} />
                     )}
                 </div>
-                <div
-                    className={cn(
-                        'w-72 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 shadow-2xl shadow-black/50 backdrop-blur-xl',
-                        hudClassName,
-                    )}
-                >
+                <div className={cn('w-72 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 shadow-2xl shadow-black/50 backdrop-blur-xl', hudClassName)}>
                     <div className="flex items-center justify-between gap-2">
                         <LiveStatus status={live.status} />
                         <span className="font-mono text-[11px] text-slate-400">
@@ -218,10 +219,7 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudCla
                 className,
             )}
         >
-            <div
-                aria-hidden
-                className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_30%_40%,rgb(79_70_229/0.22),transparent_70%)]"
-            />
+            <div aria-hidden className="absolute inset-0 -z-10 bg-[radial-gradient(60%_80%_at_30%_40%,rgb(79_70_229/0.22),transparent_70%)]" />
             <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
                 <div ref={boxRef} className="relative h-[22rem] sm:h-[26rem]">
                     {mount && !failed ? (
@@ -236,7 +234,7 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudCla
                             />
                         </Suspense>
                     ) : (
-                        <GlobePlaceholder loading={!failed} />
+                        <GlobePlaceholder loading={!failed && !saveData()} />
                     )}
                     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
                         <div>
@@ -244,14 +242,16 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudCla
                                 <Activity className="size-4 text-indigo-300" /> กิจกรรมสด
                             </p>
                             <p className="mt-0.5 text-xs text-slate-400">
-                                {guildId ? 'เซิร์ฟเวอร์นี้' : `${formatNumber(live.hubs.length)} เซิร์ฟเวอร์ที่คุณจัดการ`} · ตำแหน่งตามเซิร์ฟเวอร์ ไม่ใช่ตำแหน่งจริงของสมาชิก
+                                {guildId ? 'เซิร์ฟเวอร์นี้' : `${formatNumber(live.hubs.length)} เซิร์ฟเวอร์ที่คุณจัดการ`} · ตำแหน่งตามเซิร์ฟเวอร์
+                                ไม่ใช่ตำแหน่งจริงของสมาชิก
                             </p>
                         </div>
                         <LiveStatus status={live.status} />
                     </div>
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
                         <p className="font-mono text-xs text-slate-400">
-                            <span className="text-3xl font-semibold tracking-tight text-white tabular-nums">{formatNumber(live.stats.total)}</span> เหตุการณ์ / นาที
+                            <span className="text-3xl font-semibold tracking-tight text-white tabular-nums">{formatNumber(live.stats.total)}</span> เหตุการณ์ /
+                            นาที
                         </p>
                         <div className="mt-2">
                             <Legend stats={live.stats} />

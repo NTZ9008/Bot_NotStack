@@ -218,7 +218,14 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
         if (scope === 'public') {
             const day = new Date(record.at).toISOString().slice(0, 10);
             const from = record.from ?? scatterPoint(coarsePoint(hub), this.hmac(`${day}:${record.guildId}:${record.userId ?? record.id}`, 32));
-            return { id: record.id, kind: record.kind, eventKey: record.eventKey, at: new Date(record.at).toISOString(), from, hub: this.publicHubKey(record.guildId) };
+            return {
+                id: record.id,
+                kind: record.kind,
+                eventKey: record.eventKey,
+                at: new Date(record.at).toISOString(),
+                from,
+                hub: this.publicHubKey(record.guildId),
+            };
         }
         return {
             id: record.id,

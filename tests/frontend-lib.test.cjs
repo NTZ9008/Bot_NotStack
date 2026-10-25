@@ -312,3 +312,61 @@ test('preview decoder accepts binary responses and old JSON APIs during rolling 
     assert.deepEqual(legacy.vars, vars);
     await assert.rejects(decodePreviewResponse(new Response('<html>error</html>')));
 });
+
+const { parseCommand, cleanTarget, previewXp, describeXpCommand, matchScore } = require('../apps/frontend/src/lib/command-parser.ts');
+const { createSseParser } = require('../apps/frontend/src/lib/sse-parser.ts');
+
+test('command palette understands Thai and English XP commands', () => {
+    const xp = (action, target, amount, reason) => ({ type: 'xp', action, target, amount, ...(reason ? { reason } : {}) });
+    assert.deepEqual(parseCommand('ให้ XP @boat 500'), xp('add', 'boat', 500));
+    assert.deepEqual(parseCommand('ให้ @boat 500 xp'), xp('add', 'boat', 500));
+    assert.deepEqual(parseCommand('give 500 xp to boat'), xp('add', 'boat', 500));
+    assert.deepEqual(parseCommand('เพิ่ม xp boat ngin 1.5k เพราะช่วยตอบคำถาม'), xp('add', 'boat ngin', 1500, 'ช่วยตอบคำถาม'));
+    assert.deepEqual(parseCommand('หัก xp boat 1,200'), xp('subtract', 'boat', 1200));
+    assert.deepEqual(parseCommand('xp boat -200'), xp('subtract', 'boat', 200));
+    assert.deepEqual(parseCommand('xp +50 @boat'), xp('add', 'boat', 50));
+    assert.deepEqual(parseCommand('give boat 300xp'), xp('add', 'boat', 300));
+    assert.deepEqual(parseCommand('ตั้ง xp boat 0'), xp('set', 'boat', 0));
+    assert.deepEqual(parseCommand('รีเซ็ต xp @boat because spam'), xp('reset', 'boat', 0, 'spam'));
+    assert.deepEqual(parseCommand('ให้ xp <@!123456789012345678> 2หมื่น'), xp('add', '123456789012345678', 20000));
+    // ใส่ User ID ตรงๆ ไม่ถูกตีความเป็นจำนวน XP
+    assert.deepEqual(parseCommand('ให้ xp 123456789012345678 500'), xp('add', '123456789012345678', 500));
+});
+
+test('command palette ignores text that is not a command', () => {
+    for (const text of ['', 'levels', 'ให้', 'ให้ boat 500', 'xp', 'ให้ xp boat', 'ให้ xp 500', 'xp boat 500', 'ให้ xp boat 0', 'ให้ xp boat 9999999999']) {
+        assert.equal(parseCommand(text), null, text);
+    }
+});
+
+test('command palette activity search and helpers', () => {
+    assert.deepEqual(parseCommand('log boat'), { type: 'activity', query: 'boat' });
+    assert.deepEqual(parseCommand('ค้นหา log เข้าห้องเสียง'), { type: 'activity', query: 'เข้าห้องเสียง' });
+    assert.equal(cleanTarget(' @@boat '), 'boat');
+    assert.equal(cleanTarget('<@123456789012345678>'), '123456789012345678');
+    assert.equal(previewXp('add', 100, 50), 150);
+    assert.equal(previewXp('subtract', 100, 500), 0);
+    assert.equal(previewXp('set', 100, 7), 7);
+    assert.equal(previewXp('reset', 100, 7), 0);
+    assert.equal(describeXpCommand('add', 1500), 'ให้ 1,500 XP');
+    assert.equal(describeXpCommand('reset', 0), 'รีเซ็ต XP');
+    assert.equal(matchScore('ห้องเสียง voice guard', 'voice'), matchScore('ห้องเสียง voice guard', 'voice'));
+    assert.ok(matchScore('Voice Guard ห้องเสียง', 'voice') > matchScore('ตั้งค่า voice', 'voice'));
+    assert.equal(matchScore('news ข่าว', 'voice'), 0);
+    assert.ok(matchScore('levels xp อันดับ', 'xp อันดับ') > 0);
+});
+
+test('SSE parser handles split chunks, CRLF, comments and multi-line data', () => {
+    const messages = [];
+    const parse = createSseParser((message) => messages.push(message));
+    parse('retry: 5000\n\n: ping\n\nevent: hel');
+    parse('lo\r');
+    parse('\ndata: {"a":1}\r\n\r\nevent: batch\ndata: line1\ndata: line2\n');
+    assert.equal(messages.length, 1);
+    parse('\ndata: no-event\n\n');
+    assert.deepEqual(messages, [
+        { event: 'hello', data: '{"a":1}' },
+        { event: 'batch', data: 'line1\nline2' },
+        { event: 'message', data: 'no-event' },
+    ]);
+});
