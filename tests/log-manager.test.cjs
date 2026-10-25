@@ -167,6 +167,24 @@ test('dispatcher uses saved appearance for queued and attached logs without chan
     assert.equal(recorded.length, 3);
 });
 
+test('audit gateway state and buffer are tracked per guild', async () => {
+    const logs = new LogDispatcher({}, {}, {});
+    let restCalls = 0;
+    const guildB = {
+        id: 'b',
+        fetchAuditLogs: async () => {
+            restCalls++;
+            return { entries: { find: () => ({ executor: { id: 'mod-b' }, reason: null, createdTimestamp: Date.now() }) } };
+        },
+    };
+    logs.pushAuditEntry({ action: 20, targetId: 'u1', executor: { id: 'mod-a' }, reason: null }, { id: 'a' });
+    assert.equal(logs.findInAuditBuffer('b', 20, 'u1', 10000), null);
+    assert.equal(logs.findInAuditBuffer('a', 20, 'u1', 10000).executor.id, 'mod-a');
+    const hit = await logs.fetchExecutor(guildB, 20, 'u1');
+    assert.equal(restCalls, 1);
+    assert.equal(hit.executor.id, 'mod-b');
+});
+
 const { bucketLabels, breakdownFromSeries, buildDatasets, summarizeVoiceTime } = require('../apps/backend/dist/log-manager/utils/activity-stats.util');
 const { activityEventLabel, humanizeMentions } = require('../apps/backend/dist/log-manager/utils/activity-humanize.util');
 
