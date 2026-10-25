@@ -2,7 +2,7 @@ import { ACTIVITY_ONLY_EVENTS, LOG_EVENT_MAP } from './log-manager';
 
 // ==========================================
 // 🌏 LIVE ACTIVITY — เหตุการณ์สดสำหรับลูกโลก 3D (Server-Sent Events)
-// GET /api/live/public (ไม่ต้อง login — ไม่มีชื่อคน / ห้อง / เซิร์ฟเวอร์) และ GET /api/live (เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้เข้าถึงได้)
+// GET /api/live (ต้อง login — เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้) ; หน้า landing ใช้ข้อมูลจำลองที่สร้างฝั่งหน้าเว็บ ไม่ต่อ API
 // ตำแหน่งบนลูกโลกเป็นของ "เซิร์ฟเวอร์" (สถานที่ในหน้ารายงานอากาศ หรือภาษาหลักของเซิร์ฟเวอร์) ไม่ใช่ตำแหน่งจริงของสมาชิก
 // ==========================================
 
@@ -25,12 +25,12 @@ export interface LivePoint {
     lon: number;
 }
 
-// จุดศูนย์กลางของเซิร์ฟเวอร์บนลูกโลก (ฝั่ง public ไม่มี id / ชื่อ)
+// จุดศูนย์กลางของเซิร์ฟเวอร์บนลูกโลก
 export interface LiveHub extends LivePoint {
     key: string;
-    guildId?: string;
-    name?: string;
-    iconUrl?: string | null;
+    guildId: string;
+    name: string;
+    iconUrl: string | null;
 }
 
 export interface LiveEvent {
@@ -41,12 +41,11 @@ export interface LiveEvent {
     // จุดที่เกิด (กระจายรอบเซิร์ฟเวอร์ตามผู้ใช้) → วิ่งเป็นเส้นโค้งไปหา hub
     from: LivePoint;
     hub: string;
-    // ฝั่ง public ไม่มีฟิลด์ด้านล่าง
-    guildId?: string;
+    guildId: string;
     guildName?: string;
-    userName?: string | null;
-    channelName?: string | null;
-    summary?: string | null;
+    userName: string | null;
+    channelName: string | null;
+    summary: string | null;
 }
 
 export interface LiveStats {
@@ -57,7 +56,6 @@ export interface LiveStats {
 
 // event แรกหลังต่อสำเร็จ — ของที่ต้องใช้วาดลูกโลกทันทีโดยไม่ต้องรอเหตุการณ์ใหม่
 export interface LiveHello {
-    scope: 'public' | 'private';
     hubs: LiveHub[];
     recent: LiveEvent[];
     stats: LiveStats;

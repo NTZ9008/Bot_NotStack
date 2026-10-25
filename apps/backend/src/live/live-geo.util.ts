@@ -53,13 +53,6 @@ export function localePoint(locale: string | null | undefined): LivePoint | null
     return LOCALE_POINTS[locale] ?? LOCALE_POINTS[locale.split('-')[0]!] ?? null;
 }
 
-const round = (value: number, step: number) => Math.round(value / step) * step;
-
-// ฝั่ง public ไม่บอกพิกัดละเอียด (สถานที่ในหน้ารายงานอากาศอาจเป็นที่ตั้งจริงของกลุ่ม) — ปัดเป็นช่องละครึ่งองศา (~50 กม.)
-export function coarsePoint(point: LivePoint): LivePoint {
-    return { lat: round(point.lat, 0.5), lon: round(point.lon, 0.5) };
-}
-
 function hashUnit(seed: string, offset: number): number {
     return crypto.createHash('sha256').update(seed).digest().readUInt32BE(offset) / 0xffffffff;
 }

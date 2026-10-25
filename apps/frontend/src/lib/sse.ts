@@ -6,8 +6,6 @@ export type StreamStatus = 'connecting' | 'live' | 'reconnecting' | 'disabled' |
 
 export interface EventStreamOptions {
     path: string;
-    // ข้อมูลสาธารณะ — ไม่ refresh session และไม่ถูกตัดตอนเปลี่ยนบัญชี
-    sessionless?: boolean;
     onMessage: (message: SseMessage) => void;
     onStatus?: (status: StreamStatus) => void;
     signal: AbortSignal;
@@ -25,8 +23,9 @@ const sleep = (ms: number, signal: AbortSignal) =>
 // เพราะต้องรู้ status code: 401 → refresh session แล้วต่อใหม่ / 404 → ปิดอยู่ ไม่ต้องลองซ้ำ
 // หลุดเมื่อไหร่ต่อใหม่เองแบบรอนานขึ้นเรื่อยๆ (สูงสุด 30 วินาที) — หยุดเมื่อ signal ถูก abort
 // ==========================================
-export async function openEventStream({ path, sessionless, onMessage, onStatus, signal: outer }: EventStreamOptions): Promise<void> {
-    const signal = sessionless ? outer : AbortSignal.any([outer, sessionRequests.capture()]);
+export async function openEventStream({ path, onMessage, onStatus, signal: outer }: EventStreamOptions): Promise<void> {
+    // เปลี่ยนบัญชี / logout → ตัดการเชื่อมต่อของ session เดิมทันที
+    const signal = AbortSignal.any([outer, sessionRequests.capture()]);
     let attempt = 0;
     let refreshed = false;
 
@@ -34,7 +33,7 @@ export async function openEventStream({ path, sessionless, onMessage, onStatus, 
         onStatus?.(attempt === 0 ? 'connecting' : 'reconnecting');
         try {
             const res = await fetch(apiUrl(path), { credentials: 'include', headers: { Accept: 'text/event-stream' }, signal });
-            if (res.status === 401 && !sessionless) {
+            if (res.status === 401) {
                 if (!refreshed && (await refreshSession())) {
                     refreshed = true;
                     continue;

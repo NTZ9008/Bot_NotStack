@@ -4,7 +4,8 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { StreamStatus } from '@/lib/sse';
 import { formatNumber, formatTimeAgo } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { useLiveStream, type LiveScope } from './use-live-stream';
+import { useLiveStream } from './use-live-stream';
+import { useMockLive } from './use-mock-live';
 
 const GlobeCanvas = lazy(() => import('./globe-canvas'));
 
@@ -112,15 +113,14 @@ function Legend({ stats }: { stats: LiveStats }) {
     );
 }
 
-function describe(event: LiveEvent, scope: LiveScope): { title: string; detail: string } {
+function describe(event: LiveEvent): { title: string; detail: string } {
     const label = liveEventLabel(event.eventKey);
-    if (scope === 'public') return { title: label, detail: event.kind === 'pr' ? 'จาก GitHub' : 'ในเซิร์ฟเวอร์ที่ใช้บอท' };
     const where = [event.channelName && (event.kind === 'pr' ? event.channelName : `#${event.channelName}`), event.guildName].filter(Boolean).join(' · ');
     return { title: event.userName ? `${event.userName} · ${label}` : label, detail: where || (event.summary ?? '') };
 }
 
-function FeedItem({ event, scope, now }: { event: LiveEvent; scope: LiveScope; now: number }) {
-    const { title, detail } = describe(event, scope);
+function FeedItem({ event, now }: { event: LiveEvent; now: number }) {
+    const { title, detail } = describe(event);
     const color = LIVE_KIND_META[event.kind].color;
     return (
         <li className="animate-in fade-in slide-in-from-top-1 flex items-start gap-2.5 py-2 duration-500 motion-reduce:animate-none">
@@ -150,47 +150,44 @@ function GlobePlaceholder({ loading }: { loading?: boolean }) {
     );
 }
 
-export interface LiveGlobeProps {
-    scope: LiveScope;
-    guildId?: string;
-    variant?: 'hero' | 'panel';
-    className?: string;
-}
-
 // ==========================================
-// 🌏 ลูกโลกกิจกรรมสด + แถบข้อมูล
-// - hero:  ลูกโลกอย่างเดียว พื้นหลังโปร่ง วางซ้อนใน hero ของหน้า landing (ข้อมูลแบบไม่ระบุตัวตน)
-// - panel: การ์ดสีเข้มใน Dashboard พร้อมรายการล่าสุด (ชื่อคน / ห้อง / เซิร์ฟเวอร์)
+// 🎬 ลูกโลกในหน้า landing — พื้นหลังโปร่ง ลูกโลกอย่างเดียว ใช้ข้อมูลจำลอง (ไม่ดึงกิจกรรมจริงจาก API)
 // ==========================================
-export function LiveGlobe({ scope, guildId, variant = 'panel', className }: LiveGlobeProps) {
+export function LandingGlobe({ className }: { className?: string }) {
     const reducedMotion = useReducedMotion();
     const [boxRef, mount] = useMountWhenNear<HTMLDivElement>();
     const [failed, setFailed] = useState(false);
-    const live = useLiveStream(scope, { guildId });
-    const now = useNow();
+    const mock = useMockLive(mount && !failed);
 
-    if (variant === 'hero') {
-        // ปิด public ไว้ (LIVE_PUBLIC=false) — hero กลับเป็นแบบเดิม
-        if (live.status === 'disabled') return null;
-        return (
-            <div ref={boxRef} aria-hidden className={cn('pointer-events-none', className)}>
-                {mount && !failed ? (
-                    <Suspense fallback={<GlobePlaceholder loading />}>
-                        <GlobeCanvas
-                            hubs={live.hubs}
-                            subscribe={live.subscribe}
-                            reducedMotion={reducedMotion}
-                            interactive={false}
-                            altitude={1.75}
-                            onError={() => setFailed(true)}
-                        />
-                    </Suspense>
-                ) : (
-                    <GlobePlaceholder loading={!failed && !saveData()} />
-                )}
-            </div>
-        );
-    }
+    return (
+        <div ref={boxRef} aria-hidden className={cn('pointer-events-none', className)}>
+            {mount && !failed ? (
+                <Suspense fallback={<GlobePlaceholder loading />}>
+                    <GlobeCanvas
+                        hubs={mock.hubs}
+                        subscribe={mock.subscribe}
+                        reducedMotion={reducedMotion}
+                        interactive={false}
+                        altitude={1.75}
+                        onError={() => setFailed(true)}
+                    />
+                </Suspense>
+            ) : (
+                <GlobePlaceholder loading={!failed && !saveData()} />
+            )}
+        </div>
+    );
+}
+
+// ==========================================
+// 🌏 ลูกโลกกิจกรรมสดใน Dashboard (ข้อมูลจริง ต้อง login) — การ์ดสีเข้มพร้อมรายการล่าสุด (ชื่อคน / ห้อง / เซิร์ฟเวอร์)
+// ==========================================
+export function LiveGlobe({ guildId, className }: { guildId?: string; className?: string }) {
+    const reducedMotion = useReducedMotion();
+    const [boxRef, mount] = useMountWhenNear<HTMLDivElement>();
+    const [failed, setFailed] = useState(false);
+    const live = useLiveStream({ guildId });
+    const now = useNow();
 
     return (
         <section
@@ -247,7 +244,7 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className }: Live
                     ) : (
                         <ul aria-live="polite" className="max-h-[22rem] divide-y divide-white/5 overflow-y-auto px-4 pb-2 lg:max-h-[24rem]">
                             {live.feed.slice(0, 12).map((event) => (
-                                <FeedItem key={event.id} event={event} scope={scope} now={now} />
+                                <FeedItem key={event.id} event={event} now={now} />
                             ))}
                         </ul>
                     )}

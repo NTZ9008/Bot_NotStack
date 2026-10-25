@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import { Injectable, Logger, OnApplicationShutdown, OnModuleInit } from '@nestjs/common';
 import { Interval } from '@nestjs/schedule';
 import {
@@ -16,7 +15,7 @@ import {
 } from '@notstack/shared';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { coarsePoint, DEFAULT_HUB, localePoint, scatterPoint } from './live-geo.util';
+import { DEFAULT_HUB, localePoint, scatterPoint } from './live-geo.util';
 
 const TICK_MS = 500; // รวม event เป็นชุดก่อนส่ง — Discord ยิงถี่มาก ส่งทีละตัวจะหนักทั้งเครือข่ายและหน้าเว็บ
 const STATS_EVERY_MS = 5000; // ไม่มี event ใหม่ก็ส่งสถิติให้ตัวเลขบนหน้าเว็บลดลงตามเวลา
@@ -26,8 +25,6 @@ const RECENT_SIZE = 150;
 const HELLO_RECENT = 40;
 const WINDOW_SECONDS = 60;
 const HUB_REFRESH_MS = 10 * 60 * 1000;
-
-export type LiveScope = 'public' | 'private';
 
 export interface LiveInput {
     guildId: string;
@@ -61,8 +58,7 @@ export interface LiveSink {
 }
 
 interface Subscriber {
-    scope: LiveScope;
-    // null = ทุกเซิร์ฟเวอร์ (ฝั่ง public / ADMIN)
+    // null = ทุกเซิร์ฟเวอร์ (ADMIN)
     guildIds: Set<string> | null;
     sink: LiveSink;
     pending: LiveRecord[];
@@ -78,8 +74,7 @@ interface Counter {
 // ==========================================
 // 🌏 LIVE ACTIVITY — กระจายเหตุการณ์สดให้หน้าเว็บ (ลูกโลก 3D) ผ่าน Server-Sent Events
 // รับเหตุการณ์ชุดเดียวกับ Activity Log (เคารพการปิดบันทึกของแต่ละเซิร์ฟเวอร์อยู่แล้ว) + PR จาก GitHub
-// - public: ไม่มีชื่อคน / ห้อง / เซิร์ฟเวอร์ / id — ตำแหน่งปัดหยาบ และ seed ของจุดเปลี่ยนทุกวัน (ตามตัวคนข้ามวันไม่ได้)
-// - private: เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้ (สิทธิ์เดียวกับหน้า Activity Log)
+// เฉพาะผู้ที่ login และเฉพาะเซิร์ฟเวอร์ที่จัดการได้ (สิทธิ์เดียวกับหน้า Activity Log) — หน้า landing ใช้ข้อมูลจำลองฝั่งหน้าเว็บ ไม่ต่อ API นี้
 // ไม่เก็บลงฐานข้อมูล — มีแค่ในหน่วยความจำ (ล่าสุด 150 รายการ)
 // ==========================================
 @Injectable()
@@ -89,7 +84,6 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
     private readonly recent: LiveRecord[] = [];
     private readonly counters = new Map<string, Counter>();
     private readonly weatherHubs = new Map<string, LivePoint>();
-    private readonly salt = crypto.randomBytes(32);
     private nextId = 1;
     private timer: NodeJS.Timeout | null = null;
     private lastStatsAt = 0;
@@ -134,18 +128,8 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
         return this.weatherHubs.get(guildId) ?? localePoint(this.discord.guild(guildId)?.preferredLocale) ?? DEFAULT_HUB;
     }
 
-    private hmac(value: string, length = 12): string {
-        return crypto.createHmac('sha256', this.salt).update(value).digest('hex').slice(0, length);
-    }
-
-    // key ของเซิร์ฟเวอร์ฝั่ง public — คงที่ตลอดอายุโปรเซส แต่ย้อนกลับเป็น guild id ไม่ได้
-    private publicHubKey(guildId: string): string {
-        return `h${this.hmac(`hub:${guildId}`)}`;
-    }
-
-    private hubOf(scope: LiveScope, guildId: string): LiveHub {
+    private hubOf(guildId: string): LiveHub {
         const point = this.hubPoint(guildId);
-        if (scope === 'public') return { key: this.publicHubKey(guildId), ...coarsePoint(point) };
         const guild = this.discord.guild(guildId);
         return { key: guildId, guildId, name: guild?.name ?? guildId, iconUrl: guild?.iconURL({ size: 64 }) ?? null, ...point };
     }
@@ -211,22 +195,10 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
     }
 
     // ==========================================
-    // 🔒 แปลงเป็นข้อมูลที่ส่งออก — ฝั่ง public ตัดทุกอย่างที่ระบุตัวคน / ห้อง / เซิร์ฟเวอร์ทิ้ง
+    // 🔒 แปลงเป็นข้อมูลที่ส่งออก
     // ==========================================
-    project(scope: LiveScope, record: LiveRecord): LiveEvent {
+    project(record: LiveRecord): LiveEvent {
         const hub = this.hubPoint(record.guildId);
-        if (scope === 'public') {
-            const day = new Date(record.at).toISOString().slice(0, 10);
-            const from = record.from ?? scatterPoint(coarsePoint(hub), this.hmac(`${day}:${record.guildId}:${record.userId ?? record.id}`, 32));
-            return {
-                id: record.id,
-                kind: record.kind,
-                eventKey: record.eventKey,
-                at: new Date(record.at).toISOString(),
-                from,
-                hub: this.publicHubKey(record.guildId),
-            };
-        }
         return {
             id: record.id,
             kind: record.kind,
@@ -245,10 +217,10 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
     // ==========================================
     // 📡 ผู้ชม
     // ==========================================
-    subscribe(scope: LiveScope, guildIds: Set<string> | null, sink: LiveSink): () => void {
-        const sub: Subscriber = { scope, guildIds, sink, pending: [], dropped: 0 };
+    subscribe(guildIds: Set<string> | null, sink: LiveSink): () => void {
+        const sub: Subscriber = { guildIds, sink, pending: [], dropped: 0 };
         this.subscribers.add(sub);
-        sink.send('hello', this.hello(scope, guildIds));
+        sink.send('hello', this.hello(guildIds));
         this.startTimer();
         return () => {
             this.subscribers.delete(sub);
@@ -261,21 +233,21 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
         for (const sub of this.subscribers) if (sub.sink === sink) sub.guildIds = guildIds;
     }
 
-    hello(scope: LiveScope, guildIds: Set<string> | null): LiveHello {
+    hello(guildIds: Set<string> | null): LiveHello {
         const client = this.discord.ready;
         const ids = guildIds ? [...guildIds] : client ? [...client.guilds.cache.keys()] : [];
         const hubs = new Map<string, LiveHub>();
         for (const guildId of ids) {
-            const hub = this.hubOf(scope, guildId);
+            const hub = this.hubOf(guildId);
             hubs.set(hub.key, hub);
         }
         const records = this.recent.filter((record) => !guildIds || guildIds.has(record.guildId)).slice(-HELLO_RECENT);
         // เหตุการณ์เก่าของเซิร์ฟเวอร์ที่ไม่อยู่ในรายการ (บอทออกไปแล้ว) ยังต้องมีจุดให้เส้นวิ่งไปหา
         for (const record of records) {
-            const hub = this.hubOf(scope, record.guildId);
+            const hub = this.hubOf(record.guildId);
             if (!hubs.has(hub.key)) hubs.set(hub.key, hub);
         }
-        return { scope, hubs: [...hubs.values()], recent: records.map((record) => this.project(scope, record)), stats: this.stats(guildIds) };
+        return { hubs: [...hubs.values()], recent: records.map((record) => this.project(record)), stats: this.stats(guildIds) };
     }
 
     private startTimer(): void {
@@ -294,20 +266,12 @@ export class LiveService implements OnModuleInit, OnApplicationShutdown {
         const sendPing = now - this.lastPingAt >= PING_EVERY_MS;
         if (sendStats) this.lastStatsAt = now;
         if (sendPing) this.lastPingAt = now;
-        // public ทุกคนได้ข้อมูลชุดเดียวกัน — แปลงครั้งเดียวต่อรอบ
-        const publicCache = new Map<number, LiveEvent>();
-        let publicStats: LiveStats | null = null;
 
         for (const sub of [...this.subscribers]) {
             try {
                 if (sub.pending.length || sub.dropped || sendStats) {
-                    const events = sub.pending.map((record) => {
-                        if (sub.scope === 'private') return this.project('private', record);
-                        let event = publicCache.get(record.id);
-                        if (!event) publicCache.set(record.id, (event = this.project('public', record)));
-                        return event;
-                    });
-                    const stats = sub.scope === 'public' ? (publicStats ??= this.stats(null, now)) : this.stats(sub.guildIds, now);
+                    const events = sub.pending.map((record) => this.project(record));
+                    const stats = this.stats(sub.guildIds, now);
                     sub.sink.send('batch', { events, stats, dropped: sub.dropped });
                     sub.pending = [];
                     sub.dropped = 0;

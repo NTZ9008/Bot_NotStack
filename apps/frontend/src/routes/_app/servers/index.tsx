@@ -148,7 +148,7 @@ function ServersPage() {
             )}
 
             {/* กิจกรรมสดของทุกเซิร์ฟเวอร์ที่จัดการได้ (สิทธิ์ดูอย่างเดียวไม่เห็นกิจกรรม เหมือนหน้า Activity Log) */}
-            {data?.botOnline && data.guilds.some((guild) => guild.access === 'manage') && <LiveGlobe scope="private" />}
+            {data?.botOnline && data.guilds.some((guild) => guild.access === 'manage') && <LiveGlobe />}
         </>
     );
 }

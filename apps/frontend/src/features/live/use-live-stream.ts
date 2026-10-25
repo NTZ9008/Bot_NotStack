@@ -4,7 +4,6 @@ import { openEventStream, type StreamStatus } from '@/lib/sse';
 
 const FEED_SIZE = 30;
 
-export type LiveScope = 'public' | 'private';
 type Listener = (events: LiveEvent[]) => void;
 
 export interface LiveStream {
@@ -18,10 +17,10 @@ export interface LiveStream {
 }
 
 // ==========================================
-// 🌏 ต่อ /api/live (หรือ /api/live/public) แล้วเก็บ hub / สถิติ / รายการล่าสุด
+// 🌏 ต่อ /api/live (ต้อง login) แล้วเก็บ hub / สถิติ / รายการล่าสุด
 // guildId = ดูเฉพาะเซิร์ฟเวอร์เดียว (API กรองให้ สถิติจึงเป็นของเซิร์ฟเวอร์นั้นจริงๆ)
 // ==========================================
-export function useLiveStream(scope: LiveScope, { enabled = true, guildId }: { enabled?: boolean; guildId?: string } = {}): LiveStream {
+export function useLiveStream({ enabled = true, guildId }: { enabled?: boolean; guildId?: string } = {}): LiveStream {
     const [status, setStatus] = useState<StreamStatus>('connecting');
     const [hubs, setHubs] = useState<LiveHub[]>([]);
     const [stats, setStats] = useState<LiveStats>(emptyLiveStats);
@@ -53,8 +52,7 @@ export function useLiveStream(scope: LiveScope, { enabled = true, guildId }: { e
         };
 
         void openEventStream({
-            path: scope === 'public' ? '/live/public' : guildId ? `/live?guild=${guildId}` : '/live',
-            sessionless: scope === 'public',
+            path: guildId ? `/live?guild=${guildId}` : '/live',
             signal: controller.signal,
             onStatus: setStatus,
             onMessage: ({ event, data }) => {
@@ -77,7 +75,7 @@ export function useLiveStream(scope: LiveScope, { enabled = true, guildId }: { e
             },
         });
         return () => controller.abort();
-    }, [scope, enabled, guildId]);
+    }, [enabled, guildId]);
 
     return { status, hubs, stats, feed, subscribe };
 }

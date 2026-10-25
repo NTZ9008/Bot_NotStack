@@ -1,18 +1,13 @@
 import { Controller, Get, HttpStatus, Query, Req, Res } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AUTH_ERROR_CODES, isSnowflake } from '@notstack/shared';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { Public } from '../common/decorators/public.decorator';
 import { ApiException, notFound } from '../common/exceptions/api.exception';
-import type { Env } from '../config/env.validation';
 import type { User } from '../generated/prisma/client';
 import { GuildAccessService } from '../guilds/guild-access.service';
 import { GuildsService } from '../guilds/guilds.service';
-import { LiveService, type LiveScope, type LiveSink } from './live.service';
+import { LiveService, type LiveSink } from './live.service';
 
-const MAX_PUBLIC = 300;
-const MAX_PER_IP = 4;
 const MAX_PER_USER = 4;
 // ผู้ชมที่รับไม่ทัน (เน็ตช้า / แท็บค้าง) — ข้อมูลค้างในบัฟเฟอร์เกินนี้ตัดทิ้งเลย ไม่ให้กินหน่วยความจำ
 const MAX_BUFFERED_BYTES = 512 * 1024;
@@ -20,37 +15,18 @@ const ACCESS_RECHECK_MS = 5 * 60 * 1000;
 
 // ==========================================
 // 🌏 LIVE — Server-Sent Events ของลูกโลก 3D
-// GET /api/live/public  ไม่ต้อง login (หน้า landing) — ปิดได้ด้วย LIVE_PUBLIC=false
-// GET /api/live         เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้ (สิทธิ์ manage เหมือนหน้า Activity Log) — ?guild=<id> ดูเซิร์ฟเวอร์เดียว
+// GET /api/live  ต้อง login — เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้ (สิทธิ์ manage เหมือนหน้า Activity Log) — ?guild=<id> ดูเซิร์ฟเวอร์เดียว
+// ไม่มี endpoint สาธารณะ: ลูกโลกในหน้า landing ใช้ข้อมูลจำลองฝั่งหน้าเว็บ (ไม่เปิดเผยกิจกรรมจริงให้คนนอก)
 // ==========================================
 @Controller('live')
 export class LiveController {
     private readonly connections = new Map<string, number>();
-    private publicCount = 0;
-    private readonly publicEnabled: boolean;
 
     constructor(
         private readonly live: LiveService,
         private readonly guilds: GuildsService,
         private readonly access: GuildAccessService,
-        config: ConfigService<Env, true>,
-    ) {
-        this.publicEnabled = config.get('LIVE_PUBLIC', { infer: true });
-    }
-
-    @Public()
-    @Get('public')
-    stream(@Req() req: Request, @Res() res: Response): void {
-        if (!this.publicEnabled) throw notFound('ปิดการแสดงกิจกรรมสาธารณะไว้');
-        if (this.publicCount >= MAX_PUBLIC) throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, 'ผู้ชมเต็มแล้ว ลองใหม่อีกครั้ง');
-        const key = `ip:${req.ip}`;
-        this.acquire(key, MAX_PER_IP);
-        this.publicCount++;
-        this.open(req, res, 'public', null, () => {
-            this.publicCount--;
-            this.release(key);
-        });
-    }
+    ) {}
 
     @Get()
     async privateStream(@CurrentUser() user: User, @Req() req: Request, @Res() res: Response, @Query('guild') guild?: string): Promise<void> {
@@ -76,7 +52,7 @@ export class LiveController {
                 .catch(() => this.live.updateScope(target, new Set()));
         }, ACCESS_RECHECK_MS);
         recheck.unref?.();
-        sink = this.open(req, res, 'private', guildIds, () => {
+        sink = this.open(req, res, guildIds, () => {
             clearInterval(recheck);
             this.release(key);
         });
@@ -107,7 +83,7 @@ export class LiveController {
         else this.connections.set(key, count);
     }
 
-    private open(req: Request, res: Response, scope: LiveScope, guildIds: Set<string> | null, onClose: () => void): LiveSink | null {
+    private open(req: Request, res: Response, guildIds: Set<string> | null, onClose: () => void): LiveSink | null {
         // ปิดแท็บไปก่อนตรวจสิทธิ์เสร็จ — event close ผ่านไปแล้ว จะไม่มีใครเรียก onClose ให้
         if (res.destroyed || req.socket.destroyed) {
             onClose();
@@ -146,7 +122,7 @@ export class LiveController {
         req.on('close', close);
         res.on('error', close);
         try {
-            unsubscribe = this.live.subscribe(scope, guildIds, sink);
+            unsubscribe = this.live.subscribe(guildIds, sink);
         } catch {
             close();
             res.end();

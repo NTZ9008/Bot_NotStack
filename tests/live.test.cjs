@@ -1,7 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { LiveService } = require('../apps/backend/dist/live/live.service');
-const { coarsePoint, scatterPoint, localePoint, DEFAULT_HUB } = require('../apps/backend/dist/live/live-geo.util');
+const { scatterPoint, localePoint, DEFAULT_HUB } = require('../apps/backend/dist/live/live-geo.util');
 const { liveKindOf } = require('../packages/shared/dist/live');
 
 const GUILD_A = '111111111111111111';
@@ -33,38 +33,11 @@ const message = (guildId, userId = '333333333333333333') => ({
     summary: 'boat ส่งข้อความใน #general',
 });
 
-test('public stream never carries names, ids or exact coordinates', async () => {
-    const { live } = fixture();
-    await live.refreshHubs();
-    const out = sink();
-    live.subscribe('public', null, out);
-    live.publish(message(GUILD_A));
-    live.tick(Date.now() + 10_000);
-    live.onApplicationShutdown();
-
-    const [hello, batch] = out.messages;
-    assert.equal(hello.event, 'hello');
-    assert.equal(batch.event, 'batch');
-    const text = JSON.stringify(out.messages);
-    for (const secret of [GUILD_A, GUILD_B, 'Secret Club', 'Tokyo Devs', 'boat', 'general', '333333333333333333', '13.8015']) {
-        assert.ok(!text.includes(secret), `public payload leaked ${secret}`);
-    }
-    const [event] = batch.data.events;
-    assert.deepEqual(Object.keys(event).sort(), ['at', 'eventKey', 'from', 'hub', 'id', 'kind']);
-    assert.equal(event.kind, 'message');
-    // hub ปัดเป็นครึ่งองศา และ event ชี้ไปหา hub ที่มีใน hello
-    const hub = hello.data.hubs.find((h) => h.key === event.hub);
-    assert.ok(hub);
-    assert.equal(hub.lat % 0.5, 0);
-    assert.equal(hub.lon % 0.5, 0);
-    assert.equal(hello.data.hubs.length, 2);
-});
-
-test('private stream only sees its own guilds, with details', async () => {
+test("stream only sees the subscriber's guilds, with details", async () => {
     const { live } = fixture();
     await live.refreshHubs();
     const mine = sink();
-    live.subscribe('private', new Set([GUILD_B]), mine);
+    live.subscribe(new Set([GUILD_B]), mine);
     live.publish(message(GUILD_A));
     live.publish({ ...message(GUILD_B), userName: 'tanaka', eventKey: 'voiceJoin' });
     live.tick(Date.now() + 10_000);
@@ -90,7 +63,7 @@ test('private stream only sees its own guilds, with details', async () => {
 test('bot events are ignored and floods are capped per tick but still counted', () => {
     const { live } = fixture();
     const out = sink();
-    live.subscribe('public', null, out);
+    live.subscribe(null, out);
     live.publish({ ...message(GUILD_A), isBot: true });
     for (let i = 0; i < 100; i++) live.publish(message(GUILD_A, String(400000000000000000n + BigInt(i))));
     live.tick(Date.now() + 10_000);
@@ -105,7 +78,7 @@ test('late subscribers get recent events in hello; unsubscribing stops delivery'
     const { live } = fixture();
     live.publish(message(GUILD_A));
     const out = sink();
-    const unsubscribe = live.subscribe('private', null, out);
+    const unsubscribe = live.subscribe(null, out);
     assert.equal(out.messages[0].data.recent.length, 1);
     unsubscribe();
     assert.equal(live.subscriberCount, 0);
@@ -122,11 +95,10 @@ test('stats only count the last 60 seconds', () => {
     assert.equal(live.stats(new Set([GUILD_B])).total, 0);
 });
 
-test('geo helpers: locale fallback, coarse rounding and stable scatter around the hub', () => {
+test('geo helpers: locale fallback and stable scatter around the hub', () => {
     assert.deepEqual(localePoint('th'), DEFAULT_HUB);
     assert.ok(localePoint('es-419'));
     assert.equal(localePoint('xx'), null);
-    assert.deepEqual(coarsePoint({ lat: 13.8015, lon: 100.3242 }), { lat: 14, lon: 100.5 });
     const a = scatterPoint(DEFAULT_HUB, 'seed');
     assert.deepEqual(a, scatterPoint(DEFAULT_HUB, 'seed'));
     assert.notDeepEqual(a, scatterPoint(DEFAULT_HUB, 'other'));

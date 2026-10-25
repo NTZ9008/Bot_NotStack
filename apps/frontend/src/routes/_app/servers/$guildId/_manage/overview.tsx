@@ -205,7 +205,7 @@ function OverviewPage() {
                 description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด"
             />
             <GettingStarted />
-            <LiveGlobe scope="private" guildId={guildId} />
+            <LiveGlobe guildId={guildId} />
             <Card>
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
