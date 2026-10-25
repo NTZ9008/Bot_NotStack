@@ -11,7 +11,7 @@ import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { authApi, meQuery, providersQuery } from '@/api/auth';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { DiscordIcon } from '@/components/discord-icon';
 import { apiUrl, errorMessage } from '@/lib/api';
@@ -64,14 +64,7 @@ function LoginPage() {
     });
 
     return (
-        <div className="relative flex min-h-svh items-center justify-center p-4">
-            <Link
-                to="/"
-                className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-                <ArrowLeft className="size-4" />
-                กลับหน้าแรก
-            </Link>
+        <div className="flex min-h-svh items-center justify-center p-4">
             <div className="w-full max-w-sm space-y-6">
                 <div className="flex justify-center">
                     <Link to="/" aria-label="กลับหน้าแรก">
@@ -148,6 +141,14 @@ function LoginPage() {
                             </>
                         )}
                     </CardContent>
+                    <CardFooter className="justify-center py-3">
+                        <Button asChild variant="ghost" className="h-10 w-full gap-2 text-muted-foreground">
+                            <Link to="/">
+                                <ArrowLeft className="size-4" aria-hidden="true" />
+                                กลับหน้าแรก
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
                 <p className="text-center text-xs text-muted-foreground">
                     การเข้าสู่ระบบถือว่าคุณยอมรับ{' '}
