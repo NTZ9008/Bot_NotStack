@@ -1,11 +1,13 @@
-import { Controller, Get, HttpStatus, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Query, Req, Res } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AUTH_ERROR_CODES, isSnowflake } from '@notstack/shared';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { Public } from '../common/decorators/public.decorator';
 import { ApiException, notFound } from '../common/exceptions/api.exception';
 import type { Env } from '../config/env.validation';
 import type { User } from '../generated/prisma/client';
+import { GuildAccessService } from '../guilds/guild-access.service';
 import { GuildsService } from '../guilds/guilds.service';
 import { LiveService, type LiveScope, type LiveSink } from './live.service';
 
@@ -19,7 +21,7 @@ const ACCESS_RECHECK_MS = 5 * 60 * 1000;
 // ==========================================
 // 🌏 LIVE — Server-Sent Events ของลูกโลก 3D
 // GET /api/live/public  ไม่ต้อง login (หน้า landing) — ปิดได้ด้วย LIVE_PUBLIC=false
-// GET /api/live         เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้ (สิทธิ์ manage เหมือนหน้า Activity Log)
+// GET /api/live         เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้จัดการได้ (สิทธิ์ manage เหมือนหน้า Activity Log) — ?guild=<id> ดูเซิร์ฟเวอร์เดียว
 // ==========================================
 @Controller('live')
 export class LiveController {
@@ -30,6 +32,7 @@ export class LiveController {
     constructor(
         private readonly live: LiveService,
         private readonly guilds: GuildsService,
+        private readonly access: GuildAccessService,
         config: ConfigService<Env, true>,
     ) {
         this.publicEnabled = config.get('LIVE_PUBLIC', { infer: true });
@@ -50,12 +53,14 @@ export class LiveController {
     }
 
     @Get()
-    async privateStream(@CurrentUser() user: User, @Req() req: Request, @Res() res: Response): Promise<void> {
+    async privateStream(@CurrentUser() user: User, @Req() req: Request, @Res() res: Response, @Query('guild') guild?: string): Promise<void> {
+        const only = typeof guild === 'string' && guild ? guild : null;
+        if (only && !isSnowflake(only)) throw notFound('ไม่พบเซิร์ฟเวอร์นี้');
         const key = `user:${user.id}`;
         this.acquire(key, MAX_PER_USER);
         let guildIds: Set<string> | null;
         try {
-            guildIds = await this.managedGuilds(user);
+            guildIds = await this.managedGuilds(user, only);
         } catch (err) {
             this.release(key);
             throw err;
@@ -68,15 +73,22 @@ export class LiveController {
         if (!sink) return;
         // สิทธิ์ในเซิร์ฟเวอร์เปลี่ยนได้ระหว่างที่เปิดหน้าค้างไว้ (ถูกถอดยศ / บอทออกจากเซิร์ฟเวอร์)
         recheck = setInterval(() => {
-            void this.managedGuilds(user)
+            void this.managedGuilds(user, only)
                 .then((ids) => this.live.updateScope(sink, ids))
-                .catch(() => undefined);
+                // ตรวจไม่ผ่าน (ถูกถอดสิทธิ์) → หยุดส่งจนกว่าจะตรวจผ่านอีกครั้ง
+                .catch(() => this.live.updateScope(sink, new Set()));
         }, ACCESS_RECHECK_MS);
         recheck.unref?.();
     }
 
-    // null = ทุกเซิร์ฟเวอร์ (ADMIN)
-    private async managedGuilds(user: User): Promise<Set<string> | null> {
+    // null = ทุกเซิร์ฟเวอร์ (ADMIN) ; only = ดูเซิร์ฟเวอร์เดียว (ต้องจัดการเซิร์ฟเวอร์นั้นได้)
+    private async managedGuilds(user: User, only: string | null): Promise<Set<string> | null> {
+        if (only) {
+            if ((await this.access.resolve(user, only)) !== 'manage') {
+                throw new ApiException(HttpStatus.FORBIDDEN, 'คุณไม่มีสิทธิ์ดูกิจกรรมของเซิร์ฟเวอร์นี้', AUTH_ERROR_CODES.forbidden);
+            }
+            return new Set([only]);
+        }
         if (user.role === 'ADMIN') return null;
         const { guilds } = await this.guilds.listForUser(user);
         return new Set(guilds.filter((guild) => guild.access === 'manage').map((guild) => guild.id));

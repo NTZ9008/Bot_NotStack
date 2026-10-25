@@ -1,3 +1,5 @@
+import { ACTIVITY_ONLY_EVENTS, LOG_EVENT_MAP } from './log-manager';
+
 // ==========================================
 // 🌏 LIVE ACTIVITY — เหตุการณ์สดสำหรับลูกโลก 3D (Server-Sent Events)
 // GET /api/live/public (ไม่ต้อง login — ไม่มีชื่อคน / ห้อง / เซิร์ฟเวอร์) และ GET /api/live (เฉพาะเซิร์ฟเวอร์ที่ผู้ใช้เข้าถึงได้)
@@ -82,4 +84,16 @@ export function liveKindOf(eventKey: string): LiveKind {
 
 export function emptyLiveStats(): LiveStats {
     return { perMinute: Object.fromEntries(LIVE_KINDS.map((kind) => [kind, 0])) as Record<LiveKind, number>, total: 0 };
+}
+
+const PR_LABELS: Record<string, string> = { prOpened: 'เปิด Pull Request', prMerged: 'Merge Pull Request' };
+
+// ชื่อเหตุการณ์ภาษาไทยสำหรับรายการสด
+export function liveEventLabel(eventKey: string): string {
+    return (
+        PR_LABELS[eventKey] ??
+        ACTIVITY_ONLY_EVENTS[eventKey as keyof typeof ACTIVITY_ONLY_EVENTS]?.label ??
+        LOG_EVENT_MAP.get(eventKey)?.label ??
+        LIVE_KIND_META[liveKindOf(eventKey)].label
+    );
 }

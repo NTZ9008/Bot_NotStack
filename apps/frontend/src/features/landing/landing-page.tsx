@@ -4,6 +4,7 @@ import { ArrowDown, ArrowUpRight } from 'lucide-react';
 import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
+import { LiveGlobe } from '@/features/live/live-globe';
 import { CommandSearch } from './command-search';
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
@@ -197,6 +198,13 @@ function Hero({ botName, botAvatar, inviteUrl }: { botName: string; botAvatar: s
             <div
                 aria-hidden
                 className="absolute inset-0 -z-10 bg-[radial-gradient(600px_circle_at_var(--spot-x)_var(--spot-y),rgb(99_102_241/0.28),transparent_60%)]"
+            />
+            {/* ลูกโลกกิจกรรมสด — ชิดขวา ล้นขอบจอ อยู่หลังตัวหนังสือ (จอเล็กจางลงให้อ่านหัวข้อออก) */}
+            <LiveGlobe
+                scope="public"
+                variant="hero"
+                className="absolute top-1/2 left-1/2 -z-10 aspect-square w-[150vw] -translate-x-1/2 -translate-y-1/2 md:translate-x-0 opacity-45 [mask-image:radial-gradient(circle,black_55%,transparent_71%)] sm:w-[min(115svh,95vw)] md:left-auto md:-right-[18vw] md:opacity-90 lg:-right-[8vw]"
+                hudClassName="absolute top-16 right-4 z-10 hidden sm:right-8 md:block"
             />
 
             {/* มุมบน (ไม่ใช่แถบ navbar) */}
