@@ -76,7 +76,13 @@ async function bootstrap(): Promise<void> {
     }
 
     // บีบอัดคำตอบ (JSON / CSV / ไฟล์หน้าเว็บ) ที่ใหญ่กว่า 1KB — รูปภาพบีบซ้ำไม่ได้จึงถูกข้ามอัตโนมัติ
-    app.use(compression({ threshold: 1024 }));
+    // ยกเว้น Server-Sent Events (/api/live) — compression พักข้อมูลไว้รอครบก้อน เหตุการณ์สดจะไม่ถึงหน้าเว็บ
+    app.use(
+        compression({
+            threshold: 1024,
+            filter: (req, res) => !String(res.getHeader('Content-Type') ?? '').startsWith('text/event-stream') && compression.filter(req, res),
+        }),
+    );
     app.use(cookieParser());
 
     // GitHub webhook: ต้องใช้ raw body ตรวจลายเซ็น HMAC

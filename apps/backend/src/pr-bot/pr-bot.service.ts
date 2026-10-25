@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import type { Guild } from 'discord.js';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
+import { GITHUB_POINT } from '../live/live-geo.util';
+import { LiveService } from '../live/live.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
     CheckRunEvent,
@@ -37,6 +39,7 @@ export class PrBotService {
         private readonly prisma: PrismaService,
         config: ConfigService<Env, true>,
         private readonly stats: PrBotStatsService,
+        private readonly live: LiveService,
     ) {
         this.legacySecret = config.get('GITHUB_WEBHOOK_SECRET', { infer: true }) ?? '';
     }
@@ -130,6 +133,7 @@ export class PrBotService {
                 allowedMentions: { parse: ['users', 'roles'] },
             });
             await this.stats.record(guildId, message.id, 'sent');
+            this.publishLive(guildId, 'prOpened', pr, repo);
             const data = {
                 lastDeliveryId: deliveryKey ?? null,
                 channelId: channel.id,
@@ -151,7 +155,25 @@ export class PrBotService {
         const updated = await this.mutate(guildId, repo.full_name, pr.number, (activity) => applyPullRequest(activity, pr, repo, action));
         if (!updated) return; // ไม่เคยเห็น "opened" มาก่อน (เช่น bot เพิ่งเปิดใช้งาน) → ข้าม
         const messageId = await this.refresh(guildId, repo.full_name, pr.number);
-        if (action === 'closed' && messageId) await this.stats.record(guildId, messageId, pr.merged ? 'merged' : 'closed');
+        if (action === 'closed' && messageId) {
+            await this.stats.record(guildId, messageId, pr.merged ? 'merged' : 'closed');
+            if (pr.merged) this.publishLive(guildId, 'prMerged', pr, repo);
+        }
+    }
+
+    // ลูกโลกกิจกรรมสด — เส้นโค้งวิ่งจาก GitHub มาหาเซิร์ฟเวอร์
+    private publishLive(guildId: string, eventKey: 'prOpened' | 'prMerged', pr: NonNullable<PullRequestEvent['pull_request']>, repo: GithubRepository): void {
+        const verb = eventKey === 'prMerged' ? 'merge' : 'เปิด';
+        this.live.publish({
+            guildId,
+            eventKey,
+            kind: 'pr',
+            userId: pr.user?.login ?? null,
+            userName: pr.user?.login ?? null,
+            channelName: repo.full_name,
+            summary: `${verb} PR #${pr.number} ${pr.title}`,
+            from: GITHUB_POINT,
+        });
     }
 
     // ข้อความใหม่ส่งสำเร็จแล้ว — ลบข้อความเก่าไม่ได้ (ถูกลบไปแล้ว / ห้องหาย) ก็ไม่ควรทำให้ webhook ล้มเหลว
