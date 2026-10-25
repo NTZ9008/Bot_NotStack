@@ -12,7 +12,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/audit-logs'
     // ?q= คำค้นเริ่มต้นของแท็บเหตุการณ์ใน Discord (ลิงก์จากช่อง ⌘K)
     validateSearch: (search: Record<string, unknown>): { source?: 'dashboard' | 'discord'; q?: string } => ({
         source: search.source === 'discord' ? 'discord' : 'dashboard',
-        ...(typeof search.q === 'string' && search.q.trim() ? { q: search.q.trim().slice(0, 100) } : {}),
+        ...((typeof search.q === 'string' || typeof search.q === 'number') && String(search.q).trim() ? { q: String(search.q).trim().slice(0, 100) } : {}),
     }),
     loaderDeps: ({ search }) => ({ source: search.source }),
     loader: ({ context: { queryClient }, params, deps }) =>

@@ -23,11 +23,12 @@ import { XpSettingsPanel } from '@/features/levels/settings';
 import { useAuth } from '@/hooks/use-auth';
 import { useGuild } from '@/hooks/use-guild';
 import { usePreloadTasks } from '@/hooks/use-preload-tasks';
-import { stringSearch } from '@/lib/search-params';
 
 // ?q=<ชื่อ หรือ User ID> → เปิดหน้ามาพร้อมค้นหาสมาชิกคนนั้นในตารางอันดับ (ลิงก์จากช่อง ⌘K)
 export const Route = createFileRoute('/_app/servers/$guildId/levels')({
-    validateSearch: (search: Record<string, unknown>) => stringSearch(search, ['q'] as const),
+    // พิมพ์ ?q=<User ID> เองใน URL → router แปลงเป็นตัวเลข จึงรับทั้งสองแบบ (ลิงก์จากในแอป router ใส่เครื่องหมายคำพูดให้ ไม่เสียความแม่นยำ)
+    validateSearch: (search: Record<string, unknown>): { q?: string } =>
+        (typeof search.q === 'string' || typeof search.q === 'number') && String(search.q).trim() ? { q: String(search.q).trim().slice(0, 100) } : {},
     loader: ({ context, params }) => context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25 })),
     component: LevelsPage,
 });

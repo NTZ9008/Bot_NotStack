@@ -1,10 +1,12 @@
 import { LIVE_KIND_META, type LiveEvent, type LiveHub } from '@notstack/shared';
+import type { Feature, Geometry } from 'geojson';
 import Globe, { type GlobeInstance } from 'globe.gl';
+import { polygonToCells } from 'h3-js';
 import { useEffect, useRef } from 'react';
 import { Color, MeshPhongMaterial } from 'three';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
-import landUrl from 'world-atlas/land-110m.json?url';
+import countriesUrl from 'world-atlas/countries-110m.json?url';
 
 // ==========================================
 // 🌏 ลูกโลก WebGL (globe.gl / three.js) — โหลดแบบ lazy เพราะ three.js ใหญ่ ไม่ให้ถ่วงหน้าแรก
@@ -58,6 +60,21 @@ const MAX_ARCS = 70;
 const MAX_QUEUE = 90;
 const RELEASE_EVERY_MS = 110;
 const HUB_COLOR = '#c7d2fe';
+const HEX_RESOLUTION = 3;
+
+// globe.gl แปลงทุกประเทศใน loop เดียว — ถ้า h3 แปลงรูปทรงไหนไม่ได้ (เช่นเกาหลีเหนือในไฟล์ 110m) ประเทศที่เหลือหายหมด
+// จึงลองแปลงก่อน แล้วตัดประเทศที่พังทิ้ง
+function hexable(country: Feature<Geometry>): boolean {
+    const { geometry } = country;
+    try {
+        if (geometry.type === 'Polygon') polygonToCells(geometry.coordinates, HEX_RESOLUTION, true);
+        else if (geometry.type === 'MultiPolygon') geometry.coordinates.forEach((polygon) => polygonToCells(polygon, HEX_RESOLUTION, true));
+        else return false;
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 function supportsWebGL(): boolean {
     try {
@@ -71,6 +88,14 @@ function supportsWebGL(): boolean {
 function alpha(hex: string, value: number): string {
     const color = new Color(hex);
     return `rgba(${Math.round(color.r * 255)},${Math.round(color.g * 255)},${Math.round(color.b * 255)},${value})`;
+}
+
+// หันกล้องไปหากลุ่มเซิร์ฟเวอร์ที่หนาแน่นที่สุด (ค่าเฉลี่ยของทุกจุดจะตกไปกลางทะเลถ้าเซิร์ฟเวอร์อยู่คนละทวีป)
+function focusPoint(hubs: HubDatum[]): { lat: number; lng: number } {
+    if (!hubs.length) return { lat: 13.7, lng: 100.5 }; // ยังไม่มีเซิร์ฟเวอร์ → เอเชียตะวันออกเฉียงใต้
+    const near = (a: HubDatum, b: HubDatum) => Math.abs(a.lat - b.lat) < 30 && Math.abs(((a.lng - b.lng + 540) % 360) - 180) < 45;
+    const best = hubs.reduce((top, hub) => (hubs.filter((other) => near(hub, other)).length > hubs.filter((other) => near(top, other)).length ? hub : top));
+    return { lat: best.lat, lng: best.lng };
 }
 
 function hubElement(hub: HubDatum): HTMLElement {
@@ -140,7 +165,7 @@ export default function GlobeCanvas({
             .atmosphereAltitude(0.2)
             .globeMaterial(new MeshPhongMaterial({ color: '#0b1022', emissive: '#0c1236', emissiveIntensity: 0.55, shininess: 0.8 }))
             // แผ่นดินเป็นจุด
-            .hexPolygonResolution(3)
+            .hexPolygonResolution(HEX_RESOLUTION)
             .hexPolygonMargin(0.55)
             .hexPolygonUseDots(true)
             .hexPolygonColor(() => 'rgba(165,180,252,0.42)')
@@ -195,13 +220,14 @@ export default function GlobeCanvas({
         controls.addEventListener('start', onStart);
         controls.addEventListener('end', onEnd);
 
-        // แผ่นดิน — ไฟล์ JSON แยก (cache ได้นาน) ไม่ฝังใน JS
+        // แผ่นดิน — ไฟล์ JSON แยก (cache ได้นาน) ไม่ฝังใน JS ; ใช้รายประเทศ (h3 แปลงแผ่นดินก้อนเดียวทั้งโลกไม่ได้) ไม่เอาแอนตาร์กติกา (010)
         const land = new AbortController();
-        void fetch(landUrl, { signal: land.signal })
-            .then((res) => res.json() as Promise<Topology<{ land: GeometryCollection }>>)
+        void fetch(countriesUrl, { signal: land.signal })
+            .then((res) => res.json() as Promise<Topology<{ countries: GeometryCollection }>>)
             .then((topology) => {
-                const geo = feature(topology, topology.objects.land);
-                globe.hexPolygonsData('features' in geo ? geo.features : [geo]);
+                const geo = feature(topology, topology.objects.countries);
+                const features = 'features' in geo ? geo.features : [geo];
+                globe.hexPolygonsData(features.filter((country) => country.id !== '010' && hexable(country)));
             })
             .catch(() => undefined);
 
@@ -248,10 +274,8 @@ export default function GlobeCanvas({
         const data = [...next.values()];
         globe.pointsData(data);
         globe.htmlElementsData(showLabels && data.length <= 12 ? data : []);
-        // หันไปหาเซิร์ฟเวอร์ (ค่าเฉลี่ย) — ไม่มีเลยหันไปเอเชียตะวันออกเฉียงใต้
-        const lat = data.length ? data.reduce((sum, hub) => sum + hub.lat, 0) / data.length : 13.7;
-        const lng = data.length ? data.reduce((sum, hub) => sum + hub.lng, 0) / data.length : 100.5;
-        globe.pointOfView({ lat: lat * 0.6, lng: lng + lngOffset, altitude }, reducedMotion ? 0 : 1200);
+        const { lat, lng } = focusPoint(data);
+        globe.pointOfView({ lat: lat * 0.7, lng: lng + lngOffset, altitude }, reducedMotion ? 0 : 1200);
     }, [hubs, showLabels, lngOffset, altitude, reducedMotion, interactive]);
 
     // ==========================================
@@ -282,8 +306,8 @@ export default function GlobeCanvas({
                 startLng: event.from.lon,
                 endLat: hub.lat,
                 endLng: hub.lng,
-                color: [alpha(color, 0.15), color],
-                stroke: event.kind === 'pr' ? 0.9 : 0.45,
+                color: [alpha(color, 0.25), color],
+                stroke: event.kind === 'pr' ? 1 : 0.6,
             };
             arcs = [...arcs.slice(-(MAX_ARCS - 1)), arc];
             globe.arcsData(arcs);

@@ -93,11 +93,11 @@ export function LiveStatus({ status, className }: { status: StreamStatus; classN
     );
 }
 
-function Legend({ stats, compact }: { stats: LiveStats; compact?: boolean }) {
+function Legend({ stats }: { stats: LiveStats }) {
     const active = LIVE_KINDS.filter((kind) => stats.perMinute[kind] > 0);
     const kinds: LiveKind[] = active.length ? active : ['message', 'voice', 'member', 'pr'];
     return (
-        <ul className={cn('flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400', compact && 'gap-x-2.5 text-[11px]')}>
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
             {kinds.map((kind) => (
                 <li key={kind} className="inline-flex items-center gap-1.5">
                     <span
@@ -155,16 +155,14 @@ export interface LiveGlobeProps {
     guildId?: string;
     variant?: 'hero' | 'panel';
     className?: string;
-    // hero: ตำแหน่งของกล่องข้อมูล (แยกจากตัวลูกโลกที่ล้นขอบจอ)
-    hudClassName?: string;
 }
 
 // ==========================================
 // 🌏 ลูกโลกกิจกรรมสด + แถบข้อมูล
-// - hero:  พื้นหลังโปร่ง วางซ้อนใน hero ของหน้า landing (ข้อมูลแบบไม่ระบุตัวตน)
+// - hero:  ลูกโลกอย่างเดียว พื้นหลังโปร่ง วางซ้อนใน hero ของหน้า landing (ข้อมูลแบบไม่ระบุตัวตน)
 // - panel: การ์ดสีเข้มใน Dashboard พร้อมรายการล่าสุด (ชื่อคน / ห้อง / เซิร์ฟเวอร์)
 // ==========================================
-export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudClassName }: LiveGlobeProps) {
+export function LiveGlobe({ scope, guildId, variant = 'panel', className }: LiveGlobeProps) {
     const reducedMotion = useReducedMotion();
     const [boxRef, mount] = useMountWhenNear<HTMLDivElement>();
     const [failed, setFailed] = useState(false);
@@ -175,40 +173,22 @@ export function LiveGlobe({ scope, guildId, variant = 'panel', className, hudCla
         // ปิด public ไว้ (LIVE_PUBLIC=false) — hero กลับเป็นแบบเดิม
         if (live.status === 'disabled') return null;
         return (
-            <>
-                <div ref={boxRef} aria-hidden className={cn('pointer-events-none', className)}>
-                    {mount && !failed ? (
-                        <Suspense fallback={<GlobePlaceholder loading />}>
-                            <GlobeCanvas
-                                hubs={live.hubs}
-                                subscribe={live.subscribe}
-                                reducedMotion={reducedMotion}
-                                interactive={false}
-                                altitude={1.75}
-                                onError={() => setFailed(true)}
-                            />
-                        </Suspense>
-                    ) : (
-                        <GlobePlaceholder loading={!failed && !saveData()} />
-                    )}
-                </div>
-                <div className={cn('w-72 rounded-2xl border border-white/10 bg-slate-950/60 p-3.5 shadow-2xl shadow-black/50 backdrop-blur-xl', hudClassName)}>
-                    <div className="flex items-center justify-between gap-2">
-                        <LiveStatus status={live.status} />
-                        <span className="font-mono text-[11px] text-slate-400">
-                            <span className="text-base font-semibold text-white tabular-nums">{formatNumber(live.stats.total)}</span> events/min
-                        </span>
-                    </div>
-                    <div className="mt-2.5">
-                        <Legend stats={live.stats} compact />
-                    </div>
-                    {live.feed[0] && (
-                        <ul aria-live="polite" className="mt-1.5 border-t border-white/10">
-                            <FeedItem key={live.feed[0].id} event={live.feed[0]} scope={scope} now={now} />
-                        </ul>
-                    )}
-                </div>
-            </>
+            <div ref={boxRef} aria-hidden className={cn('pointer-events-none', className)}>
+                {mount && !failed ? (
+                    <Suspense fallback={<GlobePlaceholder loading />}>
+                        <GlobeCanvas
+                            hubs={live.hubs}
+                            subscribe={live.subscribe}
+                            reducedMotion={reducedMotion}
+                            interactive={false}
+                            altitude={1.75}
+                            onError={() => setFailed(true)}
+                        />
+                    </Suspense>
+                ) : (
+                    <GlobePlaceholder loading={!failed && !saveData()} />
+                )}
+            </div>
         );
     }
 

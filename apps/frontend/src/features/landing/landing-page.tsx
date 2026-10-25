@@ -204,7 +204,6 @@ function Hero({ botName, botAvatar, inviteUrl }: { botName: string; botAvatar: s
                 scope="public"
                 variant="hero"
                 className="absolute top-1/2 left-1/2 -z-10 aspect-square w-[150vw] -translate-x-1/2 -translate-y-1/2 md:translate-x-0 opacity-45 [mask-image:radial-gradient(circle,black_55%,transparent_71%)] sm:w-[min(115svh,95vw)] md:left-auto md:-right-[18vw] md:opacity-90 lg:-right-[8vw]"
-                hudClassName="absolute top-16 right-4 z-10 hidden sm:right-8 md:block"
             />
 
             {/* มุมบน (ไม่ใช่แถบ navbar) */}

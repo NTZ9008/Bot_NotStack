@@ -85,6 +85,8 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         <div className="flex items-center gap-2 font-mono text-sm tabular-nums">
                             {current.isLoading ? (
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                            ) : current.isError ? (
+                                <span className="font-sans text-xs text-muted-foreground">ดู XP ตอนนี้ไม่ได้</span>
                             ) : (
                                 <>
                                     <span className="text-muted-foreground">{formatNumber(currentXp)}</span>
