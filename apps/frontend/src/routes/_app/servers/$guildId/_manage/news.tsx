@@ -19,7 +19,8 @@ import { applyMarkdown, MarkdownToolbar, type MarkdownAction } from '@/features/
 import { errorMessage } from '@/lib/api';
 import { renderDiscordMarkdown } from '@/lib/discord-markdown';
 import { cn } from '@/lib/utils';
-import { useGuildId } from '@/hooks/use-guild';
+import { useGuild } from '@/hooks/use-guild';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/news')({
     component: NewsPage,
@@ -29,13 +30,25 @@ const EMPTY = { title: '', content: '', footer: '', imageUrl: '' };
 const SHORTCUTS: Record<string, MarkdownAction> = { b: 'bold', i: 'italic', u: 'underline' };
 
 function NewsPage() {
-    const guildId = useGuildId();
+    const guild = useGuild();
+    // draft และ mutation ของเซิร์ฟเวอร์เดิมต้องไม่ติดไปยังเซิร์ฟเวอร์ที่เพิ่งเลือก
+    return <NewsEditor key={guild.id} guildId={guild.id} guildName={guild.name} />;
+}
+
+function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string }) {
     const confirm = useConfirm();
     const [type, setType] = useState<NewsType>('general');
     const [color, setColor] = useState(NEWS_PRESETS.general.color);
     const [form, setForm] = useState(EMPTY);
     const textarea = useRef<HTMLTextAreaElement>(null);
     const pendingSelection = useRef<[number, number] | null>(null);
+
+    useUnsavedChangesGuard(Object.values(form).some(Boolean), {
+        title: 'ทิ้งประกาศที่ยังไม่ได้ส่ง?',
+        description: `ประกาศสำหรับเซิร์ฟเวอร์ ${guildName} ยังไม่ได้ส่ง หากออกจากหน้านี้หรือสลับเซิร์ฟเวอร์ ข้อความที่ร่างไว้จะถูกล้าง`,
+        confirmText: 'ทิ้งข้อความ',
+        destructive: true,
+    });
 
     // หลังแทรก Markdown ให้เลือกข้อความเดิม/ตำแหน่งเคอร์เซอร์ต่อ
     useLayoutEffect(() => {
@@ -72,7 +85,7 @@ function NewsPage() {
         }
         const ok = await confirm({
             title: 'ยืนยันการส่งประกาศ?',
-            description: 'ข้อความนี้จะถูกส่งไปยังห้องดิสคอร์ดที่คุณตั้งค่าไว้ทันที',
+            description: `ข้อความนี้จะถูกส่งไปยังห้องประกาศที่ตั้งค่าไว้ของเซิร์ฟเวอร์ ${guildName} ทันที`,
             confirmText: 'ส่งเลย!',
         });
         if (!ok) return;
@@ -91,7 +104,7 @@ function NewsPage() {
 
     return (
         <>
-            <PageHeader help="news" title="ส่งประกาศ" description="เขียนประกาศเป็น embed พร้อมจัดรูปแบบข้อความ และดูตัวอย่างก่อนส่งจริง" />
+            <PageHeader help="news" title="ส่งประกาศ" description={`ประกาศสำหรับเซิร์ฟเวอร์ ${guildName} — จัดรูปแบบข้อความและดูตัวอย่างก่อนส่งจริง`} />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
                     <CardContent className="space-y-4">

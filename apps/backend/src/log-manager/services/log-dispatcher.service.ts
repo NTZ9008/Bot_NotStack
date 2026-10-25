@@ -60,6 +60,7 @@ export class LogDispatcher {
     // เซิร์ฟเวอร์ที่เคยได้รับ entry จาก gateway แล้ว แปลว่า intent + สิทธิ์ครบ → ไม่ต้อง fallback ไปยิง REST อีก
     private readonly auditGatewayGuilds = new Set<string>();
 
+    // แยกคิวตาม guildId:channelId — embed ของคนละเซิร์ฟเวอร์ต้องไม่ถูกรวมเป็นข้อความเดียวกัน
     private readonly queues = new Map<string, { embeds: EmbedBuilder[]; timer: NodeJS.Timeout | null }>();
 
     constructor(
@@ -187,10 +188,11 @@ export class LogDispatcher {
     }
 
     private enqueueEmbed(guildId: string, channelId: string, embed: EmbedBuilder): void {
-        let queue = this.queues.get(channelId);
+        const key = `${guildId}:${channelId}`;
+        let queue = this.queues.get(key);
         if (!queue) {
             queue = { embeds: [], timer: null };
-            this.queues.set(channelId, queue);
+            this.queues.set(key, queue);
         }
         queue.embeds.push(embed);
 
@@ -202,7 +204,8 @@ export class LogDispatcher {
     }
 
     private async flushQueue(guildId: string, channelId: string): Promise<void> {
-        const queue = this.queues.get(channelId);
+        const key = `${guildId}:${channelId}`;
+        const queue = this.queues.get(key);
         if (!queue || queue.embeds.length === 0) return;
 
         if (queue.timer) clearTimeout(queue.timer);
@@ -228,7 +231,7 @@ export class LogDispatcher {
         if (queue.embeds.length) {
             queue.timer = setTimeout(() => void this.flushQueue(guildId, channelId), FLUSH_DELAY);
         } else {
-            this.queues.delete(channelId);
+            this.queues.delete(key);
         }
     }
 
