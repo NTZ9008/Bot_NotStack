@@ -5,5 +5,11 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage')({
     beforeLoad: ({ context, params }) => {
         if (context.guild.access !== 'manage') throw redirect({ to: '/servers/$guildId/levels', params });
     },
-    component: Outlet,
+    component: ManageLayout,
 });
+
+// สลับเซิร์ฟเวอร์แล้ว router ใช้ component เดิมต่อ — ใส่ key ให้ฟอร์ม/ร่างข้อความของเซิร์ฟเวอร์เดิมถูกล้างทิ้งทั้งหมด
+function ManageLayout() {
+    const { guildId } = Route.useParams();
+    return <Outlet key={guildId} />;
+}
