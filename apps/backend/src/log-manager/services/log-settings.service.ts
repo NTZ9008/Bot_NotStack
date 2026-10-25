@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     DEFAULT_LOG_APPEARANCE,
     logAppearanceSchema,
@@ -15,6 +15,7 @@ import {
 import { Events, type Client, type Guild } from 'discord.js';
 import { badRequest } from '../../common/exceptions/api.exception';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
+import { DiscordService } from '../../discord/discord.service';
 import { PrismaService } from '../../prisma/prisma.service';
 
 // แถวพิเศษสำหรับสวิตช์เปิด/ปิดทั้งระบบ (ไม่ใช่ event จริง จึงถูกกรองออกตอนส่งให้ Dashboard)
@@ -67,7 +68,17 @@ export class LogSettingsService {
     private readonly guilds = new Map<string, GuildLogState>();
     private readonly loading = new Map<string, Promise<GuildLogState>>();
 
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        @Optional() private readonly discord?: DiscordService,
+    ) {}
+
+    // ห้องรับ log ต้องเป็นห้องของเซิร์ฟเวอร์นี้เท่านั้น — กันตั้งห้องของเซิร์ฟเวอร์อื่นแล้ว log ไหลข้ามเซิร์ฟเวอร์
+    private async assertGuildChannel(guildId: string, channelId: string): Promise<void> {
+        if (!channelId || !this.discord?.ready) return;
+        const channel = await this.discord.fetchGuildChannel(guildId, channelId);
+        if (!channel) throw badRequest('ไม่พบห้องนี้ในเซิร์ฟเวอร์');
+    }
 
     // บอทออนไลน์ → เตรียมค่าของทุกเซิร์ฟเวอร์ไว้ใน cache
     @OnDiscord(Events.ClientReady, { once: true })
@@ -205,6 +216,7 @@ export class LogSettingsService {
         if (typeof patch.channelId === 'string') {
             const trimmed = patch.channelId.trim();
             if (trimmed && !SNOWFLAKE_RE.test(trimmed)) throw badRequest('รูปแบบ Channel ID ไม่ถูกต้อง');
+            await this.assertGuildChannel(guildId, trimmed);
             data.channelId = trimmed;
         }
         if (typeof patch.color === 'string') {
@@ -230,6 +242,7 @@ export class LogSettingsService {
     async setChannelForAll(guildId: string, channelId: string): Promise<void> {
         const trimmed = channelId.trim();
         if (trimmed && !SNOWFLAKE_RE.test(trimmed)) throw badRequest('รูปแบบ Channel ID ไม่ถูกต้อง');
+        await this.assertGuildChannel(guildId, trimmed);
         await this.ensure(guildId);
         await this.prisma.logSetting.updateMany({ where: { guildId, eventKey: { not: SYSTEM_KEY } }, data: { channelId: trimmed } });
         await this.reload(guildId);
