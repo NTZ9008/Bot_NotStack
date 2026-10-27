@@ -13,6 +13,7 @@ import {
 import type { Env } from '../../config/env.validation';
 import { DiscordService } from '../../discord/discord.service';
 import { Prisma } from '../../generated/prisma/client';
+import { LiveService } from '../../live/live.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { LogPayload, UserLike } from '../interfaces/log-payload.interface';
 import { activityEventLabel, humanizeMentions, type MentionResolvers } from '../utils/activity-humanize.util';
@@ -61,6 +62,7 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     constructor(
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
+        private readonly live: LiveService,
         config: ConfigService<Env, true>,
     ) {
         this.retentionDays = config.get('ACTIVITY_LOG_RETENTION_DAYS', { infer: true });
@@ -135,7 +137,18 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     // เปิด/ปิดการบันทึกของแต่ละเซิร์ฟเวอร์ตรวจที่ LogDispatcher (ตัวกรอง ACTIVITY_RECORDING)
     record(guildId: string, eventKey: string, payload: LogPayload): void {
         try {
-            this.buffer.push(this.buildRow(guildId, eventKey, payload));
+            const row = this.buildRow(guildId, eventKey, payload);
+            this.buffer.push(row);
+            // ลูกโลกกิจกรรมสด — ใช้ข้อมูลชุดเดียวกับที่บันทึก (ปิดบันทึกของเซิร์ฟเวอร์ไหน ลูกโลกก็ไม่เห็นเซิร์ฟเวอร์นั้น)
+            this.live.publish({
+                guildId,
+                eventKey,
+                userId: row.userId,
+                userName: row.userName,
+                channelName: row.channelName,
+                summary: row.summary,
+                isBot: row.isBot,
+            });
         } catch (err) {
             this.logger.error(`สร้างข้อมูล ${eventKey} ไม่สำเร็จ: ${(err as Error).message}`);
             return;

@@ -23,6 +23,7 @@ import { GrowthService } from './growth/growth.service';
 import { HealthController } from './health/health.controller';
 import { JiraModule } from './jira/jira.module';
 import { LevelsModule } from './levels/levels.module';
+import { LiveModule } from './live/live.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
 import { MetricsService } from './monitoring/metrics.service';
@@ -79,6 +80,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         GuildsModule,
         BotConfigModule,
         LogFilesModule,
+        LiveModule,
         LogManagerModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,

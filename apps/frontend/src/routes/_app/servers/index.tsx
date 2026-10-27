@@ -4,6 +4,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { AlertTriangle, ChevronRight, Plus, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { guildsQuery } from '@/api/guilds';
 import { DiscordIcon } from '@/components/discord-icon';
+import { LiveGlobe } from '@/features/live/live-globe';
 import { GuildIcon } from '@/components/guild-icon';
 import { PageHeader } from '@/components/page-header';
 import { GuildListSkeleton } from '@/components/skeleton/app-pages';
@@ -145,6 +146,9 @@ function ServersPage() {
             {data && data.guilds.length === 0 && !data.needsDiscordLink && (
                 <p className="text-center text-sm text-muted-foreground">ยังไม่มีเซิร์ฟเวอร์ที่คุณเข้าถึงได้ — เชิญบอทเข้าเซิร์ฟเวอร์ของคุณเพื่อเริ่มใช้งาน</p>
             )}
+
+            {/* กิจกรรมสดของทุกเซิร์ฟเวอร์ที่จัดการได้ (สิทธิ์ดูอย่างเดียวไม่เห็นกิจกรรม เหมือนหน้า Activity Log) */}
+            {data?.botOnline && data.guilds.some((guild) => guild.access === 'manage') && <LiveGlobe />}
         </>
     );
 }

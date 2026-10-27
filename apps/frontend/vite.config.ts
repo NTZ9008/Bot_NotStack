@@ -48,7 +48,11 @@ export default defineConfig(({ mode }) => {
             },
         ],
         resolve: {
-            alias: { '@': path.resolve(import.meta.dirname, 'src') },
+            alias: [
+                { find: '@', replacement: path.resolve(import.meta.dirname, 'src') },
+                // ลูกโลก (globe.gl) ใช้ WebGL — ไม่ต้องรวม three.js รุ่น WebGPU/TSL ที่ใช้แค่กับ heatmap (ดู three-webgpu-stub.ts)
+                { find: /^three\/(webgpu|tsl)$/, replacement: path.resolve(import.meta.dirname, 'src/features/live/three-webgpu-stub.ts') },
+            ],
             // ใช้ source (TypeScript) ของ @notstack/shared ตรงๆ — แก้แล้วเห็นผลทันทีไม่ต้อง build
             conditions: ['source', ...defaultClientConditions],
         },

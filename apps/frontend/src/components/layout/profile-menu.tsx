@@ -18,13 +18,12 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { DEFAULT_AVATAR } from '@/lib/format';
 
-export function ProfileMenu() {
-    const { user } = useAuth();
+// ออกจากระบบ (ถามยืนยันก่อน) — ใช้ทั้งเมนูโปรไฟล์และช่อง ⌘K
+export function useLogout(): () => Promise<void> {
     const confirm = useConfirm();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-
-    const logout = async () => {
+    return async () => {
         const ok = await confirm({
             title: 'ยืนยันการออกจากระบบ?',
             description: 'คุณต้องการออกจากระบบ Dashboard ใช่หรือไม่',
@@ -36,6 +35,11 @@ export function ProfileMenu() {
         replaceSession(queryClient, null);
         void navigate({ to: '/login' });
     };
+}
+
+export function ProfileMenu() {
+    const { user } = useAuth();
+    const logout = useLogout();
 
     return (
         <DropdownMenu>
