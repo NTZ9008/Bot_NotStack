@@ -204,3 +204,287 @@ test('explicit overview refresh still enforces the maximum one-year range', asyn
     const data = await controller.stats('g', { from: new Date('2000-01-01'), fresh: true, includeBots: false, limit: 10 }, response());
     assert.equal(data.to.getTime() - data.from.getTime(), 365 * 86400000);
 });
+
+const deferred = () => {
+    let resolve, reject;
+    const promise = new Promise((yes, no) => {
+        resolve = yes;
+        reject = no;
+    });
+    return { promise, resolve, reject };
+};
+
+test('concurrent guild permission checks share work and isolate users and guilds', async () => {
+    const { GuildAccessService } = require('../apps/backend/dist/guilds/guild-access.service');
+    const service = new GuildAccessService({}, {});
+    const gate = deferred();
+    let calls = 0;
+    service.checkGuildManager = async () => {
+        calls++;
+        return gate.promise;
+    };
+    const requests = Array.from({ length: 20 }, () => service.canManageGuild({ id: 'g' }, 'u'));
+    requests.push(service.canManageGuild({ id: 'other' }, 'u'), service.canManageGuild({ id: 'g' }, 'other'));
+    await Promise.resolve();
+    assert.equal(calls, 3);
+    gate.resolve(true);
+    assert((await Promise.all(requests)).every(Boolean));
+    assert.equal(await service.canManageGuild({ id: 'g' }, 'u'), true);
+    assert.equal(calls, 3);
+});
+
+for (const invalidate of ['member', 'guild']) {
+    test(`permission ${invalidate} invalidation fences old pending checks`, async () => {
+        const { GuildAccessService } = require('../apps/backend/dist/guilds/guild-access.service');
+        const service = new GuildAccessService({}, {});
+        const old = deferred();
+        let calls = 0;
+        service.checkGuildManager = async () => (++calls === 1 ? old.promise : false);
+        const first = service.canManageGuild({ id: 'g' }, 'u');
+        await Promise.resolve();
+        if (invalidate === 'member') service.forget('u', 'g');
+        else service.forgetGuild('g');
+        assert.equal(await service.canManageGuild({ id: 'g' }, 'u'), false);
+        old.resolve(true);
+        await first;
+        assert.equal(await service.canManageGuild({ id: 'g' }, 'u'), false);
+        assert.equal(calls, 2);
+    });
+}
+
+test('rejected permission checks release pending work for retry', async () => {
+    const { GuildAccessService } = require('../apps/backend/dist/guilds/guild-access.service');
+    const service = new GuildAccessService({}, {});
+    service.checkGuildManager = async () => {
+        throw new Error('offline');
+    };
+    await assert.rejects(service.canManageGuild({ id: 'g' }, 'u'), /offline/);
+    service.checkGuildManager = async () => true;
+    assert.equal(await service.canManageGuild({ id: 'g' }, 'u'), true);
+});
+
+test('activity metadata shares concurrent queries, isolates guilds and keeps enabled request-specific', async () => {
+    const { ActivityService } = require('../apps/backend/dist/log-manager/services/activity.service');
+    const gate = deferred();
+    let counts = 0,
+        oldest = 0;
+    const service = new ActivityService(
+        {
+            activityEvent: {
+                count: async () => {
+                    counts++;
+                    await gate.promise;
+                    return 42;
+                },
+                findFirst: async () => {
+                    oldest++;
+                    await gate.promise;
+                    return { createdAt: new Date('2026-01-01') };
+                },
+            },
+        },
+        {},
+        {},
+        { get: () => 90 },
+    );
+    const requests = Array.from({ length: 20 }, (_, i) => service.meta('g', i % 2 === 0));
+    requests.push(service.meta('other', true));
+    await Promise.resolve();
+    assert.equal(counts, 2);
+    assert.equal(oldest, 2);
+    gate.resolve();
+    const results = await Promise.all(requests);
+    assert.equal(results[0].total, 42);
+    assert.equal(results[0].since, '2026-01-01T00:00:00.000Z');
+    assert.equal(results[0].enabled, true);
+    assert.equal(results[1].enabled, false);
+    await service.meta('g', true);
+    assert.equal(counts, 2);
+});
+
+test('bounded mapping fills a free slot without waiting for the slowest request and preserves order', async () => {
+    const { mapConcurrent } = require('../apps/backend/dist/common/utils/map-concurrent');
+    const gates = Array.from({ length: 7 }, deferred);
+    const started = [];
+    const result = mapConcurrent(gates, 3, async (gate, index) => {
+        started.push(index);
+        await gate.promise;
+        return index;
+    });
+    assert.deepEqual(started, [0, 1, 2]);
+    gates[1].resolve();
+    await new Promise(setImmediate);
+    assert.deepEqual(started, [0, 1, 2, 3]);
+    gates.forEach((gate) => gate.resolve());
+    assert.deepEqual(await result, [0, 1, 2, 3, 4, 5, 6]);
+    assert.deepEqual(await mapConcurrent([], 3, async () => null), []);
+    await assert.rejects(
+        mapConcurrent([1], 0, async () => null),
+        RangeError,
+    );
+});
+
+for (const mode of ['whitelist', 'blacklist']) {
+    test(`${mode} overview batches guild-scoped membership reads and resolves repeated users only once`, async () => {
+        const { VoiceGuardService } = require('../apps/backend/dist/voice-guard/voice-guard.service');
+        const prefix = mode === 'whitelist' ? 'voiceWhitelist' : 'voiceBlacklist';
+        const channels = Array.from({ length: 8 }, (_, i) => ({ channelId: `c${i}`, guildId: 'g', enabled: i % 2 === 0, notify: false }));
+        let queries = 0,
+            active = 0,
+            peak = 0;
+        const fetched = [];
+        const db = {
+            [`${prefix}Channel`]: {
+                findMany: async ({ where }) => {
+                    assert.deepEqual(where, { guildId: 'g' });
+                    queries++;
+                    return channels;
+                },
+            },
+            [`${prefix}User`]: {
+                findMany: async ({ where }) => {
+                    assert.deepEqual(
+                        where.channelId.in,
+                        channels.map((c) => c.channelId),
+                    );
+                    queries++;
+                    return channels.slice(0, 7).flatMap((c, i) => [
+                        { channelId: c.channelId, userId: 'shared' },
+                        { channelId: c.channelId, userId: `u${i}` },
+                    ]);
+                },
+            },
+        };
+        const service = new VoiceGuardService(db, {
+            guild: () => ({ channels: { cache: new Map([['c0', { name: 'General' }]]) } }),
+            fetchUser: async (id) => {
+                fetched.push(id);
+                peak = Math.max(peak, ++active);
+                await new Promise(setImmediate);
+                active--;
+                return id === 'u0' ? null : { username: id, globalName: `Name ${id}`, displayAvatarURL: () => `avatar:${id}` };
+            },
+        });
+        const rows = await service.overview(mode, 'g');
+        assert.equal(queries, 2);
+        assert.equal(fetched.length, 8);
+        assert.equal(new Set(fetched).size, 8);
+        assert.equal(peak, 5);
+        assert.equal(rows[0].channelName, 'General');
+        assert.equal(rows[1].channelName, 'c1');
+        assert.equal(rows[1].enabled, false);
+        assert.equal(rows[0].users[0].username, 'Name shared');
+        assert.equal(rows[0].users[1].username, 'u0');
+        assert.deepEqual(rows[7].users, []);
+    });
+}
+
+test('Room Access keeps fresh permissions and room-specific expiry while deduplicating profile lookups', async () => {
+    const { RoomAccessService } = require('../apps/backend/dist/room-access/room-access.service');
+    const { Collection, OverwriteType } = require('../apps/backend/node_modules/discord.js');
+    const channels = Array.from({ length: 8 }, (_, i) => ({ channelId: `c${i}` }));
+    const fetched = [],
+        forced = [];
+    let active = 0,
+        peak = 0;
+    const service = new RoomAccessService(
+        {
+            roomAccessChannel: {
+                findMany: async ({ where }) => {
+                    assert.deepEqual(where, { guildId: 'g' });
+                    return channels;
+                },
+            },
+            roomAccess: { findMany: async () => [{ roomId: 'c0', userId: 'u', expireAt: new Date(12345) }] },
+        },
+        {
+            requireReady() {},
+            fetchGuildChannel: async (guild, id, force) => {
+                assert.equal(guild, 'g');
+                forced.push(force);
+                peak = Math.max(peak, ++active);
+                await new Promise(setImmediate);
+                active--;
+                if (id === 'c7') return null;
+                return {
+                    name: id,
+                    permissionOverwrites: {
+                        cache: new Collection([
+                            ['u', { type: OverwriteType.Member, allow: { has: () => true } }],
+                            ['denied', { type: OverwriteType.Member, allow: { has: () => false } }],
+                            ['role', { type: OverwriteType.Role, allow: { has: () => true } }],
+                        ]),
+                    },
+                };
+            },
+            fetchUser: async (id) => {
+                fetched.push(id);
+                return null;
+            },
+        },
+    );
+    const rows = await service.list('g');
+    assert.equal(peak, 5);
+    assert.equal(forced.length, 8);
+    assert(forced.every(Boolean));
+    assert.deepEqual(fetched, ['u']);
+    assert.equal(rows.length, 7);
+    assert.deepEqual(
+        rows.map((row) => row.roomId),
+        channels.slice(0, 7).map((row) => row.channelId),
+    );
+    assert.equal(rows[0].type, 'temporary');
+    assert.equal(rows[0].expireAt, 12345);
+    assert.equal(rows[1].type, 'permanent');
+    assert.equal(rows[1].expireAt, null);
+    assert.equal(rows[0].username, 'u');
+    assert.equal(rows[0].avatar, null);
+});
+
+test('Levels reads settings alongside the page and preserves page ranks with bounded profile work', async () => {
+    const { LevelsService } = require('../apps/backend/dist/levels/levels.service');
+    const settingsGate = deferred();
+    let pageStarted = false,
+        active = 0,
+        peak = 0;
+    const rows = Array.from({ length: 12 }, (_, i) => ({ userId: `u${i}`, xp: 1000 - i, level: 0 }));
+    const service = new LevelsService(
+        {
+            xpSetting: {
+                findUnique: async () => {
+                    await settingsGate.promise;
+                    return null;
+                },
+            },
+            level: {
+                count: async () => 30,
+                findMany: async () => {
+                    pageStarted = true;
+                    return rows;
+                },
+            },
+            $transaction: (queries) => Promise.all(queries),
+        },
+        {
+            ready: true,
+            guild: () => null,
+            displayName: async (id) => {
+                peak = Math.max(peak, ++active);
+                await new Promise(setImmediate);
+                active--;
+                return `Name ${id}`;
+            },
+        },
+    );
+    const pending = service.list('g', { page: 2, pageSize: 12 });
+    assert.equal(pageStarted, true);
+    settingsGate.resolve();
+    const result = await pending;
+    assert.equal(peak, 5);
+    assert.equal(result.total, 30);
+    assert.deepEqual(
+        result.items.map((row) => row.rank),
+        Array.from({ length: 12 }, (_, i) => 13 + i),
+    );
+    assert.equal(result.items[0].username, 'Name u0');
+});

@@ -24,6 +24,7 @@ import type { Message } from 'discord.js';
 import { Subject } from 'rxjs';
 import { badRequest, conflict } from '../common/exceptions/api.exception';
 import { bangkokDay } from '../common/utils/parse.util';
+import { mapConcurrent } from '../common/utils/map-concurrent';
 import { DiscordService } from '../discord/discord.service';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -148,7 +149,6 @@ export class LevelsService {
     }
 
     async list(guildId: string, query: LevelQuery = { page: 1, pageSize: 25 }): Promise<LevelPage> {
-        const { settings } = await this.settings(guildId);
         const where: Prisma.LevelWhereInput = { guildId };
         let filtered = false,
             searchLimited = false;
@@ -161,33 +161,33 @@ export class LevelsService {
             filtered = true;
             searchLimited = members.size === 100;
         }
-        const [total, rows] = await this.prisma.$transaction([
-            this.prisma.level.count({ where }),
-            this.prisma.level.findMany({
-                where,
-                orderBy: [{ xp: 'desc' }, { userId: 'asc' }],
-                skip: (query.page - 1) * query.pageSize,
-                take: query.pageSize,
-            }),
-        ]);
-        const items: LevelRow[] = [];
-        // Bounded batches for Discord lookups; only fetch the requested page.
-        for (let offset = 0; offset < rows.length; offset += 5) {
-            const batch = await Promise.all(
-                rows.slice(offset, offset + 5).map(async (row, i) => {
-                    const cached = this.discord.guild(guildId)?.members.cache.get(row.userId);
-                    const username = cached?.displayName ?? (this.discord.ready ? await this.discord.displayName(row.userId) : null) ?? row.userId;
-                    const rank = filtered
-                        ? 1 +
-                          (await this.prisma.level.count({
-                              where: { guildId, OR: [{ xp: { gt: row.xp } }, { xp: row.xp, userId: { lt: row.userId } }] },
-                          }))
-                        : (query.page - 1) * query.pageSize + offset + i + 1;
-                    return { userId: row.userId, xp: row.xp, level: levelForXp(row.xp, settings), username, rank };
+        const [{ settings }, [total, rows]] = await Promise.all([
+            this.settings(guildId),
+            this.prisma.$transaction([
+                this.prisma.level.count({ where }),
+                this.prisma.level.findMany({
+                    where,
+                    orderBy: [{ xp: 'desc' }, { userId: 'asc' }],
+                    skip: (query.page - 1) * query.pageSize,
+                    take: query.pageSize,
                 }),
-            );
-            items.push(...batch);
-        }
+            ]),
+        ]);
+        // Keep five lookups moving; a slow Discord response must not hold back the next batch.
+        const items: LevelRow[] = await mapConcurrent(rows, 5, async (row, i) => {
+            const cached = this.discord.guild(guildId)?.members.cache.get(row.userId);
+            const [name, rank] = await Promise.all([
+                cached?.displayName ?? (this.discord.ready ? this.discord.displayName(row.userId) : null),
+                filtered
+                    ? this.prisma.level
+                          .count({
+                              where: { guildId, OR: [{ xp: { gt: row.xp } }, { xp: row.xp, userId: { lt: row.userId } }] },
+                          })
+                          .then((count) => count + 1)
+                    : (query.page - 1) * query.pageSize + i + 1,
+            ]);
+            return { userId: row.userId, xp: row.xp, level: levelForXp(row.xp, settings), username: name ?? row.userId, rank };
+        });
         return {
             items,
             total,

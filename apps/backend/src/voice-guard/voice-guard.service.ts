@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { defaultAvatarUrl, type DiscordUserInfo, type VoiceGuardChannel, type VoiceGuardMode } from '@notstack/shared';
 import { ChannelType } from 'discord.js';
 import { badRequest, notFound } from '../common/exceptions/api.exception';
+import { mapConcurrent } from '../common/utils/map-concurrent';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -135,25 +136,37 @@ export class VoiceGuardService {
     // รายการห้องพร้อมชื่อห้อง + ชื่อ/รูปของสมาชิกแต่ละคน สำหรับหน้าเว็บ
     async overview(mode: VoiceGuardMode, guildId: string): Promise<VoiceGuardChannel[]> {
         const guild = this.discord.guild(guildId);
-        const result: VoiceGuardChannel[] = [];
-        for (const channel of await this.getChannels(mode, guildId)) {
-            const users: DiscordUserInfo[] = [];
-            for (const userId of await this.getUsers(mode, channel.channelId)) {
-                const user = await this.discord.fetchUser(userId);
-                users.push({
-                    userId,
-                    username: user ? user.globalName || user.username : userId,
-                    avatar: user ? user.displayAvatarURL({ size: 64 }) : defaultAvatarUrl(userId),
-                });
-            }
-            result.push({
-                channelId: channel.channelId,
-                channelName: guild?.channels.cache.get(channel.channelId)?.name ?? channel.channelId,
-                enabled: channel.enabled,
-                notify: channel.notify,
-                users,
-            });
+        const channels = await this.getChannels(mode, guildId);
+        if (!channels.length) return [];
+        // One guild-scoped query instead of one query per channel.
+        const args = { where: { channelId: { in: channels.map((channel) => channel.channelId) } }, select: { channelId: true, userId: true } };
+        const rows = mode === 'whitelist' ? await this.prisma.voiceWhitelistUser.findMany(args) : await this.prisma.voiceBlacklistUser.findMany(args);
+        const members = new Map<string, string[]>();
+        for (const row of rows) {
+            const ids = members.get(row.channelId) ?? [];
+            ids.push(row.userId);
+            members.set(row.channelId, ids);
         }
-        return result;
+        const userIds = [...new Set(rows.map((row) => row.userId))];
+        const profiles = new Map(
+            await mapConcurrent(userIds, 5, async (userId): Promise<[string, DiscordUserInfo]> => {
+                const user = await this.discord.fetchUser(userId);
+                return [
+                    userId,
+                    {
+                        userId,
+                        username: user ? user.globalName || user.username : userId,
+                        avatar: user ? user.displayAvatarURL({ size: 64 }) : defaultAvatarUrl(userId),
+                    },
+                ];
+            }),
+        );
+        return channels.map((channel) => ({
+            channelId: channel.channelId,
+            channelName: guild?.channels.cache.get(channel.channelId)?.name ?? channel.channelId,
+            enabled: channel.enabled,
+            notify: channel.notify,
+            users: (members.get(channel.channelId) ?? []).map((id) => profiles.get(id)!),
+        }));
     }
 }

@@ -29,7 +29,9 @@ export const Route = createFileRoute('/_app/servers/$guildId/levels')({
     // พิมพ์ ?q=<User ID> เองใน URL → router แปลงเป็นตัวเลข จึงรับทั้งสองแบบ (ลิงก์จากในแอป router ใส่เครื่องหมายคำพูดให้ ไม่เสียความแม่นยำ)
     validateSearch: (search: Record<string, unknown>): { q?: string } =>
         (typeof search.q === 'string' || typeof search.q === 'number') && String(search.q).trim() ? { q: String(search.q).trim().slice(0, 100) } : {},
-    loader: ({ context, params }) => context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25 })),
+    loaderDeps: ({ search }) => ({ q: search.q }),
+    loader: ({ context, params, deps }) =>
+        context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25, ...(deps.q ? { q: deps.q } : {}) })),
     component: LevelsPage,
 });
 function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQuery?: string }) {
