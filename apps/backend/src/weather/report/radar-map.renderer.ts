@@ -14,9 +14,10 @@ import { formatTime } from './weather-format';
 // - เรดาร์มี 2 แหล่งให้เลือก (options.radar.source) — ทั้งคู่ไม่มีภาพพยากรณ์ล่วงหน้า ใช้แค่ภาพที่วัดได้จริง
 //   · RainViewer (ฟรี ไม่ต้องใช้ key) ทั่วโลก มีภาพย้อนหลังราว 2 ชม. ทุก 10 นาที
 //     ซูมได้สูงสุดระดับ 7 (ระดับ 8 ขึ้นไปได้ภาพ "Zoom Level Not Supported") จึงดึงไทล์ระดับ 7 ขนาด 512px มาขยายลงแผนที่
-//   · กรมอุตุนิยมวิทยา (ระบบ RADARGIS) รวมเรดาร์ทุกสถานีในไทยเป็นภาพ dBZ โปร่งใสภาพเดียวทั้งประเทศ ทุก 15 นาที
-//     พร้อมพิกัดขอบภาพ — ภาพวางแบบ Web Mercator (แบบเดียวกับ Leaflet imageOverlay ในหน้าเว็บของกรมฯ) จึงซ้อนแผนที่ได้ตรง
-//     เซิร์ฟเวอร์เปิดแค่ HTTP (ใบรับรอง HTTPS ไม่ตรงชื่อโดเมน) และครอบคลุมแค่ไทย + ประเทศใกล้เคียง
+//   · กรมอุตุนิยมวิทยา (TMD Radar Monitor ที่ weather.tmd.go.th/composite) รวมเรดาร์ทุกสถานีในไทยเป็นภาพฝนโปร่งใสภาพเดียวทั้งประเทศ
+//     ทุก 15 นาที ย้อนหลังราว 6 ชม. — ภาพวางแบบ Web Mercator ในกรอบพิกัดคงที่ (แบบเดียวกับ MapLibre image source ในหน้าเว็บของกรมฯ)
+//     ครอบคลุมแค่ไทย + ประเทศใกล้เคียง
+//     (ไม่ใช้ระบบ RADARGIS www2.radargis.tmd.go.th เพราะรับเฉพาะ IP ในไทย — เซิร์ฟเวอร์บอทในต่างประเทศเชื่อมต่อไม่ได้เลย)
 // - แผนที่พื้นหลัง: OpenStreetMap ทำเป็นขาวดำให้สีฝนเด่น — นโยบายของ OSM ต้องระบุ User-Agent ของแอปและแสดงเครดิตบนภาพ
 //   แผนที่ของสถานที่เดิมไม่เปลี่ยน จึงเก็บภาพที่ต่อไทล์แล้วไว้ 1 วัน ไม่โหลดไทล์ซ้ำทุกครั้ง
 // ==========================================
@@ -25,7 +26,12 @@ type RadarOptions = WeatherOptions['radar'];
 const logger = new Logger('Weather');
 
 const RAINVIEWER_MAPS_URL = 'https://api.rainviewer.com/public/weather-maps.json';
-const TMD_BASE_URL = 'http://www2.radargis.tmd.go.th';
+const TMD_BASE_URL = 'https://weather.tmd.go.th/composite/';
+// กรอบภาพ [[ใต้, ตะวันตก], [เหนือ, ตะวันออก]] — ค่า RADAR_COORDS ในหน้าเว็บของกรมฯ
+const TMD_BOUNDS: [[number, number], [number, number]] = [
+    [4, 95],
+    [22.5, 108],
+];
 const USER_AGENT = `Bot_NotStack/${APP_VERSION} (Discord weather report; +https://github.com/NTZ9008/Bot_NotStack)`;
 // RainViewer เป็น free API ไม่มี SLA — ช่วง peak อาจช้ากว่า 8 วินาที จึงเพิ่ม timeout ให้กว้างขึ้น
 const TIMEOUT_MS = 12000;
@@ -251,21 +257,10 @@ const rainViewer: RadarSource = {
     },
 };
 
-interface TmdOverlay {
-    group?: string;
-    product_kind?: string;
-    url?: string;
-    valid_dt_iso?: string;
-    bounds?: unknown;
-}
+// แต่ละบรรทัดของรายการภาพ: background_THA.png "2026-10-29 00:00" overlay=zr/24.png (เวลา UTC เรียงเก่า → ใหม่)
+const TMD_LIST_LINE = /^\S+\s+"(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})"\s+overlay=(.+)$/;
 
-const isBounds = (value: unknown): value is NonNullable<RadarFrame['bounds']> =>
-    Array.isArray(value) && value.length === 2 && value.every((corner) => Array.isArray(corner) && corner.length === 2 && corner.every(Number.isFinite));
-
-// valid_dt_iso เป็นเวลา UTC ที่ไม่มี Z ต่อท้าย (ส่วน valid_dt_ts ของ API คลาดไป 7 ชม. จึงไม่ใช้)
-const utcSeconds = (iso: string) => Date.parse(/(Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}Z`) / 1000;
-
-// ภาพทั้งประเทศเป็น PNG ราว 200 KB แต่ถอดแล้ว 2706×2706 px ≈ 30 MB — เก็บแค่ไฟล์ และถอดทีละภาพ ไม่ให้ GIF 5 ภาพกินแรมพร้อมกัน
+// ภาพทั้งประเทศเป็น PNG ราว 200 KB แต่ถอดแล้ว 1800×2644 px ≈ 19 MB — เก็บแค่ไฟล์ และถอดทีละภาพ ไม่ให้ GIF 5 ภาพกินแรมพร้อมกัน
 const tmdImages = lru<CacheEntry<Buffer>>(12);
 let decoding: Promise<unknown> = Promise.resolve();
 function oneAtATime<T>(task: () => Promise<T>): Promise<T> {
@@ -277,16 +272,25 @@ function oneAtATime<T>(task: () => Promise<T>): Promise<T> {
 const tmd: RadarSource = {
     name: 'กรมอุตุฯ',
     credit: 'เรดาร์: กรมอุตุนิยมวิทยา',
-    // ชุดสี dBZ ของหน้าเว็บ RADARGIS (ตัดโทนชมพูอ่อน-ขาวช่วงท้ายที่มองไม่เห็นบนพื้นสว่าง)
-    legend: ['#00E600', '#00FF00', '#FFFF00', '#FFD000', '#FF6A00', '#FF0000', '#CC0044', '#FF00F5'],
+    // ชุดสีปริมาณฝน (มม./ชม.) ของหน้าเว็บกรมฯ (ตัดโทนชมพูอ่อน-ขาวช่วงท้ายที่มองไม่เห็นบนพื้นสว่าง)
+    legend: ['#54A431', '#7BEC4B', '#F3F453', '#F1C946', '#D79C37', '#E3622A', '#D43320', '#CA325D', '#E345F5'],
     opacity: 0.85,
     async frames() {
-        const data = await fetchJson<{ overlays?: TmdOverlay[] }>(`${TMD_BASE_URL}/api/overlays`, 'เรดาร์กรมอุตุฯ');
-        // เฉพาะภาพ dBZ ที่วัดได้จริง — ไม่เอาภาพพยากรณ์ (nowcast) / ปริมาณฝน / ฟ้าผ่า
-        const frames = (Array.isArray(data?.overlays) ? data.overlays : []).flatMap((o): RadarFrame[] => {
-            if (o?.product_kind !== 'dbz' || /nowcast/i.test(`${o.group} ${o.url}`) || typeof o.url !== 'string' || typeof o.valid_dt_iso !== 'string' || !isBounds(o.bounds)) return [];
-            const time = utcSeconds(o.valid_dt_iso);
-            return Number.isFinite(time) ? [{ time, url: new URL(o.url, TMD_BASE_URL).href, bounds: o.bounds }] : [];
+        let list: string;
+        try {
+            list = (await fetchWithRetry(new URL('images_composite.list', TMD_BASE_URL).href)).toString('utf8');
+        } catch (err) {
+            throw new Error(`ติดต่อเรดาร์กรมอุตุฯ ไม่ได้ (${reason(err)})`);
+        }
+        const frames = list.split('\n').flatMap((line): RadarFrame[] => {
+            const m = TMD_LIST_LINE.exec(line.trim());
+            const file = m?.[3]?.split(',').map((f) => f.trim()).find((f) => /\.png$/i.test(f));
+            const time = m ? Date.parse(`${m[1]}T${m[2]}:00Z`) / 1000 : NaN;
+            if (!file || !Number.isFinite(time)) return [];
+            // ไฟล์ zr/00..24.png ถูกเขียนทับวนไปทุก 15 นาที — ใส่เวลาไว้ใน URL ให้ cache แยกภาพตามเวลา
+            const url = new URL(`images/${file.includes('/') ? file : `zr/${file}`}`, TMD_BASE_URL);
+            url.searchParams.set('t', String(time));
+            return [{ time, url: url.href, bounds: TMD_BOUNDS }];
         });
         return [...new Map(frames.map((frame) => [frame.time, frame])).values()].sort((a, b) => a.time - b.time);
     },
