@@ -1,10 +1,11 @@
-import { formatBaht, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
+import { formatBaht, roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Calendar, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowRight, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
 import { Field } from '@/components/field';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,8 +31,7 @@ import {
 const remainingOf = (member: FundMemberView | null | undefined) => (member && member.remaining > 0 ? String(member.remaining) : '');
 
 // ==========================================
-// 💵 บันทึก / แก้ไขการรับเงิน (รายคน / รายรายการ)
-// payment = แก้ไขรายการเดิม, member = เปิดจากแถวของคนนั้น (ไม่ระบุ = เลือกคนที่ยังค้างคนแรก)
+// 💵 บันทึก / แก้ไขการรับเงิน (รายคน / รายรายการ) + ปุ่มกดยอดด่วน + ตัวอย่างยอดหลังจ่าย
 // ==========================================
 export function PaymentDialog({
     topic,
@@ -113,6 +113,40 @@ export function PaymentDialog({
 
     const invalidPeriod = Boolean(usePeriod && periodStart && periodEnd && periodStart > periodEnd);
     const selected = topic.members.find((m) => String(m.id) === memberId);
+    const numAmount = Number(amount) || 0;
+
+    // คำนวณยอดก่อน-หลังจ่ายให้เห็นชัดเจนก่อนกดบันทึก
+    const balancePreview = useMemo(() => {
+        if (!selected || !(numAmount > 0)) return null;
+        const basePaid = payment && payment.memberId === selected.id ? Math.max(0, roundMoney(selected.paid - payment.amount)) : selected.paid;
+        const nextPaid = roundMoney(basePaid + numAmount);
+        const nextRemaining = Math.max(0, roundMoney(selected.target - nextPaid));
+        return { basePaid, nextPaid, nextRemaining, willComplete: nextRemaining === 0 && selected.target > 0 };
+    }, [selected, numAmount, payment]);
+
+    // ปุ่มลัดเลือกจำนวนเงิน
+    const quickAmounts = useMemo(() => {
+        const list: { label: string; value: number }[] = [];
+        if (selected && selected.remaining > 0) {
+            list.push({ label: `ยอดค้าง (${formatBaht(selected.remaining)})`, value: selected.remaining });
+            if (selected.remaining >= 20) {
+                const half = roundMoney(selected.remaining / 2);
+                if (half > 0 && half !== selected.remaining) {
+                    list.push({ label: `ครึ่งหนึ่ง (${formatBaht(half)})`, value: half });
+                }
+            }
+        }
+        if (dailyRate) {
+            for (const d of [1, 7, 15, 30]) {
+                const val = roundMoney(dailyRate * d);
+                if (!list.some((item) => item.value === val)) {
+                    list.push({ label: `${d} วัน (${formatBaht(val)})`, value: val });
+                }
+            }
+        }
+        return list.slice(0, 5);
+    }, [selected, dailyRate]);
+
     const save = useMutation({
         mutationFn: () => {
             const payload = {
@@ -164,9 +198,9 @@ export function PaymentDialog({
                         </Select>
                     </Field>
 
-                    <div className="rounded-lg border bg-muted/20 p-2.5 space-y-2">
+                    <div className="space-y-2 rounded-lg border bg-muted/20 p-2.5">
                         <div className="flex items-center justify-between">
-                            <Label htmlFor="toggle-period" className="text-xs font-medium cursor-pointer flex items-center gap-1.5">
+                            <Label htmlFor="toggle-period" className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
                                 <Calendar className="size-3.5 text-primary" />
                                 บันทึกตามห้วงวันที่ (ย้อนหลัง / รายวัน)
                             </Label>
@@ -185,7 +219,14 @@ export function PaymentDialog({
                         </div>
                         {usePeriod && (
                             <div className="space-y-2 pt-1">
-                                <PeriodFields idPrefix="pay" start={periodStart} end={periodEnd} onChange={handlePeriodChange} dailyRate={dailyRate} />
+                                <PeriodFields
+                                    idPrefix="pay"
+                                    start={periodStart}
+                                    end={periodEnd}
+                                    onChange={handlePeriodChange}
+                                    dailyRate={dailyRate}
+                                    topicStartDate={topic.startDate}
+                                />
                             </div>
                         )}
                     </div>
@@ -199,7 +240,7 @@ export function PaymentDialog({
                                 : undefined
                         }
                     >
-                        <div className="flex gap-2">
+                        <div className="space-y-2">
                             <Input
                                 id="fund-pay-amount"
                                 type="number"
@@ -208,21 +249,43 @@ export function PaymentDialog({
                                 inputMode="decimal"
                                 value={amount}
                                 onChange={(e) => setAmount(e.target.value)}
-                                className="flex-1"
                             />
-                            {!payment && selected && selected.remaining > 0 && Number(amount) !== selected.remaining && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setAmount(String(selected.remaining))}
-                                    title="กรอกยอดคงค้างทั้งหมดของคนนี้"
-                                >
-                                    ยอดค้าง ({formatBaht(selected.remaining)})
-                                </Button>
+                            {quickAmounts.length > 0 && (
+                                <div className="flex flex-wrap items-center gap-1">
+                                    {quickAmounts.map((q) => (
+                                        <Button
+                                            key={q.label}
+                                            type="button"
+                                            size="xs"
+                                            variant={numAmount === q.value ? 'default' : 'outline'}
+                                            className="h-6 px-2 text-[11px]"
+                                            onClick={() => setAmount(String(q.value))}
+                                        >
+                                            {q.label}
+                                        </Button>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </Field>
+
+                    {balancePreview && (
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-xs">
+                            <div className="flex items-center gap-1.5 tabular-nums">
+                                <span className="text-muted-foreground">จ่ายสะสม: {formatBaht(balancePreview.basePaid)}</span>
+                                <ArrowRight className="size-3 text-muted-foreground" />
+                                <span className="font-semibold text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
+                            </div>
+                            {balancePreview.willComplete ? (
+                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-400">
+                                    <CheckCircle2 className="size-3" /> จ่ายครบตามเป้า!
+                                </Badge>
+                            ) : (
+                                <span className="font-medium text-amber-400 tabular-nums">คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}</span>
+                            )}
+                        </div>
+                    )}
+
                     <Field label="วันเวลาที่รับเงิน" htmlFor="fund-pay-at">
                         <Input id="fund-pay-at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
                     </Field>
@@ -234,9 +297,9 @@ export function PaymentDialog({
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
                         ยกเลิก
                     </Button>
-                    <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(Number(amount) > 0) || invalidPeriod}>
+                    <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(numAmount > 0) || invalidPeriod}>
                         {save.isPending && <Loader2 className="animate-spin" />}
-                        {payment ? 'บันทึกการแก้ไข' : 'บันทึก'}
+                        {payment ? 'บันทึกการแก้ไข' : 'บันทึกการรับเงิน'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
