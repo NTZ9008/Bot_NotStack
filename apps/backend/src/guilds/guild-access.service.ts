@@ -18,6 +18,7 @@ const CACHE_TTL_MS = 60 * 1000;
 @Injectable()
 export class GuildAccessService {
     private readonly cache = new Map<string, { canManage: boolean; at: number }>();
+    private readonly pending = new Map<string, Promise<boolean>>();
 
     constructor(
         private readonly discord: DiscordService,
@@ -47,10 +48,24 @@ export class GuildAccessService {
         const hit = this.cache.get(key);
         if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.canManage;
 
-        const canManage = await this.checkGuildManager(guild, discordId);
-        this.cache.set(key, { canManage, at: Date.now() });
-        if (this.cache.size > 5000) this.cache.clear();
-        return canManage;
+        const running = this.pending.get(key);
+        if (running) return running;
+        const promise = Promise.resolve()
+            .then(() => this.checkGuildManager(guild, discordId))
+            .then((canManage) => {
+                // A member/role event may invalidate this lookup while Discord is responding.
+                if (this.pending.get(key) === promise) {
+                    this.cache.set(key, { canManage, at: Date.now() });
+                    if (this.cache.size > 5000) this.cache.clear();
+                }
+                return canManage;
+            })
+            .finally(() => {
+                if (this.pending.get(key) === promise) this.pending.delete(key);
+            });
+        // Entries leave on settle, so this holds only in-flight checks; capping it would also skip caching.
+        this.pending.set(key, promise);
+        return promise;
     }
 
     async checkGuildManager(guild: Guild, discordId: string): Promise<boolean> {
@@ -78,10 +93,12 @@ export class GuildAccessService {
 
     forgetGuild(guildId: string): void {
         for (const key of this.cache.keys()) if (key.endsWith(`:${guildId}`)) this.cache.delete(key);
+        for (const key of this.pending.keys()) if (key.endsWith(`:${guildId}`)) this.pending.delete(key);
     }
 
     // เรียกเมื่อสิทธิ์ของสมาชิกเปลี่ยน (ยศ / ออกจากเซิร์ฟเวอร์) ให้ตรวจใหม่ทันที
     forget(discordId: string, guildId: string): void {
         this.cache.delete(`${discordId}:${guildId}`);
+        this.pending.delete(`${discordId}:${guildId}`);
     }
 }
