@@ -72,6 +72,36 @@ test('AI quota survives a restart by loading today’s counts and is disabled wi
     assert.equal(await service.reserve('home'), 'global');
     assert.equal(await gemini({ key: null }).service.reserve('home'), 'disabled');
 });
+test('GeminiService multi-model pool falls back across free-tier models and cools down failing models', async () => {
+    const { service } = gemini();
+    const tried = [];
+    service.chatModels = [
+        {
+            name: 'model-a',
+            model: {
+                generateContent: async () => {
+                    tried.push('model-a');
+                    throw Object.assign(new Error('429 Quota exceeded per day'), { status: 429 });
+                },
+            },
+        },
+        {
+            name: 'model-b',
+            model: {
+                generateContent: async () => {
+                    tried.push('model-b');
+                    return { response: { text: () => 'คำตอบจาก model-b' } };
+                },
+            },
+        },
+    ];
+    assert.equal(await service.chat('สวัสดี'), 'คำตอบจาก model-b');
+    assert.deepEqual(tried, ['model-a', 'model-b']);
+    // ครั้งถัดไปควรข้าม model-a ที่ติด cooldown ทันทีและใช้ model-b เลย
+    tried.length = 0;
+    assert.equal(await service.chat('สวัสดีอีกครั้ง'), 'คำตอบจาก model-b');
+    assert.deepEqual(tried, ['model-b']);
+});
 
 // --- Message pipeline ---
 function listener({ verdict = 'PASS', quota = 'ok', home = true } = {}) {
@@ -130,7 +160,7 @@ test('AI chat strips only the bot mention and its reply cannot ping anyone', asy
     assert.deepEqual(calls.replies[0].allowedMentions, { parse: [], repliedUser: true });
     const quota = listener({ quota: 'guild' });
     await quota.instance.aiChat(quota.message('<@999> hi'), '999');
-    assert.match(quota.calls.replies[0], /โควตา AI ของเซิร์ฟเวอร์นี้วันนี้หมดแล้ว/);
+    assert.match(quota.calls.replies[0].content ?? quota.calls.replies[0], /โควตา AI ของเซิร์ฟเวอร์นี้วันนี้หมดแล้ว/);
 });
 test('chat content is written to log files only for the home server', () => {
     const home = listener({ home: true });
