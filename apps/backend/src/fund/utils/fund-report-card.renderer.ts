@@ -250,7 +250,7 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
     ctx.font = font(700, 48);
     const collectedText = plainAmount(topic.collected);
     ctx.fillText(collectedText, infoX, y + 98);
-    let ux = infoX + ctx.measureText(collectedText).width + 12;
+    const ux = infoX + ctx.measureText(collectedText).width + 12;
     ctx.fillStyle = C.textSoft;
     ctx.font = font(500, 22);
     ctx.fillText(`/ ${formatBaht(topic.target)}`, ux, y + 96);
