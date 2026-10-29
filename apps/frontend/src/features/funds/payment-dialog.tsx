@@ -191,7 +191,7 @@ export function PaymentDialog({
                             <SelectContent className="max-h-80">
                                 {topic.members.map((m) => (
                                     <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.displayName} {m.remaining > 0 ? `(ค้าง ${formatBaht(m.remaining)})` : '✅ จ่ายครบ'}
+                                        {m.displayName} {m.remaining > 0 ? `(ค้าง ${formatBaht(m.remaining)})` : '(จ่ายครบแล้ว)'}
                                     </SelectItem>
                                 ))}
                             </SelectContent>

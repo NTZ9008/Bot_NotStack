@@ -1,5 +1,5 @@
 import { formatBaht } from '@notstack/shared';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Calendar } from 'lucide-react';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,19 +69,22 @@ export function PeriodFields({
                 </p>
             ) : (
                 days > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                        📅 รวม <span className="font-semibold text-foreground">{days} วัน</span>
-                        {dailyRate && (
-                            <span>
-                                {' '}
-                                (วันละ {formatBaht(dailyRate)} ={' '}
-                                <span className="font-semibold text-emerald-400">
-                                    {formatBaht(days * dailyRate)}
-                                    {amountSuffix}
+                    <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Calendar className="size-3.5 text-primary" />
+                        <span>
+                            รวม <span className="font-semibold text-foreground">{days} วัน</span>
+                            {dailyRate && (
+                                <span>
+                                    {' '}
+                                    (วันละ {formatBaht(dailyRate)} ={' '}
+                                    <span className="font-semibold text-emerald-400">
+                                        {formatBaht(days * dailyRate)}
+                                        {amountSuffix}
+                                    </span>
+                                    )
                                 </span>
-                                )
-                            </span>
-                        )}
+                            )}
+                        </span>
                     </p>
                 )
             )}

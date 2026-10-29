@@ -1,6 +1,24 @@
 import { formatBaht, roundMoney, type FundMemberView, type FundPaymentView } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Banknote, Calendar, Check, CheckCircle2, Clock, Copy, Download, Loader2, Lock, LockOpen, Pencil, Trash2 } from 'lucide-react';
+import {
+    AlertTriangle,
+    Banknote,
+    BarChart3,
+    Calendar,
+    Check,
+    CheckCircle2,
+    Clock,
+    Copy,
+    Download,
+    Loader2,
+    Lock,
+    LockOpen,
+    Pencil,
+    Receipt,
+    Target,
+    Trash2,
+    Users,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi, fundQuery } from '@/api/fund';
@@ -26,7 +44,7 @@ import { dailyRateOf, downloadFundCsv, dueDateStatus, extractAccountDigits, onFu
 type TopicTab = 'members' | 'payments' | 'analytics';
 
 // ==========================================
-// 🗂️ แผงจัดการหัวข้อที่เลือก — สรุปยอด / ส่งรายงาน / แท็บรายชื่อ-ประวัติ-กราฟ / dialog ต่างๆ
+// แผงจัดการหัวข้อที่เลือก — สรุปยอด / ส่งรายงาน / แท็บรายชื่อ-ประวัติ-กราฟ / dialog ต่างๆ
 // ==========================================
 export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted: () => void }) {
     const guildId = useGuildId();
@@ -147,13 +165,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                         <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             {dailyRate ? (
-                                <Badge variant="secondary" className="border-primary/30 bg-primary/10 font-normal text-primary">
-                                    📅 เก็บรายวัน วันละ {formatBaht(dailyRate)}
+                                <Badge variant="secondary" className="gap-1 border-primary/30 bg-primary/10 font-normal text-primary">
+                                    <Calendar className="size-3" />
+                                    เก็บรายวัน วันละ {formatBaht(dailyRate)}
                                     {topic.startDate && ` (เริ่ม ${new Date(topic.startDate).toLocaleDateString('th-TH')})`}
                                 </Badge>
                             ) : (
-                                <Badge variant="outline" className="font-normal">
-                                    💰 ยอดต่อคน {formatBaht(topic.amountPerMember)}
+                                <Badge variant="outline" className="gap-1 font-normal">
+                                    <Banknote className="size-3 text-muted-foreground" />
+                                    ยอดต่อคน {formatBaht(topic.amountPerMember)}
                                 </Badge>
                             )}
 
@@ -184,9 +204,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                             size="xs"
                                             variant="outline"
                                             className="h-6 text-[11px]"
-                                            onClick={() =>
-                                                void copyText(accountDigits.replace(/[^\d]/g, ''), 'account', `เลขบัญชี/พร้อมเพย์ (${accountDigits})`)
-                                            }
+                                            onClick={() => void copyText(accountDigits.replace(/[^\d]/g, ''), 'account', `เลขบัญชี/พร้อมเพย์ (${accountDigits})`)}
                                         >
                                             {copiedKey === 'account' ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
                                             คัดลอกเลข {accountDigits}
@@ -251,35 +269,39 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                     <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                         <StatTile
-                            label="🎯 เป้าหมายรวม"
+                            label="เป้าหมายรวม"
                             value={formatBaht(topic.target)}
-                            subtext={
-                                dailyRate
-                                    ? `วันละ ${formatBaht(dailyRate)} · ${topic.memberCount} คน`
-                                    : `คนละ ${formatBaht(topic.amountPerMember)} · ${topic.memberCount} คน`
-                            }
+                            subtext={dailyRate ? `วันละ ${formatBaht(dailyRate)} · ${topic.memberCount} คน` : `คนละ ${formatBaht(topic.amountPerMember)} · ${topic.memberCount} คน`}
+                            icon={<Target className="size-3.5 text-rose-400" />}
                             variant="summary"
                         />
                         <StatTile
-                            label="💵 เก็บได้แล้ว"
+                            label="เก็บได้แล้ว"
                             value={formatBaht(topic.collected)}
                             subtext={`คิดเป็น ${pct}% ของเป้าหมาย (${topic.payments.length} รายการโอน)`}
+                            icon={<Banknote className="size-3.5 text-emerald-400" />}
                             valueClassName="text-emerald-400"
                             tone="emerald"
                             variant="summary"
                         />
                         <StatTile
-                            label="⏳ คงค้างรวม"
+                            label="คงค้างรวม"
                             value={formatBaht(remaining)}
-                            subtext={remaining > 0 ? `ค้างชำระ ${statusCounts.partial + statusCounts.unpaid} คน` : 'ไม่มีค้างชำระ เก็บครบทุกคนแล้ว'}
+                            subtext={
+                                remaining > 0
+                                    ? `ค้างชำระ ${statusCounts.partial + statusCounts.unpaid} คน`
+                                    : 'ไม่มีค้างชำระ เก็บครบทุกคนแล้ว'
+                            }
+                            icon={<Clock className="size-3.5 text-amber-400" />}
                             valueClassName={remaining > 0 ? 'text-amber-400' : 'text-muted-foreground'}
                             tone={remaining > 0 ? 'amber' : 'default'}
                             variant="summary"
                         />
                         <StatTile
-                            label="👥 สถานะสมาชิก"
+                            label="สถานะสมาชิก"
                             value={`${topic.paidCount} / ${topic.memberCount} คน`}
                             subtext={`บางส่วน ${statusCounts.partial} · ยังไม่จ่าย ${statusCounts.unpaid}`}
+                            icon={<Users className="size-3.5 text-sky-400" />}
                             tone="sky"
                             variant="summary"
                         />
@@ -304,9 +326,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TopicTab)}>
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <TabsList>
-                                <TabsTrigger value="members">👥 รายชื่อสมาชิก ({topic.memberCount})</TabsTrigger>
-                                <TabsTrigger value="payments">🧾 ประวัติรับเงิน ({topic.payments.length})</TabsTrigger>
-                                <TabsTrigger value="analytics">📊 แดชบอร์ด & กราฟ</TabsTrigger>
+                                <TabsTrigger value="members" className="gap-1.5">
+                                    <Users className="size-3.5" /> รายชื่อสมาชิก ({topic.memberCount})
+                                </TabsTrigger>
+                                <TabsTrigger value="payments" className="gap-1.5">
+                                    <Receipt className="size-3.5" /> ประวัติรับเงิน ({topic.payments.length})
+                                </TabsTrigger>
+                                <TabsTrigger value="analytics" className="gap-1.5">
+                                    <BarChart3 className="size-3.5" /> แดชบอร์ด & กราฟ
+                                </TabsTrigger>
                             </TabsList>
                             <div className="flex flex-wrap items-center gap-2">
                                 <Button

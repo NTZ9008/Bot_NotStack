@@ -1,5 +1,20 @@
 import { formatBaht, roundMoney, type FundTopicSummary } from '@notstack/shared';
-import { AlertTriangle, BarChart3, CheckCircle2, Clock, Lock, Plus, Sparkles, Wallet } from 'lucide-react';
+import {
+    AlertTriangle,
+    Banknote,
+    BarChart3,
+    Calendar,
+    CheckCircle2,
+    Clock,
+    Gamepad2,
+    Lock,
+    PartyPopper,
+    Plus,
+    Sparkles,
+    Target,
+    TrendingUp,
+    Wallet,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
@@ -9,10 +24,23 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { cn } from '@/lib/utils';
 import { ProgressBar } from './progress-bar';
 import { StatTile } from './stat-tile';
-import { TOPIC_TEMPLATES, dailyRateOf, dueDateStatus, percent, type TopicTemplate } from './utils';
+import { TOPIC_TEMPLATES, dailyRateOf, dueDateStatus, percent, type TopicTemplate, type TopicTemplateIcon } from './utils';
+
+export function TemplateIcon({ icon, className }: { icon: TopicTemplateIcon; className?: string }) {
+    switch (icon) {
+        case 'wallet':
+            return <Wallet className={className} />;
+        case 'calendar':
+            return <Calendar className={className} />;
+        case 'gamepad':
+            return <Gamepad2 className={className} />;
+        case 'party':
+            return <PartyPopper className={className} />;
+    }
+}
 
 // ==========================================
-// 📊 ภาพรวมทุกหัวข้อของเซิร์ฟเวอร์ (แบนเนอร์สรุป + กราฟเปรียบเทียบ) และรายการหัวข้อด้านซ้าย
+// ภาพรวมทุกหัวข้อของเซิร์ฟเวอร์ (แบนเนอร์สรุป + กราฟเปรียบเทียบ) และรายการหัวข้อด้านซ้าย
 // ==========================================
 const overviewTopicsChartConfig = {
     collected: { label: 'เก็บได้แล้ว (บาท)', color: '#10b981' },
@@ -66,7 +94,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         </Badge>
                         {totals.completedCount > 0 && (
                             <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-400">
-                                ครบเป้า {totals.completedCount} หัวข้อ
+                                <CheckCircle2 className="size-3" /> ครบเป้า {totals.completedCount} หัวข้อ
                             </Badge>
                         )}
                     </div>
@@ -77,11 +105,18 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                    <StatTile label="เป้ารวมทุกหัวข้อ" value={formatBaht(totals.target)} subtext={`จาก ${topics.length} หัวข้อเก็บเงิน`} variant="overview" />
+                    <StatTile
+                        label="เป้ารวมทุกหัวข้อ"
+                        value={formatBaht(totals.target)}
+                        subtext={`จาก ${topics.length} หัวข้อเก็บเงิน`}
+                        icon={<Target className="size-3.5 text-rose-400" />}
+                        variant="overview"
+                    />
                     <StatTile
                         label="เก็บได้รวมทั้งหมด"
                         value={formatBaht(totals.collected)}
                         subtext={`คืบหน้ารวม ${totals.pct}%`}
+                        icon={<Banknote className="size-3.5 text-emerald-400" />}
                         valueClassName="text-emerald-400"
                         tone="emerald"
                         variant="overview"
@@ -90,6 +125,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label="ยอดคงค้างรวม"
                         value={formatBaht(totals.remaining)}
                         subtext={totals.remaining > 0 ? 'รอเก็บเพิ่มเติม' : 'เก็บครบทุกหัวข้อแล้ว'}
+                        icon={<Clock className="size-3.5 text-amber-400" />}
                         valueClassName={totals.remaining > 0 ? 'text-amber-400' : 'text-muted-foreground'}
                         tone={totals.remaining > 0 ? 'amber' : 'default'}
                         variant="overview"
@@ -98,6 +134,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label="ความคืบหน้ารวม"
                         value={`${totals.pct}%`}
                         subtext={`จ่ายครบ ${totals.memberPaid}/${totals.memberTotal} รายการคน`}
+                        icon={<TrendingUp className="size-3.5 text-sky-400" />}
                         tone="sky"
                         variant="overview"
                     />
@@ -168,12 +205,12 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
 
             <div className="flex flex-wrap items-center gap-1.5">
                 {dailyRate ? (
-                    <Badge variant="outline" className="border-primary/30 bg-primary/5 text-[10px] text-primary">
-                        📅 วันละ {formatBaht(dailyRate)}
+                    <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-[10px] text-primary">
+                        <Calendar className="size-2.5" /> วันละ {formatBaht(dailyRate)}
                     </Badge>
                 ) : (
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                        💰 คนละ {formatBaht(topic.amountPerMember)}
+                    <Badge variant="outline" className="gap-1 text-[10px] text-muted-foreground">
+                        <Banknote className="size-2.5" /> คนละ {formatBaht(topic.amountPerMember)}
                     </Badge>
                 )}
                 <span className="ml-auto text-xs font-bold tabular-nums text-foreground">{pct}%</span>
@@ -194,7 +231,13 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
 }
 
 // หน้าต้อนรับเมื่อยังไม่มีหัวข้อเก็บเงิน พร้อมเทมเพลตเริ่มใช้งานในคลิกเดียว
-export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCreateBlank: () => void; onSelectTemplate: (template: TopicTemplate) => void }) {
+export function FundsEmptyOnboarding({
+    onCreateBlank,
+    onSelectTemplate,
+}: {
+    onCreateBlank: () => void;
+    onSelectTemplate: (template: TopicTemplate) => void;
+}) {
     return (
         <Card className="border-dashed bg-gradient-to-b from-card to-muted/20">
             <CardContent className="flex flex-col items-center py-10 text-center">
@@ -203,7 +246,7 @@ export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCr
                 </div>
                 <h2 className="text-lg font-semibold">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
                 <p className="mt-1 max-w-lg text-sm text-muted-foreground">
-                    จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งรายงานเข้าห้อง Discord อัตโนมัติ
+                    จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งการ์ดรูปภาพรายงานเข้าห้อง Discord อัตโนมัติ
                 </p>
 
                 <div className="mt-5">
@@ -222,10 +265,12 @@ export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCr
                                 key={tpl.id}
                                 type="button"
                                 onClick={() => onSelectTemplate(tpl)}
-                                className="flex flex-col items-start gap-1 rounded-xl border bg-card/80 p-3 text-left transition-all hover:border-primary/50 hover:bg-muted/40"
+                                className="flex flex-col items-start gap-1.5 rounded-xl border bg-card/80 p-3.5 text-left transition-all hover:border-primary/50 hover:bg-muted/40"
                             >
-                                <span className="text-xl">{tpl.emoji}</span>
-                                <span className="mt-1 text-sm font-semibold">{tpl.title}</span>
+                                <div className="flex size-8 items-center justify-center rounded-lg bg-primary/15 text-primary">
+                                    <TemplateIcon icon={tpl.icon} className="size-4" />
+                                </div>
+                                <span className="mt-0.5 text-sm font-semibold">{tpl.title}</span>
                                 <span className="text-xs text-muted-foreground">{tpl.subtitle}</span>
                             </button>
                         ))}

@@ -20,9 +20,11 @@ export const STATUS_LABEL: Record<FundMemberStatus, { text: string; className: s
     unpaid: { text: 'ยังไม่จ่าย', className: 'border-destructive/40 bg-destructive/10 text-destructive', color: '#ef4444' },
 };
 
+export type TopicTemplateIcon = 'wallet' | 'calendar' | 'gamepad' | 'party';
+
 export interface TopicTemplate {
     id: string;
-    emoji: string;
+    icon: TopicTemplateIcon;
     title: string;
     subtitle: string;
     name: string;
@@ -35,7 +37,7 @@ export interface TopicTemplate {
 export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     {
         id: 'monthly',
-        emoji: '💰',
+        icon: 'wallet',
         title: 'กองกลางรายเดือน',
         subtitle: 'เก็บยอดคงที่เท่ากันทุกคน',
         name: 'ค่ากองกลางประจำเดือน',
@@ -46,7 +48,7 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     },
     {
         id: 'daily-15',
-        emoji: '📅',
+        icon: 'calendar',
         title: 'เก็บเงินรายวัน 15 ฿',
         subtitle: 'คิดยอดอัตโนมัติตามจำนวนวัน',
         name: 'กองกลางรายวัน (วันละ 15 บาท)',
@@ -57,7 +59,7 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     },
     {
         id: 'server-share',
-        emoji: '🎮',
+        icon: 'gamepad',
         title: 'หารค่าเซิร์ฟเวอร์ / เกม',
         subtitle: 'หารค่าเช่าเซิร์ฟเวอร์หรือซับรายเดือน',
         name: 'หารค่าเช่าเซิร์ฟเวอร์เกม',
@@ -68,7 +70,7 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     },
     {
         id: 'party-trip',
-        emoji: '🍻',
+        icon: 'party',
         title: 'ทริป / ปาร์ตี้กลุ่ม',
         subtitle: 'เก็บเงินมัดจำหรือค่ากิจกรรมกลุ่ม',
         name: 'ค่าทริป / ปาร์ตี้กลุ่ม',
