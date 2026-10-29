@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useGuildId } from '@/hooks/use-guild';
 import { cn } from '@/lib/utils';
-import { onFundError, useFundRefresh } from './utils';
+import { ProgressBar } from './progress-bar';
+import { onFundError, percent, useFundRefresh } from './utils';
 
 type MemberPatch = { targetAmount?: number | null; paidAmount?: number };
 
@@ -59,7 +60,7 @@ function InlineAmountEditor({
             <button
                 type="button"
                 className={cn(
-                    'group inline-flex items-center gap-1.5 rounded px-1 tabular-nums hover:bg-muted',
+                    'group inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 tabular-nums transition-colors hover:bg-muted/80',
                     align === 'right' ? 'justify-end text-right' : 'text-left',
                     buttonClassName,
                 )}
@@ -87,6 +88,12 @@ function InlineAmountEditor({
                 step="0.01"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                    if (e.key === 'Escape') {
+                        e.preventDefault();
+                        onEditingChange(false);
+                    }
+                }}
                 className={cn('h-7 w-24', align === 'right' && 'text-right')}
                 autoFocus
             />
@@ -102,7 +109,7 @@ function InlineAmountEditor({
 }
 
 const CustomTargetBadge = () => (
-    <Badge variant="outline" className="text-[10px]">
+    <Badge variant="outline" className="px-1 text-[10px] border-primary/30 text-primary">
         เฉพาะคน
     </Badge>
 );
@@ -125,7 +132,7 @@ export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: 
     return (
         <InlineAmountEditor
             value={member.target}
-            title="กดเพื่อตั้งยอดเฉพาะคนนี้"
+            title="กดเพื่อตั้งยอดต้องจ่ายเฉพาะคนนี้"
             editing={editing}
             onEditingChange={setEditing}
             pending={update.isPending}
@@ -144,36 +151,53 @@ export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: 
                 )
             }
         >
-            {formatBaht(member.target)}
+            <span className="border-b border-dashed border-muted-foreground/40">{formatBaht(member.target)}</span>
             {member.customTarget && <CustomTargetBadge />}
-            <Pencil className="size-3 opacity-0 group-hover:opacity-60" />
+            <Pencil className="size-3 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
         </InlineAmountEditor>
     );
 }
 
 // ==========================================
-// 💰 ยอดจ่ายแล้วรายคน (กดที่ยอดเพื่อแก้ไขยอดที่จ่ายแล้วได้โดยตรง)
+// 💰 ยอดจ่ายแล้วรายคน + แถบความคืบหน้าย่อย (กดที่ยอดเพื่อแก้ไขยอดที่จ่ายแล้วได้โดยตรง)
 // ==========================================
 export function PaidCell({ topic, member }: { topic: FundTopicDetail; member: FundMemberView }) {
     const [editing, setEditing] = useState(false);
     const update = useMemberUpdate(topic, member, 'แก้ไขยอดที่จ่ายแล้วเรียบร้อย', () => setEditing(false));
+    const pct = percent(member.paid, member.target);
 
     if (topic.closed) {
-        return <span className="tabular-nums font-medium text-emerald-400">{formatBaht(member.paid)}</span>;
+        return (
+            <div className="inline-flex flex-col items-end gap-1">
+                <span className="tabular-nums font-medium text-emerald-400">{formatBaht(member.paid)}</span>
+                <div className="flex items-center gap-1.5">
+                    <ProgressBar value={pct} className="h-1 w-16" />
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
+                </div>
+            </div>
+        );
     }
     return (
-        <InlineAmountEditor
-            value={member.paid}
-            title="กดเพื่อแก้ไขยอดที่จ่ายแล้วของคนนี้"
-            editing={editing}
-            onEditingChange={setEditing}
-            align="right"
-            buttonClassName="font-medium text-emerald-400"
-            pending={update.isPending}
-            onSave={(paidAmount) => update.mutate({ paidAmount })}
-        >
-            {formatBaht(member.paid)}
-            <Pencil className="size-3 text-foreground opacity-0 group-hover:opacity-60" />
-        </InlineAmountEditor>
+        <div className="inline-flex flex-col items-end gap-1">
+            <InlineAmountEditor
+                value={member.paid}
+                title="กดเพื่อแก้ไขยอดที่จ่ายแล้วของคนนี้โดยตรง"
+                editing={editing}
+                onEditingChange={setEditing}
+                align="right"
+                buttonClassName="font-medium text-emerald-400"
+                pending={update.isPending}
+                onSave={(paidAmount) => update.mutate({ paidAmount })}
+            >
+                <span className="border-b border-dashed border-emerald-400/40">{formatBaht(member.paid)}</span>
+                <Pencil className="size-3 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
+            </InlineAmountEditor>
+            {!editing && (
+                <div className="flex items-center gap-1.5 pr-1.5">
+                    <ProgressBar value={pct} className="h-1 w-16" />
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
+                </div>
+            )}
+        </div>
     );
 }

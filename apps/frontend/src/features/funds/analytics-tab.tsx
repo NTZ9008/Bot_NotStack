@@ -83,10 +83,33 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatTile label="📊 เฉลี่ยเก็บได้ต่อคน" value={formatBaht(avgPaidPerMember)} valueClassName="text-emerald-400" variant="kpi" />
-                <StatTile label="💸 เฉลี่ยต่อรายการโอน" value={formatBaht(avgPerPayment)} variant="kpi" />
-                <StatTile label="✅ อัตราคนจ่ายครบ" value={`${completionRate}% (${topic.paidCount}/${topic.memberCount} คน)`} variant="kpi" />
-                <StatTile label="🧾 จำนวนครั้งที่รับเงิน" value={`${topic.payments.length} รายการ`} variant="kpi" />
+                <StatTile
+                    label="📊 เฉลี่ยเก็บได้ต่อคน"
+                    value={formatBaht(avgPaidPerMember)}
+                    subtext={`จากเป้าหมายเฉลี่ย ${formatBaht(topic.amountPerMember)}`}
+                    valueClassName="text-emerald-400"
+                    tone="emerald"
+                    variant="kpi"
+                />
+                <StatTile
+                    label="💸 เฉลี่ยต่อรายการโอน"
+                    value={formatBaht(avgPerPayment)}
+                    subtext={`จากทั้งหมด ${topic.payments.length} รายการ`}
+                    variant="kpi"
+                />
+                <StatTile
+                    label="✅ อัตราคนจ่ายครบ"
+                    value={`${completionRate}%`}
+                    subtext={`จ่ายครบ ${topic.paidCount} จาก ${topic.memberCount} คน`}
+                    tone="sky"
+                    variant="kpi"
+                />
+                <StatTile
+                    label="🧾 จำนวนครั้งที่รับเงิน"
+                    value={`${topic.payments.length} รายการ`}
+                    subtext={topic.payments.length > 0 ? 'บันทึกในระบบแล้ว' : 'ยังไม่มีรายการโอน'}
+                    variant="kpi"
+                />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">

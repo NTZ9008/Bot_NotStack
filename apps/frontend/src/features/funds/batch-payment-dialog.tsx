@@ -22,7 +22,17 @@ const unpaidIdsOf = (topic: FundTopicDetail) => topic.members.filter((m) => m.st
 // ==========================================
 // 📅 บันทึกการรับเงินเป็นกลุ่ม / หลายคนตามห้วงเวลา
 // ==========================================
-export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundTopicDetail; open: boolean; onOpenChange: (open: boolean) => void }) {
+export function BatchPaymentDialog({
+    topic,
+    initialMemberIds = null,
+    open,
+    onOpenChange,
+}: {
+    topic: FundTopicDetail;
+    initialMemberIds?: number[] | null;
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+}) {
     const guildId = useGuildId();
     const refresh = useFundRefresh();
     const dailyRate = dailyRateOf(topic);
@@ -36,8 +46,12 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
 
     useEffect(() => {
         if (!open) return;
-        const unpaid = unpaidIdsOf(topic);
-        setSelectedIds(unpaid.length > 0 ? unpaid : allIdsOf(topic));
+        if (initialMemberIds && initialMemberIds.length > 0) {
+            setSelectedIds(initialMemberIds);
+        } else {
+            const unpaid = unpaidIdsOf(topic);
+            setSelectedIds(unpaid.length > 0 ? unpaid : allIdsOf(topic));
+        }
         setSearchQuery('');
         setPaidAt(toLocalInput(new Date()));
         const { start, end } = defaultPeriod(topic);
@@ -51,7 +65,7 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
             setAmount(String(topic.amountPerMember || ''));
             setNote('');
         }
-    }, [open, topic, dailyRate]);
+    }, [open, topic, dailyRate, initialMemberIds]);
 
     const handlePeriodChange = (start: string, end: string) => {
         setPeriodStart(start);
@@ -64,7 +78,8 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
     };
 
     const invalidPeriod = Boolean(periodStart && periodEnd && periodStart > periodEnd);
-    const totalCollected = roundMoney(selectedIds.length * Number(amount || 0));
+    const numAmount = Number(amount || 0);
+    const totalCollected = roundMoney(selectedIds.length * numAmount);
 
     const filteredMembers = useMemo(() => {
         const q = searchQuery.trim().toLowerCase();
@@ -97,7 +112,7 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>บันทึกรับเงินตามห้วงเวลา (หลายคน)</DialogTitle>
-                    <DialogDescription>{topic.name} — บันทึกเก็บยอดรายวันย้อนหลังให้สมาชิกหลายคนพร้อมกันในครั้งเดียว</DialogDescription>
+                    <DialogDescription>{topic.name} — บันทึกเก็บยอดรายวันหรือรายงวดให้สมาชิกหลายคนพร้อมกันในครั้งเดียว</DialogDescription>
                 </DialogHeader>
                 <form
                     id="fund-batch-form"
@@ -108,7 +123,7 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
                         save.mutate();
                     }}
                 >
-                    <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                    <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                         <p className="text-xs font-semibold text-muted-foreground">📅 กำหนดห้วงเวลาที่จ่าย</p>
                         <PeriodFields
                             idPrefix="batch"
@@ -116,6 +131,7 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
                             end={periodEnd}
                             onChange={handlePeriodChange}
                             dailyRate={dailyRate}
+                            topicStartDate={topic.startDate}
                             amountSuffix=" ต่อคน"
                         />
                     </div>
@@ -155,10 +171,10 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
                             </Label>
                             <div className="flex gap-1">
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds(allIdsOf(topic))}>
-                                    ทั้งหมด
+                                    ทั้งหมด ({topic.members.length})
                                 </Button>
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds(unpaidIdsOf(topic))}>
-                                    เฉพาะค้าง
+                                    เฉพาะค้าง ({unpaidIdsOf(topic).length})
                                 </Button>
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds([])}>
                                     ล้าง
@@ -166,21 +182,22 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
                             </div>
                         </div>
                         {topic.members.length > 5 && <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="ค้นหาชื่อสมาชิกในรายการ..." />}
-                        <div className="max-h-48 overflow-y-auto rounded-lg border divide-y bg-background p-1">
+                        <div className="max-h-48 divide-y overflow-y-auto rounded-lg border bg-background p-1">
                             {filteredMembers.length === 0 ? (
                                 <p className="py-4 text-center text-xs text-muted-foreground">ไม่พบสมาชิกที่ค้นหา</p>
                             ) : (
                                 filteredMembers.map((m) => {
                                     const checkboxId = `batch-member-${m.id}`;
                                     return (
-                                        <div key={m.id} className="flex items-center justify-between gap-2 p-1.5 hover:bg-muted/50 rounded text-xs">
-                                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <div key={m.id} className="flex items-center justify-between gap-2 rounded p-1.5 text-xs hover:bg-muted/50">
+                                            <div className="flex min-w-0 flex-1 items-center gap-2">
                                                 <Checkbox id={checkboxId} checked={selectedIds.includes(m.id)} onCheckedChange={() => toggleMember(m.id)} />
-                                                <Label htmlFor={checkboxId} className="truncate font-medium cursor-pointer flex-1">
+                                                <img src={m.avatar} alt="" className="size-5 shrink-0 rounded-full object-cover" />
+                                                <Label htmlFor={checkboxId} className="flex-1 cursor-pointer truncate font-medium">
                                                     {m.displayName}
                                                 </Label>
                                             </div>
-                                            <span className="text-muted-foreground tabular-nums shrink-0">
+                                            <span className="shrink-0 text-muted-foreground tabular-nums">
                                                 {m.remaining > 0 ? `ค้าง ${formatBaht(m.remaining)}` : '✅ จ่ายครบแล้ว'}
                                             </span>
                                         </div>
@@ -191,18 +208,15 @@ export function BatchPaymentDialog({ topic, open, onOpenChange }: { topic: FundT
                     </div>
                 </form>
                 <DialogFooter className="flex-row items-center justify-between sm:justify-between">
-                    <p className="text-xs text-muted-foreground">
-                        ยอดรวมทั้งหมด: <span className="font-semibold text-emerald-400">{formatBaht(totalCollected)}</span>
-                    </p>
+                    <div className="text-xs text-muted-foreground">
+                        <span>ยอดรับรวม ({selectedIds.length} คน): </span>
+                        <span className="font-semibold text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
+                    </div>
                     <div className="flex gap-2">
                         <Button variant="outline" onClick={() => onOpenChange(false)}>
                             ยกเลิก
                         </Button>
-                        <Button
-                            type="submit"
-                            form="fund-batch-form"
-                            disabled={save.isPending || selectedIds.length === 0 || !(Number(amount) > 0) || invalidPeriod}
-                        >
+                        <Button type="submit" form="fund-batch-form" disabled={save.isPending || selectedIds.length === 0 || !(numAmount > 0) || invalidPeriod}>
                             {save.isPending && <Loader2 className="animate-spin" />}
                             บันทึก {selectedIds.length} คน
                         </Button>
