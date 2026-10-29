@@ -16,7 +16,7 @@ const SPAM_LIMIT = 6;
 const SPAM_TIME = 5000;
 
 // คำรุนแรงชัดเจน 100% (ต้องตรงทั้งข้อความ) — ลบเลยไม่ต้องถาม AI (ประหยัดโควตา)
-const HARD_BAD_WORDS = ['ค', 'ดอ', 'เย็ด'];
+const HARD_BAD_WORDS = ['ค', 'ดอ', 'เย็ด', 'ควย', 'หี', 'เย็ดแม่'];
 // คำที่ต้องสงสัย (มีโอกาสเป็นคำหยาบ แต่ต้องดูบริบท) — ให้ AI ช่วยตัดสิน
 const SUSPICIOUS_WORDS = [...new Set((badWords as string[]).map((word) => word.toLowerCase()))];
 
@@ -164,7 +164,7 @@ export class MessageListener {
 
     // --- 4) กรองคำหยาบ — คืน true ถ้าลบข้อความแล้ว ---
     private async filterBadWords(msg: Message<true>): Promise<boolean> {
-        const contentLower = msg.content.toLowerCase();
+        const contentLower = msg.content.toLowerCase().trim();
         const isHardcodedBad = HARD_BAD_WORDS.some((word) => contentLower === word.toLowerCase());
         const isSuspicious = SUSPICIOUS_WORDS.some((word) => contentLower.includes(word));
         if (!isHardcodedBad && !isSuspicious) return false;
