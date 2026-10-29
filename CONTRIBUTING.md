@@ -47,6 +47,8 @@ pnpm lint
 pnpm test
 ```
 
+To see test coverage, run `pnpm test:coverage` after a build. It writes `coverage/lcov.info`, which CI uploads to Codecov.
+
 If you touched the database, migrations or the XP system, also run `pnpm test:integration`.
 It needs `initdb`, `pg_ctl` and `createdb` on `PATH`, creates its own temporary cluster and never uses your `DATABASE_URL`.
 
