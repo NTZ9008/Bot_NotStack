@@ -1,0 +1,14 @@
+# ตั้งค่า Codecov — ตอนนี้ใช้แค่รายงาน ยังไม่บังคับให้ coverage ผ่านเกณฑ์
+coverage:
+  status:
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        informational: true
+comment:
+  layout: 'condensed_header, diff, flags, files'
+  require_changes: true
+ignore:
+  - 'apps/backend/src/generated'

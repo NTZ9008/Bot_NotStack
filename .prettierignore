@@ -12,3 +12,4 @@ apps/frontend/src/components/ui
 # เอกสาร / ข้อมูล
 *.md
 logs
+coverage
