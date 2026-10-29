@@ -103,6 +103,24 @@ export class MessageListener {
         if (msg.channel.isSendable()) await msg.channel.send(content).catch(() => {});
     }
 
+    // ตอบกลับแบบ Reply — ถ้า Reply ไม่ได้ (เช่น บอทไม่มีสิทธิ์ Read Message History ในห้องนั้น หรือข้อความต้นทางถูกลบ) จะส่งเป็นข้อความปกติพร้อมแท็กผู้ถามแทน
+    private async reply(msg: Message, content: string): Promise<void> {
+        const safeContent = content.length > 2000 ? `${content.substring(0, 1990)}...` : content;
+        try {
+            await msg.reply({ content: safeContent, allowedMentions: { parse: [], repliedUser: true } });
+        } catch {
+            if (msg.channel.isSendable()) {
+                const fallback = `<@${msg.author.id}> ${safeContent}`;
+                await msg.channel
+                    .send({
+                        content: fallback.length > 2000 ? `${fallback.substring(0, 1990)}...` : fallback,
+                        allowedMentions: { parse: [], users: [msg.author.id] },
+                    })
+                    .catch(() => {});
+            }
+        }
+    }
+
     // --- 1) ไฟล์ log รายวัน + Activity Log ---
     // ไฟล์ log เก็บเนื้อหาข้อความเฉพาะเซิร์ฟเวอร์หลัก (เซิร์ฟเวอร์อื่นที่เชิญบอทไปไม่ได้ตกลงให้เก็บแชท) และลบเองตาม LOG_RETENTION_DAYS
     // Activity Log เก็บทุกเซิร์ฟเวอร์ แต่เก็บแค่ว่าใครส่งที่ห้องไหนเมื่อไหร่ ไม่เก็บเนื้อหาข้อความ
@@ -188,7 +206,7 @@ export class MessageListener {
         // ตัดการแท็กชื่อบอทออก ให้เหลือแต่คำถาม
         const question = msg.content.replace(new RegExp(`<@!?${botId}>`, 'g'), '').trim();
         if (!question) {
-            await msg.reply('ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖').catch(() => {});
+            await this.reply(msg, 'ว่างายยย มีอะไรให้ช่วยมั้ยครับ? 🤖');
             return;
         }
 
@@ -196,27 +214,27 @@ export class MessageListener {
         if (quota === 'global' || quota === 'guild') {
             const limit = quota === 'global' ? this.gemini.dailyLimit : this.gemini.guildDailyLimit;
             const scope = quota === 'global' ? 'ประจำวัน' : 'ของเซิร์ฟเวอร์นี้วันนี้';
-            await msg
-                .reply(`🚫 **โควตา AI ${scope}หมดแล้วครับ!** (${limit}/${limit})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`)
-                .catch(() => {});
+            await this.reply(msg, `🚫 **โควตา AI ${scope}หมดแล้วครับ!** (${limit}/${limit})\nระบบจะรีเซ็ตใหม่พรุ่งนี้ครับ หรือใช้คำสั่ง \`/weather\` เช็คอากาศแทนได้ครับ 🌦️`);
             return;
         }
 
-        if (msg.channel.isSendable()) await msg.channel.sendTyping().catch(() => {}); // ขึ้นสถานะ "กำลังพิมพ์..."
+        if (msg.channel.isSendable()) void msg.channel.sendTyping().catch(() => {}); // ขึ้นสถานะ "กำลังพิมพ์..."
+        let text: string;
         try {
             if (quota === 'disabled') throw new Error('ยังไม่ได้ตั้ง GEMINI_KEY');
-            const text = await this.gemini.chat(question);
-            // Discord จำกัด 2000 ตัวอักษร — คำตอบจาก AI ห้ามแท็กใครหรือยศไหน (แท็กแค่คนที่ถาม)
-            await msg.reply({ content: text.length > 2000 ? `${text.substring(0, 1990)}...` : text, allowedMentions: { parse: [], repliedUser: true } });
+            text = await this.gemini.chat(question);
         } catch (err) {
             this.logger.error(`AI Error: ${(err as Error).message}`);
-            await msg.reply('❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ').catch(() => {});
+            await this.reply(msg, '❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ');
+            return;
         }
+        // Discord จำกัด 2000 ตัวอักษร — คำตอบจาก AI ห้ามแท็กใครหรือยศไหน (แท็กแค่คนที่ถาม)
+        await this.reply(msg, text);
     }
 
     // --- 7) ตอบกลับอัตโนมัติ ---
     private autoReply(msg: Message): void {
-        const reply = (text: string) => void msg.reply(text).catch(() => {});
+        const reply = (text: string) => void this.reply(msg, text);
         const content = msg.content;
         if (content === 'สวัสดีบอท') reply(`สวัสดี <@${msg.author.id}> ครับ`);
         else if (content === 'Hello bot') reply(`Hello <@${msg.author.id}> 🙋‍♂️`);

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI, SchemaType, type GenerativeModel } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType, type GenerationConfig, type GenerativeModel } from '@google/generative-ai';
 import { bangkokDay } from '../common/utils/parse.util';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
@@ -9,6 +9,10 @@ import { PrismaService } from '../prisma/prisma.service';
 const MODEL = 'gemini-3.8-flash';
 // เก็บสถิติการใช้ย้อนหลังกี่วัน (ใช้แค่วันปัจจุบัน ที่เหลือไว้ดูย้อนหลังเฉยๆ)
 const USAGE_RETENTION_DAYS = 14;
+
+type ThinkingGenerationConfig = GenerationConfig & {
+    thinkingConfig?: { thinkingLevel: 'minimal' | 'low' | 'medium' | 'high' };
+};
 
 // กติกาอยู่ใน system instruction ส่วนข้อความของผู้ใช้ส่งแยกเป็นข้อมูล — ผู้ใช้จึงพิมพ์คำสั่งมาเปลี่ยนกติกาได้ยากขึ้น
 const CHAT_PERSONA = `คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์ Discord
@@ -56,19 +60,30 @@ export class GeminiService {
             return;
         }
         const ai = new GoogleGenerativeAI(key);
-        this.chatModel = ai.getGenerativeModel({ model: MODEL, systemInstruction: CHAT_PERSONA });
+        const chatConfig: ThinkingGenerationConfig = {
+            // ลดเวลาคิดจากค่าเริ่มต้น (high) เป็น low เพื่อให้แชทบอทตอบกลับไว
+            thinkingConfig: { thinkingLevel: 'low' },
+        };
+        const moderationConfig: ThinkingGenerationConfig = {
+            responseMimeType: 'application/json',
+            responseSchema: {
+                type: SchemaType.OBJECT,
+                properties: { verdict: { type: SchemaType.STRING, format: 'enum', enum: ['BAD', 'PASS'] } },
+                required: ['verdict'],
+            },
+            // งานกรองคำหยาบต้องการแค่ BAD / PASS ทันที จึงใช้ minimal
+            thinkingConfig: { thinkingLevel: 'minimal' },
+        };
+        this.chatModel = ai.getGenerativeModel({
+            model: MODEL,
+            systemInstruction: CHAT_PERSONA,
+            generationConfig: chatConfig,
+        });
         this.moderationModel = ai.getGenerativeModel({
             model: MODEL,
             systemInstruction: MODERATION_RULES,
             // บังคับคำตอบเป็น JSON ที่มีแค่ BAD / PASS
-            generationConfig: {
-                responseMimeType: 'application/json',
-                responseSchema: {
-                    type: SchemaType.OBJECT,
-                    properties: { verdict: { type: SchemaType.STRING, format: 'enum', enum: ['BAD', 'PASS'] } },
-                    required: ['verdict'],
-                },
-            },
+            generationConfig: moderationConfig,
         });
     }
 
