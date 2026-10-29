@@ -30,6 +30,7 @@ const recorderName = (user: User | undefined) => user?.displayName || user?.disc
 // POST /                                  สร้างหัวข้อ
 // GET  /:id                               รายละเอียด (คน + รายการรับเงิน)
 // GET  /:id/export                        ส่งออกข้อมูลเป็นไฟล์ CSV
+// GET  /:id/report-image                  ดูรูปการ์ดสรุปรายงาน (PNG)
 // POST /:id                               แก้ไขหัวข้อ (ชื่อ / ยอดต่อคน / ห้องรายงาน / ปิด-เปิด)
 // POST /:id/delete                        ลบหัวข้อ
 // POST /:id/members                       เพิ่มคน (เลือกทีละคน หรือดึงทั้งยศ)
@@ -66,17 +67,21 @@ export class FundController {
     }
 
     @Get(':id/export')
-    async exportCsv(
-        @GuildId() guildId: string,
-        @Param('id') id: string,
-        @Res({ passthrough: true }) res: Response,
-    ): Promise<string> {
+    async exportCsv(@GuildId() guildId: string, @Param('id') id: string, @Res({ passthrough: true }) res: Response): Promise<string> {
         const numericId = topicId(id);
         const { filename, csv } = await this.fund.exportCsv(guildId, numericId);
         const encoded = encodeURIComponent(filename);
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', `attachment; filename="fund-${numericId}.csv"; filename*=UTF-8''${encoded}`);
         return csv;
+    }
+
+    @Get(':id/report-image')
+    async reportImage(@GuildId() guildId: string, @Param('id') id: string, @Res() res: Response): Promise<void> {
+        const buffer = await this.fund.renderReportImage(guildId, topicId(id));
+        res.setHeader('Content-Type', 'image/png');
+        res.setHeader('Cache-Control', 'no-store');
+        res.send(buffer);
     }
 
     @Audit('fund.topic_update')

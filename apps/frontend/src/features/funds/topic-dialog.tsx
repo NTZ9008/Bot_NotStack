@@ -1,6 +1,6 @@
 import { calculateDailyAmount, calculateDays, formatBaht, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useGuildId } from '@/hooks/use-guild';
+import { TemplateIcon } from './funds-overview';
 import {
     TOPIC_TEMPLATES,
     currentMonthRange,
@@ -185,7 +186,7 @@ export function TopicDialog({
                                     className="h-6 px-2 text-[11px]"
                                     onClick={() => applyTemplate(tpl)}
                                 >
-                                    {tpl.emoji} {tpl.title}
+                                    <TemplateIcon icon={tpl.icon} className="size-3 text-primary" /> {tpl.title}
                                 </Button>
                             ))}
                         </div>
@@ -219,7 +220,7 @@ export function TopicDialog({
                     <Field label="รูปแบบการเก็บเงิน">
                         <div className="grid grid-cols-2 gap-2">
                             <Button type="button" size="sm" variant={mode === 'fixed' ? 'default' : 'outline'} onClick={() => setMode('fixed')}>
-                                💰 ยอดคงที่ต่อคน
+                                <Banknote className="size-3.5" /> ยอดคงที่ต่อคน
                             </Button>
                             <Button
                                 type="button"
@@ -231,7 +232,7 @@ export function TopicDialog({
                                     if (!startDate) setStartDate(todayInput());
                                 }}
                             >
-                                📅 ยอดรายวัน (เช่น 15 บาท)
+                                <Calendar className="size-3.5" /> ยอดรายวัน (เช่น 15 บาท)
                             </Button>
                         </div>
                     </Field>

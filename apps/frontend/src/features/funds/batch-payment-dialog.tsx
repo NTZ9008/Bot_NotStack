@@ -1,6 +1,6 @@
 import { formatBaht, roundMoney, type FundTopicDetail } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Calendar, CheckCircle2, Loader2 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -124,7 +124,9 @@ export function BatchPaymentDialog({
                     }}
                 >
                     <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-                        <p className="text-xs font-semibold text-muted-foreground">📅 กำหนดห้วงเวลาที่จ่าย</p>
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                            <Calendar className="size-3.5 text-primary" /> กำหนดห้วงเวลาที่จ่าย
+                        </p>
                         <PeriodFields
                             idPrefix="batch"
                             start={periodStart}
@@ -198,7 +200,13 @@ export function BatchPaymentDialog({
                                                 </Label>
                                             </div>
                                             <span className="shrink-0 text-muted-foreground tabular-nums">
-                                                {m.remaining > 0 ? `ค้าง ${formatBaht(m.remaining)}` : '✅ จ่ายครบแล้ว'}
+                                                {m.remaining > 0 ? (
+                                                    `ค้าง ${formatBaht(m.remaining)}`
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                                                        <CheckCircle2 className="size-3" /> จ่ายครบแล้ว
+                                                    </span>
+                                                )}
                                             </span>
                                         </div>
                                     );

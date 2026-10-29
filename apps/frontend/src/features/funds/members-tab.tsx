@@ -186,7 +186,7 @@ export function MembersTab({
         <div className="space-y-3">
             {!topic.closed && (
                 <div className="grid gap-2.5 rounded-xl border bg-muted/15 p-3 md:grid-cols-2">
-                    <Field label="➕ เพิ่มสมาชิกรายคน">
+                    <Field label="เพิ่มสมาชิกรายคน">
                         <UserPicker
                             keepSelection={false}
                             placeholder="พิมพ์ชื่อหรือ username เพื่อเพิ่มเข้าหัวข้อ..."
@@ -194,7 +194,7 @@ export function MembersTab({
                             onSelect={(user) => add.mutate({ userIds: [user.userId] })}
                         />
                     </Field>
-                    <Field label="👥 ดึงสมาชิกทุกคนจากยศ (Role)">
+                    <Field label="ดึงสมาชิกทุกคนจากยศ (Role)">
                         <div className="flex gap-2">
                             <Select value={roleId} onValueChange={setRoleId}>
                                 <SelectTrigger className="w-full">
