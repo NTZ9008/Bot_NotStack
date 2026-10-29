@@ -6,7 +6,7 @@ import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 
-const MODEL = 'gemini-2.5-flash';
+const MODEL = 'gemini-3.8-flash';
 // เก็บสถิติการใช้ย้อนหลังกี่วัน (ใช้แค่วันปัจจุบัน ที่เหลือไว้ดูย้อนหลังเฉยๆ)
 const USAGE_RETENTION_DAYS = 14;
 
