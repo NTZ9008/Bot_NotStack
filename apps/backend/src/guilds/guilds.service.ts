@@ -1,9 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import type { GuildAccessLevel, GuildListResponse, GuildSummary } from '@notstack/shared';
 import type { Guild } from 'discord.js';
 import { DiscordService } from '../discord/discord.service';
 import type { User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UsersService } from '../users/users.service';
 import { GuildAccessService } from './guild-access.service';
 
 // ตรวจสิทธิ์พร้อมกันทีละไม่เกินเท่านี้ (ไม่ให้ยิง API ของ Discord รัวเกินตอนบอทอยู่หลายเซิร์ฟเวอร์)
@@ -20,12 +21,26 @@ export class GuildsService {
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
         private readonly access: GuildAccessService,
+        @Optional() private readonly users?: UsersService,
     ) {}
 
     // บอทอยู่ในเซิร์ฟเวอร์นี้ (ตอนออนไลน์ / ถูกเชิญ / เซิร์ฟเวอร์เปลี่ยนชื่อ-รูป)
     async upsert(guild: Guild): Promise<void> {
         const data = { name: guild.name, iconUrl: guild.iconURL({ size: 128 }), ownerId: guild.ownerId, leftAt: null };
         await this.prisma.guild.upsert({ where: { id: guild.id }, create: { id: guild.id, ...data }, update: data });
+    }
+
+    // ถ้าคนที่เชิญบอทเข้าเซิร์ฟเวอร์เคย login ด้วย Discord ไว้ก่อนแล้ว (ได้ USER ตอนยังไม่มีเซิร์ฟ) ให้เลื่อนเป็น OWNER อัตโนมัติ
+    async promoteGuildOwnerIfEligible(ownerId: string | null | undefined): Promise<void> {
+        if (!ownerId || !this.users) return;
+        const user = await this.users.findByDiscordId(ownerId);
+        if (!user || user.role !== 'USER') return;
+        const manualRoleChange = await this.prisma.auditLog.count({
+            where: { action: 'user.update', targetType: 'user', targetId: String(user.id) },
+        });
+        if (manualRoleChange === 0) {
+            await this.users.update(user.id, { role: 'OWNER' });
+        }
     }
 
     // บอทถูกเตะ / เซิร์ฟเวอร์ถูกลบ — เก็บการตั้งค่าไว้เผื่อเชิญกลับมา
@@ -63,7 +78,14 @@ export class GuildsService {
             const rows = user.role === 'ADMIN' ? await this.prisma.guild.findMany({ where: { leftAt: null } }) : [];
             return {
                 guilds: this.sort(
-                    rows.map((row) => ({ id: row.id, name: row.name || row.id, iconUrl: row.iconUrl, memberCount: 0, access: 'manage', isHome: this.discord.isHome(row.id) })),
+                    rows.map((row) => ({
+                        id: row.id,
+                        name: row.name || row.id,
+                        iconUrl: row.iconUrl,
+                        memberCount: 0,
+                        access: 'manage',
+                        isHome: this.discord.isHome(row.id),
+                    })),
                 ),
                 inviteUrl: null,
                 needsDiscordLink,

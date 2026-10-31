@@ -28,13 +28,21 @@ const quiet = (target) => {
 // --- Gemini quota ---
 function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {}) {
     const writes = [];
+    const counts = new Map(stored.map((row) => [row.guildId, row.count]));
     const prisma = {
+        $executeRaw: async () => {},
         aiUsage: {
-            findMany: async () => stored,
+            aggregate: async () => ({ _sum: { count: [...counts.values()].reduce((a, b) => a + b, 0) } }),
+            findUnique: async ({ where }) => ({ count: counts.get(where.day_guildId.guildId) ?? 0 }),
             deleteMany: async () => {},
-            upsert: async (args) => writes.push(args),
+            upsert: async (args) => {
+                writes.push(args);
+                const id = args.where.day_guildId.guildId;
+                counts.set(id, (counts.get(id) ?? 0) + 1);
+            },
         },
     };
+    prisma.$transaction = async (fn) => fn(prisma);
     const service = quiet(
         new GeminiService(config({ GEMINI_KEY: key, AI_DAILY_LIMIT: daily, AI_GUILD_DAILY_LIMIT: perGuild }), prisma, { isHome: (id) => id === 'home' }),
     );
@@ -53,11 +61,46 @@ test('AI quota caps other servers per day while the home server only shares the 
     assert.deepEqual(writes[0].where, { day_guildId: { day: bangkokDay(), guildId: 'other' } });
 });
 test('AI quota survives a restart by loading today’s counts and is disabled without a key', async () => {
-    const { service } = gemini({ stored: [{ guildId: 'other', count: 2 }, { guildId: 'home', count: 2 }] });
+    const { service } = gemini({
+        stored: [
+            { guildId: 'other', count: 2 },
+            { guildId: 'home', count: 2 },
+        ],
+    });
     assert.equal(await service.reserve('other'), 'guild');
     assert.equal(await service.reserve('home'), 'ok');
     assert.equal(await service.reserve('home'), 'global');
     assert.equal(await gemini({ key: null }).service.reserve('home'), 'disabled');
+});
+test('GeminiService multi-model pool falls back across free-tier models and cools down failing models', async () => {
+    const { service } = gemini();
+    const tried = [];
+    service.chatModels = [
+        {
+            name: 'model-a',
+            model: {
+                generateContent: async () => {
+                    tried.push('model-a');
+                    throw Object.assign(new Error('429 Quota exceeded per day'), { status: 429 });
+                },
+            },
+        },
+        {
+            name: 'model-b',
+            model: {
+                generateContent: async () => {
+                    tried.push('model-b');
+                    return { response: { text: () => 'คำตอบจาก model-b' } };
+                },
+            },
+        },
+    ];
+    assert.equal(await service.chat('สวัสดี'), 'คำตอบจาก model-b');
+    assert.deepEqual(tried, ['model-a', 'model-b']);
+    // ครั้งถัดไปควรข้าม model-a ที่ติด cooldown ทันทีและใช้ model-b เลย
+    tried.length = 0;
+    assert.equal(await service.chat('สวัสดีอีกครั้ง'), 'คำตอบจาก model-b');
+    assert.deepEqual(tried, ['model-b']);
 });
 
 // --- Message pipeline ---
@@ -117,7 +160,7 @@ test('AI chat strips only the bot mention and its reply cannot ping anyone', asy
     assert.deepEqual(calls.replies[0].allowedMentions, { parse: [], repliedUser: true });
     const quota = listener({ quota: 'guild' });
     await quota.instance.aiChat(quota.message('<@999> hi'), '999');
-    assert.match(quota.calls.replies[0], /โควตา AI ของเซิร์ฟเวอร์นี้วันนี้หมดแล้ว/);
+    assert.match(quota.calls.replies[0].content ?? quota.calls.replies[0], /โควตา AI ของเซิร์ฟเวอร์นี้วันนี้หมดแล้ว/);
 });
 test('chat content is written to log files only for the home server', () => {
     const home = listener({ home: true });
@@ -278,7 +321,12 @@ test('log files are pruned by the date in their name and large files are read fr
         fs.writeFileSync(path.join(dir, 'big.log'), line.repeat(Math.ceil((LOG_READ_MAX_BYTES * 1.5) / Buffer.byteLength(line))));
         const text = service.read('big.log');
         assert.match(text.split('\n')[0], /แสดงเฉพาะ/);
-        assert(text.split('\n').slice(1, -1).every((l) => l === line.trim()));
+        assert(
+            text
+                .split('\n')
+                .slice(1, -1)
+                .every((l) => l === line.trim()),
+        );
         assert(Buffer.byteLength(text) <= LOG_READ_MAX_BYTES + 200);
     } finally {
         fs.rmSync(dir, { recursive: true, force: true });

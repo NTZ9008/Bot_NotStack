@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CONFIG_KEY_MAP, CONFIG_KEYS, SNOWFLAKE_RE, type ConfigRow } from '@notstack/shared';
-import { badRequest } from '../common/exceptions/api.exception';
+import { serviceUnavailable, badRequest } from '../common/exceptions/api.exception';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -26,15 +26,19 @@ export class BotConfigService {
     ) {}
 
     private async values(guildId: string): Promise<Map<string, string | null>> {
+        for (const [key, entry] of this.cache) if (Date.now() - entry.at >= CACHE_TTL_MS) this.cache.delete(key);
         const hit = this.cache.get(guildId);
         if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.values;
 
         let pending = this.loading.get(guildId);
         if (!pending) {
+            if (this.loading.size >= 64) throw serviceUnavailable('กำลังโหลดการตั้งค่าหลายรายการ กรุณาลองใหม่');
             pending = this.prisma.config
                 .findMany({ where: { guildId }, select: { key: true, value: true } })
                 .then((rows) => {
                     const values = new Map(rows.map((row) => [row.key, row.value]));
+                    if (this.cache.size >= 1000) this.cache.delete(this.cache.keys().next().value!);
+                    // เซิร์ฟเวอร์ที่ยังไม่มีการตั้งค่าก็ต้องแคช ไม่งั้นทุก event ของบอทจะ query ซ้ำ (webhook ที่ยังไม่ยืนยันตัวตนไม่ผ่านแคชนี้แล้ว)
                     this.cache.set(guildId, { values, at: Date.now() });
                     return values;
                 })

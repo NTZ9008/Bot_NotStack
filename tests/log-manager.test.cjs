@@ -167,6 +167,51 @@ test('dispatcher uses saved appearance for queued and attached logs without chan
     assert.equal(recorded.length, 3);
 });
 
+test('log channels must belong to the guild and queues never mix guilds that share a channel id', async () => {
+    const db = database();
+    const owner = { '111111111111111111': 'a', '222222222222222222': 'b' };
+    const discord = {
+        ready: true,
+        fetchGuildChannel: async (guildId, channelId) => (owner[channelId] === guildId ? { isSendable: () => true, send: async (value) => sent.push({ guildId, channelId, value }) } : null),
+    };
+    const sent = [];
+    const settings = new LogSettingsService(db, discord);
+    await assert.rejects(settings.updateSetting('a', 'messageUpdate', { channelId: '222222222222222222' }), /ไม่พบห้อง/);
+    await assert.rejects(settings.setChannelForAll('a', '222222222222222222'), /ไม่พบห้อง/);
+    await settings.updateSetting('a', 'messageUpdate', { enabled: true, channelId: '111111111111111111' });
+
+    // ค่าเก่าที่ชี้ข้ามเซิร์ฟเวอร์ (ตั้งไว้ก่อนมีการตรวจ) ต้องไม่ทำให้คิวของสองเซิร์ฟเวอร์รวมกัน
+    const legacy = new LogSettingsService(db);
+    await legacy.updateSetting('a', 'messageUpdate', { channelId: '222222222222222222' });
+    await legacy.updateSetting('b', 'messageUpdate', { enabled: true, channelId: '222222222222222222' });
+    const logs = new LogDispatcher(discord, legacy, { record: () => {} });
+    await logs.sendLog('b', 'messageUpdate', payload);
+    await logs.sendLog('a', 'messageUpdate', { ...payload, title: 'จาก A' });
+    await logs.flushQueue('b', '222222222222222222');
+    await logs.flushQueue('a', '222222222222222222');
+    assert.equal(sent.length, 1);
+    assert.equal(sent[0].value.embeds.length, 1);
+    assert.equal(sent[0].guildId, 'b');
+});
+
+test('audit gateway state and buffer are tracked per guild', async () => {
+    const logs = new LogDispatcher({}, {}, {});
+    let restCalls = 0;
+    const guildB = {
+        id: 'b',
+        fetchAuditLogs: async () => {
+            restCalls++;
+            return { entries: { find: () => ({ executor: { id: 'mod-b' }, reason: null, createdTimestamp: Date.now() }) } };
+        },
+    };
+    logs.pushAuditEntry({ action: 20, targetId: 'u1', executor: { id: 'mod-a' }, reason: null }, { id: 'a' });
+    assert.equal(logs.findInAuditBuffer('b', 20, 'u1', 10000), null);
+    assert.equal(logs.findInAuditBuffer('a', 20, 'u1', 10000).executor.id, 'mod-a');
+    const hit = await logs.fetchExecutor(guildB, 20, 'u1');
+    assert.equal(restCalls, 1);
+    assert.equal(hit.executor.id, 'mod-b');
+});
+
 const { bucketLabels, breakdownFromSeries, buildDatasets, summarizeVoiceTime } = require('../apps/backend/dist/log-manager/utils/activity-stats.util');
 const { activityEventLabel, humanizeMentions } = require('../apps/backend/dist/log-manager/utils/activity-humanize.util');
 

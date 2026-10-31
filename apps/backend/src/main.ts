@@ -8,9 +8,11 @@ import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
+import { rateLimit } from 'express-rate-limit';
 import { AppModule } from './app.module';
 import { allowedOrigins } from './config/allowed-origins';
 import type { Env } from './config/env.validation';
+import { MetricsService } from './monitoring/metrics.service';
 
 // ==========================================
 // 🚀 BOOTSTRAP — API (/api/*) + GitHub webhook (/webhook/github*) และบอท Discord ในโปรเซสเดียวกัน
@@ -22,7 +24,25 @@ async function bootstrap(): Promise<void> {
     const logger = new Logger('Server');
     const config = app.get<ConfigService<Env, true>>(ConfigService);
 
-    app.set('trust proxy', 1); // อยู่หลัง Nginx / Cloudflare
+    app.use(app.get(MetricsService).middleware);
+    app.set('trust proxy', config.get('TRUST_PROXY', { infer: true }));
+    app.use('/api', (_req: Request, res: Response, next: NextFunction) => {
+        res.setHeader('Cache-Control', 'no-store');
+        next();
+    });
+    const limiter = (limit: number) =>
+        rateLimit({
+            windowMs: 60_000,
+            limit,
+            standardHeaders: 'draft-8',
+            legacyHeaders: false,
+            handler: (req, res) => {
+                logger.warn(JSON.stringify({ event: 'rate_limit_exceeded', ip: req.ip }));
+                res.status(429).json({ error: 'Too many requests' });
+            },
+        });
+    app.use(limiter(600));
+    app.use('/webhook', limiter(120));
 
     app.use(
         helmet({
@@ -56,11 +76,17 @@ async function bootstrap(): Promise<void> {
     }
 
     // บีบอัดคำตอบ (JSON / CSV / ไฟล์หน้าเว็บ) ที่ใหญ่กว่า 1KB — รูปภาพบีบซ้ำไม่ได้จึงถูกข้ามอัตโนมัติ
-    app.use(compression({ threshold: 1024 }));
+    // ยกเว้น Server-Sent Events (/api/live) — compression พักข้อมูลไว้รอครบก้อน เหตุการณ์สดจะไม่ถึงหน้าเว็บ
+    app.use(
+        compression({
+            threshold: 1024,
+            filter: (req, res) => !String(res.getHeader('Content-Type') ?? '').startsWith('text/event-stream') && compression.filter(req, res),
+        }),
+    );
     app.use(cookieParser());
 
     // GitHub webhook: ต้องใช้ raw body ตรวจลายเซ็น HMAC
-    app.use('/webhook', express.raw({ type: 'application/json', limit: '5mb' }));
+    app.use('/webhook', express.raw({ type: 'application/json', limit: '1mb' }));
     app.use(express.json({ limit: '1mb' }));
     // อัปโหลดรูปพื้นหลังการ์ดต้อนรับเป็นไฟล์ดิบ (body = ตัวไฟล์รูป)
     app.use(express.raw({ type: 'image/*', limit: WELCOME_MAX_UPLOAD_BYTES }));
@@ -83,7 +109,9 @@ async function bootstrap(): Promise<void> {
     app.enableShutdownHooks();
 
     const port = config.get('PORT', { infer: true });
-    await app.listen(port);
+    const host = config.get('HOST', { infer: true });
+    if (host) await app.listen(port, host);
+    else await app.listen(port);
     logger.log(`🚀 API running on http://localhost:${port}`);
 }
 

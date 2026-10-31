@@ -4,7 +4,7 @@ import { guildQuery } from '@/api/guilds';
 import { meQuery } from '@/api/auth';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { findNavItem } from '@/components/layout/nav-items';
-import { PageSearch } from '@/components/layout/page-search';
+import { CommandPalette } from '@/components/layout/command-palette';
 import { ProfileMenu } from '@/components/layout/profile-menu';
 import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -12,7 +12,7 @@ import { ChevronRight } from 'lucide-react';
 import { SplashScreen } from '@/components/splash-screen';
 
 // ==========================================
-// 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ค้นหาหน้า / เมนูโปรไฟล์)
+// 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ⌘K ค้นหาและสั่งงาน / เมนูโปรไฟล์)
 // ==========================================
 export const Route = createFileRoute('/_app')({
     beforeLoad: async ({ context, location }) => {
@@ -47,7 +47,7 @@ function AppLayout() {
                         <h1 className="truncate font-medium">{current?.label ?? 'Dashboard'}</h1>
                     </div>
                     <div className="ml-auto flex items-center gap-2">
-                        <PageSearch />
+                        <CommandPalette />
                         <ProfileMenu />
                     </div>
                 </header>

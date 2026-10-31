@@ -3,15 +3,15 @@ import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { authApi, meQuery, providersQuery } from '@/api/auth';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { DiscordIcon } from '@/components/discord-icon';
 import { apiUrl, errorMessage } from '@/lib/api';
@@ -24,7 +24,7 @@ export const Route = createFileRoute('/login')({
         // เริ่มโหลดช่องทาง login ไปพร้อมกัน ปุ่ม Discord จะได้ขึ้นเร็ว (ไม่สำเร็จ useQuery ในหน้าจะลองใหม่เอง)
         void context.queryClient.prefetchQuery(providersQuery);
         const me = await context.queryClient.ensureQueryData(meQuery);
-        if (me) throw redirect({ to: '/' });
+        if (me) throw redirect({ to: '/dashboard' });
     },
     component: LoginPage,
     // splash ต่อจากใน index.html ทันที (ไม่รอ pendingMs) จะได้ไม่มีจังหวะจอว่าง
@@ -56,7 +56,7 @@ function LoginPage() {
                 replaceSession(queryClient, me);
                 await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
                 toast.success('เข้าสู่ระบบสำเร็จ!');
-                await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/' });
+                await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/dashboard' });
             } catch (err) {
                 toast.error('เข้าสู่ระบบล้มเหลว', { description: errorMessage(err) });
             }
@@ -67,11 +67,13 @@ function LoginPage() {
         <div className="flex min-h-svh items-center justify-center p-4">
             <div className="w-full max-w-sm space-y-6">
                 <div className="flex justify-center">
-                    <img
-                        src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
-                        alt="Bot Logo"
-                        className="size-18 rounded-full border-2 border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.4)]"
-                    />
+                    <Link to="/" aria-label="กลับหน้าแรก">
+                        <img
+                            src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
+                            alt="Bot Logo"
+                            className="size-18 rounded-full border-2 border-white/10 shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                        />
+                    </Link>
                 </div>
                 <Card>
                     <CardHeader className="text-center">
@@ -139,7 +141,25 @@ function LoginPage() {
                             </>
                         )}
                     </CardContent>
+                    <CardFooter className="justify-center py-3">
+                        <Button asChild variant="ghost" className="h-10 w-full gap-2 text-muted-foreground">
+                            <Link to="/">
+                                <ArrowLeft className="size-4" aria-hidden="true" />
+                                กลับหน้าแรก
+                            </Link>
+                        </Button>
+                    </CardFooter>
                 </Card>
+                <p className="text-center text-xs text-muted-foreground">
+                    การเข้าสู่ระบบถือว่าคุณยอมรับ{' '}
+                    <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
+                        ข้อกำหนดการใช้งาน
+                    </Link>{' '}
+                    และ{' '}
+                    <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
+                        นโยบายความเป็นส่วนตัว
+                    </Link>
+                </p>
             </div>
         </div>
     );

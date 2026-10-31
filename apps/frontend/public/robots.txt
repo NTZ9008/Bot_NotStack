@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Allow: /privacy
+Allow: /terms
+Allow: /login
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /servers
+Disallow: /users
+Disallow: /audit-logs
+Disallow: /logs
+Disallow: /account
+
+Sitemap: https://bntdash.arlifzs.com/sitemap.xml

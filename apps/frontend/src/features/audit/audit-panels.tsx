@@ -234,9 +234,9 @@ const RANGES = [
 ];
 
 // เหตุการณ์ในเซิร์ฟเวอร์ Discord (Activity Log ของเซิร์ฟเวอร์นั้น)
-export function DiscordActivity({ guildId }: { guildId: string }) {
-    const [filters, setFilters] = useState<ActivityFilters>({ hours: 168, includeBots: false });
-    const [q, setQ] = useState('');
+export function DiscordActivity({ guildId, initialQuery }: { guildId: string; initialQuery?: string }) {
+    const [filters, setFilters] = useState<ActivityFilters>({ hours: 168, includeBots: false, ...(initialQuery ? { q: initialQuery } : {}) });
+    const [q, setQ] = useState(initialQuery ?? '');
     const [detail, setDetail] = useState<ActivityItem | null>(null);
     const meta = useQuery(activityMetaQuery(guildId));
     const logs = useInfiniteQuery(activityQuery(guildId, filters));

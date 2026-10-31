@@ -130,6 +130,7 @@ function fakePrisma(initial = []) {
 
 function botFixture({ failSend = false, failEdit = false, channelAvailable = true, rows } = {}) {
     const records = [];
+    const live = [];
     const sent = [];
     const edits = [];
     const message = {
@@ -156,6 +157,7 @@ function botFixture({ failSend = false, failEdit = false, channelAvailable = tru
         prisma,
         { get: () => '' },
         { record: async (...args) => records.push(args) },
+        { publish: (event) => live.push(event) },
     );
     bot.logger = { error: () => {} };
     const lastEmbeds = () => (edits.at(-1) ?? sent.at(-1)).embeds;
@@ -163,7 +165,7 @@ function botFixture({ failSend = false, failEdit = false, channelAvailable = tru
     const field = (name) => lastEmbed().fields.find((f) => f.name.includes(name))?.value;
     const fieldName = (name) => lastEmbed().fields.find((f) => f.name.includes(name))?.name;
     const comments = () => lastEmbeds()[1];
-    return { bot, records, sent, edits, prisma, lastEmbed, lastEmbeds, field, fieldName, comments };
+    return { bot, records, live, sent, edits, prisma, lastEmbed, lastEmbeds, field, fieldName, comments };
 }
 const repository = { full_name: 'owner/repo', html_url: 'https://github.com/owner/repo' };
 const payload = {
@@ -181,7 +183,7 @@ const payload = {
 const legacyRow = { guildId: 'guild', repoFullName: 'owner/repo', prNumber: 1, channelId: 'channel', messageId: 'message' };
 
 test('successful opened, reopened, ready, merged and closed deliveries record the correct kinds', async () => {
-    const { bot, records } = botFixture();
+    const { bot, records, live } = botFixture();
     for (const action of ['opened', 'reopened', 'ready_for_review']) await bot.handle('guild', 'pull_request', { ...payload, action });
     await bot.handle('guild', 'pull_request', { ...payload, action: 'closed' });
     await bot.handle('guild', 'pull_request', { ...payload, action: 'closed', pull_request: { ...payload.pull_request, merged: true } });
@@ -190,6 +192,12 @@ test('successful opened, reopened, ready, merged and closed deliveries record th
         ['sent', 'sent', 'sent', 'closed', 'merged'],
     );
     assert.ok(records.every(([guildId, messageId]) => guildId === 'guild' && messageId === 'message'));
+    // ลูกโลกกิจกรรมสด: ทุกครั้งที่ส่งข้อความใหม่ + ตอน merge (ปิดเฉยๆ ไม่นับ) — วิ่งมาจาก GitHub
+    assert.deepEqual(
+        live.map((event) => event.eventKey),
+        ['prOpened', 'prOpened', 'prOpened', 'prMerged'],
+    );
+    assert.ok(live.every((event) => event.kind === 'pr' && event.guildId === 'guild' && event.from.lon < -100));
 });
 
 // ห้องที่แต่ละข้อความได้ id ไม่ซ้ำกัน — ใช้ดูว่าข้อความไหนถูกส่ง / แก้ / ลบ
@@ -218,6 +226,7 @@ function multiMessageFixture({ failDelete = false } = {}) {
     };
     const prisma = fakePrisma();
     const records = [];
+    const live = [];
     const errors = [];
     const bot = new PrBotService(
         { getChannelIdForOrg: async () => 'channel', getMentionForRepo: async () => '' },
@@ -225,6 +234,7 @@ function multiMessageFixture({ failDelete = false } = {}) {
         prisma,
         { get: () => '' },
         { record: async (...args) => records.push(args) },
+        { publish: (event) => live.push(event) },
     );
     bot.logger = { error: (...args) => errors.push(args) };
     return { bot, messages, deleted, prisma, records, errors };

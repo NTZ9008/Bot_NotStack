@@ -16,7 +16,7 @@ export class AuditRecorderMiddleware implements NestMiddleware {
 
     use(req: AppRequest, res: Response, next: NextFunction): void {
         req.audit ??= {};
-        const path = new URL(req.originalUrl, 'http://local').pathname;
+        const path = new URL(req.originalUrl, 'http://local').pathname.toLowerCase();
         if (SAFE_METHODS.has(req.method) || !path.startsWith('/api/') || path.startsWith('/api/auth/') || path.startsWith('/api/admin/')) {
             return next();
         }

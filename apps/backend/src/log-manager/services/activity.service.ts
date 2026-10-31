@@ -11,8 +11,10 @@ import {
     type ActivityPage,
 } from '@notstack/shared';
 import type { Env } from '../../config/env.validation';
+import { ResultCache } from '../../common/utils/result-cache';
 import { DiscordService } from '../../discord/discord.service';
 import { Prisma } from '../../generated/prisma/client';
+import { LiveService } from '../../live/live.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { LogPayload, UserLike } from '../interfaces/log-payload.interface';
 import { activityEventLabel, humanizeMentions, type MentionResolvers } from '../utils/activity-humanize.util';
@@ -55,12 +57,13 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     private readonly logger = new Logger('Activity');
     private readonly buffer: Prisma.ActivityEventCreateManyInput[] = [];
     private flushTimer: NodeJS.Timeout | null = null;
-    private readonly metaCache = new Map<string, { at: number; total: number; since: string | null }>();
+    private readonly metaCache = new ResultCache<{ total: number; since: string | null }>(META_CACHE_MS, 1000);
     readonly retentionDays: number;
 
     constructor(
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
+        private readonly live: LiveService,
         config: ConfigService<Env, true>,
     ) {
         this.retentionDays = config.get('ACTIVITY_LOG_RETENTION_DAYS', { infer: true });
@@ -135,7 +138,18 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     // เปิด/ปิดการบันทึกของแต่ละเซิร์ฟเวอร์ตรวจที่ LogDispatcher (ตัวกรอง ACTIVITY_RECORDING)
     record(guildId: string, eventKey: string, payload: LogPayload): void {
         try {
-            this.buffer.push(this.buildRow(guildId, eventKey, payload));
+            const row = this.buildRow(guildId, eventKey, payload);
+            this.buffer.push(row);
+            // ลูกโลกกิจกรรมสด — ใช้ข้อมูลชุดเดียวกับที่บันทึก (ปิดบันทึกของเซิร์ฟเวอร์ไหน ลูกโลกก็ไม่เห็นเซิร์ฟเวอร์นั้น)
+            this.live.publish({
+                guildId,
+                eventKey,
+                userId: row.userId,
+                userName: row.userName,
+                channelName: row.channelName,
+                summary: row.summary,
+                isBot: row.isBot,
+            });
         } catch (err) {
             this.logger.error(`สร้างข้อมูล ${eventKey} ไม่สำเร็จ: ${(err as Error).message}`);
             return;
@@ -213,16 +227,14 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
 
     // จำนวนเหตุการณ์ทั้งหมดที่เก็บอยู่ + ช่วงเวลาที่มีข้อมูล (ใช้บอกผู้ใช้ว่าเริ่มเก็บตั้งแต่เมื่อไหร่)
     async meta(guildId: string, enabled: boolean): Promise<ActivityMeta> {
-        let stored = this.metaCache.get(guildId);
-        if (!stored || Date.now() - stored.at > META_CACHE_MS) {
+        const stored = await this.metaCache.get(guildId, async () => {
             const [total, oldest] = await Promise.all([
                 this.prisma.activityEvent.count({ where: { guildId } }),
                 // เรียงตาม created_at ให้ใช้ index (guild_id, created_at) ได้ทันที
                 this.prisma.activityEvent.findFirst({ where: { guildId }, orderBy: { createdAt: 'asc' }, select: { createdAt: true } }),
             ]);
-            stored = { at: Date.now(), total, since: oldest?.createdAt.toISOString() ?? null };
-            this.metaCache.set(guildId, stored);
-        }
+            return { total, since: oldest?.createdAt.toISOString() ?? null };
+        });
         return {
             total: stored.total,
             since: stored.since,

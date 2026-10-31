@@ -1,6 +1,6 @@
 {
   "name": "notstack-bot",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "private": true,
   "description": "Multi-server Discord bot (NotStackOverflow) — monorepo: NestJS backend + React dashboard",
   "author": "AT Tech",
@@ -20,7 +20,8 @@
     "lint": "eslint .",
     "format": "prettier --write \"apps/*/src/**/*.{ts,tsx}\" \"packages/*/src/**/*.ts\" \"tests/**/*.cjs\" \"scripts/**/*.mjs\"",
     "test": "turbo run build --filter=@notstack/backend... && pnpm test:unit",
-    "test:unit": "node --test tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs tests/log-manager.test.cjs tests/weather-command.test.cjs tests/frontend-lib.test.cjs tests/chat.test.cjs tests/rank-card.test.cjs tests/pr-bot.test.cjs tests/jira.test.cjs tests/fund.test.cjs tests/performance.test.cjs",
+    "test:unit": "node --test tests/monitoring.test.cjs tests/safety.test.cjs tests/session.test.cjs tests/xp-rules.test.cjs tests/log-manager.test.cjs tests/weather-command.test.cjs tests/frontend-lib.test.cjs tests/chat.test.cjs tests/rank-card.test.cjs tests/pr-bot.test.cjs tests/jira.test.cjs tests/fund.test.cjs tests/performance.test.cjs tests/security.test.cjs tests/growth.test.cjs tests/live.test.cjs",
+    "test:coverage": "node scripts/test-coverage.mjs",
     "test:integration": "turbo run build --filter=@notstack/backend... && node scripts/test-xp-postgres.mjs"
   },
   "devDependencies": {
@@ -31,16 +32,5 @@
     "prettier": "^3.9.9",
     "turbo": "^2.11.4",
     "typescript-eslint": "^8.71.1"
-  },
-  "pnpm": {
-    "overrides": {
-      "deepmerge-ts": "8.0.2",
-      "mysql2": "3.24.4"
-    },
-    "onlyBuiltDependencies": [
-      "@prisma/engines",
-      "prisma",
-      "esbuild"
-    ]
   }
 }

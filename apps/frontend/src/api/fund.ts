@@ -16,7 +16,7 @@ import { api, apiUrl, refreshSession } from '@/lib/api';
 import { guildKey } from './guilds';
 
 // ==========================================
-// 💰 เก็บเงินตามเป้า — /api/guilds/:guildId/funds/*
+// เก็บเงินตามเป้า — /api/guilds/:guildId/funds/*
 // ==========================================
 const f = (guildId: string, path = '') => `/guilds/${guildId}/funds${path}`;
 
@@ -45,6 +45,8 @@ export const fundApi = {
     batchPayment: (guildId: string, id: number, input: BatchFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments/batch`), { body: input }),
     removePayment: (guildId: string, id: number, paymentId: number) => api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),
+    reportImageUrl: (guildId: string, id: number, version = '') =>
+        apiUrl(`${f(guildId, `/${id}/report-image`)}${version ? `?v=${encodeURIComponent(version)}` : ''}`),
     exportCsv: async (guildId: string, id: number) => {
         const url = apiUrl(f(guildId, `/${id}/export`));
         let res = await fetch(url, { credentials: 'include' });

@@ -18,6 +18,7 @@ const {
     defaultAvatarUrl,
 } = require('../packages/shared/dist');
 const { buildFundReport, progressBar } = require('../apps/backend/dist/fund/utils/fund-report');
+const { renderFundReportCard } = require('../apps/backend/dist/fund/utils/fund-report-card.renderer');
 const { planPaidAdjustment } = require('../apps/backend/dist/fund/utils/paid-adjustment');
 
 test('roundMoney and formatBaht format currency correctly', () => {
@@ -155,6 +156,42 @@ test('buildFundReport produces valid embed payload with summary and members', ()
     // Paid member Alice shouldn't be mentioned
     assert.ok(!reportWithMention.content.includes('<@111111111111111111>'));
     assert.deepEqual(reportWithMention.allowedMentions.users, ['333333333333333333', '222222222222222222']);
+});
+
+test('renderFundReportCard produces valid PNG buffer for full and compact modes', async () => {
+    const topic = {
+        id: 1,
+        name: 'เงินทุนกองกลาง',
+        description: 'พร้อมเพย์ 081-234-5678',
+        amountPerMember: 15,
+        dailyRate: 15,
+        startDate: '2026-10-01T00:00:00.000Z',
+        reportChannelId: '123456789012345678',
+        dueDate: '2026-10-31T23:59:00.000Z',
+        closed: false,
+        memberCount: 2,
+        paidCount: 1,
+        target: 465,
+        collected: 240,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        members: [
+            { id: 1, userId: '111111111111111111', displayName: 'Alice', avatar: '', target: 225, customTarget: false, paid: 225, remaining: 0, status: 'paid' },
+            { id: 2, userId: '222222222222222222', displayName: 'Bob', avatar: '', target: 240, customTarget: false, paid: 15, remaining: 225, status: 'partial' },
+        ],
+        payments: [],
+    };
+
+    const pngFull = await renderFundReportCard(topic, false);
+    assert.ok(Buffer.isBuffer(pngFull));
+    assert.ok(pngFull.length > 1000);
+    // PNG magic bytes: 89 50 4E 47
+    assert.deepEqual(pngFull.subarray(0, 4), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+
+    const pngCompact = await renderFundReportCard(topic, true);
+    assert.ok(Buffer.isBuffer(pngCompact));
+    // Compact mode encodes WebP (RIFF header: 52 49 46 46)
+    assert.deepEqual(pngCompact.subarray(0, 4), Buffer.from('RIFF'));
 });
 
 test('calculateDays and calculateDailyAmount calculate correct days and baht', () => {

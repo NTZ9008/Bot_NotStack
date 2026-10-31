@@ -1,5 +1,5 @@
 import { formatBaht, roundMoney, type FundMemberStatus, type FundTopicDetail } from '@notstack/shared';
-import { BarChart3, PieChart as PieChartIcon, TrendingUp } from 'lucide-react';
+import { Banknote, BarChart3, CheckCircle2, PieChart as PieChartIcon, Receipt, TrendingUp } from 'lucide-react';
 import { useMemo } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/states';
@@ -10,7 +10,7 @@ import { StatTile } from './stat-tile';
 import { STATUS_LABEL } from './utils';
 
 // ==========================================
-// 📈 แดชบอร์ดกราฟ & สถิติวิเคราะห์ของหัวข้อ
+// แดชบอร์ดกราฟ & สถิติวิเคราะห์ของหัวข้อ
 // ==========================================
 const statusChartConfig = {
     paid: { label: 'จ่ายครบแล้ว', color: STATUS_LABEL.paid.color },
@@ -83,10 +83,37 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <StatTile label="📊 เฉลี่ยเก็บได้ต่อคน" value={formatBaht(avgPaidPerMember)} valueClassName="text-emerald-400" variant="kpi" />
-                <StatTile label="💸 เฉลี่ยต่อรายการโอน" value={formatBaht(avgPerPayment)} variant="kpi" />
-                <StatTile label="✅ อัตราคนจ่ายครบ" value={`${completionRate}% (${topic.paidCount}/${topic.memberCount} คน)`} variant="kpi" />
-                <StatTile label="🧾 จำนวนครั้งที่รับเงิน" value={`${topic.payments.length} รายการ`} variant="kpi" />
+                <StatTile
+                    label="เฉลี่ยเก็บได้ต่อคน"
+                    value={formatBaht(avgPaidPerMember)}
+                    subtext={`จากเป้าหมายเฉลี่ย ${formatBaht(topic.amountPerMember)}`}
+                    icon={<BarChart3 className="size-3.5 text-emerald-400" />}
+                    valueClassName="text-emerald-400"
+                    tone="emerald"
+                    variant="kpi"
+                />
+                <StatTile
+                    label="เฉลี่ยต่อรายการโอน"
+                    value={formatBaht(avgPerPayment)}
+                    subtext={`จากทั้งหมด ${topic.payments.length} รายการ`}
+                    icon={<Banknote className="size-3.5 text-primary" />}
+                    variant="kpi"
+                />
+                <StatTile
+                    label="อัตราคนจ่ายครบ"
+                    value={`${completionRate}%`}
+                    subtext={`จ่ายครบ ${topic.paidCount} จาก ${topic.memberCount} คน`}
+                    icon={<CheckCircle2 className="size-3.5 text-sky-400" />}
+                    tone="sky"
+                    variant="kpi"
+                />
+                <StatTile
+                    label="จำนวนครั้งที่รับเงิน"
+                    value={`${topic.payments.length} รายการ`}
+                    subtext={topic.payments.length > 0 ? 'บันทึกในระบบแล้ว' : 'ยังไม่มีรายการโอน'}
+                    icon={<Receipt className="size-3.5 text-amber-400" />}
+                    variant="kpi"
+                />
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">

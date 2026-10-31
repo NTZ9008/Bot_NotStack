@@ -1,0 +1,31 @@
+groups:
+    - name: notstack
+      rules:
+          - alert: NotStackDown
+            expr: up{job="notstack"} == 0
+            for: 2m
+            labels:
+                severity: critical
+            annotations:
+                summary: 'Cannot scrape NotStack on {{ $labels.instance }}'
+          - alert: NotStackDatabaseDown
+            expr: notstack_database_up{job="notstack"} == 0
+            for: 1m
+            labels:
+                severity: critical
+            annotations:
+                summary: 'NotStack database probe failed on {{ $labels.instance }}'
+          - alert: NotStackDiscordDisconnected
+            expr: (notstack_discord_ready{job="notstack"} == 0) and on(job, instance) (notstack_discord_enabled{job="notstack"} == 1)
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: 'Discord disconnected on {{ $labels.instance }}'
+          - alert: NotStackHighErrorRate
+            expr: (sum by(job, instance) (rate(notstack_http_requests_total{job="notstack",status_code=~"5.."}[5m])) / sum by(job, instance) (rate(notstack_http_requests_total{job="notstack"}[5m])) > 0.05) and on(job, instance) (sum by(job, instance) (increase(notstack_http_requests_total{job="notstack"}[5m])) >= 20)
+            for: 5m
+            labels:
+                severity: warning
+            annotations:
+                summary: 'NotStack HTTP 5xx exceeds 5% on {{ $labels.instance }}'

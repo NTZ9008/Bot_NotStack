@@ -56,6 +56,7 @@ test('concurrent PR webhooks lock the row so no check or review result is lost',
         prisma,
         { get: () => '' },
         service,
+        { publish: () => {} },
     );
     const repository = { full_name: 'owner/repo', html_url: 'https://github.com/owner/repo' };
     const pr = { number: 7, title: 'T', html_url: 'https://github.com/owner/repo/pull/7', state: 'open', head: { ref: 'b', sha: 'abc' } };

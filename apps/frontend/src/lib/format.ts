@@ -25,6 +25,15 @@ export function formatCountdown(ms: number): string {
     return `${pad(Math.floor(total / 3600))}:${pad(Math.floor((total % 3600) / 60))}:${pad(total % 60)}`;
 }
 
+// เวลาที่ผ่านมาแบบสั้น (รายการกิจกรรมสด)
+export function formatTimeAgo(value: string | number | Date, now = Date.now()): string {
+    const seconds = Math.max(0, Math.round((now - new Date(value).getTime()) / 1000));
+    if (seconds < 10) return 'เมื่อสักครู่';
+    if (seconds < 60) return `${seconds} วินาทีที่แล้ว`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} นาทีที่แล้ว`;
+    return `${Math.floor(seconds / 3600)} ชม.ที่แล้ว`;
+}
+
 export const nowTimeLabel = () => `วันนี้ ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
 
 // ค่าสำหรับ <input type="datetime-local"> (เวลาท้องถิ่น)

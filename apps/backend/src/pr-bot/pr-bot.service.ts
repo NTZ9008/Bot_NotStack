@@ -4,6 +4,8 @@ import { ConfigService } from '@nestjs/config';
 import type { Guild } from 'discord.js';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
+import { GITHUB_POINT } from '../live/live-geo.util';
+import { LiveService } from '../live/live.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
     CheckRunEvent,
@@ -37,6 +39,7 @@ export class PrBotService {
         private readonly prisma: PrismaService,
         config: ConfigService<Env, true>,
         private readonly stats: PrBotStatsService,
+        private readonly live: LiveService,
     ) {
         this.legacySecret = config.get('GITHUB_WEBHOOK_SECRET', { infer: true }) ?? '';
     }
@@ -48,7 +51,9 @@ export class PrBotService {
     // ต้องใช้ raw body (Buffer) ไม่ใช่ JSON ที่ parse แล้ว ไม่งั้น HMAC จะไม่ตรงกัน
     // legacy = webhook เดิมที่ไม่มี guildId ใน URL (ใช้ secret จาก .env)
     async verifySignature(guildId: string, rawBody: Buffer, signatureHeader: unknown, legacy: boolean): Promise<boolean> {
-        if (typeof signatureHeader !== 'string') return false;
+        if (typeof signatureHeader !== 'string' || !/^sha256=[a-f0-9]{64}$/.test(signatureHeader)) return false;
+        const guild = await this.prisma.guild.findUnique({ where: { id: guildId }, select: { leftAt: true } });
+        if (!guild || guild.leftAt) return false;
         const secret = legacy ? this.legacySecret : await this.settings.getWebhookSecret(guildId);
         if (!secret) return false;
         const expected = Buffer.from(`sha256=${crypto.createHmac('sha256', secret).update(rawBody).digest('hex')}`);
@@ -59,10 +64,11 @@ export class PrBotService {
 
     // event ที่ต้องเลือกใน GitHub webhook: Pull requests, Pull request reviews, Pull request review comments,
     // Issue comments, Check runs, Statuses — event อื่น (เช่น ping) ไม่ทำอะไร
-    async handle(guildId: string, event: string, payload: unknown): Promise<void> {
+    async handle(guildId: string, event: string, payload: unknown, deliveryKey?: string): Promise<void> {
+        if (deliveryKey && !this.discord.ready) throw new Error('Discord unavailable; retry webhook');
         switch (event) {
             case 'pull_request':
-                return this.handlePullRequest(guildId, payload as PullRequestEvent);
+                return this.handlePullRequest(guildId, payload as PullRequestEvent, deliveryKey);
             case 'pull_request_review':
                 return this.handleReview(guildId, payload as PullRequestReviewEvent);
             case 'issue_comment':
@@ -101,7 +107,7 @@ export class PrBotService {
         return `@${mention}`;
     }
 
-    private async handlePullRequest(guildId: string, { action, pull_request: pr, repository: repo }: PullRequestEvent): Promise<void> {
+    private async handlePullRequest(guildId: string, { action, pull_request: pr, repository: repo }: PullRequestEvent, deliveryKey?: string): Promise<void> {
         if (!pr || !repo) return;
         if (!this.discord.ready) return void this.logger.error('Discord client ยังไม่พร้อม');
         const key = { guildId_repoFullName_prNumber: { guildId, repoFullName: repo.full_name, prNumber: pr.number } };
@@ -113,16 +119,28 @@ export class PrBotService {
             if (!channel || !channel.isSendable() || !('messages' in channel)) return void this.logger.error(`ไม่พบ channel: ${channelId} (${guildId})`);
             const mention = await this.resolveMention(guildId, repo, 'guild' in channel ? channel.guild : null);
             // reopen / ready_for_review ส่งข้อความใหม่ (ping อีกรอบ) แต่ยังเก็บ review / comment ที่สะสมไว้
-            const previous = await this.prisma.prMessage.findUnique({ where: key, select: { channelId: true, messageId: true, activity: true } });
+            const previous = await this.prisma.prMessage.findUnique({
+                where: key,
+                select: { channelId: true, messageId: true, activity: true, lastDeliveryId: true },
+            });
+            if (deliveryKey && previous?.lastDeliveryId === deliveryKey) return;
             const activity = applyPullRequest(normalizeActivity(previous?.activity), pr, repo, action);
             // mention มาจากการตั้งค่าของแอดมิน (ผู้ใช้หรือยศ) — แท็กได้ทั้งสองแบบ
             const message = await channel.send({
                 ...prPayload(activity.pr!, activity),
+                ...(deliveryKey ? { nonce: crypto.createHash('sha256').update(deliveryKey).digest('hex').slice(0, 24), enforceNonce: true } : {}),
                 ...(mention ? { content: mention } : {}),
                 allowedMentions: { parse: ['users', 'roles'] },
             });
             await this.stats.record(guildId, message.id, 'sent');
-            const data = { channelId: channel.id, messageId: message.id, headSha: activity.pr!.headSha, activity: toJsonValue(activity) };
+            this.publishLive(guildId, 'prOpened', pr, repo);
+            const data = {
+                lastDeliveryId: deliveryKey ?? null,
+                channelId: channel.id,
+                messageId: message.id,
+                headSha: activity.pr!.headSha,
+                activity: toJsonValue(activity),
+            };
             await this.prisma.prMessage.upsert({
                 where: key,
                 create: { guildId, repoFullName: repo.full_name, prNumber: pr.number, ...data },
@@ -137,7 +155,25 @@ export class PrBotService {
         const updated = await this.mutate(guildId, repo.full_name, pr.number, (activity) => applyPullRequest(activity, pr, repo, action));
         if (!updated) return; // ไม่เคยเห็น "opened" มาก่อน (เช่น bot เพิ่งเปิดใช้งาน) → ข้าม
         const messageId = await this.refresh(guildId, repo.full_name, pr.number);
-        if (action === 'closed' && messageId) await this.stats.record(guildId, messageId, pr.merged ? 'merged' : 'closed');
+        if (action === 'closed' && messageId) {
+            await this.stats.record(guildId, messageId, pr.merged ? 'merged' : 'closed');
+            if (pr.merged) this.publishLive(guildId, 'prMerged', pr, repo);
+        }
+    }
+
+    // ลูกโลกกิจกรรมสด — เส้นโค้งวิ่งจาก GitHub มาหาเซิร์ฟเวอร์
+    private publishLive(guildId: string, eventKey: 'prOpened' | 'prMerged', pr: NonNullable<PullRequestEvent['pull_request']>, repo: GithubRepository): void {
+        const verb = eventKey === 'prMerged' ? 'merge' : 'เปิด';
+        this.live.publish({
+            guildId,
+            eventKey,
+            kind: 'pr',
+            userId: pr.user?.login ?? null,
+            userName: pr.user?.login ?? null,
+            channelName: repo.full_name,
+            summary: `${verb} PR #${pr.number} ${pr.title}`,
+            from: GITHUB_POINT,
+        });
     }
 
     // ข้อความใหม่ส่งสำเร็จแล้ว — ลบข้อความเก่าไม่ได้ (ถูกลบไปแล้ว / ห้องหาย) ก็ไม่ควรทำให้ webhook ล้มเหลว
@@ -224,7 +260,7 @@ export class PrBotService {
 
     private async render(guildId: string, repoFullName: string, prNumber: number): Promise<string | null> {
         const where = { guildId_repoFullName_prNumber: { guildId, repoFullName, prNumber } };
-        const row = await this.prisma.prMessage.findUnique({ where, select: { channelId: true, messageId: true, activity: true } });
+        const row = await this.prisma.prMessage.findUnique({ where, select: { channelId: true, messageId: true, activity: true, lastDeliveryId: true } });
         const activity = normalizeActivity(row?.activity);
         if (!row || !activity.pr) return null; // แถวเก่าที่ยังไม่มีข้อมูล PR — รอ event ที่มี pull_request
         // ใช้ห้องที่เคยส่งข้อความจริง ไม่ใช่ค่าห้องปัจจุบันซึ่งอาจถูกแอดมินเปลี่ยนหลังเปิด PR
@@ -239,4 +275,3 @@ export class PrBotService {
         return msg.id;
     }
 }
-

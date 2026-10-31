@@ -54,11 +54,13 @@ function embedLength(embed: EmbedBuilder): number {
 export class LogDispatcher {
     private readonly logger = new Logger('LogManager');
 
-    // audit entry ที่ไหลเข้ามาจาก gateway (guildAuditLogEntryCreate) — ให้ event ต่างๆ มาจับคู่หา "ใครเป็นคนทำ"
-    private readonly auditBuffer: { entry: GuildAuditLogsEntry; guildId: string | undefined; at: number }[] = [];
-    // ถ้าเคยได้รับ entry จาก gateway แล้ว แปลว่า intent + สิทธิ์ครบ → ไม่ต้อง fallback ไปยิง REST อีก
-    private auditGatewayWorking = false;
+    // audit entry ที่ไหลเข้ามาจาก gateway (guildAuditLogEntryCreate) แยกตามเซิร์ฟเวอร์ — ให้ event ต่างๆ มาจับคู่หา "ใครเป็นคนทำ"
+    // แยก buffer ต่อเซิร์ฟเวอร์ เพื่อไม่ให้เซิร์ฟเวอร์ที่มี event เยอะเบียด entry ของเซิร์ฟเวอร์อื่นออก
+    private readonly auditBuffers = new Map<string, { entry: GuildAuditLogsEntry; at: number }[]>();
+    // เซิร์ฟเวอร์ที่เคยได้รับ entry จาก gateway แล้ว แปลว่า intent + สิทธิ์ครบ → ไม่ต้อง fallback ไปยิง REST อีก
+    private readonly auditGatewayGuilds = new Set<string>();
 
+    // แยกคิวตาม guildId:channelId — embed ของคนละเซิร์ฟเวอร์ต้องไม่ถูกรวมเป็นข้อความเดียวกัน
     private readonly queues = new Map<string, { embeds: EmbedBuilder[]; timer: NodeJS.Timeout | null }>();
 
     constructor(
@@ -71,20 +73,27 @@ export class LogDispatcher {
     // 🕵️ AUDIT LOG
     // ==========================================
     pushAuditEntry(entry: GuildAuditLogsEntry, guild: Guild | null): void {
-        this.auditGatewayWorking = true;
-        this.auditBuffer.push({ entry, guildId: guild?.id, at: Date.now() });
+        if (!guild) return;
+        this.auditGatewayGuilds.add(guild.id);
+        let buffer = this.auditBuffers.get(guild.id);
+        if (!buffer) {
+            buffer = [];
+            this.auditBuffers.set(guild.id, buffer);
+        }
+        buffer.push({ entry, at: Date.now() });
 
         const cutoff = Date.now() - AUDIT_BUFFER_TTL;
-        while (this.auditBuffer.length && this.auditBuffer[0]!.at < cutoff) this.auditBuffer.shift();
-        while (this.auditBuffer.length > AUDIT_BUFFER_MAX) this.auditBuffer.shift();
+        while (buffer.length && buffer[0]!.at < cutoff) buffer.shift();
+        while (buffer.length > AUDIT_BUFFER_MAX) buffer.shift();
     }
 
     findInAuditBuffer(guildId: string | undefined, auditType: AuditLogEvent, targetId: string | null, maxAgeMs: number): ExecutorInfo | null {
+        const buffer = guildId ? this.auditBuffers.get(guildId) : undefined;
+        if (!buffer) return null;
         const cutoff = Date.now() - maxAgeMs;
-        for (let i = this.auditBuffer.length - 1; i >= 0; i--) {
-            const rec = this.auditBuffer[i]!;
+        for (let i = buffer.length - 1; i >= 0; i--) {
+            const rec = buffer[i]!;
             if (rec.at < cutoff) break;
-            if (guildId && rec.guildId && rec.guildId !== guildId) continue;
             if (rec.entry.action !== auditType) continue;
             if (targetId && rec.entry.targetId && rec.entry.targetId !== targetId) continue;
             return { executor: rec.entry.executor, reason: rec.entry.reason, entry: rec.entry };
@@ -95,7 +104,7 @@ export class LogDispatcher {
     /**
      * หาว่าใครเป็นคนลงมือทำ
      * 1) รอ entry จาก gateway (เร็ว ไม่กินโควตา API)
-     * 2) ถ้ายังไม่เคยได้ entry จาก gateway เลย ค่อย fallback ไปยิง REST ให้
+     * 2) ถ้าเซิร์ฟเวอร์นี้ยังไม่เคยได้ entry จาก gateway เลย ค่อย fallback ไปยิง REST ให้
      */
     async fetchExecutor(guild: Guild | null | undefined, auditType: AuditLogEvent, targetId: string | null = null, maxAgeMs = 10000): Promise<ExecutorInfo | null> {
         if (!guild) return null;
@@ -107,7 +116,7 @@ export class LogDispatcher {
             await sleep(150);
         }
 
-        if (this.auditGatewayWorking) return null; // gateway ทำงานอยู่แล้ว ถ้าไม่เจอแปลว่าไม่มี entry จริงๆ
+        if (this.auditGatewayGuilds.has(guild.id)) return null; // gateway ของเซิร์ฟเวอร์นี้ทำงานอยู่แล้ว ถ้าไม่เจอแปลว่าไม่มี entry จริงๆ
 
         try {
             const logs = await guild.fetchAuditLogs({ limit: 6, type: auditType });
@@ -179,10 +188,11 @@ export class LogDispatcher {
     }
 
     private enqueueEmbed(guildId: string, channelId: string, embed: EmbedBuilder): void {
-        let queue = this.queues.get(channelId);
+        const key = `${guildId}:${channelId}`;
+        let queue = this.queues.get(key);
         if (!queue) {
             queue = { embeds: [], timer: null };
-            this.queues.set(channelId, queue);
+            this.queues.set(key, queue);
         }
         queue.embeds.push(embed);
 
@@ -194,7 +204,8 @@ export class LogDispatcher {
     }
 
     private async flushQueue(guildId: string, channelId: string): Promise<void> {
-        const queue = this.queues.get(channelId);
+        const key = `${guildId}:${channelId}`;
+        const queue = this.queues.get(key);
         if (!queue || queue.embeds.length === 0) return;
 
         if (queue.timer) clearTimeout(queue.timer);
@@ -220,7 +231,7 @@ export class LogDispatcher {
         if (queue.embeds.length) {
             queue.timer = setTimeout(() => void this.flushQueue(guildId, channelId), FLUSH_DELAY);
         } else {
-            this.queues.delete(channelId);
+            this.queues.delete(key);
         }
     }
 

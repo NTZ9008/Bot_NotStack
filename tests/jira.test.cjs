@@ -471,9 +471,9 @@ test('only images from the Discord CDN within the size limit are downloaded', as
     const calls = [];
     const fetch = async (url) => {
         calls.push(String(url));
-        if (String(url).includes('broken')) return { ok: false, status: 404 };
-        if (String(url).includes('huge')) return { ok: true, arrayBuffer: async () => new ArrayBuffer(2048) };
-        return { ok: true, arrayBuffer: async () => new TextEncoder().encode('png-bytes').buffer };
+        if (String(url).includes('broken')) return new Response(null, { status: 404 });
+        if (String(url).includes('huge')) return new Response(new Uint8Array(2048));
+        return new Response('png-bytes');
     };
     const cdn = (name) => `https://cdn.discordapp.com/ephemeral-attachments/1/2/${name}?ex=1`;
     const result = await downloadDiscordImages(
@@ -528,7 +528,7 @@ test('images uploaded in the pop-up are attached to the card and shown in the ro
     const ticket = { id: 1, guildId: 'g1', userId: 'u1', userName: 'Boat', channelId: 'ch1', issueKey: null, closedAt: null, createdAt: new Date() };
     const settings = { ...baseSettings, options: normalizeJiraOptions({ ...baseSettings.options, maxImages: 2 }) };
     const { listener, created, attachments, sent, guild } = setupListener({ settings, tickets: [ticket] });
-    listener.fetchImpl = async () => ({ ok: true, arrayBuffer: async () => new TextEncoder().encode('img').buffer });
+    listener.fetchImpl = async () => new Response('img');
     const file = (name) => ({ name, url: `https://cdn.discordapp.com/ephemeral-attachments/1/2/${name}`, contentType: 'image/png', size: 3 });
     const uploaded = new Map([
         ['1', file('crash.png')],

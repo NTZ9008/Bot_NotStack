@@ -23,11 +23,16 @@ export interface AllowedOrigins {
     cors: (string | RegExp)[];
     // host ของ Origin / Referer (ตัวพิมพ์เล็ก เช่น dash.example.com) อยู่ในรายการหรือไม่
     allowsHost(host: string): boolean;
+    allowsOrigin(origin: string): boolean;
 }
 
 function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatcher: (host: string) => boolean } {
     // ตัดเครื่องหมายคำพูดรอบข้าง, ช่องว่าง และ trailing slash
-    const trimmed = pattern.trim().replace(/^["']|["']$/g, '').trim().replace(/\/+$/, '');
+    const trimmed = pattern
+        .trim()
+        .replace(/^["']|["']$/g, '')
+        .trim()
+        .replace(/\/+$/, '');
     if (!trimmed) {
         return { cors: '', hostMatcher: () => false };
     }
@@ -43,7 +48,7 @@ function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatch
 
     // กรณีมี Wildcard (*): แยกโปรโตคอลและโฮสต์
     const match = /^(?:(https?):\/\/)?(.*)$/i.exec(trimmed);
-    const protocol = match?.[1] ? match[1].toLowerCase() : '(?:https?|http)';
+    const protocol = match?.[1] ? match[1].toLowerCase() : 'https';
     const hostPattern = match?.[2] ?? trimmed;
 
     let hostRegexStr: string;
@@ -59,9 +64,7 @@ function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatch
             if (label === '*') return '[a-z0-9-]+';
             // แปลง *- ให้รองรับทั้งแบบมี branch prefix และ production worker (เช่น feat-bot-notstack และ bot-notstack)
             // แปลง * อื่นๆ เป็น [a-z0-9-]+
-            return escapeRegExp(label)
-                .replace(/\\\*-/g, '(?:[a-z0-9-]+-)?')
-                .replace(/\\\*/g, '[a-z0-9-]+');
+            return escapeRegExp(label).replace(/\\\*-/g, '(?:[a-z0-9-]+-)?').replace(/\\\*/g, '[a-z0-9-]+');
         });
         hostRegexStr = regexLabels.join('\\.');
     }
@@ -89,6 +92,7 @@ export function allowedOrigins(list: string[]): AllowedOrigins {
 
     return {
         cors,
+        allowsOrigin: (origin) => cors.some((pattern) => (typeof pattern === 'string' ? pattern === origin : pattern.test(origin))),
         allowsHost: (host) => {
             const normalized = host.toLowerCase();
             return hostMatchers.some((matcher) => matcher(normalized));

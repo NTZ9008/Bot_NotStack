@@ -4,6 +4,7 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { AlertTriangle, ChevronRight, Plus, RefreshCw, ShieldCheck, Users } from 'lucide-react';
 import { guildsQuery } from '@/api/guilds';
 import { DiscordIcon } from '@/components/discord-icon';
+import { LiveGlobe } from '@/features/live/live-globe';
 import { GuildIcon } from '@/components/guild-icon';
 import { PageHeader } from '@/components/page-header';
 import { GuildListSkeleton } from '@/components/skeleton/app-pages';
@@ -66,7 +67,7 @@ function ServersPage() {
             <PageHeader
                 help="servers"
                 title="เซิร์ฟเวอร์ของคุณ"
-                description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — เห็นเฉพาะเซิร์ฟเวอร์ที่บอทอยู่และคุณเป็นสมาชิก (ต้องมีสิทธิ์ Manage Server ถึงจะตั้งค่าได้)"
+                description="เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — แสดงเฉพาะเซิร์ฟเวอร์ของคุณที่บอทอยู่ (เป็นเจ้าของเซิร์ฟเวอร์หรือมีสิทธิ์ Manage Server)"
                 actions={
                     <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
                         <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> รีเฟรช
@@ -145,6 +146,9 @@ function ServersPage() {
             {data && data.guilds.length === 0 && !data.needsDiscordLink && (
                 <p className="text-center text-sm text-muted-foreground">ยังไม่มีเซิร์ฟเวอร์ที่คุณเข้าถึงได้ — เชิญบอทเข้าเซิร์ฟเวอร์ของคุณเพื่อเริ่มใช้งาน</p>
             )}
+
+            {/* กิจกรรมสดของทุกเซิร์ฟเวอร์ที่จัดการได้ (สิทธิ์ดูอย่างเดียวไม่เห็นกิจกรรม เหมือนหน้า Activity Log) */}
+            {data?.botOnline && data.guilds.some((guild) => guild.access === 'manage') && <LiveGlobe />}
         </>
     );
 }

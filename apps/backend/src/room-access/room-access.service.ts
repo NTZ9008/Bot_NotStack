@@ -2,6 +2,7 @@ import { HttpStatus, Injectable } from '@nestjs/common';
 import { ALL_ROOMS, type AccessRoom, type GrantAccessResponse, type RoomAccessItem } from '@notstack/shared';
 import { OverwriteType, PermissionsBitField, type GuildChannel } from 'discord.js';
 import { ApiException, badRequest } from '../common/exceptions/api.exception';
+import { mapConcurrent } from '../common/utils/map-concurrent';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type { GrantAccessDto } from './dto/grant-access.dto';
@@ -118,29 +119,38 @@ export class RoomAccessService {
             this.prisma.roomAccessChannel.findMany({ where: { guildId }, orderBy: { createdAt: 'asc' } }),
             this.prisma.roomAccess.findMany({ where: { guildId } }),
         ]);
-        const result: RoomAccessItem[] = [];
-
-        for (const room of rooms) {
+        const accessByRoomUser = new Map(activeAccess.map((entry) => [`${entry.roomId}:${entry.userId}`, entry]));
+        const channels = await mapConcurrent(rooms, 5, async (room) => {
             // force: true เพื่อให้ได้ permission ล่าสุด ไม่ใช่ค่าในแคช
             const channel = await this.discord.fetchGuildChannel(guildId, room.channelId, true);
-            if (!isGuildChannel(channel)) continue;
-
+            return isGuildChannel(channel) ? channel : null;
+        });
+        const entries = channels.flatMap((channel, index) => {
+            if (!channel) return [];
             const overwrites = channel.permissionOverwrites.cache.filter((o) => o.type === OverwriteType.Member);
-            for (const [userId, overwrite] of overwrites) {
-                if (!overwrite.allow.has('ViewChannel')) continue;
-                const user = await this.discord.fetchUser(userId);
-                const temp = activeAccess.find((r) => r.userId === userId && r.roomId === room.channelId);
-                result.push({
-                    userId,
-                    username: user ? user.globalName || user.username : userId,
-                    avatar: user ? user.displayAvatarURL({ size: 64 }) : null,
-                    roomId: room.channelId,
-                    roomName: channel.name,
-                    type: temp ? 'temporary' : 'permanent',
-                    expireAt: temp ? temp.expireAt.getTime() : null,
-                });
-            }
-        }
-        return result;
+            return [...overwrites]
+                .filter(([, overwrite]) => overwrite.allow.has('ViewChannel'))
+                .map(([userId]) => ({ userId, roomId: rooms[index]!.channelId, roomName: channel.name }));
+        });
+        const profiles = new Map(
+            await mapConcurrent(
+                [...new Set(entries.map((entry) => entry.userId))],
+                5,
+                async (userId) => [userId, await this.discord.fetchUser(userId)] as const,
+            ),
+        );
+        return entries.map(({ userId, roomId, roomName }) => {
+            const user = profiles.get(userId);
+            const temp = accessByRoomUser.get(`${roomId}:${userId}`);
+            return {
+                userId,
+                username: user ? user.globalName || user.username : userId,
+                avatar: user ? user.displayAvatarURL({ size: 64 }) : null,
+                roomId,
+                roomName,
+                type: temp ? 'temporary' : 'permanent',
+                expireAt: temp ? temp.expireAt.getTime() : null,
+            };
+        });
     }
 }

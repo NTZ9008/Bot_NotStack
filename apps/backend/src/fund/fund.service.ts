@@ -19,11 +19,12 @@ import {
     type UpdateFundPaymentData,
     type UpdateFundTopicData,
 } from '@notstack/shared';
-import type { GuildMember } from 'discord.js';
+import { AttachmentBuilder, type GuildMember } from 'discord.js';
 import { badRequest, notFound } from '../common/exceptions/api.exception';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { buildFundReport } from './utils/fund-report';
+import { renderFundReportCard } from './utils/fund-report-card.renderer';
 import { planPaidAdjustment } from './utils/paid-adjustment';
 
 type Decimalish = { toNumber(): number } | null | undefined;
@@ -95,7 +96,10 @@ export class FundService {
         });
         if (!topic) throw notFound('ไม่พบหัวข้อเก็บเงินนี้');
         const computed = this.computeMembers(topic, topic.members, topic.payments);
-        const avatars = await this.avatars(guildId, topic.members.map((m) => m.userId));
+        const avatars = await this.avatars(
+            guildId,
+            topic.members.map((m) => m.userId),
+        );
         const members: FundMemberView[] = computed.map((m) => ({ ...m, avatar: avatars.get(m.userId) ?? defaultAvatarUrl(m.userId) }));
         const names = new Map(topic.members.map((m) => [m.id, m.displayName]));
         const payments: FundPaymentView[] = topic.payments.map((p) => ({
@@ -303,6 +307,11 @@ export class FundService {
     }
 
     // ---------- รายงาน ----------
+    async renderReportImage(guildId: string, topicId: number, compact = false): Promise<Buffer> {
+        const detail = await this.detail(guildId, topicId);
+        return renderFundReportCard(detail, compact);
+    }
+
     async sendReport(guildId: string, topicId: number, body: SendFundReportInput): Promise<{ channelName: string }> {
         const detail = await this.detail(guildId, topicId);
         const channelId = body.channelId || detail.reportChannelId;
@@ -311,7 +320,12 @@ export class FundService {
 
         const payload = buildFundReport(detail, { mentionUnpaid: body.mentionUnpaid ?? false });
         try {
-            await channel.send(payload);
+            const image = await renderFundReportCard(detail);
+            await channel.send({
+                ...(payload.content ? { content: payload.content } : {}),
+                files: [new AttachmentBuilder(image, { name: 'fund-report.png' })],
+                allowedMentions: payload.allowedMentions,
+            });
         } catch (err) {
             this.logger.error(`Error sending fund report: ${(err as Error).message}`);
             throw badRequest(`ส่งรายงานไม่สำเร็จ: ${(err as Error).message}`);

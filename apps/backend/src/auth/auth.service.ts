@@ -9,7 +9,9 @@ import {
     type SuccessResponse,
 } from '@notstack/shared';
 import type { Response } from 'express';
+import { Optional } from '@nestjs/common';
 import { AuditService } from '../audit/audit.service';
+import { GuildAccessService } from '../guilds/guild-access.service';
 import { ApiException, badRequest } from '../common/exceptions/api.exception';
 import type { AppRequest } from '../common/interfaces/app-request.interface';
 import type { User } from '../generated/prisma/client';
@@ -41,12 +43,13 @@ export class AuthService {
         private readonly users: UsersService,
         private readonly oauth: DiscordOAuthService,
         private readonly audit: AuditService,
+        @Optional() private readonly guildAccess?: GuildAccessService,
     ) {}
 
     // ออก access + refresh token ชุดใหม่ (family ใหม่ = อุปกรณ์/การ login ใหม่)
     async startSession(req: AppRequest, res: Response, user: User): Promise<void> {
-        const refreshRaw = await this.tokens.issueRefreshToken(user.id, requestContext(req));
-        this.tokens.setAuthCookies(res, this.tokens.signAccessToken(user), refreshRaw);
+        const { raw, sessionId } = await this.tokens.issueRefreshToken(user, requestContext(req));
+        this.tokens.setAuthCookies(res, this.tokens.signAccessToken(user, sessionId), raw);
     }
 
     // --- Username / Password (เรียกจาก LocalStrategy) ---
@@ -67,10 +70,6 @@ export class AuthService {
         if (result.justLocked && result.user) {
             await this.audit.audit(req, { action: 'auth.account_locked', actor: result.user, success: false, metadata: { until: result.lockedUntil } });
         }
-        if (result.reason === 'locked') {
-            throw new ApiException(HttpStatus.LOCKED, 'บัญชีถูกล็อกชั่วคราวเพราะใส่รหัสผ่านผิดหลายครั้ง', undefined, { lockedUntil: result.lockedUntil });
-        }
-        if (result.reason === 'disabled') throw new ApiException(HttpStatus.FORBIDDEN, 'บัญชีนี้ถูกปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ');
         throw new ApiException(HttpStatus.UNAUTHORIZED, 'รหัสผ่านหรือชื่อผู้ใช้ไม่ถูกต้อง');
     }
 
@@ -88,7 +87,7 @@ export class AuthService {
         const result = await this.tokens.rotateRefreshToken(raw, requestContext(req));
         switch (result.status) {
             case 'ok':
-                this.tokens.setAuthCookies(res, this.tokens.signAccessToken(result.user), result.raw);
+                this.tokens.setAuthCookies(res, this.tokens.signAccessToken(result.user, result.sessionId), result.raw);
                 return { success: true, user: publicUser(result.user) };
             case 'rotated':
                 // อีกแท็บเพิ่ง refresh ไป — ไม่ล้าง cookie เพราะเบราว์เซอร์อาจได้ cookie ใบใหม่มาแล้ว
@@ -108,6 +107,7 @@ export class AuthService {
 
     async logout(req: AppRequest, res: Response): Promise<SuccessResponse> {
         const raw = (req.cookies as Record<string, string> | undefined)?.[this.cfg.cookie.refresh];
+        if (req.authSessionId) await this.tokens.revokeFamily(req.authSessionId);
         if (raw) await this.tokens.revokeRefreshToken(raw);
         if (req.user) await this.audit.audit(req, { action: 'auth.logout' });
         this.tokens.clearAuthCookies(res);
@@ -150,8 +150,8 @@ export class AuthService {
     // login → สมัครให้อัตโนมัติถ้ายังไม่มีบัญชี (role USER — จัดการได้เฉพาะเซิร์ฟเวอร์ที่ตัวเองมีสิทธิ์ Manage Server)
     // link  → ผูก Discord เข้ากับบัญชีที่ login อยู่ (เพื่อให้ login ได้ทั้งสองทาง และให้ระบบรู้ว่าเป็นใครใน Discord)
     // ==========================================
-    startDiscordFlow(res: Response, mode: OAuthMode, userId: number | null = null): void {
-        const { state, cookie } = this.oauth.createState(mode, userId);
+    startDiscordFlow(res: Response, mode: OAuthMode, userId: number | null = null, sessionId: string | null = null, tokenVersion: number | null = null): void {
+        const { state, cookie } = this.oauth.createState(mode, userId, sessionId, tokenVersion);
         res.cookie(this.cfg.cookie.oauthState, cookie, {
             ...this.tokens.cookieBase,
             sameSite: 'lax',
@@ -164,6 +164,15 @@ export class AuthService {
     // คืน path ของหน้า Dashboard ที่จะพาผู้ใช้ไปต่อ
     async completeDiscordFlow(req: AppRequest, res: Response, { flow, profile }: DiscordAuthResult): Promise<string> {
         if (flow.mode === 'link') {
+            if (
+                !req.user ||
+                req.user.id !== flow.userId ||
+                !flow.sessionId ||
+                req.authSessionId !== flow.sessionId ||
+                req.user.tokenVersion !== flow.tokenVersion ||
+                !(await this.tokens.validateSession(flow.sessionId, req.user.id, req.user.tokenVersion))
+            )
+                return '/account?discord_error=discord_state';
             const user = flow.userId ? await this.users.findById(flow.userId) : null;
             if (!user || !user.isActive) return '/account?discord_error=account_disabled';
             const owner = await this.users.findByDiscordId(profile.id);
@@ -178,7 +187,8 @@ export class AuthService {
                 });
                 return '/account?discord_error=discord_taken';
             }
-            await this.users.linkDiscord(user.id, profile);
+            const promoteToOwner = user.role === 'USER' && Boolean(await this.guildAccess?.hasManagedGuild(profile.id));
+            await this.users.linkDiscord(user.id, profile, promoteToOwner);
             await this.audit.audit(req, {
                 action: 'auth.discord_link',
                 actor: user,
@@ -193,7 +203,8 @@ export class AuthService {
         if (user) {
             user = await this.users.syncDiscordProfile(user.id, profile);
         } else {
-            user = await this.users.createDiscordUser(profile);
+            const isOwner = Boolean(await this.guildAccess?.hasManagedGuild(profile.id));
+            user = await this.users.createDiscordUser(profile, isOwner);
             await this.audit.audit(req, {
                 action: 'auth.discord_register',
                 actor: user,
@@ -211,7 +222,7 @@ export class AuthService {
         user = await this.users.recordLogin(user.id);
         await this.startSession(req, res, user);
         await this.audit.audit(req, { action: 'auth.login', actor: user, metadata: { method: 'discord' } });
-        return '/';
+        return '/dashboard';
     }
 
     // ยกเลิกการผูก Discord — ต้องมีรหัสผ่านอยู่ ไม่อย่างนั้นจะไม่เหลือทาง login

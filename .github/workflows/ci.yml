@@ -8,6 +8,10 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # ให้ Codecov ยืนยันตัวตนด้วย OIDC แทน CODECOV_TOKEN
+      id-token: write
     services:
       postgres:
         image: postgres:18
@@ -24,18 +28,27 @@ jobs:
       DATABASE_URL: postgresql://xp_test:xp_test@127.0.0.1:5432/notstack_xp_test
       XP_TEST_DATABASE_URL: postgresql://xp_test:xp_test@127.0.0.1:5432/notstack_xp_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      - run: pnpm audit --audit-level=moderate
       - run: pnpm lint
       # build ทั้ง backend และหน้าเว็บ (เทสต์ใช้ dist ของ backend / หน้าเว็บต้อง build ผ่านก่อน deploy)
       - run: pnpm build
-      - run: pnpm test:unit
+      # unit test ชุดเดียวกับ pnpm test:unit แต่เก็บ coverage ไว้ที่ coverage/lcov.info
+      - run: pnpm test:coverage
+      - uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ./coverage/lcov.info
+          # PR จาก fork ขอ OIDC token ไม่ได้ ให้ Codecov ใช้โหมด tokenless ของ fork แทน
+          use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
+          # อัปโหลดไม่ผ่าน (เช่น Codecov ยังไม่ได้เปิดใช้กับ repo) ไม่ทำให้ CI ล้ม
+          fail_ci_if_error: false
       - run: pnpm db:migrate
       - run: pnpm --filter @notstack/backend exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
-      - run: node --test tests/xp-database.test.cjs
+      - run: node --test tests/xp-database.test.cjs tests/security-database.test.cjs

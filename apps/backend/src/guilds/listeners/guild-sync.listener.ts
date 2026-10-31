@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Events, type Client, type Guild, type GuildMember, type PartialGuildMember } from 'discord.js';
+import { Events, type Client, type Guild, type GuildMember, type Role, type PartialGuildMember } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import { GuildAccessService } from '../guild-access.service';
 import { GuildsService } from '../guilds.service';
@@ -26,6 +26,7 @@ export class GuildSyncListener {
     async onJoin(guild: Guild): Promise<void> {
         this.logger.log(`➕ ถูกเชิญเข้าเซิร์ฟเวอร์ ${guild.name} (${guild.id})`);
         await this.guilds.upsert(guild);
+        await this.guilds.promoteGuildOwnerIfEligible(guild.ownerId);
     }
 
     // ถูกเตะ / เซิร์ฟเวอร์ถูกลบ (available = false คือ Discord ล่มชั่วคราว ไม่ใช่ถูกเตะ)
@@ -39,12 +40,23 @@ export class GuildSyncListener {
     @OnDiscord(Events.GuildUpdate)
     async onUpdate(_old: Guild, guild: Guild): Promise<void> {
         await this.guilds.upsert(guild);
+        await this.guilds.promoteGuildOwnerIfEligible(guild.ownerId);
     }
 
     // ยศเปลี่ยน / ออกจากเซิร์ฟเวอร์ → สิทธิ์ในหน้า Dashboard เปลี่ยนตามทันที
     @OnDiscord(Events.GuildMemberUpdate)
     onMemberUpdate(_old: GuildMember | PartialGuildMember, member: GuildMember): void {
         this.access.forget(member.id, member.guild.id);
+    }
+
+    @OnDiscord(Events.GuildRoleUpdate)
+    onRoleUpdate(_old: Role, role: Role): void {
+        this.access.forgetGuild(role.guild.id);
+    }
+
+    @OnDiscord(Events.GuildRoleDelete)
+    onRoleDelete(role: Role): void {
+        this.access.forgetGuild(role.guild.id);
     }
 
     @OnDiscord(Events.GuildMemberRemove)

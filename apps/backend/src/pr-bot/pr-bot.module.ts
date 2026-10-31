@@ -1,3 +1,4 @@
+import { WebhookQueueService } from './webhook-queue.service';
 import { Module } from '@nestjs/common';
 import { GithubWebhookController } from './controllers/github-webhook.controller';
 import { PrBotSettingsController } from './controllers/pr-bot-settings.controller';
@@ -7,6 +8,6 @@ import { PrBotService } from './pr-bot.service';
 
 @Module({
     controllers: [GithubWebhookController, PrBotSettingsController],
-    providers: [PrBotSettingsService, PrBotService, PrBotStatsService],
+    providers: [WebhookQueueService, PrBotSettingsService, PrBotService, PrBotStatsService],
 })
 export class PrBotModule {}
