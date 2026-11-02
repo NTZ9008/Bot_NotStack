@@ -109,7 +109,7 @@ export function BatchPaymentDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>บันทึกรับเงินตามห้วงเวลา (หลายคน)</DialogTitle>
                     <DialogDescription>{topic.name} — บันทึกเก็บยอดรายวันหรือรายงวดให้สมาชิกหลายคนพร้อมกันในครั้งเดียว</DialogDescription>
@@ -167,11 +167,11 @@ export function BatchPaymentDialog({
                     </Field>
 
                     <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
                             <Label className="font-medium">
                                 เลือกคนที่จ่าย ({selectedIds.length}/{topic.members.length} คน)
                             </Label>
-                            <div className="flex gap-1">
+                            <div className="flex flex-wrap gap-1">
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds(allIdsOf(topic))}>
                                     ทั้งหมด ({topic.members.length})
                                 </Button>
@@ -215,16 +215,21 @@ export function BatchPaymentDialog({
                         </div>
                     </div>
                 </form>
-                <DialogFooter className="flex-row items-center justify-between sm:justify-between">
+                <DialogFooter className="flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-xs text-muted-foreground">
                         <span>ยอดรับรวม ({selectedIds.length} คน): </span>
                         <span className="font-semibold text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
                     </div>
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => onOpenChange(false)}>
+                    <div className="flex w-full justify-end gap-2 sm:w-auto">
+                        <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => onOpenChange(false)}>
                             ยกเลิก
                         </Button>
-                        <Button type="submit" form="fund-batch-form" disabled={save.isPending || selectedIds.length === 0 || !(numAmount > 0) || invalidPeriod}>
+                        <Button
+                            type="submit"
+                            form="fund-batch-form"
+                            className="flex-1 sm:flex-initial"
+                            disabled={save.isPending || selectedIds.length === 0 || !(numAmount > 0) || invalidPeriod}
+                        >
                             {save.isPending && <Loader2 className="animate-spin" />}
                             บันทึก {selectedIds.length} คน
                         </Button>

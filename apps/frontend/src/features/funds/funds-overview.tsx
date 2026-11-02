@@ -98,13 +98,13 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                             </Badge>
                         )}
                     </div>
-                    <Button variant="outline" size="xs" onClick={() => setShowChart((v) => !v)}>
+                    <Button variant="outline" size="xs" className="w-full sm:w-auto" onClick={() => setShowChart((v) => !v)}>
                         <BarChart3 className="size-3.5" />
                         {showChart ? 'ซ่อนกราฟเปรียบเทียบ' : 'เปรียบเทียบทุกหัวข้อ'}
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
                     <StatTile
                         label="เป้ารวมทุกหัวข้อ"
                         value={formatBaht(totals.target)}
@@ -146,12 +146,12 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                 </div>
 
                 {showChart && (
-                    <div className="rounded-lg border bg-background/50 p-3 pt-4">
-                        <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-60 w-full">
-                            <BarChart data={chartData} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
+                    <div className="rounded-lg border bg-background/50 p-2.5 pt-3 sm:p-3 sm:pt-4">
+                        <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-52 w-full sm:h-60">
+                            <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
                                 <CartesianGrid vertical={false} />
-                                <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} className="text-xs" />
-                                <YAxis tickLine={false} axisLine={false} width={48} />
+                                <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={16} className="text-[11px] sm:text-xs" />
+                                <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <ChartLegend content={<ChartLegendContent />} />
                                 <Bar dataKey="collected" stackId="a" fill="var(--color-collected)" radius={[0, 0, 4, 4]} />
@@ -240,17 +240,17 @@ export function FundsEmptyOnboarding({
 }) {
     return (
         <Card className="border-dashed bg-gradient-to-b from-card to-muted/20">
-            <CardContent className="flex flex-col items-center py-10 text-center">
+            <CardContent className="flex flex-col items-center px-4 py-8 text-center sm:px-6 sm:py-10">
                 <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                     <Wallet className="size-6" />
                 </div>
-                <h2 className="text-lg font-semibold">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
-                <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                <h2 className="text-base font-semibold sm:text-lg">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
+                <p className="mt-1 max-w-lg text-xs text-muted-foreground sm:text-sm">
                     จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งการ์ดรูปภาพรายงานเข้าห้อง Discord อัตโนมัติ
                 </p>
 
-                <div className="mt-5">
-                    <Button size="lg" onClick={onCreateBlank}>
+                <div className="mt-5 w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto" onClick={onCreateBlank}>
                         <Plus /> สร้างหัวข้อเก็บเงินใหม่
                     </Button>
                 </div>

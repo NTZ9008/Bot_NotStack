@@ -76,7 +76,7 @@ function InlineAmountEditor({
     }
     return (
         <form
-            className={cn('flex items-center gap-1', align === 'right' && 'justify-end')}
+            className={cn('flex flex-wrap items-center gap-1', align === 'right' && 'justify-end')}
             onSubmit={(event) => {
                 event.preventDefault();
                 onSave(Number(input || 0));
@@ -94,7 +94,7 @@ function InlineAmountEditor({
                         onEditingChange(false);
                     }
                 }}
-                className={cn('h-7 w-24', align === 'right' && 'text-right')}
+                className={cn('h-7 w-20 sm:w-24', align === 'right' && 'text-right')}
                 autoFocus
             />
             <Button type="submit" size="xs" disabled={pending}>
@@ -161,30 +161,42 @@ export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: 
 // ==========================================
 // 💰 ยอดจ่ายแล้วรายคน + แถบความคืบหน้าย่อย (กดที่ยอดเพื่อแก้ไขยอดที่จ่ายแล้วได้โดยตรง)
 // ==========================================
-export function PaidCell({ topic, member }: { topic: FundTopicDetail; member: FundMemberView }) {
+export function PaidCell({
+    topic,
+    member,
+    align = 'right',
+    showProgress = true,
+}: {
+    topic: FundTopicDetail;
+    member: FundMemberView;
+    align?: 'left' | 'right';
+    showProgress?: boolean;
+}) {
     const [editing, setEditing] = useState(false);
     const update = useMemberUpdate(topic, member, 'แก้ไขยอดที่จ่ายแล้วเรียบร้อย', () => setEditing(false));
     const pct = percent(member.paid, member.target);
 
     if (topic.closed) {
         return (
-            <div className="inline-flex flex-col items-end gap-1">
+            <div className={cn('inline-flex flex-col gap-1', align === 'right' ? 'items-end' : 'items-start')}>
                 <span className="tabular-nums font-medium text-emerald-400">{formatBaht(member.paid)}</span>
-                <div className="flex items-center gap-1.5">
-                    <ProgressBar value={pct} className="h-1 w-16" />
-                    <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
-                </div>
+                {showProgress && (
+                    <div className="flex items-center gap-1.5">
+                        <ProgressBar value={pct} className="h-1 w-16" />
+                        <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
+                    </div>
+                )}
             </div>
         );
     }
     return (
-        <div className="inline-flex flex-col items-end gap-1">
+        <div className={cn('inline-flex flex-col gap-1', align === 'right' ? 'items-end' : 'items-start')}>
             <InlineAmountEditor
                 value={member.paid}
                 title="กดเพื่อแก้ไขยอดที่จ่ายแล้วของคนนี้โดยตรง"
                 editing={editing}
                 onEditingChange={setEditing}
-                align="right"
+                align={align}
                 buttonClassName="font-medium text-emerald-400"
                 pending={update.isPending}
                 onSave={(paidAmount) => update.mutate({ paidAmount })}
@@ -192,8 +204,8 @@ export function PaidCell({ topic, member }: { topic: FundTopicDetail; member: Fu
                 <span className="border-b border-dashed border-emerald-400/40">{formatBaht(member.paid)}</span>
                 <Pencil className="size-3 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
             </InlineAmountEditor>
-            {!editing && (
-                <div className="flex items-center gap-1.5 pr-1.5">
+            {!editing && showProgress && (
+                <div className={cn('flex items-center gap-1.5', align === 'right' ? 'pr-1.5' : 'pl-1.5')}>
                     <ProgressBar value={pct} className="h-1 w-16" />
                     <span className="text-[10px] text-muted-foreground tabular-nums">{pct}%</span>
                 </div>
