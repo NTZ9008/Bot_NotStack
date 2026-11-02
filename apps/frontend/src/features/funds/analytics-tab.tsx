@@ -82,7 +82,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
 
     return (
         <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
                 <StatTile
                     label="เฉลี่ยเก็บได้ต่อคน"
                     value={formatBaht(avgPaidPerMember)}
@@ -129,15 +129,15 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         {statusData.length === 0 ? (
                             <EmptyState>ยังไม่มีสมาชิกในหัวข้อนี้</EmptyState>
                         ) : (
-                            <ChartContainer config={statusChartConfig} className="aspect-auto h-64 w-full">
+                            <ChartContainer config={statusChartConfig} className="aspect-auto h-56 w-full sm:h-64">
                                 <PieChart>
                                     <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
-                                    <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={55} outerRadius={88} paddingAngle={3} strokeWidth={2}>
+                                    <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={48} outerRadius={80} paddingAngle={3} strokeWidth={2}>
                                         {statusData.map((entry) => (
                                             <Cell key={entry.status} fill={entry.fill} />
                                         ))}
                                     </Pie>
-                                    <ChartLegend content={<ChartLegendContent nameKey="status" />} className="flex-wrap gap-3 text-xs" />
+                                    <ChartLegend content={<ChartLegendContent nameKey="status" />} className="flex-wrap gap-2 text-xs sm:gap-3" />
                                 </PieChart>
                             </ChartContainer>
                         )}
@@ -156,11 +156,11 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         {timelineData.length === 0 ? (
                             <EmptyState>ยังไม่มีประวัติการรับเงินเพื่อแสดงกราฟแนวโน้ม</EmptyState>
                         ) : (
-                            <ChartContainer config={timelineChartConfig} className="aspect-auto h-64 w-full">
-                                <AreaChart data={timelineData} margin={{ left: 4, right: 12, top: 8, bottom: 0 }}>
+                            <ChartContainer config={timelineChartConfig} className="aspect-auto h-56 w-full sm:h-64">
+                                <AreaChart data={timelineData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={20} />
-                                    <YAxis tickLine={false} axisLine={false} width={48} />
+                                    <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={20} className="text-[11px]" />
+                                    <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
                                     <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
                                     <ChartLegend content={<ChartLegendContent />} />
                                     <Area
@@ -195,11 +195,11 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={memberBarConfig} className="aspect-auto h-72 w-full">
-                                <BarChart data={memberChartData} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
+                            <ChartContainer config={memberBarConfig} className="aspect-auto h-60 w-full sm:h-72">
+                                <BarChart data={memberChartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} className="text-[11px]" />
-                                    <YAxis tickLine={false} axisLine={false} width={48} />
+                                    <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={14} className="text-[11px]" />
+                                    <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <ChartLegend content={<ChartLegendContent />} />
                                     <Bar dataKey="paid" stackId="a" fill="var(--color-paid)" radius={[0, 0, 4, 4]} />

@@ -49,12 +49,12 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
         <Card className="border-border/80">
             <CardContent className="space-y-3 py-3.5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
                         <div className="flex items-center gap-2 text-sm font-semibold">
-                            <MessageSquareShare className="size-4 text-primary" />
+                            <MessageSquareShare className="size-4 shrink-0 text-primary" />
                             <span>ส่งรูปการ์ดรายงานเข้า Discord</span>
                         </div>
-                        <div className="w-56 sm:w-64">
+                        <div className="w-full sm:w-64">
                             <ChannelSelect
                                 channels={textChannels}
                                 value={topic.reportChannelId}
@@ -70,7 +70,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                         )}
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2.5">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                         <Label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/20 px-2.5 py-1.5 text-xs font-normal hover:bg-muted/40">
                             <Checkbox checked={mentionUnpaid} onCheckedChange={(checked) => setMentionUnpaid(checked === true)} />
                             <span>แท็กคนค้างชำระ</span>
@@ -79,23 +79,25 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             </Badge>
                         </Label>
 
-                        <Button type="button" variant="ghost" size="sm" onClick={() => setShowPreview((v) => !v)}>
-                            {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                            {showPreview ? 'ซ่อนตัวอย่างรูป' : 'ดูตัวอย่างรูปภาพ'}
-                        </Button>
+                        <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
+                            <Button type="button" variant="ghost" size="sm" onClick={() => setShowPreview((v) => !v)}>
+                                {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                                {showPreview ? 'ซ่อนตัวอย่างรูป' : 'ดูตัวอย่างรูปภาพ'}
+                            </Button>
 
-                        <Button size="sm" onClick={() => send.mutate()} disabled={send.isPending || !topic.reportChannelId}>
-                            {send.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-                            {send.isPending ? 'กำลังส่ง...' : 'ส่งรายงาน'}
-                        </Button>
+                            <Button size="sm" onClick={() => send.mutate()} disabled={send.isPending || !topic.reportChannelId}>
+                                {send.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+                                {send.isPending ? 'กำลังส่ง...' : 'ส่งรายงาน'}
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
                 {showPreview && (
-                    <div className="rounded-xl border bg-[#313338] p-3.5 text-xs text-[#dbdee1] shadow-inner">
-                        <div className="mb-2 flex items-center justify-between text-[11px] text-[#949ba4]">
+                    <div className="rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
+                        <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
                             <span className="flex items-center gap-1.5">
-                                <ImageIcon className="size-3.5" /> ตัวอย่างรูปการ์ดรายงานที่จะถูกส่งเข้าห้อง Discord (PNG)
+                                <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างรูปการ์ดรายงานที่จะถูกส่งเข้าห้อง Discord (PNG)
                             </span>
                             {topic.reportChannelId && <span>ห้อง: {channelLabel(textChannels, topic.reportChannelId)}</span>}
                         </div>

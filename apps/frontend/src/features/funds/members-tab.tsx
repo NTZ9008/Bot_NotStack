@@ -17,7 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useGuildId } from '@/hooks/use-guild';
 import { cn } from '@/lib/utils';
 import { PaidCell, TargetCell } from './member-cells';
-import { STATUS_LABEL, onFundError, useFundRefresh } from './utils';
+import { ProgressBar } from './progress-bar';
+import { STATUS_LABEL, onFundError, percent, useFundRefresh } from './utils';
 
 // ==========================================
 // 👥 รายชื่อ + เพิ่ม/ลบคน + เลือกหลายคน (Bulk Actions) + ค้นหา/กรอง/เรียงลำดับ
@@ -195,9 +196,9 @@ export function MembersTab({
                         />
                     </Field>
                     <Field label="ดึงสมาชิกทุกคนจากยศ (Role)">
-                        <div className="flex gap-2">
+                        <div className="flex flex-col gap-2 sm:flex-row">
                             <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className="min-w-0 flex-1">
                                     <SelectValue placeholder="-- เลือกยศในเซิร์ฟเวอร์ --" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
@@ -208,7 +209,7 @@ export function MembersTab({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" disabled={!roleId || add.isPending} onClick={() => add.mutate({ roleId })}>
+                            <Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={!roleId || add.isPending} onClick={() => add.mutate({ roleId })}>
                                 {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} เพิ่มทั้งยศ
                             </Button>
                         </div>
@@ -220,7 +221,7 @@ export function MembersTab({
                 <EmptyState>ยังไม่มีคนในหัวข้อนี้ — เพิ่มทีละคนหรือดึงทั้งยศจากแถบด้านบน</EmptyState>
             ) : (
                 <>
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-1.5">
                             {(
                                 [
@@ -243,11 +244,11 @@ export function MembersTab({
                             ))}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
-                            <SearchInput value={search} onChange={setSearch} placeholder="ค้นหาชื่อ หรือ User ID..." className="w-48 sm:w-56" />
+                        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                            <SearchInput value={search} onChange={setSearch} placeholder="ค้นหาชื่อ หรือ User ID..." className="w-full sm:w-56" />
                             <Select value={sortBy} onValueChange={(v) => setSortBy(v as MemberSort)}>
-                                <SelectTrigger className="h-8 w-40 text-xs">
-                                    <ArrowUpDown className="mr-1 size-3 text-muted-foreground" />
+                                <SelectTrigger className="h-8 w-full text-xs sm:w-40">
+                                    <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -261,8 +262,8 @@ export function MembersTab({
                     </div>
 
                     {!topic.closed && validSelectedIds.length > 0 && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/8 px-3.5 py-2 text-xs">
-                            <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/8 px-3 py-2.5 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-3.5 sm:py-2">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                                 <span className="font-semibold text-primary">เลือกแล้ว {validSelectedIds.length} คน</span>
                                 {selectedUnpaidMembers.length > 0 && (
                                     <span className="text-muted-foreground tabular-nums">
@@ -293,7 +294,138 @@ export function MembersTab({
                     {filteredMembers.length === 0 ? (
                         <EmptyState>ไม่พบสมาชิกที่ตรงกับเงื่อนไขการค้นหา</EmptyState>
                     ) : (
-                        <div className="overflow-x-auto rounded-xl border">
+                        <>
+                            {/* มุมมองการ์ดสำหรับหน้าจอมือถือ (< md) */}
+                            <div className="space-y-2.5 md:hidden">
+                                {!topic.closed && (
+                                    <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-xs">
+                                        <label className="flex cursor-pointer items-center gap-2 font-medium text-muted-foreground">
+                                            <Checkbox
+                                                checked={allFilteredSelected}
+                                                onCheckedChange={toggleSelectAllFiltered}
+                                                aria-label="เลือกทั้งหมดในรายการ"
+                                            />
+                                            <span>เลือกทั้งหมดในรายการ ({filteredMembers.length} คน)</span>
+                                        </label>
+                                        {validSelectedIds.length > 0 && (
+                                            <span className="font-semibold text-primary">เลือก {validSelectedIds.length} คน</span>
+                                        )}
+                                    </div>
+                                )}
+
+                                {filteredMembers.map((m) => {
+                                    const isPayingThis = payingMemberId === m.id;
+                                    const isSelected = validSelectedIds.includes(m.id);
+                                    const payCount = paymentCountByMember.get(m.id) ?? 0;
+                                    const pct = percent(m.paid, m.target);
+
+                                    return (
+                                        <div
+                                            key={m.id}
+                                            className={cn(
+                                                'space-y-2.5 rounded-xl border p-3 transition-colors',
+                                                isSelected ? 'border-primary/40 bg-primary/5' : 'bg-card/50',
+                                            )}
+                                        >
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                                                    {!topic.closed && (
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            onCheckedChange={() => toggleMember(m.id)}
+                                                            aria-label={`เลือก ${m.displayName}`}
+                                                        />
+                                                    )}
+                                                    <img src={m.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-medium">{m.displayName}</p>
+                                                        <div className="flex flex-wrap items-center gap-1.5">
+                                                            <p className="truncate font-mono text-[11px] text-muted-foreground">{m.userId}</p>
+                                                            {payCount > 0 && onViewHistory && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => onViewHistory(m.id)}
+                                                                    className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                                                                    title="ดูประวัติการโอนของคนนี้"
+                                                                >
+                                                                    <History className="size-2.5" /> {payCount} ครั้ง
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <Badge variant="outline" className={cn('shrink-0', STATUS_LABEL[m.status].className)}>
+                                                    {STATUS_LABEL[m.status].text}
+                                                </Badge>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-2 rounded-lg border bg-muted/20 p-2 text-xs">
+                                                <div className="min-w-0 space-y-0.5">
+                                                    <p className="text-[10px] text-muted-foreground">ต้องจ่าย</p>
+                                                    <div className="text-xs font-medium">
+                                                        <TargetCell topic={topic} member={m} />
+                                                    </div>
+                                                </div>
+                                                <div className="min-w-0 space-y-0.5">
+                                                    <p className="text-[10px] text-muted-foreground">จ่ายแล้ว</p>
+                                                    <div className="text-xs">
+                                                        <PaidCell topic={topic} member={m} align="left" showProgress={false} />
+                                                    </div>
+                                                </div>
+                                                <div className="min-w-0 space-y-0.5 text-right">
+                                                    <p className="text-[10px] text-muted-foreground">คงค้าง</p>
+                                                    <p
+                                                        className={cn(
+                                                            'py-0.5 text-xs tabular-nums',
+                                                            m.remaining > 0 ? 'font-semibold text-amber-400' : 'text-muted-foreground',
+                                                        )}
+                                                    >
+                                                        {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2">
+                                                <ProgressBar value={pct} className="h-1.5 flex-1" />
+                                                <span className="shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">{pct}%</span>
+                                            </div>
+
+                                            {!topic.closed && (
+                                                <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                                                    <Button size="xs" variant="outline" className="flex-1" disabled={topic.closed} onClick={() => onPay(m)}>
+                                                        <Banknote /> รับเงิน
+                                                    </Button>
+                                                    {m.remaining > 0 && (
+                                                        <Button
+                                                            size="xs"
+                                                            variant="secondary"
+                                                            className="flex-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+                                                            disabled={topic.closed || payFull.isPending}
+                                                            onClick={() => payFull.mutate(m)}
+                                                            title={`บันทึกรับยอดคงค้าง ${formatBaht(m.remaining)}`}
+                                                        >
+                                                            {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} จ่ายครบ
+                                                        </Button>
+                                                    )}
+                                                    <Button
+                                                        size="icon-xs"
+                                                        variant="ghost"
+                                                        aria-label="ลบคน"
+                                                        title="ลบออกจากหัวข้อ"
+                                                        disabled={topic.closed}
+                                                        onClick={() => void remove(m)}
+                                                    >
+                                                        <Trash2 className="text-destructive" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* มุมมองตารางสำหรับหน้าจอแท็บเล็ตและเดสก์ท็อป (md+) */}
+                            <div className="hidden overflow-x-auto rounded-xl border md:block">
                             <table className="w-full text-sm">
                                 <thead className="bg-muted/40 text-xs text-muted-foreground">
                                     <tr>
@@ -405,7 +537,8 @@ export function MembersTab({
                                     })}
                                 </tbody>
                             </table>
-                        </div>
+                            </div>
+                        </>
                     )}
                 </>
             )}

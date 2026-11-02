@@ -83,7 +83,7 @@ export function PaymentsTab({
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs text-muted-foreground">
                         แสดง <span className="font-semibold text-foreground">{filteredPayments.length}</span> รายการ · ยอดรวม{' '}
@@ -105,39 +105,41 @@ export function PaymentsTab({
                     )}
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    {onMemberFilterChange && topic.members.length > 1 && (
-                        <Select
-                            value={memberFilter !== null ? String(memberFilter) : 'all'}
-                            onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
-                        >
-                            <SelectTrigger className="h-8 w-44 text-xs">
-                                <SelectValue placeholder="สมาชิกทุกคน" />
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
+                    <SearchInput value={search} onChange={setSearch} placeholder="ค้นหาชื่อคนจ่าย หรือหมายเหตุ..." className="w-full sm:w-56" />
+
+                    <div className="flex w-full items-center gap-2 sm:w-auto">
+                        {onMemberFilterChange && topic.members.length > 1 && (
+                            <Select
+                                value={memberFilter !== null ? String(memberFilter) : 'all'}
+                                onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
+                            >
+                                <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
+                                    <SelectValue placeholder="สมาชิกทุกคน" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-72">
+                                    <SelectItem value="all">สมาชิกทุกคน ({topic.payments.length})</SelectItem>
+                                    {topic.members.map((m) => (
+                                        <SelectItem key={m.id} value={String(m.id)}>
+                                            {m.displayName}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+
+                        <Select value={sortBy} onValueChange={(v) => setSortBy(v as PaymentSort)}>
+                            <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
+                                <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
+                                <SelectValue />
                             </SelectTrigger>
-                            <SelectContent className="max-h-72">
-                                <SelectItem value="all">สมาชิกทุกคน ({topic.payments.length})</SelectItem>
-                                {topic.members.map((m) => (
-                                    <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.displayName}
-                                    </SelectItem>
-                                ))}
+                            <SelectContent>
+                                <SelectItem value="newest">ล่าสุดก่อน</SelectItem>
+                                <SelectItem value="oldest">เก่าสุดก่อน</SelectItem>
+                                <SelectItem value="amount_desc">ยอดมากสุด</SelectItem>
                             </SelectContent>
                         </Select>
-                    )}
-
-                    <SearchInput value={search} onChange={setSearch} placeholder="ค้นหาชื่อคนจ่าย หรือหมายเหตุ..." className="w-48 sm:w-56" />
-
-                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as PaymentSort)}>
-                        <SelectTrigger className="h-8 w-36 text-xs">
-                            <ArrowUpDown className="mr-1 size-3 text-muted-foreground" />
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="newest">ล่าสุดก่อน</SelectItem>
-                            <SelectItem value="oldest">เก่าสุดก่อน</SelectItem>
-                            <SelectItem value="amount_desc">ยอดมากสุด</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    </div>
                 </div>
             </div>
 
@@ -149,18 +151,18 @@ export function PaymentsTab({
                         const days = p.periodStart && p.periodEnd ? calculateDays(p.periodStart, p.periodEnd) : 0;
                         const avatar = avatarByMemberId.get(p.memberId);
                         return (
-                            <li key={p.id} className="flex items-center gap-3 px-3.5 py-2.5 text-sm transition-colors hover:bg-muted/20">
+                            <li key={p.id} className="flex items-start gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-muted/20 sm:items-center sm:gap-3 sm:px-3.5">
                                 {avatar ? (
-                                    <img src={avatar} alt="" className="size-8 shrink-0 rounded-full object-cover ring-1 ring-border" />
+                                    <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
                                 ) : (
-                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-400">
+                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-400 sm:mt-0">
                                         ฿
                                     </div>
                                 )}
 
                                 <div className="min-w-0 flex-1 space-y-0.5">
-                                    <div className="flex flex-wrap items-center gap-2 font-medium">
-                                        <span>{p.memberName}</span>
+                                    <div className="flex flex-wrap items-center gap-1.5 font-medium sm:gap-2">
+                                        <span className="truncate">{p.memberName}</span>
                                         <Badge
                                             variant="outline"
                                             className="border-emerald-500/35 bg-emerald-500/10 font-semibold text-emerald-400 tabular-nums"
@@ -169,13 +171,15 @@ export function PaymentsTab({
                                         </Badge>
                                         {p.periodStart && p.periodEnd && (
                                             <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary">
-                                                <Calendar className="size-3" />
-                                                งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} – {new Date(p.periodEnd).toLocaleDateString('th-TH')}
-                                                {days > 0 && ` (${days} วัน)`}
+                                                <Calendar className="size-3 shrink-0" />
+                                                <span className="truncate">
+                                                    งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} – {new Date(p.periodEnd).toLocaleDateString('th-TH')}
+                                                    {days > 0 && ` (${days} วัน)`}
+                                                </span>
                                             </Badge>
                                         )}
                                     </div>
-                                    <p className="truncate text-xs text-muted-foreground">
+                                    <p className="break-words text-xs text-muted-foreground sm:truncate">
                                         {formatDateTime(p.paidAt)}
                                         {p.note && <span className="text-foreground/80"> · “{p.note}”</span>}
                                         {p.recordedBy && ` · บันทึกโดย ${p.recordedBy}`}
