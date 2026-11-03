@@ -146,7 +146,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                 </div>
 
                 {showChart && (
-                    <div className="rounded-lg border bg-background/50 p-2.5 pt-3 sm:p-3 sm:pt-4">
+                    <div className="min-w-0 overflow-hidden rounded-lg border bg-background/50 p-2.5 pt-3 sm:p-3 sm:pt-4">
                         <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-52 w-full sm:h-60">
                             <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
                                 <CartesianGrid vertical={false} />
@@ -177,7 +177,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
             type="button"
             onClick={onSelect}
             className={cn(
-                'group relative w-full space-y-2 rounded-xl border px-3.5 py-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40',
+                'group relative w-full min-w-0 space-y-2 overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40',
                 active ? 'border-primary border-l-4 bg-primary/8 shadow-xs' : 'bg-card/60',
                 topic.closed && !active && 'opacity-70',
             )}

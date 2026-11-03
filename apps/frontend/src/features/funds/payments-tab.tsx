@@ -82,7 +82,7 @@ export function PaymentsTab({
     if (topic.payments.length === 0) return <EmptyState>ยังไม่มีรายการรับเงินในหัวข้อนี้</EmptyState>;
 
     return (
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs text-muted-foreground">
@@ -90,7 +90,7 @@ export function PaymentsTab({
                         <span className="font-semibold text-emerald-400 tabular-nums">{formatBaht(filteredTotal)}</span>
                     </p>
                     {activeMember && onMemberFilterChange && (
-                        <Badge variant="secondary" className="gap-1 border-primary/30 bg-primary/10 text-primary">
+                        <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 text-primary">
                             <UserCheck className="size-3" />
                             เฉพาะ: {activeMember.displayName}
                             <button
@@ -114,7 +114,7 @@ export function PaymentsTab({
                                 value={memberFilter !== null ? String(memberFilter) : 'all'}
                                 onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
                             >
-                                <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
+                                <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
                                     <SelectValue placeholder="สมาชิกทุกคน" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-72">
@@ -129,7 +129,7 @@ export function PaymentsTab({
                         )}
 
                         <Select value={sortBy} onValueChange={(v) => setSortBy(v as PaymentSort)}>
-                            <SelectTrigger className="h-8 min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
+                            <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
                                 <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                 <SelectValue />
                             </SelectTrigger>
@@ -170,7 +170,7 @@ export function PaymentsTab({
                                             +{formatBaht(p.amount)}
                                         </Badge>
                                         {p.periodStart && p.periodEnd && (
-                                            <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary">
+                                            <Badge variant="outline" className="max-w-full gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary">
                                                 <Calendar className="size-3 shrink-0" />
                                                 <span className="truncate">
                                                     งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} – {new Date(p.periodEnd).toLocaleDateString('th-TH')}

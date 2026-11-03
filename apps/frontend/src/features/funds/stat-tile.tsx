@@ -34,7 +34,7 @@ export function StatTile({
 }) {
     const style = VARIANTS[variant];
     return (
-        <div className={cn('rounded-xl border transition-colors', style.box, TONES[tone])}>
+        <div className={cn('min-w-0 rounded-xl border transition-colors', style.box, TONES[tone])}>
             <div className="flex items-center justify-between gap-1.5">
                 <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
                 {icon && <span className="shrink-0 text-muted-foreground/80">{icon}</span>}
