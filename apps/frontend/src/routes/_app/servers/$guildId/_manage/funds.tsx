@@ -94,8 +94,8 @@ function FundsPage() {
             ) : (
                 <>
                     <FundsOverviewSummary topics={topics} />
-                    <div className="grid gap-4 lg:grid-cols-[19rem_1fr]">
-                        <div className="space-y-2.5">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
+                        <div className="min-w-0 space-y-2.5">
                             {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder="ค้นหาหัวข้อเก็บเงิน..." />}
 
                             {closedCount > 0 && (
@@ -112,7 +112,7 @@ function FundsPage() {
                                             type="button"
                                             size="xs"
                                             variant={topicFilter === val ? 'default' : 'ghost'}
-                                            className="h-7 text-[11px]"
+                                            className="h-7 min-w-0 px-1.5 text-[11px]"
                                             onClick={() => setTopicFilter(val)}
                                         >
                                             {label}

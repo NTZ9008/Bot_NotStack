@@ -49,12 +49,12 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
         <Card className="border-border/80">
             <CardContent className="space-y-3 py-3.5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
+                    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
                         <div className="flex items-center gap-2 text-sm font-semibold">
                             <MessageSquareShare className="size-4 shrink-0 text-primary" />
                             <span>ส่งรูปการ์ดรายงานเข้า Discord</span>
                         </div>
-                        <div className="w-full sm:w-64">
+                        <div className="w-full min-w-0 sm:w-64">
                             <ChannelSelect
                                 channels={textChannels}
                                 value={topic.reportChannelId}

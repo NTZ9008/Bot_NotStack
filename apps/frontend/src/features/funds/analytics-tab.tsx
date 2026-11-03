@@ -81,7 +81,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const completionRate = topic.memberCount > 0 ? Math.round((topic.paidCount / topic.memberCount) * 100) : 0;
 
     return (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
                 <StatTile
                     label="เฉลี่ยเก็บได้ต่อคน"
@@ -116,7 +116,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                 />
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {/* กราฟโดนัทสัดส่วนสถานะสมาชิก */}
                 <Card>
                     <CardHeader className="pb-2">
@@ -187,7 +187,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
 
                 {/* กราฟแท่งเปรียบเทียบยอดจ่ายแล้ว vs คงค้าง รายบุคคล */}
                 {memberChartData.length > 0 && (
-                    <Card className="lg:col-span-2">
+                    <Card className="min-w-0 lg:col-span-2">
                         <CardHeader className="pb-2">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                                 <BarChart3 className="size-4 text-sky-400" />

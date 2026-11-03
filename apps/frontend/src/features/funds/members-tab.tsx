@@ -184,9 +184,9 @@ export function MembersTab({
     };
 
     return (
-        <div className="space-y-3">
+        <div className="min-w-0 space-y-3">
             {!topic.closed && (
-                <div className="grid gap-2.5 rounded-xl border bg-muted/15 p-3 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-2.5 rounded-xl border bg-muted/15 p-3 md:grid-cols-2">
                     <Field label="เพิ่มสมาชิกรายคน">
                         <UserPicker
                             keepSelection={false}
@@ -198,7 +198,7 @@ export function MembersTab({
                     <Field label="ดึงสมาชิกทุกคนจากยศ (Role)">
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Select value={roleId} onValueChange={setRoleId}>
-                                <SelectTrigger className="min-w-0 flex-1">
+                                <SelectTrigger className="w-full min-w-0 sm:flex-1">
                                     <SelectValue placeholder="-- เลือกยศในเซิร์ฟเวอร์ --" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">

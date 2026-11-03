@@ -146,9 +146,9 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
     const isCompleted = topic.target > 0 && remaining === 0;
 
     return (
-        <div className="space-y-4">
+        <div className="min-w-0 space-y-4">
             <Card>
-                <CardHeader className="flex-col items-stretch justify-between gap-3 pb-3 sm:flex-row sm:items-start sm:gap-2">
+                <CardHeader className="flex flex-col items-stretch justify-between gap-3 pb-3 sm:flex-row sm:items-start sm:gap-2">
                     <div className="min-w-0 flex-1 space-y-2">
                         <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg">
                             <span className="break-words sm:truncate">{topic.name}</span>
@@ -165,9 +165,9 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                         <div className="flex flex-wrap items-center gap-1.5 text-xs">
                             {dailyRate ? (
-                                <Badge variant="secondary" className="gap-1 border-primary/30 bg-primary/10 font-normal text-primary">
+                                <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 font-normal text-primary">
                                     <Calendar className="size-3 shrink-0" />
-                                    <span>
+                                    <span className="truncate">
                                         เก็บรายวัน วันละ {formatBaht(dailyRate)}
                                         {topic.startDate && ` (เริ่ม ${new Date(topic.startDate).toLocaleDateString('th-TH')})`}
                                     </span>
@@ -198,7 +198,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                         {topic.description && (
                             <div className="flex flex-col gap-2 rounded-lg border bg-muted/25 px-3 py-2 text-xs sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-                                <p className="break-words whitespace-pre-line text-muted-foreground">{topic.description}</p>
+                                <p className="min-w-0 break-words whitespace-pre-line text-muted-foreground">{topic.description}</p>
                                 <div className="flex shrink-0 flex-wrap items-center gap-1">
                                     {accountDigits && (
                                         <Button
@@ -231,7 +231,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 sm:flex-initial"
+                            className="min-w-0 flex-1 sm:flex-initial"
                             onClick={() => void handleExport()}
                             disabled={exporting}
                             title="ดาวน์โหลดข้อมูลสรุป รายชื่อสมาชิก และประวัติการรับเงินเป็นไฟล์ CSV (เปิดใน Excel ได้ทันที)"
@@ -242,7 +242,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <Button
                             variant="outline"
                             size="sm"
-                            className="flex-1 sm:flex-initial"
+                            className="min-w-0 flex-1 sm:flex-initial"
                             onClick={() => toggleClosed.mutate(!topic.closed)}
                             disabled={toggleClosed.isPending}
                         >
@@ -335,19 +335,19 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TopicTab)}>
                         <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
                             <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-8 sm:w-fit">
-                                <TabsTrigger value="members" className="gap-1 px-2 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger value="members" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <Users className="size-3.5 shrink-0" />
                                     <span className="truncate">
                                         <span className="hidden sm:inline">รายชื่อ</span>สมาชิก ({topic.memberCount})
                                     </span>
                                 </TabsTrigger>
-                                <TabsTrigger value="payments" className="gap-1 px-2 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger value="payments" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <Receipt className="size-3.5 shrink-0" />
                                     <span className="truncate">
                                         ประวัติ<span className="hidden sm:inline">รับเงิน</span> ({topic.payments.length})
                                     </span>
                                 </TabsTrigger>
-                                <TabsTrigger value="analytics" className="gap-1 px-2 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger value="analytics" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <BarChart3 className="size-3.5 shrink-0" />
                                     <span className="truncate">
                                         <span className="hidden sm:inline">แดชบอร์ด & </span>กราฟ

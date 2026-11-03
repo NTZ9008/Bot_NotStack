@@ -60,7 +60,7 @@ function InlineAmountEditor({
             <button
                 type="button"
                 className={cn(
-                    'group inline-flex items-center gap-1.5 rounded-md px-1.5 py-0.5 tabular-nums transition-colors hover:bg-muted/80',
+                    'group inline-flex max-w-full flex-wrap items-center gap-1 rounded-md px-1 py-0.5 tabular-nums transition-colors hover:bg-muted/80 sm:gap-1.5 sm:px-1.5',
                     align === 'right' ? 'justify-end text-right' : 'text-left',
                     buttonClassName,
                 )}
@@ -94,7 +94,7 @@ function InlineAmountEditor({
                         onEditingChange(false);
                     }
                 }}
-                className={cn('h-7 w-20 sm:w-24', align === 'right' && 'text-right')}
+                className={cn('h-7 w-full max-w-24 sm:w-24', align === 'right' && 'text-right')}
                 autoFocus
             />
             <Button type="submit" size="xs" disabled={pending}>
