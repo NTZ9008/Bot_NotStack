@@ -77,7 +77,7 @@ function FundsPage() {
             <PageHeader
                 help="funds"
                 title="เก็บเงินตามเป้า"
-                description="สร้างหัวข้อเก็บเงินได้หลายเรื่อง ตั้งยอดคงที่หรือรายวัน เพิ่ม/ลบคน บันทึกและแก้ไขการรับเงิน วิเคราะห์กราฟแดชบอร์ด ส่งออก CSV และส่งรายงานเข้า Discord"
+                description="สร้างหัวข้อ ตั้งยอดคงที่หรือรายวัน จัดการสมาชิก บันทึกรับเงิน ดูสรุป และส่งรายงานเข้า Discord"
                 actions={
                     <Button onClick={openCreateBlank}>
                         <Plus /> สร้างหัวข้อ
@@ -94,17 +94,21 @@ function FundsPage() {
             ) : (
                 <>
                     <FundsOverviewSummary topics={topics} />
-                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]">
-                        <div className="min-w-0 space-y-2.5">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+                        <aside className="min-w-0 space-y-3 rounded-xl border bg-card/50 p-3">
+                            <div className="flex items-center justify-between gap-2 px-1">
+                                <h2 className="text-sm font-semibold">หัวข้อเก็บเงิน</h2>
+                                <span className="text-xs text-muted-foreground">ทั้งหมด {topics.length}</span>
+                            </div>
                             {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder="ค้นหาหัวข้อเก็บเงิน..." />}
 
                             {closedCount > 0 && (
                                 <div className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/30 p-1">
                                     {(
                                         [
-                                            ['all', `ทั้งหมด (${topics.length})`],
-                                            ['open', `เปิดอยู่ (${openCount})`],
-                                            ['closed', `ปิดแล้ว (${closedCount})`],
+                                            ['all', `ทั้งหมด ${topics.length}`],
+                                            ['open', `เปิดอยู่ ${openCount}`],
+                                            ['closed', `ปิดแล้ว ${closedCount}`],
                                         ] as const
                                     ).map(([val, label]) => (
                                         <Button
@@ -132,7 +136,7 @@ function FundsPage() {
                                     ))
                                 )}
                             </div>
-                        </div>
+                        </aside>
                         {current && <TopicPanel key={current.id} topicId={current.id} onDeleted={() => select(undefined)} />}
                     </div>
                 </>

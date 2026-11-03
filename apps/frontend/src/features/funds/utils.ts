@@ -152,19 +152,19 @@ export function dueDateStatus(dueDate: string | null, closed: boolean, now = new
     if (daysLeft < 0) {
         const overdueDays = Math.abs(daysLeft);
         return {
-            label: `เลยกำหนด ${overdueDays} วัน (${formatted})`,
+            label: `เลยกำหนด ${overdueDays} วัน · ${formatted}`,
             shortLabel: `เลยกำหนด ${overdueDays} วัน`,
             tone: 'overdue',
             daysLeft,
         };
     }
     if (daysLeft === 0) {
-        return { label: `ครบกำหนดวันนี้ (${formatted})`, shortLabel: 'ครบกำหนดวันนี้', tone: 'soon', daysLeft: 0 };
+        return { label: `ครบกำหนดวันนี้ · ${formatted}`, shortLabel: 'ครบกำหนดวันนี้', tone: 'soon', daysLeft: 0 };
     }
     if (daysLeft <= 3) {
-        return { label: `อีก ${daysLeft} วันครบกำหนด (${formatted})`, shortLabel: `อีก ${daysLeft} วัน`, tone: 'soon', daysLeft };
+        return { label: `อีก ${daysLeft} วันครบกำหนด · ${formatted}`, shortLabel: `อีก ${daysLeft} วัน`, tone: 'soon', daysLeft };
     }
-    return { label: `ครบกำหนด ${formatted} (อีก ${daysLeft} วัน)`, shortLabel: formatted, tone: 'normal', daysLeft };
+    return { label: `ครบกำหนด ${formatted} · อีก ${daysLeft} วัน`, shortLabel: formatted, tone: 'normal', daysLeft };
 }
 
 // ดึงเลขบัญชีหรือเบอร์พร้อมเพย์จากคำอธิบายหัวข้อ (ถ้ามีตัวเลข 10-15 หลัก) เพื่อให้กดคัดลอกได้ทันที

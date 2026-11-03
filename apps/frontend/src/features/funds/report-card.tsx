@@ -97,7 +97,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                     <div className="rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
                             <span className="flex items-center gap-1.5">
-                                <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างรูปการ์ดรายงานที่จะถูกส่งเข้าห้อง Discord (PNG)
+                                <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างการ์ดรายงาน · PNG
                             </span>
                             {topic.reportChannelId && <span>ห้อง: {channelLabel(textChannels, topic.reportChannelId)}</span>}
                         </div>

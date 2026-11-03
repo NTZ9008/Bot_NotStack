@@ -169,7 +169,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     <Calendar className="size-3 shrink-0" />
                                     <span className="truncate">
                                         เก็บรายวัน วันละ {formatBaht(dailyRate)}
-                                        {topic.startDate && ` (เริ่ม ${new Date(topic.startDate).toLocaleDateString('th-TH')})`}
+                                        {topic.startDate && ` · เริ่ม ${new Date(topic.startDate).toLocaleDateString('th-TH')}`}
                                     </span>
                                 </Badge>
                             ) : (
@@ -234,10 +234,10 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             className="min-w-0 flex-1 sm:flex-initial"
                             onClick={() => void handleExport()}
                             disabled={exporting}
-                            title="ดาวน์โหลดข้อมูลสรุป รายชื่อสมาชิก และประวัติการรับเงินเป็นไฟล์ CSV (เปิดใน Excel ได้ทันที)"
+                            title="ดาวน์โหลดข้อมูลสรุป รายชื่อสมาชิก และประวัติการรับเงินเป็นไฟล์ CSV"
                         >
                             {exporting ? <Loader2 className="animate-spin" /> : <Download />}
-                            {exporting ? 'กำลังส่งออก...' : 'Export CSV'}
+                            {exporting ? 'กำลังส่งออก...' : 'ส่งออก CSV'}
                         </Button>
                         <Button
                             variant="outline"
@@ -287,7 +287,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <StatTile
                             label="เก็บได้แล้ว"
                             value={formatBaht(topic.collected)}
-                            subtext={`คิดเป็น ${pct}% ของเป้าหมาย (${topic.payments.length} รายการโอน)`}
+                            subtext={`เป้าหมาย ${pct}% · ${topic.payments.length} รายการโอน`}
                             icon={<Banknote className="size-3.5 text-emerald-400" />}
                             valueClassName="text-emerald-400"
                             tone="emerald"
@@ -320,7 +320,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <div className="flex flex-wrap items-center justify-between gap-1 text-xs text-muted-foreground">
                             <span>ความคืบหน้าการเก็บเงิน</span>
                             <span className="font-semibold text-foreground tabular-nums">
-                                {formatBaht(topic.collected)} / {formatBaht(topic.target)} ({pct}%)
+                                {formatBaht(topic.collected)} / {formatBaht(topic.target)} · {pct}%
                             </span>
                         </div>
                         <ProgressBar value={pct} className="h-2.5" />
@@ -337,20 +337,18 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-8 sm:w-fit">
                                 <TabsTrigger value="members" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <Users className="size-3.5 shrink-0" />
-                                    <span className="truncate">
-                                        <span className="hidden sm:inline">รายชื่อ</span>สมาชิก ({topic.memberCount})
-                                    </span>
+                                    <span className="truncate"><span className="hidden sm:inline">รายชื่อ</span>สมาชิก</span>
+                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">{topic.memberCount}</Badge>
                                 </TabsTrigger>
                                 <TabsTrigger value="payments" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <Receipt className="size-3.5 shrink-0" />
-                                    <span className="truncate">
-                                        ประวัติ<span className="hidden sm:inline">รับเงิน</span> ({topic.payments.length})
-                                    </span>
+                                    <span className="truncate">ประวัติ<span className="hidden sm:inline">รับเงิน</span></span>
+                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">{topic.payments.length}</Badge>
                                 </TabsTrigger>
                                 <TabsTrigger value="analytics" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
                                     <BarChart3 className="size-3.5 shrink-0" />
                                     <span className="truncate">
-                                        <span className="hidden sm:inline">แดชบอร์ด & </span>กราฟ
+                                        <span className="hidden sm:inline">สรุปและ</span>กราฟ
                                     </span>
                                 </TabsTrigger>
                             </TabsList>
@@ -366,7 +364,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     }}
                                     title="บันทึกรับเงินสำหรับห้วงเวลาเดียวกันให้กับหลายคนพร้อมกัน"
                                 >
-                                    <Calendar /> บันทึกตามห้วงเวลา (หลายคน)
+                                    <Calendar /> บันทึกรับเงินหลายคน
                                 </Button>
                                 <Button
                                     size="sm"

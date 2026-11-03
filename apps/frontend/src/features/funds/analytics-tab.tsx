@@ -191,7 +191,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         <CardHeader className="pb-2">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                                 <BarChart3 className="size-4 text-sky-400" />
-                                ความคืบหน้ารายบุคคล (จ่ายแล้ว vs คงค้าง)
+                                ยอดชำระแยกตามสมาชิก
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
