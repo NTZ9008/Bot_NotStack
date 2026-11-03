@@ -1,10 +1,11 @@
 import { formatBaht, roundMoney, type FundMemberStatus, type FundTopicDetail } from '@notstack/shared';
 import { Banknote, BarChart3, CheckCircle2, PieChart as PieChartIcon, Receipt, TrendingUp } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/states';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
+import { Button } from '@/components/ui/button';
 import { toLocalInput } from '@/lib/format';
 import { StatTile } from './stat-tile';
 import { STATUS_LABEL } from './utils';
@@ -29,6 +30,8 @@ const memberBarConfig = {
 } satisfies ChartConfig;
 
 export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
+    const [visibleMemberCount, setVisibleMemberCount] = useState(12);
+
     // 1. สัดส่วนสถานะสมาชิก (Donut Chart)
     const statusData = useMemo(() => {
         const counts: Record<FundMemberStatus, number> = { paid: 0, partial: 0, unpaid: 0 };
@@ -63,17 +66,18 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
         });
     }, [topic.payments]);
 
-    // 3. ข้อมูลกราฟแท่งเปรียบเทียบรายคน (แสดงสูงสุด 12 คนแรก เรียงตามยอดจ่ายแล้ว + คงค้าง)
+    // 3. ข้อมูลกราฟแท่งเปรียบเทียบรายคน (เรียงตามยอดจ่ายแล้ว + คงค้าง)
     const memberChartData = useMemo(() => {
         return [...topic.members]
             .sort((a, b) => b.paid - a.paid || b.remaining - a.remaining)
-            .slice(0, 12)
             .map((m) => ({
-                name: m.displayName.length > 14 ? `${m.displayName.slice(0, 13)}…` : m.displayName,
+                name: m.displayName,
                 paid: m.paid,
                 remaining: m.remaining,
             }));
     }, [topic.members]);
+    const visibleMemberChartData = memberChartData.slice(0, visibleMemberCount);
+    const remainingMemberCount = memberChartData.length - visibleMemberChartData.length;
 
     // 4. ตัวชี้วัดสำคัญ (KPIs)
     const avgPaidPerMember = topic.memberCount > 0 ? roundMoney(topic.collected / topic.memberCount) : 0;
@@ -191,21 +195,41 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         <CardHeader className="pb-2">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                                 <BarChart3 className="size-4 text-sky-400" />
-                                ความคืบหน้ารายบุคคล (จ่ายแล้ว vs คงค้าง)
+                                ยอดชำระแยกตามสมาชิก
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={memberBarConfig} className="aspect-auto h-60 w-full sm:h-72">
-                                <BarChart data={memberChartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={14} className="text-[11px]" />
-                                    <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
+                            <ChartContainer
+                                config={memberBarConfig}
+                                className="aspect-auto w-full"
+                                style={{ height: `${Math.max(384, visibleMemberChartData.length * 32 + 64)}px` }}
+                            >
+                                <BarChart layout="vertical" data={visibleMemberChartData} margin={{ left: 8, right: 16, top: 8, bottom: 4 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <XAxis type="number" tickLine={false} axisLine={false} className="text-xs" />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        interval={0}
+                                        width={180}
+                                        tick={{ fontSize: 12 }}
+                                        className="text-xs"
+                                    />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <ChartLegend content={<ChartLegendContent />} />
-                                    <Bar dataKey="paid" stackId="a" fill="var(--color-paid)" radius={[0, 0, 4, 4]} />
-                                    <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="paid" stackId="a" fill="var(--color-paid)" radius={[0, 0, 0, 0]} barSize={16} />
+                                    <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[0, 4, 4, 0]} barSize={16} />
                                 </BarChart>
                             </ChartContainer>
+                            {remainingMemberCount > 0 && (
+                                <div className="mt-3 flex justify-center">
+                                    <Button variant="outline" onClick={() => setVisibleMemberCount((count) => count + 12)}>
+                                        โหลดเพิ่มอีก {Math.min(12, remainingMemberCount)} คน
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 )}
