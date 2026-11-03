@@ -69,7 +69,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
             .sort((a, b) => b.paid - a.paid || b.remaining - a.remaining)
             .slice(0, 12)
             .map((m) => ({
-                name: m.displayName.length > 14 ? `${m.displayName.slice(0, 13)}…` : m.displayName,
+                name: m.displayName,
                 paid: m.paid,
                 remaining: m.remaining,
             }));
@@ -195,15 +195,24 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <ChartContainer config={memberBarConfig} className="aspect-auto h-60 w-full sm:h-72">
-                                <BarChart data={memberChartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={14} className="text-[11px]" />
-                                    <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
+                            <ChartContainer config={memberBarConfig} className="aspect-auto h-96 w-full sm:h-[28rem]">
+                                <BarChart layout="vertical" data={memberChartData} margin={{ left: 8, right: 16, top: 8, bottom: 4 }}>
+                                    <CartesianGrid horizontal={false} />
+                                    <XAxis type="number" tickLine={false} axisLine={false} className="text-xs" />
+                                    <YAxis
+                                        type="category"
+                                        dataKey="name"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        interval={0}
+                                        width={180}
+                                        tick={{ fontSize: 12 }}
+                                        className="text-xs"
+                                    />
                                     <ChartTooltip content={<ChartTooltipContent />} />
                                     <ChartLegend content={<ChartLegendContent />} />
-                                    <Bar dataKey="paid" stackId="a" fill="var(--color-paid)" radius={[0, 0, 4, 4]} />
-                                    <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="paid" stackId="a" fill="var(--color-paid)" radius={[0, 0, 0, 0]} barSize={16} />
+                                    <Bar dataKey="remaining" stackId="a" fill="var(--color-remaining)" radius={[0, 4, 4, 0]} barSize={16} />
                                 </BarChart>
                             </ChartContainer>
                         </CardContent>
