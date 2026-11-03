@@ -10,16 +10,18 @@ import { renderSurface } from '../../common/utils/render-surface';
 // ==========================================
 const WIDTH = 960;
 const PAD = 44;
-const RADIUS = 12;
+const RADIUS = 16;
 const font = (weight: number, size: number) => fontString('kanit', weight, size);
 
 const C = {
-    bg: '#F4EFE6',
-    ink: '#1D1B18',
-    muted: '#7A7468',
-    line: '#D9D2C3',
-    owe: '#C0392B',
-    paid: '#2E6B4E',
+    bg: '#0F172A',
+    ink: '#F1F5FB',
+    muted: '#8A96B0',
+    line: '#272E3F',
+    paid: '#10B981',
+    owe: '#F59E0B',
+    member: '#38BDF8',
+    danger: '#EF4444',
 };
 
 type Tone = 'paid' | 'partial' | 'unpaid' | 'closed';
@@ -75,7 +77,7 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
     const { ctx, encode } = renderSurface(WIDTH, HEIGHT, compact);
     ctx.textBaseline = 'alphabetic';
 
-    // 1. พื้นกระดาษและเส้นขอบแบบงานพิมพ์
+    // 1. พื้นการ์ด navy และเส้นขอบแบบงานพิมพ์
     ctx.save();
     ctx.beginPath();
     ctx.roundRect(0, 0, WIDTH, HEIGHT, RADIUS);
@@ -92,21 +94,22 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
     // 2. ส่วนหัวแบบหัวกระดาษและตราสถานะ
     let y = PAD;
     const statusLabel = topic.closed ? 'ปิดการเก็บแล้ว' : done ? 'เก็บครบแล้ว' : 'เปิดรับเงิน';
+    const statusColor = topic.closed ? C.muted : C.paid;
     ctx.font = font(500, 14);
-    const stampW = ctx.measureText(statusLabel).width + 20;
+    const stampW = ctx.measureText(statusLabel).width + 24;
     const stampX = WIDTH - PAD - stampW;
-    ctx.strokeStyle = C.ink;
+    ctx.strokeStyle = statusColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.roundRect(stampX, y + 5, stampW, 28, 2);
+    ctx.roundRect(stampX, y + 5, stampW, 30, 6);
     ctx.stroke();
-    ctx.fillStyle = C.ink;
+    ctx.fillStyle = statusColor;
     ctx.textAlign = 'left';
-    ctx.fillText(statusLabel, stampX + 10, y + 24);
+    ctx.fillText(statusLabel, stampX + 12, y + 25);
 
     const titleX = PAD;
     ctx.fillStyle = C.muted;
-    ctx.font = font(500, 14);
+    ctx.font = font(500, 13);
     ctx.fillText('รายงานการเก็บเงิน', titleX, y + 18);
     ctx.fillStyle = C.ink;
     ctx.font = font(600, 28);
@@ -125,7 +128,7 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
     ctx.fillStyle = C.muted;
     ctx.font = font(500, 14);
     ctx.fillText('เก็บได้แล้ว', infoX, y + 24);
-    ctx.fillStyle = C.ink;
+    ctx.fillStyle = C.paid;
     ctx.font = font(600, 56);
     const collectedText = plainAmount(topic.collected);
     ctx.fillText(collectedText, infoX, y + 82);
@@ -142,12 +145,12 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
     const progressY = y + 98;
     ctx.fillStyle = C.line;
     ctx.beginPath();
-    ctx.rect(infoX, progressY, infoW, 6);
+    ctx.roundRect(infoX, progressY, infoW, 6, 3);
     ctx.fill();
     if (ratio > 0) {
-        ctx.fillStyle = C.ink;
+        ctx.fillStyle = C.paid;
         ctx.beginPath();
-        ctx.rect(infoX, progressY, Math.max(6, infoW * ratio), 6);
+        ctx.roundRect(infoX, progressY, Math.max(6, infoW * ratio), 6, 3);
         ctx.fill();
     }
 
@@ -160,15 +163,18 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
             label: 'จ่ายครบ',
             value: `${topic.paidCount}/${topic.memberCount} คน`,
             sub: counts.unpaid > 0 ? `ยังไม่จ่าย ${counts.unpaid} คน` : 'ทุกคนเริ่มจ่ายแล้ว',
-            color: C.ink,
+            color: C.member,
         },
         { label: 'ครบกำหนด', value: due.date, sub: due.hint, color: C.ink },
     ];
     const statsY = y + 132;
     const statsH = 92;
     const statW = infoW / 3;
+    const statAccents = [C.owe, C.member, C.line];
     chips.forEach((chip, i) => {
         const cx = infoX + i * statW;
+        ctx.fillStyle = statAccents[i] ?? C.line;
+        ctx.fillRect(cx, statsY, statW, 2);
         if (i > 0) {
             ctx.strokeStyle = C.line;
             ctx.lineWidth = 1;
@@ -180,14 +186,15 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
         ctx.textAlign = 'left';
         ctx.fillStyle = C.muted;
         ctx.font = font(500, 13);
-        ctx.fillText(chip.label, cx + 16, statsY + 20);
+        const statInset = i === 0 ? 0 : 20;
+        ctx.fillText(chip.label, cx + statInset, statsY + 20);
         ctx.fillStyle = chip.color;
         ctx.font = font(600, 20);
-        ctx.fillText(truncateText(ctx, chip.value, statW - 32), cx + 16, statsY + 50);
+        ctx.fillText(truncateText(ctx, chip.value, statW - statInset - 16), cx + statInset, statsY + 50);
         if (chip.sub) {
             ctx.fillStyle = C.muted;
             ctx.font = font(400, 13);
-            ctx.fillText(truncateText(ctx, chip.sub, statW - 32), cx + 16, statsY + 74);
+            ctx.fillText(truncateText(ctx, chip.sub, statW - statInset - 16), cx + statInset, statsY + 74);
         }
     });
     y += heroH;
@@ -204,7 +211,7 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
             ctx.fillStyle = C.muted;
             ctx.font = font(600, 13);
             ctx.fillText(label, PAD, top + 20);
-            ctx.strokeStyle = C.ink;
+            ctx.strokeStyle = C.line;
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(PAD, top + 29);
@@ -234,10 +241,14 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
                 ctx.fillText(truncateText(ctx, m.displayName, nameW - 8), PAD, baseline);
 
                 ctx.fillStyle = C.line;
-                ctx.fillRect(barX, rowY + 23, 160, 3);
+                ctx.beginPath();
+                ctx.roundRect(barX, rowY + 23, 160, 3, 2);
+                ctx.fill();
                 if (ratioPaid > 0) {
-                    ctx.fillStyle = C.ink;
-                    ctx.fillRect(barX, rowY + 23, Math.max(3, 160 * ratioPaid), 3);
+                    ctx.fillStyle = C.paid;
+                    ctx.beginPath();
+                    ctx.roundRect(barX, rowY + 23, Math.max(3, 160 * ratioPaid), 3, 2);
+                    ctx.fill();
                 }
 
                 ctx.textAlign = 'right';
@@ -245,7 +256,7 @@ export async function renderFundReportCard(topic: FundTopicDetail, compact = fal
                 ctx.font = font(400, 14);
                 ctx.fillText(`${plainAmount(m.paid)}/${plainAmount(m.target)}`, paidRight, baseline);
 
-                ctx.fillStyle = m.status === 'paid' ? C.paid : m.remaining === m.target ? C.owe : C.ink;
+                ctx.fillStyle = m.status === 'paid' ? C.paid : m.remaining === m.target ? C.danger : C.owe;
                 ctx.font = font(600, 16);
                 ctx.fillText(m.status === 'paid' ? 'ครบ' : `ค้าง ${plainAmount(m.remaining)}`, oweRight, baseline);
 
