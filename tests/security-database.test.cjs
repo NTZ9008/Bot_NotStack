@@ -7,6 +7,7 @@ const { AuthService } = require('../apps/backend/dist/auth/auth.service');
 const { UsersService } = require('../apps/backend/dist/users/users.service');
 const { WebhookQueueService } = require('../apps/backend/dist/pr-bot/webhook-queue.service');
 const { GeminiService } = require('../apps/backend/dist/chat/gemini.service');
+const { encryptGeminiKey } = require('../apps/backend/dist/chat/ai-key-crypto');
 const { WelcomeStore } = require('../apps/backend/dist/welcome/welcome.store');
 const { JwtService } = require('../apps/backend/node_modules/@nestjs/jwt');
 const bcrypt = require('../apps/backend/node_modules/bcryptjs');
@@ -132,9 +133,15 @@ test('webhook processing survives failure and retry; invalid payloads never ente
 
 test('durable AI quota serializes simultaneous calls from multiple service instances', async () => {
     await prisma.aiUsage.deleteMany();
+    const guildId = 'security-guild';
+    await prisma.guildAiConfig.upsert({
+        where: { guildId },
+        create: { guildId, aiEnabled: true, geminiApiKeyEncrypted: encryptGeminiKey('guild-fixture', 'fixture'), aiDailyLimit: 3 },
+        update: { aiEnabled: true, geminiApiKeyEncrypted: encryptGeminiKey('guild-fixture', 'fixture'), aiDailyLimit: 3 },
+    });
     const config = { get: (key) => ({ GEMINI_KEY: 'fixture', AI_DAILY_LIMIT: 3, AI_GUILD_DAILY_LIMIT: 3 })[key] };
     const instances = [0, 1].map(() => quiet(new GeminiService(config, prisma, { isHome: () => false })));
-    const results = await Promise.all(Array.from({ length: 8 }, (_, i) => instances[i % 2].reserve('security-guild')));
+    const results = await Promise.all(Array.from({ length: 8 }, (_, i) => instances[i % 2].reserve(guildId)));
     assert.equal(results.filter((x) => x === 'ok').length, 3);
     assert.equal((await prisma.aiUsage.findFirst()).count, 3);
 });
