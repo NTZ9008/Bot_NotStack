@@ -302,6 +302,9 @@ export class GeminiService {
                     .catch((err: unknown) => {
                         clearTimeout(attemptTimeout);
                         inFlight--;
+                        // Count failed attempts (including 429s) toward RPD as well.
+                        // Token usage is only available for successful responses.
+                        void this.recordUsage(guildId, entry.name, 0);
                         if (settled) return;
                         lastError = err;
                         this.recordFailure(guildId, entry.name, err);
