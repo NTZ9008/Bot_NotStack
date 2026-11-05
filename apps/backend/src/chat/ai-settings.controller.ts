@@ -72,7 +72,7 @@ export class AiSettingsController {
     async test(@GuildId() guildId: string, @Body() body: { apiKey?: string }, @AuditCtx() audit: AuditContext) {
         audit.targetId = guildId;
         try {
-            let key = body.apiKey?.trim();
+            const key = body.apiKey?.trim();
             if (!key) {
                 const config = await this.gemini.getConfig(guildId);
                 if (config?.geminiApiKeyEncrypted) {

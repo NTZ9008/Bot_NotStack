@@ -37,8 +37,9 @@ function AiSettingsPage() {
     const [dailyLimit, setDailyLimit] = useState('500');
     const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
     const canEnable = Boolean(data?.hasKey || data?.hasFallbackHomeKey);
+    const savedDailyLimit = data?.dailyLimit;
 
-    useEffect(() => { if (data) setDailyLimit(String(data.dailyLimit)); }, [data?.dailyLimit]);
+    useEffect(() => { if (savedDailyLimit !== undefined) setDailyLimit(String(savedDailyLimit)); }, [savedDailyLimit]);
 
     const save = useMutation({
         mutationFn: () => updateAiSettings(guildId, { ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}), dailyLimit: Number(dailyLimit) }),
@@ -57,7 +58,11 @@ function AiSettingsPage() {
     });
     const test = useMutation({
         mutationFn: () => testAiKey(guildId, apiKey.trim() || undefined),
-        onSuccess: (result) => { setTestResult(result); result.ok ? toast.success(result.message) : toast.error(result.message); },
+        onSuccess: (result) => {
+            setTestResult(result);
+            if (result.ok) toast.success(result.message);
+            else toast.error(result.message);
+        },
         onError: (error) => { setTestResult({ ok: false, message: errorMessage(error) }); toast.error('ทดสอบ Key ไม่สำเร็จ', { description: errorMessage(error) }); },
     });
 
