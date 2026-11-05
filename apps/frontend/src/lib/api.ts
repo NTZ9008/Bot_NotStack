@@ -78,7 +78,7 @@ export function refreshSession(signal = sessionRequests.capture()): Promise<bool
 }
 
 export interface ApiOptions {
-    method?: 'GET' | 'POST';
+    method?: 'GET' | 'POST' | 'PATCH';
     // body แบบ JSON
     body?: unknown;
     // body ดิบ (เช่นไฟล์รูป) — ใช้คู่กับ contentType

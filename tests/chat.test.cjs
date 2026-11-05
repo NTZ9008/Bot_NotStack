@@ -1,5 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const { encryptGeminiKey } = require('../apps/backend/dist/chat/ai-key-crypto');
 const { EventEmitter } = require('node:events');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -30,6 +31,12 @@ function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {})
     const writes = [];
     const counts = new Map(stored.map((row) => [row.guildId, row.count]));
     const prisma = {
+        guildAiConfig: {
+            findUnique: async ({ where }) => {
+                if (!key || where.guildId === 'home') return null;
+                return { guildId: where.guildId, aiEnabled: true, geminiApiKeyEncrypted: encryptGeminiKey(key, key), aiDailyLimit: perGuild };
+            },
+        },
         $executeRaw: async () => {},
         aiUsage: {
             aggregate: async () => ({ _sum: { count: [...counts.values()].reduce((a, b) => a + b, 0) } }),
@@ -40,6 +47,10 @@ function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {})
                 const id = args.where.day_guildId.guildId;
                 counts.set(id, (counts.get(id) ?? 0) + 1);
             },
+        },
+        aiModelUsage: {
+            deleteMany: async () => {},
+            upsert: async () => {},
         },
     };
     prisma.$transaction = async (fn) => fn(prisma);
@@ -75,7 +86,8 @@ test('AI quota survives a restart by loading today’s counts and is disabled wi
 test('GeminiService multi-model pool falls back across free-tier models and cools down failing models', async () => {
     const { service } = gemini();
     const tried = [];
-    service.chatModels = [
+    await service.modelsFor('other');
+    service.modelCache.get('other').chatModels = [
         {
             name: 'model-a',
             model: {
@@ -95,11 +107,11 @@ test('GeminiService multi-model pool falls back across free-tier models and cool
             },
         },
     ];
-    assert.equal(await service.chat('สวัสดี'), 'คำตอบจาก model-b');
+    assert.equal(await service.chat('other', 'สวัสดี'), 'คำตอบจาก model-b');
     assert.deepEqual(tried, ['model-a', 'model-b']);
     // ครั้งถัดไปควรข้าม model-a ที่ติด cooldown ทันทีและใช้ model-b เลย
     tried.length = 0;
-    assert.equal(await service.chat('สวัสดีอีกครั้ง'), 'คำตอบจาก model-b');
+    assert.equal(await service.chat('other', 'สวัสดีอีกครั้ง'), 'คำตอบจาก model-b');
     assert.deepEqual(tried, ['model-b']);
 });
 
@@ -110,7 +122,7 @@ function listener({ verdict = 'PASS', quota = 'ok', home = true } = {}) {
         dailyLimit: 250,
         guildDailyLimit: 50,
         reserve: async () => quota,
-        moderate: async (content) => {
+        moderate: async (_guildId, content) => {
             calls.moderated.push(content);
             return verdict;
         },
