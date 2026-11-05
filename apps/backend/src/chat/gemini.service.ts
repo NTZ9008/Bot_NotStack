@@ -120,7 +120,8 @@ export class GeminiService {
     clearCache(guildId: string): void { this.modelCache.delete(guildId); }
 
     async getConfig(guildId: string) {
-        return this.prisma.guildAiConfig.findUnique({ where: { guildId } });
+        const model = this.prisma.guildAiConfig;
+        return model ? model.findUnique({ where: { guildId } }) : null;
     }
 
     async saveConfig(guildId: string, input: { aiEnabled?: boolean; apiKey?: string | null; dailyLimit?: number }) {
@@ -182,11 +183,12 @@ export class GeminiService {
         try {
             return await this.prisma.$transaction(async (tx): Promise<AiQuota> => {
                 await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ai-quota:${day}`}))`;
-                const config = await tx.guildAiConfig.findUnique({ where: { guildId } });
+                const config = tx.guildAiConfig ? await tx.guildAiConfig.findUnique({ where: { guildId } }) : null;
                 const total = await tx.aiUsage.aggregate({ where: { day }, _sum: { count: true } });
                 if (this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted && (total._sum.count ?? 0) >= this.dailyLimit) return 'global';
                 const row = await tx.aiUsage.findUnique({ where: { day_guildId: { day, guildId } } });
-                const limit = this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted ? this.guildDailyLimit : (config?.aiDailyLimit ?? 500);
+                const usesHomeFallback = this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted;
+                const limit = usesHomeFallback ? (config?.aiDailyLimit ?? Number.POSITIVE_INFINITY) : (config?.aiDailyLimit ?? 500);
                 if ((row?.count ?? 0) >= limit) return 'guild';
                 await tx.aiUsage.upsert({ where: { day_guildId: { day, guildId } }, create: { day, guildId, count: 1 }, update: { count: { increment: 1 } } });
                 // ลบยอดเก่าวันละครั้งพอ ไม่ต้องทำทุกครั้งที่เรียก AI

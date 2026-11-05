@@ -37,7 +37,7 @@ export class AiSettingsController {
             maskedKey: this.gemini.maskKey(config?.geminiApiKeyEncrypted) ?? (isUsingFallbackHomeKey ? this.gemini.maskFallbackKey() : null),
             isUsingFallbackHomeKey,
             hasFallbackHomeKey,
-            dailyLimit: config?.aiDailyLimit ?? (this.discord.isHome(guildId) ? this.gemini.guildDailyLimit : 500),
+            dailyLimit: config?.aiDailyLimit ?? (this.discord.isHome(guildId) ? this.gemini.dailyLimit : 500),
             todayTotalRequests,
             models,
         };

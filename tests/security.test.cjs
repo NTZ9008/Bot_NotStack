@@ -285,10 +285,14 @@ test('production startup requires HTTPS origins and a strong secret; proxy setti
 });
 
 test('AI requests fail closed when durable quota reservation fails', async () => {
+    const { encryptGeminiKey } = require('../apps/backend/dist/chat/ai-key-crypto');
     const ai = quiet(
         new GeminiService(
             { get: (key) => ({ GEMINI_KEY: 'fixture', AI_DAILY_LIMIT: 5, AI_GUILD_DAILY_LIMIT: 2 })[key] },
             {
+                guildAiConfig: {
+                    findUnique: async () => ({ aiEnabled: true, geminiApiKeyEncrypted: encryptGeminiKey('guild-key', 'fixture'), aiDailyLimit: 500 }),
+                },
                 $transaction: async () => {
                     throw Error('DB unavailable');
                 },
