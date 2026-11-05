@@ -6,7 +6,7 @@ import { GuildId } from '../guilds/decorators/guild-id.decorator';
 import { GuildAccess, GuildRoute } from '../guilds/decorators/guild-route.decorator';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { FREE_TIER_MODELS, GeminiService } from './gemini.service';
+import { AI_STUDIO_MODELS, GeminiService } from './gemini.service';
 
 @GuildRoute()
 @Controller('guilds/:guildId/ai')
@@ -20,10 +20,10 @@ export class AiSettingsController {
         const day = bangkokDay();
         const [usage, models] = await Promise.all([
             this.prisma.aiModelUsage.findMany({ where: { guildId, day } }),
-            Promise.resolve(FREE_TIER_MODELS.map((spec) => {
+            Promise.resolve(AI_STUDIO_MODELS.map((spec) => {
                 const row = this.gemini.getRateStatus(guildId, spec.name);
                 const daily = 0;
-                return { name: spec.name, category: 'Text-out models', rpm: { current: row.rpm, limit: spec.rpm }, tpm: { current: row.tpm, limit: spec.tpm }, rpd: { current: daily, limit: spec.rpd }, cooldownUntil: row.cooldownUntil, status: row.cooldownUntil ? 'cooldown' : 'ready' };
+                return { name: spec.name, category: spec.category, rpm: { current: row.rpm, limit: spec.rpm }, tpm: { current: row.tpm, limit: spec.tpm }, rpd: { current: daily, limit: spec.rpd }, cooldownUntil: row.cooldownUntil, status: row.cooldownUntil ? 'cooldown' : 'ready' };
             })),
         ]);
         const byModel = new Map(usage.map((row) => [row.modelName, row.requestCount]));

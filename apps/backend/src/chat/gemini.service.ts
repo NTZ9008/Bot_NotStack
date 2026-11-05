@@ -67,6 +67,14 @@ export const FREE_TIER_MODELS: readonly ModelSpec[] = [
 
 export const FREE_TIER_LIMITS = Object.fromEntries(FREE_TIER_MODELS.map(({ name, rpm, tpm, rpd }) => [name, { rpm, tpm, rpd }]));
 
+// Models shown in the Google AI Studio usage table. Gemma entries are display-only
+// until they are explicitly added to the supported generation fallback pool.
+export const AI_STUDIO_MODELS: readonly (ModelSpec & { category: 'Text-out models' | 'Other models' })[] = [
+    ...FREE_TIER_MODELS.map((model) => ({ ...model, category: 'Text-out models' as const })),
+    { name: 'gemma-4-26b', thinkingLevel: 'low', rpm: 30, tpm: 16_000, rpd: 14_400, category: 'Other models' },
+    { name: 'gemma-4-31b', thinkingLevel: 'low', rpm: 30, tpm: 16_000, rpd: 14_400, category: 'Other models' },
+];
+
 // กติกาอยู่ใน system instruction ส่วนข้อความของผู้ใช้ส่งแยกเป็นข้อมูล — ผู้ใช้จึงพิมพ์คำสั่งมาเปลี่ยนกติกาได้ยากขึ้น
 const CHAT_PERSONA = `คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์ Discord และเป็นเพื่อนคุยของทุกคนในเซิร์ฟ
 บุคลิก: เป็นกันเองเหมือนเพื่อนสนิทในแชท, กวนนิดๆ แต่ใจดี, อบอุ่น
@@ -302,6 +310,9 @@ export class GeminiService {
                     .catch((err: unknown) => {
                         clearTimeout(attemptTimeout);
                         inFlight--;
+                        // Count failed attempts (including 429s) toward RPD as well.
+                        // Token usage is only available for successful responses.
+                        void this.recordUsage(guildId, entry.name, 0);
                         if (settled) return;
                         lastError = err;
                         this.recordFailure(guildId, entry.name, err);

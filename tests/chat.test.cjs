@@ -29,6 +29,7 @@ const quiet = (target) => {
 // --- Gemini quota ---
 function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {}) {
     const writes = [];
+    const modelWrites = [];
     const counts = new Map(stored.map((row) => [row.guildId, row.count]));
     const prisma = {
         guildAiConfig: {
@@ -50,14 +51,14 @@ function gemini({ stored = [], key = 'test-key', daily = 5, perGuild = 2 } = {})
         },
         aiModelUsage: {
             deleteMany: async () => {},
-            upsert: async () => {},
+            upsert: async (args) => { modelWrites.push(args); },
         },
     };
     prisma.$transaction = async (fn) => fn(prisma);
     const service = quiet(
         new GeminiService(config({ GEMINI_KEY: key, AI_DAILY_LIMIT: daily, AI_GUILD_DAILY_LIMIT: perGuild }), prisma, { isHome: (id) => id === 'home' }),
     );
-    return { service, writes };
+    return { service, writes, modelWrites };
 }
 test('AI quota caps other servers per day while the home server only shares the global cap', async () => {
     const { service, writes } = gemini();
@@ -84,7 +85,7 @@ test('AI quota survives a restart by loading today’s counts and is disabled wi
     assert.equal(await gemini({ key: null }).service.reserve('home'), 'disabled');
 });
 test('GeminiService multi-model pool falls back across free-tier models and cools down failing models', async () => {
-    const { service } = gemini();
+    const { service, modelWrites } = gemini();
     const tried = [];
     await service.modelsFor('other');
     service.modelCache.get('other').chatModels = [
@@ -109,6 +110,10 @@ test('GeminiService multi-model pool falls back across free-tier models and cool
     ];
     assert.equal(await service.chat('other', 'สวัสดี'), 'คำตอบจาก model-b');
     assert.deepEqual(tried, ['model-a', 'model-b']);
+    assert.deepEqual(modelWrites.map(({ where, create }) => ({ modelName: where.day_guildId_modelName.modelName, requestCount: create.requestCount, tokenCount: create.tokenCount })), [
+        { modelName: 'model-a', requestCount: 1, tokenCount: 0 },
+        { modelName: 'model-b', requestCount: 1, tokenCount: 0 },
+    ]);
     // ครั้งถัดไปควรข้าม model-a ที่ติด cooldown ทันทีและใช้ model-b เลย
     tried.length = 0;
     assert.equal(await service.chat('other', 'สวัสดีอีกครั้ง'), 'คำตอบจาก model-b');
