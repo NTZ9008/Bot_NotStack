@@ -426,6 +426,7 @@ model AiModelUsage {
   tokenCount   Int      @default(0) @map("token_count")
 
   @@id([day, guildId, modelName])
+  @@index([guildId, day])
   @@map("ai_model_usage")
 }
 
