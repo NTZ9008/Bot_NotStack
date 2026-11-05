@@ -4,6 +4,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
     CircleUser,
     CloudSun,
+    Bot,
     Coins,
     FileText,
     GitPullRequest,
@@ -65,6 +66,14 @@ const GUILD_GROUPS: NavGroup[] = [
                 icon: Settings,
                 guild: 'manage',
                 keywords: 'configuration config ตั้งค่า คอนฟิก ห้อง channel เปิดปิด anti spam คำหยาบ ai',
+            },
+            {
+                to: '/servers/$guildId/ai',
+                label: 'ตั้งค่า AI Chat',
+                guide: 'config',
+                icon: Bot,
+                guild: 'manage',
+                keywords: 'AI Gemini Chat moderation API key rate limit usage ตั้งค่า AI',
             },
         ],
     },

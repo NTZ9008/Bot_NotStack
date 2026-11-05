@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, type GenerationConfig, type GenerativeModel } from '@google/generative-ai';
+import { createHash } from 'node:crypto';
 import { bangkokDay } from '../common/utils/parse.util';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { decryptGeminiKey, encryptGeminiKey, maskGeminiKey } from './ai-key-crypto';
 
 // เก็บสถิติการใช้ย้อนหลังกี่วัน (ใช้แค่วันปัจจุบัน ที่เหลือไว้ดูย้อนหลังเฉยๆ)
 const USAGE_RETENTION_DAYS = 14;
@@ -32,11 +34,20 @@ type ThinkingGenerationConfig = GenerationConfig & {
 export interface ModelSpec {
     readonly name: string;
     readonly thinkingLevel: ThinkingLevel;
+    readonly rpm: number;
+    readonly tpm: number;
+    readonly rpd: number;
 }
 
 interface ModelEntry {
     readonly name: string;
     readonly model: GenerativeModel;
+}
+
+interface GuildModels {
+    keyHash: string;
+    chatModels: readonly ModelEntry[];
+    moderationModels: readonly ModelEntry[];
 }
 
 // เรียงลำดับโมเดลในกรอบ Free Tier จากตัวที่ตอบไวที่สุดและมีโควตาแยกต่อโมเดล (PerProjectPerModel)
@@ -46,13 +57,15 @@ interface ModelEntry {
 // - gemini-3.6-flash / gemini-3.5-flash-lite / gemini-3.8-flash: โมเดลสำรองที่มีโควตา Free Tier แยกแต่ละตัว
 // หมายเหตุ: gemini-3.8-flash ไม่รองรับ thinkingLevel: 'minimal' (จะเกิด 400 Bad Request) จึงต้องใช้ 'low'
 export const FREE_TIER_MODELS: readonly ModelSpec[] = [
-    { name: 'gemini-3.1-flash-lite', thinkingLevel: 'low' },
-    { name: 'gemini-3-flash-preview', thinkingLevel: 'minimal' },
-    { name: 'gemini-3.1-flash-lite-preview', thinkingLevel: 'low' },
-    { name: 'gemini-3.6-flash', thinkingLevel: 'low' },
-    { name: 'gemini-3.5-flash-lite', thinkingLevel: 'low' },
-    { name: 'gemini-3.8-flash', thinkingLevel: 'low' },
+    { name: 'gemini-3.1-flash-lite', thinkingLevel: 'low', rpm: 15, tpm: 250_000, rpd: 500 },
+    { name: 'gemini-3-flash-preview', thinkingLevel: 'minimal', rpm: 5, tpm: 250_000, rpd: 20 },
+    { name: 'gemini-3.1-flash-lite-preview', thinkingLevel: 'low', rpm: 15, tpm: 250_000, rpd: 500 },
+    { name: 'gemini-3.6-flash', thinkingLevel: 'low', rpm: 5, tpm: 250_000, rpd: 20 },
+    { name: 'gemini-3.5-flash-lite', thinkingLevel: 'low', rpm: 15, tpm: 250_000, rpd: 500 },
+    { name: 'gemini-3.8-flash', thinkingLevel: 'low', rpm: 5, tpm: 250_000, rpd: 20 },
 ];
+
+export const FREE_TIER_LIMITS = Object.fromEntries(FREE_TIER_MODELS.map(({ name, rpm, tpm, rpd }) => [name, { rpm, tpm, rpd }]));
 
 // กติกาอยู่ใน system instruction ส่วนข้อความของผู้ใช้ส่งแยกเป็นข้อมูล — ผู้ใช้จึงพิมพ์คำสั่งมาเปลี่ยนกติกาได้ยากขึ้น
 const CHAT_PERSONA = `คุณชื่อ Bot_NotStack บอทดูแลความปลอดภัยประจำเซิร์ฟเวอร์ Discord และเป็นเพื่อนคุยของทุกคนในเซิร์ฟ
@@ -84,14 +97,14 @@ export type AiQuota = 'ok' | 'global' | 'guild' | 'disabled';
 @Injectable()
 export class GeminiService {
     private readonly logger = new Logger('AI');
-    // วันที่ล้างยอดใช้ AI เก่าไปแล้ว (ล้างวันละครั้ง)
     private cleanedDay: string | null = null;
-    private readonly chatModels: readonly ModelEntry[];
-    private readonly moderationModels: readonly ModelEntry[];
-    // เก็บเวลาที่แต่ละโมเดลจะกลับมาพร้อมใช้งาน (epoch ms) เมื่อติด 429 / 503 / timeout
-    private readonly cooldownUntil = new Map<string, number>();
+    private readonly modelCache = new Map<string, GuildModels>();
+    private readonly cooldownUntil = new Map<string, Map<string, number>>();
+    private readonly windows = new Map<string, Map<string, { at: number; tokens: number }[]>>();
     readonly dailyLimit: number;
     readonly guildDailyLimit: number;
+    private readonly fallbackKey?: string;
+    private readonly encryptionSecret: string;
 
     constructor(
         config: ConfigService<Env, true>,
@@ -100,62 +113,86 @@ export class GeminiService {
     ) {
         this.dailyLimit = config.get('AI_DAILY_LIMIT', { infer: true });
         this.guildDailyLimit = config.get('AI_GUILD_DAILY_LIMIT', { infer: true });
-        const key = config.get('GEMINI_KEY', { infer: true });
-        if (!key) {
-            this.logger.warn('ยังไม่ได้ตั้ง GEMINI_KEY — AI Chat และตัวกรองคำหยาบแบบ AI จะใช้งานไม่ได้');
-            this.chatModels = [];
-            this.moderationModels = [];
-            return;
-        }
-        const ai = new GoogleGenerativeAI(key);
-        this.chatModels = FREE_TIER_MODELS.map(({ name, thinkingLevel }) => {
-            const chatConfig: ThinkingGenerationConfig = {
-                thinkingConfig: { thinkingLevel },
-            };
-            return {
-                name,
-                model: ai.getGenerativeModel({
-                    model: name,
-                    systemInstruction: CHAT_PERSONA,
-                    generationConfig: chatConfig,
-                }),
-            };
-        });
-        this.moderationModels = FREE_TIER_MODELS.map(({ name, thinkingLevel }) => {
-            const moderationConfig: ThinkingGenerationConfig = {
-                temperature: 0,
-                thinkingConfig: { thinkingLevel },
-            };
-            return {
-                name,
-                model: ai.getGenerativeModel({
-                    model: name,
-                    systemInstruction: MODERATION_RULES,
-                    generationConfig: moderationConfig,
-                }),
-            };
-        });
+        this.fallbackKey = config.get('GEMINI_KEY', { infer: true });
+        this.encryptionSecret = config.get('AI_KEY_ENCRYPTION_SECRET', { infer: true }) || config.get('JWT_SECRET', { infer: true }) || config.get('SESSION_SECRET', { infer: true }) || this.fallbackKey || '';
     }
 
-    get available(): boolean {
-        return this.chatModels.length > 0;
+    clearCache(guildId: string): void { this.modelCache.delete(guildId); }
+
+    async getConfig(guildId: string) {
+        return this.prisma.guildAiConfig.findUnique({ where: { guildId } });
+    }
+
+    async saveConfig(guildId: string, input: { aiEnabled?: boolean; apiKey?: string | null; dailyLimit?: number }) {
+        if (input.apiKey?.trim() && !this.encryptionSecret) throw new Error('Configure AI_KEY_ENCRYPTION_SECRET before saving API keys');
+        const data: { aiEnabled?: boolean; geminiApiKeyEncrypted?: string | null; aiDailyLimit?: number } = {};
+        if (input.aiEnabled !== undefined) data.aiEnabled = input.aiEnabled;
+        if (input.apiKey !== undefined) data.geminiApiKeyEncrypted = input.apiKey?.trim() ? encryptGeminiKey(input.apiKey.trim(), this.encryptionSecret) : null;
+        if (input.dailyLimit !== undefined) data.aiDailyLimit = input.dailyLimit;
+        const saved = await this.prisma.guildAiConfig.upsert({ where: { guildId }, create: { guildId, aiEnabled: input.aiEnabled ?? this.discord.isHome(guildId), ...data }, update: data });
+        this.clearCache(guildId);
+        return saved;
+    }
+
+    private createModels(key: string): GuildModels {
+        const ai = new GoogleGenerativeAI(key);
+        const chatModels = FREE_TIER_MODELS.map(({ name, thinkingLevel }) => ({ name, model: ai.getGenerativeModel({ model: name, systemInstruction: CHAT_PERSONA, generationConfig: { thinkingConfig: { thinkingLevel } } as ThinkingGenerationConfig }) }));
+        const moderationModels = FREE_TIER_MODELS.map(({ name, thinkingLevel }) => ({ name, model: ai.getGenerativeModel({ model: name, systemInstruction: MODERATION_RULES, generationConfig: { temperature: 0, thinkingConfig: { thinkingLevel } } as ThinkingGenerationConfig }) }));
+        return { keyHash: createHash('sha256').update(key).digest('hex'), chatModels, moderationModels };
+    }
+
+    private async modelsFor(guildId: string): Promise<GuildModels | null> {
+        const config = await this.getConfig(guildId);
+        let key: string | undefined;
+        if (config?.aiEnabled && config.geminiApiKeyEncrypted) key = decryptGeminiKey(config.geminiApiKeyEncrypted, this.encryptionSecret);
+        else if (this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted && (!config || config.aiEnabled)) key = this.fallbackKey;
+        if (!key || (!this.discord.isHome(guildId) && !config?.aiEnabled)) return null;
+        const hash = createHash('sha256').update(key).digest('hex');
+        const cached = this.modelCache.get(guildId);
+        if (cached?.keyHash === hash) return cached;
+        const models = this.createModels(key);
+        this.modelCache.set(guildId, models);
+        return models;
+    }
+
+    async testKey(key: string): Promise<void> {
+        const model = new GoogleGenerativeAI(key).getGenerativeModel({ model: FREE_TIER_MODELS[0]!.name });
+        await model.generateContent('Reply with OK');
+    }
+
+    async testConfiguredKey(guildId: string): Promise<void> {
+        const config = await this.getConfig(guildId);
+        const key = config?.geminiApiKeyEncrypted ? decryptGeminiKey(config.geminiApiKeyEncrypted, this.encryptionSecret) : this.discord.isHome(guildId) && (!config || config.aiEnabled) ? this.fallbackKey : undefined;
+        if (!key) throw new Error('ไม่พบ API Key ที่ตั้งค่าไว้');
+        await this.testKey(key);
+    }
+
+    hasFallbackKey(): boolean { return Boolean(this.fallbackKey); }
+    maskFallbackKey(): string | null { return this.fallbackKey ? maskGeminiKey(this.fallbackKey) : null; }
+
+    maskKey(encrypted: string | null | undefined): string | null {
+        if (!encrypted || !this.encryptionSecret) return null;
+        return maskGeminiKey(decryptGeminiKey(encrypted, this.encryptionSecret));
     }
 
     // จองโควตา 1 ครั้งก่อนเรียก Gemini (นับตอนเรียก ไม่ใช่ตอนสำเร็จ — Google ก็นับแบบนั้น)
     async reserve(guildId: string): Promise<AiQuota> {
-        if (!this.available) return 'disabled';
+        if (!(await this.modelsFor(guildId))) return 'disabled';
         const day = bangkokDay();
         try {
             return await this.prisma.$transaction(async (tx): Promise<AiQuota> => {
                 await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`ai-quota:${day}`}))`;
+                const config = await tx.guildAiConfig.findUnique({ where: { guildId } });
                 const total = await tx.aiUsage.aggregate({ where: { day }, _sum: { count: true } });
-                if ((total._sum.count ?? 0) >= this.dailyLimit) return 'global';
+                if (this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted && (total._sum.count ?? 0) >= this.dailyLimit) return 'global';
                 const row = await tx.aiUsage.findUnique({ where: { day_guildId: { day, guildId } } });
-                if (!this.discord.isHome(guildId) && (row?.count ?? 0) >= this.guildDailyLimit) return 'guild';
+                const limit = this.discord.isHome(guildId) && !config?.geminiApiKeyEncrypted ? this.guildDailyLimit : (config?.aiDailyLimit ?? 500);
+                if ((row?.count ?? 0) >= limit) return 'guild';
                 await tx.aiUsage.upsert({ where: { day_guildId: { day, guildId } }, create: { day, guildId, count: 1 }, update: { count: { increment: 1 } } });
                 // ลบยอดเก่าวันละครั้งพอ ไม่ต้องทำทุกครั้งที่เรียก AI
                 if (this.cleanedDay !== day) {
                     await tx.aiUsage.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000)) } } });
+                    await tx.aiModelUsage.deleteMany({ where: { day: { lt: bangkokDay(new Date(Date.now() - USAGE_RETENTION_DAYS * 86400000)) } } });
                     this.cleanedDay = day;
                 }
                 return 'ok';
@@ -167,11 +204,11 @@ export class GeminiService {
     }
 
     // จัดลำดับโมเดลที่จะลองเรียก: เอาโมเดลที่ไม่ติด cooldown ขึ้นก่อนตามลำดับความเร็ว แล้วค่อยตามด้วยตัวที่ใกล้พ้น cooldown
-    private orderedCandidates(entries: readonly ModelEntry[], now = Date.now()): ModelEntry[] {
+    private orderedCandidates(guildId: string, entries: readonly ModelEntry[], now = Date.now()): ModelEntry[] {
         const ready: ModelEntry[] = [];
         const cooling: { entry: ModelEntry; until: number }[] = [];
         for (const entry of entries) {
-            const until = this.cooldownUntil.get(entry.name) ?? 0;
+            const until = this.cooldownUntil.get(guildId)?.get(entry.name) ?? 0;
             if (until <= now) {
                 ready.push(entry);
             } else {
@@ -182,7 +219,7 @@ export class GeminiService {
         return [...ready, ...cooling.map((item) => item.entry)];
     }
 
-    private recordFailure(modelName: string, err: unknown, now = Date.now()): void {
+    private recordFailure(guildId: string, modelName: string, err: unknown, now = Date.now()): void {
         const msg = err instanceof Error ? err.message : String(err);
         const status = (err as { status?: number })?.status;
         let cooldownMs = COOLDOWN_TRANSIENT_MS;
@@ -191,7 +228,9 @@ export class GeminiService {
         } else if (status === 400 || status === 404 || /\b(400|404)\b/i.test(msg)) {
             cooldownMs = COOLDOWN_DAILY_QUOTA_MS;
         }
-        this.cooldownUntil.set(modelName, now + cooldownMs);
+        const guildCooldowns = this.cooldownUntil.get(guildId) ?? new Map<string, number>();
+        guildCooldowns.set(modelName, now + cooldownMs);
+        this.cooldownUntil.set(guildId, guildCooldowns);
         this.logger.warn(`สลับโมเดล AI (${modelName} ใช้งานไม่ได้ชั่วคราว พัก ${Math.round(cooldownMs / 1000)}s): ${msg}`);
     }
 
@@ -199,9 +238,9 @@ export class GeminiService {
     // 1) เริ่มยิงโมเดลอันดับแรกที่พร้อมใช้งานทันที
     // 2) ถ้าเกิด error (เช่น 429/503) จะสลับไปโมเดลถัดไปทันที หรือถ้ารอนานเกิน HEDGE_DELAY_MS จะยิงโมเดลสำรองช่วยขนานกัน (สูงสุด 2 โมเดลพร้อมกัน)
     // 3) โมเดลไหนตอบสำเร็จก่อนจะชนะทันทีและยกเลิกคำขอที่เหลือ
-    private async generateWithFallback(entries: readonly ModelEntry[], prompt: string, timeoutMs: number): Promise<string> {
+    private async generateWithFallback(guildId: string, entries: readonly ModelEntry[], prompt: string, timeoutMs: number): Promise<string> {
         if (entries.length === 0) throw new Error('ยังไม่ได้ตั้ง GEMINI_KEY');
-        const candidates = this.orderedCandidates(entries);
+        const candidates = this.orderedCandidates(guildId, entries);
 
         return new Promise<string>((resolve, reject) => {
             let settled = false;
@@ -249,11 +288,13 @@ export class GeminiService {
                     .generateContent(prompt, { signal: controller.signal })
                     .then((result) => {
                         clearTimeout(attemptTimeout);
+                        const totalTokenCount = result.response.usageMetadata?.totalTokenCount ?? 0;
+                        void this.recordUsage(guildId, entry.name, totalTokenCount);
                         if (settled) return;
                         const text = result.response.text();
                         settled = true;
                         cleanup();
-                        this.cooldownUntil.delete(entry.name);
+                        this.cooldownUntil.get(guildId)?.delete(entry.name);
                         resolve(text);
                     })
                     .catch((err: unknown) => {
@@ -261,7 +302,7 @@ export class GeminiService {
                         inFlight--;
                         if (settled) return;
                         lastError = err;
-                        this.recordFailure(entry.name, err);
+                        this.recordFailure(guildId, entry.name, err);
                         if (nextIndex < candidates.length) {
                             launchNext();
                         } else if (inFlight === 0) {
@@ -277,13 +318,40 @@ export class GeminiService {
     }
 
     // ตอบคำถามจากการแท็กบอท — เรียก reserve() ก่อนเสมอ
-    async chat(question: string): Promise<string> {
-        return this.generateWithFallback(this.chatModels, question, CHAT_TIMEOUT_MS);
+    private async recordUsage(guildId: string, modelName: string, tokenCount: number): Promise<void> {
+        const now = Date.now();
+        const byModel = this.windows.get(guildId) ?? new Map<string, { at: number; tokens: number }[]>();
+        const requests = (byModel.get(modelName) ?? []).filter((row) => now - row.at < 60_000);
+        requests.push({ at: now, tokens: tokenCount });
+        byModel.set(modelName, requests);
+        this.windows.set(guildId, byModel);
+        const day = bangkokDay();
+        try {
+            await this.prisma.aiModelUsage.upsert({
+                where: { day_guildId_modelName: { day, guildId, modelName } },
+                create: { day, guildId, modelName, requestCount: 1, tokenCount },
+                update: { requestCount: { increment: 1 }, tokenCount: { increment: tokenCount } },
+            });
+        } catch (error) { this.logger.warn(`Could not record AI usage: ${String(error)}`); }
+    }
+
+    getRateStatus(guildId: string, modelName: string) {
+        const now = Date.now();
+        const requests = (this.windows.get(guildId)?.get(modelName) ?? []).filter((row) => now - row.at < 60_000);
+        const limits = FREE_TIER_LIMITS[modelName as keyof typeof FREE_TIER_LIMITS];
+        const cooldownUntil = this.cooldownUntil.get(guildId)?.get(modelName) ?? 0;
+        return { rpm: requests.length, tpm: requests.reduce((sum, row) => sum + row.tokens, 0), cooldownUntil: cooldownUntil > now ? cooldownUntil : null, limits };
+    }
+
+    async chat(guildId: string, question: string): Promise<string> {
+        const models = await this.modelsFor(guildId);
+        return this.generateWithFallback(guildId, models?.chatModels ?? [], question, CHAT_TIMEOUT_MS);
     }
 
     // ตัดสินข้อความที่มีคำต้องสงสัย — เรียก reserve() ก่อนเสมอ
-    async moderate(content: string): Promise<ModerationVerdict> {
-        const text = await this.generateWithFallback(this.moderationModels, content, MODERATION_TIMEOUT_MS);
+    async moderate(guildId: string, content: string): Promise<ModerationVerdict> {
+        const models = await this.modelsFor(guildId);
+        const text = await this.generateWithFallback(guildId, models?.moderationModels ?? [], content, MODERATION_TIMEOUT_MS);
         const raw = text.trim();
         let verdict: unknown = raw;
         if (raw.startsWith('{') || raw.startsWith('"')) {

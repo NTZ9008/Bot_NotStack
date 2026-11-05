@@ -194,7 +194,7 @@ export class MessageListener {
     private async judge(msg: Message<true>): Promise<ModerationVerdict | null> {
         if ((await this.gemini.reserve(msg.guildId)) !== 'ok') return null;
         try {
-            return await this.gemini.moderate(msg.content);
+            return await this.gemini.moderate(msg.guildId, msg.content);
         } catch (err) {
             this.logger.error(`AI Smart Filter Error: ${(err as Error).message}`);
             return null;
@@ -222,7 +222,7 @@ export class MessageListener {
         let text: string;
         try {
             if (quota === 'disabled') throw new Error('ยังไม่ได้ตั้ง GEMINI_KEY');
-            text = await this.gemini.chat(question);
+            text = await this.gemini.chat(msg.guildId, question);
         } catch (err) {
             this.logger.error(`AI Error: ${(err as Error).message}`);
             await this.reply(msg, '❌ ตอนนี้สมองผมเบลอ (AI Error) หรือระบบ Google มีปัญหา ลองใหม่ทีหลังนะครับ');

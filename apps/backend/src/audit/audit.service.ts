@@ -7,7 +7,7 @@ import type { Prisma, User } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { AuditEntry } from './interfaces/audit-entry.interface';
 
-const SENSITIVE_KEY_RE = /pass|secret|token|authorization|cookie/i;
+const SENSITIVE_KEY_RE = /pass|secret|token|authorization|cookie|api.?key/i;
 
 // ชื่อผู้กระทำ ณ ตอนนั้น (ยังอ่านได้แม้บัญชีถูกลบหรือเปลี่ยนชื่อภายหลัง)
 function actorLabel(user: Pick<User, 'id' | 'username' | 'discordUsername'>): string {

@@ -25,6 +25,7 @@ import { Route as AppServersGuildIdRouteImport } from './routes/_app/servers/$gu
 import { Route as AppServersGuildIdIndexRouteImport } from './routes/_app/servers/$guildId/index'
 import { Route as AppServersGuildIdManageRouteImport } from './routes/_app/servers/$guildId/_manage'
 import { Route as AppServersGuildIdLevelsRouteImport } from './routes/_app/servers/$guildId/levels'
+import { Route as AppServersGuildIdManageAiRouteImport } from './routes/_app/servers/$guildId/_manage/ai'
 import { Route as AppServersGuildIdManageAuditLogsRouteImport } from './routes/_app/servers/$guildId/_manage/audit-logs'
 import { Route as AppServersGuildIdManageConfigRouteImport } from './routes/_app/servers/$guildId/_manage/config'
 import { Route as AppServersGuildIdManageFundsRouteImport } from './routes/_app/servers/$guildId/_manage/funds'
@@ -115,6 +116,12 @@ const AppServersGuildIdLevelsRoute = AppServersGuildIdLevelsRouteImport.update({
   path: '/levels',
   getParentRoute: () => AppServersGuildIdRoute,
 } as any)
+const AppServersGuildIdManageAiRoute =
+  AppServersGuildIdManageAiRouteImport.update({
+    id: '/ai',
+    path: '/ai',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageAuditLogsRoute =
   AppServersGuildIdManageAuditLogsRouteImport.update({
     id: '/audit-logs',
@@ -202,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/servers/': typeof AppServersIndexRoute
   '/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
   '/servers/$guildId/': typeof AppServersGuildIdIndexRoute
+  '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
@@ -228,6 +236,7 @@ export interface FileRoutesByTo {
   '/servers': typeof AppServersIndexRoute
   '/servers/$guildId': typeof AppServersGuildIdIndexRoute
   '/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
+  '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
@@ -259,6 +268,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage': typeof AppServersGuildIdManageRouteWithChildren
   '/_app/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
   '/_app/servers/$guildId/': typeof AppServersGuildIdIndexRoute
+  '/_app/servers/$guildId/_manage/ai': typeof AppServersGuildIdManageAiRoute
   '/_app/servers/$guildId/_manage/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/_app/servers/$guildId/_manage/config': typeof AppServersGuildIdManageConfigRoute
   '/_app/servers/$guildId/_manage/funds': typeof AppServersGuildIdManageFundsRoute
@@ -288,6 +298,7 @@ export interface FileRouteTypes {
     | '/servers/'
     | '/servers/$guildId/levels'
     | '/servers/$guildId/'
+    | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
     | '/servers/$guildId/funds'
@@ -314,6 +325,7 @@ export interface FileRouteTypes {
     | '/servers'
     | '/servers/$guildId'
     | '/servers/$guildId/levels'
+    | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
     | '/servers/$guildId/funds'
@@ -344,6 +356,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage'
     | '/_app/servers/$guildId/levels'
     | '/_app/servers/$guildId/'
+    | '/_app/servers/$guildId/_manage/ai'
     | '/_app/servers/$guildId/_manage/audit-logs'
     | '/_app/servers/$guildId/_manage/config'
     | '/_app/servers/$guildId/_manage/funds'
@@ -480,6 +493,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdLevelsRouteImport
       parentRoute: typeof AppServersGuildIdRoute
     }
+    '/_app/servers/$guildId/_manage/ai': {
+      id: '/_app/servers/$guildId/_manage/ai'
+      path: '/ai'
+      fullPath: '/servers/$guildId/ai'
+      preLoaderRoute: typeof AppServersGuildIdManageAiRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/audit-logs': {
       id: '/_app/servers/$guildId/_manage/audit-logs'
       path: '/audit-logs'
@@ -584,6 +604,7 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 )
 
 interface AppServersGuildIdManageRouteChildren {
+  AppServersGuildIdManageAiRoute: typeof AppServersGuildIdManageAiRoute
   AppServersGuildIdManageAuditLogsRoute: typeof AppServersGuildIdManageAuditLogsRoute
   AppServersGuildIdManageConfigRoute: typeof AppServersGuildIdManageConfigRoute
   AppServersGuildIdManageFundsRoute: typeof AppServersGuildIdManageFundsRoute
@@ -600,6 +621,7 @@ interface AppServersGuildIdManageRouteChildren {
 
 const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren =
   {
+    AppServersGuildIdManageAiRoute: AppServersGuildIdManageAiRoute,
     AppServersGuildIdManageAuditLogsRoute:
       AppServersGuildIdManageAuditLogsRoute,
     AppServersGuildIdManageConfigRoute: AppServersGuildIdManageConfigRoute,

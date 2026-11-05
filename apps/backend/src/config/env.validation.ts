@@ -98,6 +98,7 @@ export const envSchema = z.object({
 
     // บริการภายนอก
     GEMINI_KEY: optionalString,
+    AI_KEY_ENCRYPTION_SECRET: optionalString,
     // โควตา Gemini ต่อวัน (เวลาไทย) รวมทุกเซิร์ฟเวอร์ / ต่อเซิร์ฟเวอร์อื่นที่ไม่ใช่เซิร์ฟเวอร์หลัก — นับทั้ง AI Chat และตัวกรองคำหยาบ
     AI_DAILY_LIMIT: positiveInt(250),
     AI_GUILD_DAILY_LIMIT: positiveInt(50),
