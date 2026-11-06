@@ -27,6 +27,7 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     'voice-guard': VoiceGuardPageSkeleton,
     'log-manager': LogManagerPageSkeleton,
     'pr-bot': PrBotPageSkeleton,
+    'grafana-alerts': PrBotPageSkeleton,
     jira: JiraPageSkeleton,
     funds: FundsPageSkeleton,
     'audit-logs': AuditLogsPageSkeleton,

@@ -104,6 +104,8 @@ async function bootstrap(): Promise<void> {
         exclude: [
             { path: 'webhook/github', method: RequestMethod.POST },
             { path: 'webhook/github/:guildId', method: RequestMethod.POST },
+            { path: 'webhook/grafana', method: RequestMethod.POST },
+            { path: 'webhook/grafana/:guildId', method: RequestMethod.POST },
         ],
     });
     app.enableShutdownHooks();

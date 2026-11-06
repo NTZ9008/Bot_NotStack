@@ -105,6 +105,11 @@ export const envSchema = z.object({
     OPENWEATHER_KEY: optionalString,
     // secret ของ webhook เดิม /webhook/github (เซิร์ฟเวอร์หลัก) — เซิร์ฟเวอร์อื่นสร้าง secret ของตัวเองที่หน้า PR Bot
     GITHUB_WEBHOOK_SECRET: optionalString,
+    // Grafana Alertmanager webhook/API integration (optional).
+    GRAFANA_API_URL: optionalString,
+    GRAFANA_API_TOKEN: optionalString,
+    GRAFANA_WEBHOOK_SECRET: optionalString,
+    GRAFANA_DISCORD_CHANNEL_ID: optionalString,
 
     // ที่เก็บไฟล์ log (ค่าเริ่มต้น: <repo>/logs เหมือนเดิม)
     LOG_DIR: optionalString,

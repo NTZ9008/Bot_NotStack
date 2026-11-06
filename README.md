@@ -109,6 +109,7 @@ Each server turns each feature on and off on its own **Configuration** page.
 ### Other
 
 - **PR Bot:** posts GitHub pull-request notifications into Discord and keeps editing the same message as the PR changes: who approved or requested changes, which checks passed or failed, the latest comments, and the merged/closed state. Each server gets its own webhook URL and secret. Subscribe the webhook to Pull requests, Pull request reviews, Pull request review comments, Issue comments, Check runs and Statuses.
+- **Grafana alerts:** accepts Grafana Alertmanager notifications at `/webhook/grafana`, posts firing/resolved embeds to a configured home-server channel, and provides `/grafana` for a Grafana health check.
 - **Polls:** anonymous, one vote per member. Voting again changes your vote.
 - **Reaction roles**, **auto-replies** (e.g. `สวัสดีบอท`, "hello bot") and password-protected role claiming for the home server.
 
@@ -124,6 +125,7 @@ Each server turns each feature on and off on its own **Configuration** page.
 | `/userinfo [target]`     | Account creation date, join date and roles                                                               | All servers |
 | `/ping`                  | Latency check                                                                                            | All servers |
 | `/weather [city]`        | Weather report with forecast chart and rain radar (one use per user every 30 seconds)                    | All servers |
+| `/grafana`               | Checks the configured Grafana API health endpoint                                                        | All servers |
 | `/poll question choices` | Anonymous poll, one vote per member                                                                      | All servers |
 | `/random items`          | Picks one item from a comma-separated list                                                               | All servers |
 | `/rank [target]`         | Image rank card: avatar, name, rank, level, XP and progress bar                                          | All servers |
@@ -198,7 +200,7 @@ Bot_NotStack/
 └── ecosystem.config.cjs         PM2 config for the backend
 ```
 
-- **API:** every route lives under `/api/*` except the GitHub webhook `/webhook/github[/:guildId]`. Routes require a login by default
+- **API:** every route lives under `/api/*` except the GitHub webhook `/webhook/github[/:guildId]` and Grafana Alertmanager webhook `/webhook/grafana[/:guildId]`. Routes require a login by default
   (`@Public()` and `@AdminOnly()` mark exceptions per route). The API only uses `GET` and `POST`, because Cloudflare answers `PATCH` and `DELETE` with 403.
 - **Validation:** DTOs are generated from zod schemas in `@notstack/shared` (`class XxxDto extends createZodDto(schema)`), and a global
   `ZodValidationPipe` validates bodies and queries. The dashboard forms use the same schemas.
@@ -314,12 +316,25 @@ The dashboard does not read `.env`. See [`.env.example`](.env.example) for the a
 | `OPENWEATHER_KEY`                               |             | OpenWeatherMap key. The free tier covers `weather`, `forecast`, `air_pollution` and `geo`.                                                                                                    |
 | `VERIFY_PASSWORD`, `VIP_ROLE_PASSWORD`          |             | Passwords for `/verify` and `/addroles`. Unset means the role cannot be claimed.                                                                                                              |
 | `GITHUB_WEBHOOK_SECRET`                         |             | Secret for the legacy `/webhook/github` endpoint, which posts to the home server. Other servers use their own URL and secret from the PR Bot page.                                            |
+| `GRAFANA_API_URL`                              |             | Base URL of Grafana, used by `/grafana` (for example `https://grafana.example.com`)                                                                                                          |
+| `GRAFANA_API_TOKEN`                            |             | Optional Grafana service-account token for API health checks                                                                                                                                |
+| `GRAFANA_WEBHOOK_SECRET`                        |             | Optional legacy shared Bearer secret for the home-server `/webhook/grafana` endpoint; per-server secrets are managed in the dashboard                                                       |
+| `GRAFANA_DISCORD_CHANNEL_ID`                    |             | Optional legacy default channel for the home-server endpoint; per-server channels are managed in the dashboard                                                                              |
 | `AUDIT_LOG_RETENTION_DAYS`                      |             | Days to keep the dashboard audit log (default 180)                                                                                                                                            |
 | `ACTIVITY_LOG_RETENTION_DAYS`                   |             | Days to keep Discord activity events (default 90)                                                                                                                                             |
 | `LOG_DIR`, `LOG_RETENTION_DAYS`                 |             | Folder for daily log files (default `<repo>/logs`) and days to keep them (default 30)                                                                                                         |
 | `FRONTEND_DIST`                                 |             | Serve a built dashboard from the backend, e.g. `../frontend/dist`                                                                                                                             |
 
 Dashboard build variable: `VITE_API_URL`. Set it only when the API is on a different subdomain from the dashboard.
+
+### Grafana Alertmanager setup
+
+1. In the dashboard, choose a default text channel and optionally add `env`/`severity` channel mappings. Give the bot permission to view the channels, send messages, and embed links.
+2. Copy the page's Payload URL and Secret. In Grafana Alerting, create a **Webhook** contact point using that URL; add the HTTP header `Authorization: Bearer <Secret>`, then select the contact point in a notification policy.
+3. Grafana sends the standard Alertmanager JSON payload. Alerts include summary/description, labels, and dashboard/panel/generator links when present. The page's Test Alert button checks Discord delivery.
+4. Set `GRAFANA_API_URL` (and optionally `GRAFANA_API_TOKEN`) to enable `/grafana`; this command calls Grafana's `/api/health` endpoint. Missing configuration or Grafana outages are reported privately in Discord.
+
+The per-server webhook route `/webhook/grafana/:guildId` is excluded from the `/api` prefix and is subject to the existing webhook rate limit. Its secret is generated on first dashboard visit. The legacy `/webhook/grafana` route uses the optional environment secret and channel.
 
 ---
 

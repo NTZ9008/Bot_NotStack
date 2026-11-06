@@ -114,6 +114,17 @@ export const PAGE_GUIDES = {
         saving: 'แต่ละส่วนมีปุ่มบันทึกของตัวเอง ต้องบันทึกทุกส่วนที่แก้',
         tip: 'Secret ใช้ตรวจสอบข้อความจาก GitHub อย่าแชร์ให้ผู้อื่น ถ้าสร้าง Secret ใหม่ต้องแก้ใน GitHub ด้วย',
     },
+    grafanaAlerts: {
+        title: 'แจ้งเตือน Grafana Alert',
+        summary: 'รับ Alertmanager แล้วส่งสถานะ Firing และ Resolved ไปยัง Discord',
+        steps: [
+            'เลือกห้องเริ่มต้นสำหรับแจ้งเตือน หรือเพิ่ม mapping ตาม label env/severity แล้วบันทึก',
+            'คัดลอก Payload URL และ Secret ไปตั้งใน Grafana Alerting → Contact points → Webhook พร้อม Authorization: Bearer <Secret>',
+            'กดส่ง Test Alert เพื่อตรวจห้องปลายทางและการเชื่อมต่อ',
+        ],
+        saving: 'บันทึกห้องเริ่มต้นและ label mapping แยกตามเซิร์ฟเวอร์',
+        tip: 'เมื่อสร้าง Secret ใหม่ ให้อัปเดต Authorization header ที่ Grafana ทันที เพราะ Secret เดิมจะใช้ไม่ได้',
+    },
     jira: {
         title: 'เปิด Jira card',
         summary: 'ให้สมาชิกเปิด card ใน Jira จาก Discord ผ่านห้องส่วนตัวแบบระบบ ticket',
