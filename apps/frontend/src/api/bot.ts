@@ -3,6 +3,8 @@ import type {
     ConfigRow,
     GrantAccessInput,
     GrantAccessResponse,
+    GrafanaSettings,
+    GrafanaStats,
     LevelPage,
     LevelQuery,
     LogEventSetting,
@@ -16,6 +18,7 @@ import type {
     RoomAccessItem,
     SuccessResponse,
     UpdateConfigInput,
+    UpdateGrafanaSettingsInput,
     UpdateLogOptionsInput,
     UpdateLogSettingInput,
     UpdatePrBotInput,
@@ -122,5 +125,18 @@ export const prBotStatsQuery = (guildId: string, days: PrBotStatsDays) =>
     queryOptions({
         queryKey: [...guildKey(guildId), 'pr-bot', 'stats', days],
         queryFn: ({ signal }) => api<PrBotStats>(g(guildId, '/pr-bot/stats'), { query: { days }, signal }),
+        refetchInterval: 60_000,
+    });
+
+// Grafana Alertmanager
+export const grafanaQuery = (guildId: string) =>
+    queryOptions({ queryKey: [...guildKey(guildId), 'grafana'], queryFn: () => api<GrafanaSettings>(g(guildId, '/grafana/settings')) });
+export const updateGrafana = (guildId: string, input: UpdateGrafanaSettingsInput) => api<GrafanaSettings>(g(guildId, '/grafana/settings'), { body: input });
+export const rotateGrafanaSecret = (guildId: string) => api<{ success: true; webhookSecret: string }>(g(guildId, '/grafana/secret'), { method: 'POST' });
+export const sendGrafanaTest = (guildId: string) => api<{ success: true }>(g(guildId, '/grafana/test'), { method: 'POST' });
+export const grafanaStatsQuery = (guildId: string, days = 7) =>
+    queryOptions({
+        queryKey: [...guildKey(guildId), 'grafana', 'stats', days],
+        queryFn: ({ signal }) => api<GrafanaStats>(g(guildId, '/grafana/stats'), { query: { days }, signal }),
         refetchInterval: 60_000,
     });

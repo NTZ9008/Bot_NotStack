@@ -17,6 +17,7 @@ import { validateEnv, type Env } from './config/env.validation';
 import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
 import { FundModule } from './fund/fund.module';
+import { GrafanaModule } from './grafana/grafana.module';
 import { GuildsModule } from './guilds/guilds.module';
 import { GrowthController } from './growth/growth.controller';
 import { GrowthService } from './growth/growth.service';
@@ -91,6 +92,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         WelcomeModule,
         WeatherModule,
         PrBotModule,
+        GrafanaModule,
         JiraModule,
         FundModule,
         ChatModule,

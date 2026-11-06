@@ -5,6 +5,7 @@ import {
     CircleUser,
     CloudSun,
     Bot,
+    Activity,
     Coins,
     FileText,
     GitPullRequest,
@@ -140,6 +141,14 @@ const GUILD_GROUPS: NavGroup[] = [
                 icon: GitPullRequest,
                 guild: 'manage',
                 keywords: 'pr bot github pull request webhook',
+            },
+            {
+                to: '/servers/$guildId/grafana-alerts',
+                label: PAGE_GUIDES.grafanaAlerts.title,
+                guide: 'grafanaAlerts',
+                icon: Activity,
+                guild: 'manage',
+                keywords: 'grafana alertmanager monitoring firing resolved webhook ops observability',
             },
             {
                 to: '/servers/$guildId/jira',

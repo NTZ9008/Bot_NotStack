@@ -29,6 +29,7 @@ import { Route as AppServersGuildIdManageAiRouteImport } from './routes/_app/ser
 import { Route as AppServersGuildIdManageAuditLogsRouteImport } from './routes/_app/servers/$guildId/_manage/audit-logs'
 import { Route as AppServersGuildIdManageConfigRouteImport } from './routes/_app/servers/$guildId/_manage/config'
 import { Route as AppServersGuildIdManageFundsRouteImport } from './routes/_app/servers/$guildId/_manage/funds'
+import { Route as AppServersGuildIdManageGrafanaAlertsRouteImport } from './routes/_app/servers/$guildId/_manage/grafana-alerts'
 import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/servers/$guildId/_manage/jira'
 import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/_app/servers/$guildId/_manage/log-manager'
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
@@ -140,6 +141,12 @@ const AppServersGuildIdManageFundsRoute =
     path: '/funds',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageGrafanaAlertsRoute =
+  AppServersGuildIdManageGrafanaAlertsRouteImport.update({
+    id: '/grafana-alerts',
+    path: '/grafana-alerts',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageJiraRoute =
   AppServersGuildIdManageJiraRouteImport.update({
     id: '/jira',
@@ -213,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
+  '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
@@ -240,6 +248,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
+  '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
@@ -272,6 +281,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/_app/servers/$guildId/_manage/config': typeof AppServersGuildIdManageConfigRoute
   '/_app/servers/$guildId/_manage/funds': typeof AppServersGuildIdManageFundsRoute
+  '/_app/servers/$guildId/_manage/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/_app/servers/$guildId/_manage/jira': typeof AppServersGuildIdManageJiraRoute
   '/_app/servers/$guildId/_manage/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
     | '/servers/$guildId/funds'
+    | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
     | '/servers/$guildId/funds'
+    | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
@@ -360,6 +372,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/audit-logs'
     | '/_app/servers/$guildId/_manage/config'
     | '/_app/servers/$guildId/_manage/funds'
+    | '/_app/servers/$guildId/_manage/grafana-alerts'
     | '/_app/servers/$guildId/_manage/jira'
     | '/_app/servers/$guildId/_manage/log-manager'
     | '/_app/servers/$guildId/_manage/news'
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageFundsRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/grafana-alerts': {
+      id: '/_app/servers/$guildId/_manage/grafana-alerts'
+      path: '/grafana-alerts'
+      fullPath: '/servers/$guildId/grafana-alerts'
+      preLoaderRoute: typeof AppServersGuildIdManageGrafanaAlertsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/jira': {
       id: '/_app/servers/$guildId/_manage/jira'
       path: '/jira'
@@ -608,6 +628,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageAuditLogsRoute: typeof AppServersGuildIdManageAuditLogsRoute
   AppServersGuildIdManageConfigRoute: typeof AppServersGuildIdManageConfigRoute
   AppServersGuildIdManageFundsRoute: typeof AppServersGuildIdManageFundsRoute
+  AppServersGuildIdManageGrafanaAlertsRoute: typeof AppServersGuildIdManageGrafanaAlertsRoute
   AppServersGuildIdManageJiraRoute: typeof AppServersGuildIdManageJiraRoute
   AppServersGuildIdManageLogManagerRoute: typeof AppServersGuildIdManageLogManagerRoute
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
@@ -626,6 +647,8 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
       AppServersGuildIdManageAuditLogsRoute,
     AppServersGuildIdManageConfigRoute: AppServersGuildIdManageConfigRoute,
     AppServersGuildIdManageFundsRoute: AppServersGuildIdManageFundsRoute,
+    AppServersGuildIdManageGrafanaAlertsRoute:
+      AppServersGuildIdManageGrafanaAlertsRoute,
     AppServersGuildIdManageJiraRoute: AppServersGuildIdManageJiraRoute,
     AppServersGuildIdManageLogManagerRoute:
       AppServersGuildIdManageLogManagerRoute,
