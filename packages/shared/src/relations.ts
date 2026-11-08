@@ -64,9 +64,62 @@ export const relationBoardQuerySchema = z.object({
 });
 export type RelationBoardQuery = z.output<typeof relationBoardQuerySchema>;
 
+export const RELATION_PRESENCE_MAX_IDS = 200;
+
+export const relationPresenceQuerySchema = z.object({
+    ids: z
+        .unknown()
+        .optional()
+        .transform((value) =>
+            typeof value === 'string'
+                ? value
+                      .split(',')
+                      .filter((id) => /^\d{5,25}$/.test(id))
+                      .slice(0, RELATION_PRESENCE_MAX_IDS)
+                : [],
+        ),
+});
+
 export const relationHistoryQuerySchema = z.object({
     cursor: z.coerce.number().int().positive().optional().catch(undefined),
 });
+
+export type RelationPresenceStatus = 'online' | 'idle' | 'dnd' | 'offline';
+export type RelationActivityKind = 'playing' | 'streaming' | 'listening' | 'watching' | 'competing';
+
+export interface RelationPresence {
+    status: RelationPresenceStatus;
+    activity: { kind: RelationActivityKind; name: string; detail: string | null } | null;
+    // ข้อความสถานะที่สมาชิกตั้งเองใน Discord
+    customStatus: string | null;
+}
+
+export interface RelationPresenceResponse {
+    // false = ไม่ได้เปิด Presence Intent ของบอท จึงไม่มีข้อมูลสถานะ
+    available: boolean;
+    presences: Record<string, RelationPresence>;
+}
+
+export const RELATION_STATUS_TEXT: Record<RelationPresenceStatus, string> = {
+    online: 'ออนไลน์',
+    idle: 'ไม่อยู่',
+    dnd: 'ห้ามรบกวน',
+    offline: 'ออฟไลน์',
+};
+
+export const RELATION_ACTIVITY_LABELS: Record<RelationActivityKind, string> = {
+    playing: 'กำลังเล่น',
+    streaming: 'กำลังสตรีม',
+    listening: 'กำลังฟัง',
+    watching: 'กำลังดู',
+    competing: 'กำลังแข่ง',
+};
+
+// ข้อความสั้นบนการ์ด — สิ่งที่ทำอยู่สำคัญกว่าข้อความสถานะ
+export function relationPresenceLine(presence: RelationPresence | null | undefined): string {
+    if (presence?.activity) return `${RELATION_ACTIVITY_LABELS[presence.activity.kind]} ${presence.activity.name}`;
+    return presence?.customStatus ?? '';
+}
 
 export interface RelationRole {
     id: string;

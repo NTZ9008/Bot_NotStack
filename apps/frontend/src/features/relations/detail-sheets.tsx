@@ -1,10 +1,14 @@
 import {
     RELATION_CHAT_WINDOW_MINUTES,
     RELATION_KIND_LABELS,
+    RELATION_ACTIVITY_LABELS,
     RELATION_STATUS_LABELS,
+    RELATION_STATUS_TEXT,
     type RelationKind,
     type RelationLink,
     type RelationPerson,
+    type RelationPresence,
+    type RelationPresenceStatus,
     type RelationTimelineItem,
 } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -40,6 +44,32 @@ function StatusBadge({ person }: { person: RelationPerson }) {
     return <Badge variant="destructive">{RELATION_STATUS_LABELS[person.status]}</Badge>;
 }
 
+const STATUS_DOT: Record<RelationPresenceStatus, string> = {
+    online: 'bg-success',
+    idle: 'bg-warning',
+    dnd: 'bg-destructive',
+    offline: 'bg-neutral-500',
+};
+
+function PresenceBlock({ presence }: { presence: RelationPresence }) {
+    const { activity, customStatus, status } = presence;
+    return (
+        <div className="space-y-1 rounded-lg border bg-muted/40 p-3 text-sm">
+            <div className="flex items-center gap-2 font-medium">
+                <span className={`size-2.5 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
+                {RELATION_STATUS_TEXT[status]}
+            </div>
+            {activity && (
+                <p className="break-words">
+                    {RELATION_ACTIVITY_LABELS[activity.kind]} <span className="font-medium">{activity.name}</span>
+                    {activity.detail && <span className="text-muted-foreground"> · {activity.detail}</span>}
+                </p>
+            )}
+            {customStatus && <p className="break-words text-muted-foreground">“{customStatus}”</p>}
+        </div>
+    );
+}
+
 function ListSkeleton() {
     return (
         <div className="space-y-2">
@@ -56,6 +86,7 @@ function ListSkeleton() {
 export function PersonSheet({
     guildId,
     person,
+    presence,
     links,
     peopleById,
     onClose,
@@ -63,6 +94,7 @@ export function PersonSheet({
 }: {
     guildId: string;
     person: RelationPerson | null;
+    presence: RelationPresence | null;
     links: RelationLink[];
     peopleById: Map<string, RelationPerson>;
     onClose: () => void;
@@ -87,6 +119,7 @@ export function PersonSheet({
                             </div>
                         </SheetHeader>
                         <div className="space-y-5 px-4 pb-6">
+                            {presence && <PresenceBlock presence={presence} />}
                             {person.leftAt && <p className="text-sm text-muted-foreground">ออกจากเซิร์ฟเวอร์เมื่อ {formatDateTime(person.leftAt)}</p>}
                             <div className="grid grid-cols-2 gap-2">
                                 <Stat label="เหตุการณ์ในช่วงนี้" value={person.events.toLocaleString('th-TH')} />

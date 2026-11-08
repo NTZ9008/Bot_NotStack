@@ -1,4 +1,14 @@
-import { relationKind, relationScore, relationTier, type RelationCounts, type RelationLink, type RelationPersonStatus } from '@notstack/shared';
+import {
+    relationKind,
+    relationScore,
+    relationTier,
+    type RelationActivityKind,
+    type RelationCounts,
+    type RelationLink,
+    type RelationPersonStatus,
+    type RelationPresence,
+} from '@notstack/shared';
+import { ActivityType } from 'discord.js';
 
 const MAX_VOICE_SESSION_MS = 12 * 60 * 60 * 1000; // บอทดับระหว่างทางทำให้ไม่เห็นตอนออก — ไม่ให้ session เดียวยาวเกินจริง
 const MIN_VOICE_OVERLAP_MS = 60 * 1000; // แวะเข้ามาแป๊บเดียวไม่นับว่าอยู่ด้วยกัน
@@ -131,4 +141,38 @@ export function groupChatExchanges(rows: readonly ChatExchangeRow[]): { at: Date
         }
     }
     return [...groups.values()];
+}
+
+const PRESENCE_TEXT_MAX = 128;
+const clip = (text: string | null | undefined): string | null => text?.slice(0, PRESENCE_TEXT_MAX) || null;
+
+const ACTIVITY_KINDS = new Map<number, RelationActivityKind>([
+    [ActivityType.Playing, 'playing'],
+    [ActivityType.Streaming, 'streaming'],
+    [ActivityType.Listening, 'listening'],
+    [ActivityType.Watching, 'watching'],
+    [ActivityType.Competing, 'competing'],
+]);
+
+export interface PresenceLike {
+    status: string;
+    activities: readonly {
+        type: number;
+        name: string;
+        details?: string | null;
+        state?: string | null;
+        emoji?: { id?: string | null; name?: string | null } | null;
+    }[];
+}
+
+export function toRelationPresence(presence: PresenceLike): RelationPresence {
+    const custom = presence.activities.find((activity) => activity.type === ActivityType.Custom);
+    const main = presence.activities.find((activity) => ACTIVITY_KINDS.has(activity.type));
+    // อีโมจิของเซิร์ฟเวอร์เป็นรูป แสดงเป็นข้อความไม่ได้ จึงเก็บเฉพาะอีโมจิมาตรฐาน
+    const emoji = custom?.emoji && !custom.emoji.id ? custom.emoji.name : null;
+    return {
+        status: presence.status === 'online' || presence.status === 'idle' || presence.status === 'dnd' ? presence.status : 'offline',
+        activity: main ? { kind: ACTIVITY_KINDS.get(main.type)!, name: clip(main.name) ?? '', detail: clip(main.details ?? main.state) } : null,
+        customStatus: clip([emoji, custom?.state].filter(Boolean).join(' ')),
+    };
 }

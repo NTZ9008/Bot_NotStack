@@ -8,6 +8,7 @@ import {
     type RelationHistoryPage,
     type RelationLinkDetail,
     type RelationPerson,
+    type RelationPresenceResponse,
     type RelationRole,
     type RelationTimelineItem,
 } from '@notstack/shared';
@@ -26,6 +27,7 @@ import {
     groupChatExchanges,
     pairKey,
     resolveStatus,
+    toRelationPresence,
     type MembershipEvent,
     type VoiceEvent,
 } from './relations.util';
@@ -381,6 +383,19 @@ export class RelationsService {
             timeline: timeline.slice(0, MAX_TIMELINE),
             truncated: timeline.length > MAX_TIMELINE,
         };
+    }
+
+    // อ่านจาก gateway cache ของบอทเท่านั้น ไม่บันทึกลงฐานข้อมูล — คนที่ไม่ออนไลน์ Discord จะไม่ส่ง presence มา
+    presence(guildId: string, userIds: readonly string[]): RelationPresenceResponse {
+        const guild = this.discord.guild(guildId);
+        if (!guild || !this.discord.presenceEnabled) return { available: false, presences: {} };
+        const presences: RelationPresenceResponse['presences'] = {};
+        for (const userId of userIds) {
+            const presence = guild.presences.cache.get(userId);
+            if (presence) presences[userId] = toRelationPresence(presence);
+            else if (guild.members.cache.has(userId)) presences[userId] = { status: 'offline', activity: null, customStatus: null };
+        }
+        return { available: true, presences };
     }
 
     // ทุกเหตุการณ์ที่คนนี้เป็นเจ้าของหรือเป็นผู้ลงมือ ย้อนหลังเท่าที่ฐานข้อมูลเก็บไว้

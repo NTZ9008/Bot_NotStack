@@ -2,7 +2,7 @@ import type { RelationPerson, RelationRole } from '@notstack/shared';
 
 // จัดวางการ์ดบนกระดานครั้งแรก + เก็บตำแหน่งที่ลากเองไว้ในเบราว์เซอร์ (ไฟล์นี้ไม่พึ่ง React เพื่อให้ทดสอบได้)
 export const CARD_WIDTH = 124;
-export const CARD_HEIGHT = 178;
+export const CARD_HEIGHT = 196;
 
 export interface Point {
     x: number;

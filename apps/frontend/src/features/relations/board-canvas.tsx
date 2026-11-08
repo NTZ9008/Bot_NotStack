@@ -1,4 +1,11 @@
-import { RELATION_STATUS_LABELS, type RelationLink, type RelationPerson } from '@notstack/shared';
+import {
+    RELATION_STATUS_LABELS,
+    RELATION_STATUS_TEXT,
+    relationPresenceLine,
+    type RelationLink,
+    type RelationPerson,
+    type RelationPresence,
+} from '@notstack/shared';
 import {
     memo,
     useCallback,
@@ -51,6 +58,7 @@ interface BoardCanvasProps {
     // null = ไม่แบ่งกลุ่ม
     groups: BoardGroup[] | null;
     pinScope: string;
+    presences: Record<string, RelationPresence>;
     selection: BoardSelection;
     onSelectPerson: (userId: string) => void;
     onSelectLink: (link: RelationLink) => void;
@@ -83,17 +91,21 @@ const cardTransform = (point: Point, tilt: number) => `translate(${point.x - CAR
 
 const PersonCard = memo(function PersonCard({
     person,
+    presence,
     point,
     selected,
     register,
 }: {
     person: RelationPerson;
+    presence: RelationPresence | undefined;
     point: Point;
     selected: boolean;
     register: (id: string, el: HTMLElement | null) => void;
 }) {
     const gone = person.status !== 'member';
     const tag = gone ? RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS] : person.isBot ? 'บอท' : '';
+    const presenceLine = relationPresenceLine(presence);
+    const statusText = presence ? `, ${RELATION_STATUS_TEXT[presence.status]}` : '';
     return (
         <button
             type="button"
@@ -102,7 +114,7 @@ const PersonCard = memo(function PersonCard({
             data-person={person.userId}
             data-gone={gone || undefined}
             data-selected={selected || undefined}
-            aria-label={`${person.name}${tag ? ` (${tag})` : ''} ดูประวัติ`}
+            aria-label={`${person.name}${tag ? ` (${tag})` : ''}${statusText}${presenceLine ? `, ${presenceLine}` : ''} ดูประวัติ`}
             style={{ transform: cardTransform(point, tiltOf(person.userId)) }}
         >
             <span className="rb-pin" />
@@ -129,8 +141,10 @@ const PersonCard = memo(function PersonCard({
                         />
                     </svg>
                 )}
+                {presence && <span className="rb-status" data-status={presence.status} />}
             </span>
             <span className="rb-name">{person.name}</span>
+            {presenceLine && <span className="rb-activity">{presenceLine}</span>}
             {tag && <span className="rb-tag">{tag}</span>}
         </button>
     );
@@ -139,7 +153,19 @@ const PersonCard = memo(function PersonCard({
 // ==========================================
 // 🧷 พื้นกระดาน — ตำแหน่งระหว่างลากแก้ DOM ตรงๆ เพราะ re-render การ์ดและเส้นหลายร้อยชิ้นทุกการขยับจะกระตุก
 // ==========================================
-export function BoardCanvas({ ref, guildId, people, links, layoutLinks, groups, pinScope, selection, onSelectPerson, onSelectLink }: BoardCanvasProps) {
+export function BoardCanvas({
+    ref,
+    guildId,
+    people,
+    links,
+    layoutLinks,
+    groups,
+    pinScope,
+    presences,
+    selection,
+    onSelectPerson,
+    onSelectLink,
+}: BoardCanvasProps) {
     const boardRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<HTMLDivElement>(null);
     const view = useRef<BoardView>({ x: 0, y: 0, k: 1 });
@@ -522,6 +548,7 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, groups, 
                     <PersonCard
                         key={person.userId}
                         person={person}
+                        presence={presences[person.userId]}
                         point={positions.get(person.userId) ?? { x: 0, y: 0 }}
                         selected={selectedPerson === person.userId}
                         register={registerCard}

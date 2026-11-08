@@ -289,7 +289,7 @@ Open the dashboard, go to **All servers** and click **Invite bot**. The invite l
 - View Audit Log, Move Members, Manage Roles, Manage Messages
 - Manage Channels (Room Access) and Manage Server (invite tracking in Log Manager)
 - Attach Files (welcome cards, weather charts and rank cards) and Embed Links (weather report)
-- Privileged intents (enable them in the Developer Portal): **Message Content** and **Server Members**
+- Privileged intents (enable them in the Developer Portal): **Message Content** and **Server Members**. **Presence** is optional: enable it before setting `DISCORD_PRESENCE_INTENT=true` to show live status on the relationship board, or the bot cannot log in
 
 ---
 

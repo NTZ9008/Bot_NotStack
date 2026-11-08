@@ -91,6 +91,10 @@ export const envSchema = z.object({
     ADMIN_DISCORD_IDS: stringList,
     AUDIT_LOG_RETENTION_DAYS: positiveInt(180),
     ACTIVITY_LOG_RETENTION_DAYS: positiveInt(90),
+    DISCORD_PRESENCE_INTENT: z
+        .string()
+        .optional()
+        .transform((value) => value === 'true'),
 
     // รหัสผ่านรับยศของเซิร์ฟเวอร์หลัก — ไม่ตั้ง = ปิดการรับยศด้วยรหัสผ่าน (/verify รุ่น DST, /addroles บัตร VIP)
     VERIFY_PASSWORD: optionalString,

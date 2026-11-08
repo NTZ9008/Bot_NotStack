@@ -1,4 +1,4 @@
-import type { RelationBoard, RelationHistoryPage, RelationLinkDetail } from '@notstack/shared';
+import type { RelationBoard, RelationHistoryPage, RelationLinkDetail, RelationPresenceResponse } from '@notstack/shared';
 import { infiniteQueryOptions, queryOptions } from '@tanstack/react-query';
 import { guildKey } from '@/api/guilds';
 import { api } from '@/lib/api';
@@ -18,6 +18,17 @@ export const relationBoardQuery = (guildId: string, filters: RelationFilters) =>
             api<RelationBoard>(`/guilds/${guildId}/relations`, { query: { days: filters.days, includeBots: filters.includeBots ? 'true' : undefined } }),
         staleTime: 60 * 1000,
     });
+
+// แยกจากข้อมูลกระดานและดึงซ้ำเรื่อยๆ — สถานะเปลี่ยนบ่อย แต่ตำแหน่งการ์ดต้องไม่ขยับตาม
+export const relationPresenceQuery = (guildId: string, userIds: readonly string[]) => {
+    const ids = userIds.join(',');
+    return queryOptions({
+        queryKey: [...guildKey(guildId), 'relations', 'presence', ids],
+        queryFn: ({ signal }) => api<RelationPresenceResponse>(`/guilds/${guildId}/relations/presence`, { query: { ids }, signal }),
+        staleTime: 20 * 1000,
+        refetchInterval: 30 * 1000,
+    });
+};
 
 export const relationLinkQuery = (guildId: string, a: string, b: string, days: number) =>
     queryOptions({
