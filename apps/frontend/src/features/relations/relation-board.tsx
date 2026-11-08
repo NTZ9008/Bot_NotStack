@@ -28,14 +28,14 @@ const LINE_FILTERS = [
 ];
 
 const LEGEND: { kind: RelationKind; color: string; dashed?: boolean }[] = [
-    { kind: 'voice', color: '#38bdf8' },
-    { kind: 'chat', color: '#fbbf24' },
-    { kind: 'mod', color: '#f43f5e', dashed: true },
+    { kind: 'voice', color: 'var(--chart-2)' },
+    { kind: 'chat', color: 'var(--chart-4)' },
+    { kind: 'mod', color: 'var(--chart-5)', dashed: true },
 ];
 
 function Legend() {
     return (
-        <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-lg bg-black/70 px-3 py-2 text-xs text-white">
+        <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-lg border bg-neutral-900/90 px-3 py-2 text-xs text-neutral-100">
             <ul className="flex flex-wrap gap-x-4 gap-y-1">
                 {LEGEND.map(({ kind, color, dashed }) => (
                     <li key={kind} className="flex items-center gap-1.5">
@@ -56,12 +56,12 @@ function Legend() {
                 ))}
                 <li className="flex items-center gap-1.5">
                     <svg width="26" height="6" aria-hidden="true">
-                        <line x1="1" y1="3" x2="25" y2="3" stroke="#d8c9a8" strokeWidth="1.5" strokeLinecap="round" />
+                        <line x1="1" y1="3" x2="25" y2="3" stroke="oklch(0.68 0 0)" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     เบาบาง
                 </li>
             </ul>
-            <p className="mt-1 text-white/70">สีบอกว่าสัมพันธ์กันแบบไหน เส้นยิ่งหนายิ่งสนิท</p>
+            <p className="mt-1 text-neutral-400">สีบอกว่าสัมพันธ์กันแบบไหน เส้นยิ่งหนายิ่งสนิท</p>
         </div>
     );
 }

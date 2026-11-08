@@ -49,7 +49,7 @@ const NUDGE = 24;
 function tiltOf(userId: string): number {
     let hash = 0;
     for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
-    return (Math.abs(hash) % 9) - 4;
+    return (Math.abs(hash) % 5) - 2;
 }
 
 const cardTransform = (point: Point, tilt: number) => `translate(${point.x - CARD_WIDTH / 2}px, ${point.y}px) rotate(${tilt}deg)`;
@@ -93,7 +93,13 @@ const PersonCard = memo(function PersonCard({
                 />
                 {gone && (
                     <svg className="rb-cross" viewBox="0 0 100 100" aria-hidden="true">
-                        <path d="M9 12 C34 37 63 66 92 90 M90 10 C63 36 35 63 10 91" fill="none" stroke="#dc2626" strokeWidth="9" strokeLinecap="round" />
+                        <path
+                            d="M9 12 C34 37 63 66 92 90 M90 10 C63 36 35 63 10 91"
+                            fill="none"
+                            stroke="var(--destructive)"
+                            strokeWidth="9"
+                            strokeLinecap="round"
+                        />
                     </svg>
                 )}
             </span>
