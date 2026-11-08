@@ -18,7 +18,17 @@ const {
     resolveStatus,
 } = require('../apps/backend/dist/relations/relations.util');
 const { relationKind, relationScore, relationTier } = require('../packages/shared/dist/index.js');
-const { CARD_HEIGHT, CARD_WIDTH, computeLayout, fitView, stringPath, zoomAt } = require('../apps/frontend/src/features/relations/layout.ts');
+const {
+    CARD_HEIGHT,
+    CARD_WIDTH,
+    assignGroups,
+    computeGroupedLayout,
+    computeLayout,
+    fitView,
+    stringPath,
+    zoneRect,
+    zoomAt,
+} = require('../apps/frontend/src/features/relations/layout.ts');
 
 const MIN = 60_000;
 const voice = (eventKey, userId, minute, channelId = 'v1') => ({ eventKey, userId, channelId, channelName: channelId, at: minute * MIN });
@@ -162,4 +172,54 @@ test('zoom keeps the point under the cursor and fit shows the whole board', () =
     assert.ok(fit.k < 1);
     assert.ok(fit.x + -1062 * fit.k >= 0 && fit.x + 1062 * fit.k <= 800);
     assert.match(stringPath({ x: 0, y: 0 }, { x: 100, y: 0 }), /^M0 0Q50 10 100 0$/);
+});
+
+test('each person joins only their highest selected role, and people who left get their own group', () => {
+    const roles = [
+        { id: 'admin', name: 'Admin', color: '#f00' },
+        { id: 'mod', name: 'Mod', color: null },
+        { id: 'fan', name: 'Fan', color: null },
+    ];
+    const people = [
+        { userId: 'a', status: 'member', roleIds: ['admin', 'fan'] },
+        { userId: 'b', status: 'member', roleIds: ['mod', 'fan'] },
+        { userId: 'c', status: 'member', roleIds: [] },
+        { userId: 'd', status: 'left', roleIds: [] },
+    ];
+    const summary = (excluded) => assignGroups(people, roles, new Set(excluded)).map((group) => [group.id, group.members.join()]);
+    assert.deepEqual(summary([]), [
+        ['admin', 'a'],
+        ['mod', 'b'],
+        ['none', 'c'],
+        ['gone', 'd'],
+    ]);
+    // ไม่เลือก Admin แล้ว a ต้องตกไปอยู่ role ถัดไปที่เลือกไว้
+    assert.deepEqual(summary(['admin']), [
+        ['mod', 'b'],
+        ['fan', 'a'],
+        ['none', 'c'],
+        ['gone', 'd'],
+    ]);
+});
+
+test('grouped layout keeps every group in its own zone', () => {
+    const groups = [12, 1, 7, 3, 20].map((size, g) => ({
+        id: `g${g}`,
+        name: `g${g}`,
+        color: null,
+        members: Array.from({ length: size }, (_, i) => `u${g}-${i}`),
+    }));
+    const edges = groups.flatMap((group) => group.members.slice(1).map((id) => ({ a: group.members[0], b: id, tier: 2 })));
+    const layout = computeGroupedLayout(groups, edges);
+    const zones = groups.map((group) => zoneRect(group.members.map((id) => layout.get(id))));
+    for (let i = 0; i < zones.length; i++) {
+        for (let j = i + 1; j < zones.length; j++) {
+            const [a, b] = [zones[i], zones[j]];
+            assert.ok(a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y, `zones ${i} and ${j} overlap`);
+        }
+    }
+    // กลุ่มที่แทบไม่มีเส้นเชื่อมต้องไม่กระจายจนกรอบใหญ่เกินจำเป็น
+    const loose = { id: 'loose', name: 'loose', color: null, members: Array.from({ length: 20 }, (_, i) => `x${i}`) };
+    const zone = zoneRect([...computeGroupedLayout([loose], []).values()]);
+    assert.ok(zone.width < 1500 && zone.height < 1500, `zone too large: ${zone.width}x${zone.height}`);
 });

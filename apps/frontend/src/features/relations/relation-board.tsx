@@ -1,18 +1,21 @@
-import { RELATION_KIND_LABELS, type RelationKind, type RelationLink } from '@notstack/shared';
+import { RELATION_KIND_LABELS, type RelationKind, type RelationLink, type RelationRole } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Maximize, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ListFilter, Maximize, Minus, Plus, RotateCcw } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
 import { relationBoardQuery } from '@/api/relations';
 import { useConfirm } from '@/components/confirm-dialog';
 import { SearchInput } from '@/components/search-input';
 import { EmptyState, ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Avatar, LinkSheet, PersonSheet } from './detail-sheets';
 import { BoardCanvas, type BoardHandle, type BoardSelection } from './board-canvas';
+import { assignGroups } from './layout';
 
 const RANGES = [
     { days: 7, label: '7 วันล่าสุด' },
@@ -32,6 +35,50 @@ const LEGEND: { kind: RelationKind; color: string; dashed?: boolean }[] = [
     { kind: 'chat', color: 'var(--chart-4)' },
     { kind: 'mod', color: 'var(--chart-5)', dashed: true },
 ];
+
+function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excluded: ReadonlySet<string>; onChange: (next: Set<string>) => void }) {
+    const toggle = (roleId: string, checked: boolean) => {
+        const next = new Set(excluded);
+        if (checked) next.delete(roleId);
+        else next.add(roleId);
+        onChange(next);
+    };
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline">
+                    <ListFilter />
+                    เลือก role ({roles.length - roles.filter((role) => excluded.has(role.id)).length}/{roles.length})
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-72 p-2">
+                <p className="px-1 pb-2 text-xs text-muted-foreground">เรียงจาก role สูงสุด คนที่มีหลาย role จะอยู่กลุ่มที่สูงที่สุดที่เลือกไว้</p>
+                <div className="flex gap-1 px-1 pb-2">
+                    <Button size="sm" variant="secondary" onClick={() => onChange(new Set())}>
+                        เลือกทั้งหมด
+                    </Button>
+                    <Button size="sm" variant="secondary" onClick={() => onChange(new Set(roles.map((role) => role.id)))}>
+                        ไม่เลือกเลย
+                    </Button>
+                </div>
+                <ul className="max-h-72 space-y-0.5 overflow-y-auto">
+                    {roles.map((role) => (
+                        <li key={role.id}>
+                            <Label className="flex items-center gap-2 rounded-md p-1.5 font-normal hover:bg-accent">
+                                <Checkbox checked={!excluded.has(role.id)} onCheckedChange={(checked) => toggle(role.id, checked === true)} />
+                                <span
+                                    className="size-2.5 shrink-0 rounded-full bg-muted-foreground"
+                                    style={role.color ? { background: role.color } : undefined}
+                                />
+                                <span className="truncate">{role.name}</span>
+                            </Label>
+                        </li>
+                    ))}
+                </ul>
+            </PopoverContent>
+        </Popover>
+    );
+}
 
 function Legend() {
     return (
@@ -75,6 +122,8 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const [minTier, setMinTier] = useState(1);
     const [search, setSearch] = useState('');
     const [selection, setSelection] = useState<BoardSelection>(null);
+    const [grouping, setGrouping] = useState<'none' | 'role'>('none');
+    const [excludedRoles, setExcludedRoles] = useState<ReadonlySet<string>>(new Set());
     const confirm = useConfirm();
     const canvas = useRef<BoardHandle>(null);
 
@@ -82,6 +131,9 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const people = useMemo(() => board.data?.people ?? [], [board.data]);
     const allLinks = useMemo(() => board.data?.links ?? [], [board.data]);
     const links = useMemo(() => allLinks.filter((link) => link.tier >= minTier), [allLinks, minTier]);
+    const roles = useMemo(() => board.data?.roles ?? [], [board.data]);
+    const groups = useMemo(() => (grouping === 'role' ? assignGroups(people, roles, excludedRoles) : null), [grouping, people, roles, excludedRoles]);
+    const pinScope = grouping === 'role' ? `roles:${[...excludedRoles].sort().join(',')}` : '';
     const peopleById = useMemo(() => new Map(people.map((person) => [person.userId, person])), [people]);
 
     const query = search.trim().toLowerCase();
@@ -150,6 +202,16 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         ))}
                     </SelectContent>
                 </Select>
+                <Select value={grouping} onValueChange={(value) => setGrouping(value as 'none' | 'role')}>
+                    <SelectTrigger className="w-44" aria-label="การจัดกลุ่ม">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="none">ไม่จัดกลุ่ม</SelectItem>
+                        <SelectItem value="role">จัดกลุ่มตาม role สูงสุด</SelectItem>
+                    </SelectContent>
+                </Select>
+                {grouping === 'role' && roles.length > 0 && <RolePicker roles={roles} excluded={excludedRoles} onChange={setExcludedRoles} />}
                 <div className="flex items-center gap-2 px-1">
                     <Switch id="relation-bots" checked={includeBots} onCheckedChange={setIncludeBots} />
                     <Label htmlFor="relation-bots">แสดงบอท</Label>
@@ -175,6 +237,8 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         people={people}
                         links={links}
                         layoutLinks={allLinks}
+                        groups={groups}
+                        pinScope={pinScope}
                         selection={selection}
                         onSelectPerson={selectPerson}
                         onSelectLink={selectLink}

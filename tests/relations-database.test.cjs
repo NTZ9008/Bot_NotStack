@@ -14,15 +14,19 @@ const profile = (id, name, bot = false) => ({
     bot,
     displayAvatarURL: () => `https://cdn.discordapp.com/avatars/${id}/x.png`,
 });
-const member = (id, name, bot) => {
+const role = (id, name, position, hexColor = '#000000') => ({ id, name, position, hexColor, comparePositionTo: (other) => position - other.position });
+const member = (id, name, bot, roles = []) => {
     const user = profile(id, name, bot);
-    return { user, displayName: name, displayAvatarURL: user.displayAvatarURL };
+    return { user, displayName: name, displayAvatarURL: user.displayAvatarURL, roles: { cache: new Map(roles.map((item) => [item.id, item])) } };
 };
+const everyone = role('g1', '@everyone', 0);
+const admin = role('40001', 'Admin', 9, '#ff0000');
+const fan = role('40002', 'Fan', 2);
 const fetched = [];
 const guild = {
     members: {
         cache: new Map([
-            ['10001', member('10001', 'Boat')],
+            ['10001', member('10001', 'Boat', false, [everyone, fan, admin])],
             ['10002', member('10002', 'Mint')],
             ['10009', member('10009', 'HelperBot', true)],
         ]),
@@ -81,6 +85,11 @@ test('board combines voice, chat and moderation and keeps people who left', asyn
 
     const board = await relations.board('g1', 30, false);
     assert.deepEqual(board.people.map((person) => person.userId).sort(), ['10001', '10002', '10003']);
+    assert.deepEqual(board.people.find((person) => person.userId === '10001').roleIds, ['40001', '40002']);
+    assert.deepEqual(board.roles, [
+        { id: '40001', name: 'Admin', color: '#ff0000' },
+        { id: '40002', name: 'Fan', color: null },
+    ]);
     const former = board.people.find((person) => person.userId === '10003');
     assert.equal(former.status, 'kicked');
     assert.equal(former.name, 'Former');

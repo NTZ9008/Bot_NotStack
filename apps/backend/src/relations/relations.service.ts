@@ -8,9 +8,10 @@ import {
     type RelationHistoryPage,
     type RelationLinkDetail,
     type RelationPerson,
+    type RelationRole,
     type RelationTimelineItem,
 } from '@notstack/shared';
-import type { GuildMember } from 'discord.js';
+import type { GuildMember, Role } from 'discord.js';
 import { mapConcurrent } from '../common/utils/map-concurrent';
 import { DiscordService } from '../discord/discord.service';
 import { Prisma } from '../generated/prisma/client';
@@ -196,7 +197,7 @@ export class RelationsService {
     private async buildPeople(
         guildId: string,
         candidates: { userId: string; name: string | null; isBot: boolean; events: number; lastSeen: Date | null }[],
-    ): Promise<RelationPerson[]> {
+    ): Promise<{ people: RelationPerson[]; rolesById: Map<string, Role> }> {
         const userIds = candidates.map((person) => person.userId);
         const [{ members, complete }, membership] = await Promise.all([this.lookupMembers(guildId, userIds), this.membershipEvents(guildId, userIds)]);
         const formerUsers = new Map(
@@ -206,19 +207,24 @@ export class RelationsService {
                 async (userId) => [userId, await this.discord.fetchUser(userId)] as const,
             ),
         );
-        return candidates.map((person) => {
+        const rolesById = new Map<string, Role>();
+        const people = candidates.map((person) => {
             const member = members.get(person.userId);
+            const roles = member ? [...member.roles.cache.values()].filter((role) => role.id !== guildId).sort((a, b) => b.comparePositionTo(a)) : [];
+            for (const role of roles) rolesById.set(role.id, role);
             const user = member?.user ?? formerUsers.get(person.userId) ?? null;
             return {
                 userId: person.userId,
                 name: member?.displayName || user?.globalName || user?.username || person.name || person.userId,
                 avatarUrl: member?.displayAvatarURL({ size: 128 }) ?? user?.displayAvatarURL({ size: 128 }) ?? null,
                 isBot: user?.bot ?? person.isBot,
+                roleIds: roles.map((role) => role.id),
                 ...resolveStatus(member ? true : complete ? false : null, membership.get(person.userId) ?? []),
                 events: person.events,
                 lastSeen: person.lastSeen ? new Date(person.lastSeen).toISOString() : null,
             };
         });
+        return { people, rolesById };
     }
 
     async board(guildId: string, days: number, includeBots: boolean): Promise<RelationBoard> {
@@ -270,14 +276,20 @@ export class RelationsService {
             weight.set(link.b, (weight.get(link.b) ?? 0) + link.score);
         }
         const ranked = [...candidates.values()].sort((x, y) => (weight.get(y.userId) ?? 0) - (weight.get(x.userId) ?? 0) || y.events - x.events);
-        const resolved = await this.buildPeople(guildId, ranked.slice(0, MAX_PEOPLE));
+        const { people: resolved, rolesById } = await this.buildPeople(guildId, ranked.slice(0, MAX_PEOPLE));
         const people = includeBots ? resolved : resolved.filter((person) => !person.isBot);
+        const usedRoles = new Set(people.flatMap((person) => person.roleIds));
+        const roles: RelationRole[] = [...rolesById.values()]
+            .filter((role) => usedRoles.has(role.id))
+            .sort((a, b) => b.comparePositionTo(a))
+            .map((role) => ({ id: role.id, name: role.name, color: role.hexColor === '#000000' ? null : role.hexColor }));
         const onBoard = new Set(people.map((person) => person.userId));
 
         return {
             from: range.from.toISOString(),
             to: range.to.toISOString(),
             people,
+            roles,
             links: links
                 .filter((link) => onBoard.has(link.a) && onBoard.has(link.b))
                 .sort((x, y) => y.score - x.score)

@@ -29,6 +29,55 @@
     transform-origin: 0 0;
 }
 
+.rb-zone {
+    --zone: oklch(0.62 0 0);
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 1.5px solid color-mix(in oklch, var(--zone) 55%, transparent);
+    border-radius: 24px;
+    background: color-mix(in oklch, var(--zone) 9%, transparent);
+    pointer-events: none;
+    transition: opacity 120ms linear;
+}
+
+.rb-world[data-focus] .rb-zone {
+    opacity: 0.55;
+}
+
+.rb-zone-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 22px 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--foreground);
+}
+
+.rb-zone-dot {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--zone);
+}
+
+.rb-zone-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rb-zone-count {
+    flex: none;
+    margin-left: auto;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+}
+
 .rb-strings {
     position: absolute;
     overflow: visible;

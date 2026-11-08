@@ -68,11 +68,19 @@ export const relationHistoryQuerySchema = z.object({
     cursor: z.coerce.number().int().positive().optional().catch(undefined),
 });
 
+export interface RelationRole {
+    id: string;
+    name: string;
+    color: string | null;
+}
+
 export interface RelationPerson {
     userId: string;
     name: string;
     avatarUrl: string | null;
     isBot: boolean;
+    // role ปัจจุบัน เรียงจากสูงสุดลงมาตามลำดับใน Discord (คนที่ออกไปแล้วไม่มี)
+    roleIds: string[];
     status: RelationPersonStatus;
     leftAt: string | null;
     events: number;
@@ -93,6 +101,8 @@ export interface RelationBoard {
     to: string;
     people: RelationPerson[];
     links: RelationLink[];
+    // role ของคนบนกระดาน เรียงจากสูงสุดลงมา
+    roles: RelationRole[];
     // จำนวนคนที่ไม่ได้ขึ้นกระดาน (เกินจำนวนสูงสุด เลือกคนที่มีความสัมพันธ์มากสุดก่อน)
     hiddenPeople: number;
 }

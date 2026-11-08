@@ -8,12 +8,29 @@ import {
     useMemo,
     useRef,
     useState,
+    type CSSProperties,
     type KeyboardEvent,
     type PointerEvent,
     type Ref,
 } from 'react';
 import { fallbackAvatar } from '@/lib/format';
-import { CARD_WIDTH, clearPins, computeLayout, fitView, loadPins, savePin, stringPath, zoomAt, type BoardView, type Point } from './layout';
+import {
+    CARD_HEIGHT,
+    CARD_WIDTH,
+    clearPins,
+    computeGroupedLayout,
+    computeLayout,
+    fitView,
+    loadPins,
+    savePin,
+    stringPath,
+    zoneRect,
+    zoomAt,
+    type BoardGroup,
+    type BoardView,
+    type Point,
+    type ZoneRect,
+} from './layout';
 import './relations.css';
 
 export interface BoardHandle {
@@ -31,6 +48,9 @@ interface BoardCanvasProps {
     people: RelationPerson[];
     links: RelationLink[];
     layoutLinks: RelationLink[];
+    // null = ไม่แบ่งกลุ่ม
+    groups: BoardGroup[] | null;
+    pinScope: string;
     selection: BoardSelection;
     onSelectPerson: (userId: string) => void;
     onSelectLink: (link: RelationLink) => void;
@@ -44,12 +64,19 @@ type Gesture =
 
 const CLICK_TOLERANCE = 5;
 const NUDGE = 24;
+const FIT_PADDING_GROUPED = 28;
 
 // เอียงการ์ดคนละนิดตาม id — ตำแหน่งเอียงต้องเดิมทุกครั้งที่เปิดหน้า
 function tiltOf(userId: string): number {
     let hash = 0;
     for (const char of userId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
     return (Math.abs(hash) % 5) - 2;
+}
+
+function placeZone(el: HTMLElement, zone: ZoneRect): void {
+    el.style.transform = `translate(${zone.x}px, ${zone.y}px)`;
+    el.style.width = `${zone.width}px`;
+    el.style.height = `${zone.height}px`;
 }
 
 const cardTransform = (point: Point, tilt: number) => `translate(${point.x - CARD_WIDTH / 2}px, ${point.y}px) rotate(${tilt}deg)`;
@@ -112,7 +139,7 @@ const PersonCard = memo(function PersonCard({
 // ==========================================
 // 🧷 พื้นกระดาน — ตำแหน่งระหว่างลากแก้ DOM ตรงๆ เพราะ re-render การ์ดและเส้นหลายร้อยชิ้นทุกการขยับจะกระตุก
 // ==========================================
-export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selection, onSelectPerson, onSelectLink }: BoardCanvasProps) {
+export function BoardCanvas({ ref, guildId, people, links, layoutLinks, groups, pinScope, selection, onSelectPerson, onSelectLink }: BoardCanvasProps) {
     const boardRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<HTMLDivElement>(null);
     const view = useRef<BoardView>({ x: 0, y: 0, k: 1 });
@@ -121,17 +148,17 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
     const pointers = useRef(new Map<number, { x: number; y: number }>());
     const gesture = useRef<Gesture | null>(null);
     const hover = useRef<BoardSelection>(null);
-    const fitted = useRef(false);
+    const fitted = useRef<string | null>(null);
+    const zones = useRef(new Map<string, HTMLElement>());
     const [layoutVersion, setLayoutVersion] = useState(0);
 
     const peopleKey = people.map((person) => person.userId).join(',');
     const linksKey = layoutLinks.map((link) => `${link.id}:${link.tier}`).join(',');
+    const groupsKey = groups?.map((group) => `${group.id}=${group.members.join('+')}`).join('|') ?? '';
     const positions = useMemo(() => {
-        const layout = computeLayout(
-            peopleKey ? peopleKey.split(',') : [],
-            layoutLinks.map((link) => ({ a: link.a, b: link.b, tier: link.tier })),
-        );
-        const pins = loadPins(guildId);
+        const edges = layoutLinks.map((link) => ({ a: link.a, b: link.b, tier: link.tier }));
+        const layout = groups ? computeGroupedLayout(groups, edges) : computeLayout(peopleKey ? peopleKey.split(',') : [], edges);
+        const pins = loadPins(guildId, pinScope);
         for (const id of layout.keys()) {
             const pin = pins[id];
             if (pin) layout.set(id, { x: pin[0], y: pin[1] });
@@ -139,7 +166,10 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
         return layout;
         // peopleKey/linksKey แทนเนื้อหาของ array — refetch ที่ได้ข้อมูลเดิมต้องไม่จัดกระดานใหม่
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [guildId, peopleKey, linksKey, layoutVersion]);
+    }, [guildId, peopleKey, linksKey, layoutVersion, groupsKey, pinScope]);
+
+    const groupByUser = useMemo(() => new Map((groups ?? []).flatMap((group) => group.members.map((id) => [id, group] as const))), [groups]);
+    const zoneOf = useCallback((group: BoardGroup) => zoneRect(group.members.map((id) => positions.get(id) ?? { x: 0, y: 0 })), [positions]);
 
     const linksByPerson = useMemo(() => {
         const map = new Map<string, RelationLink[]>();
@@ -162,9 +192,19 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
     const fit = useCallback(() => {
         const board = boardRef.current;
         if (!board) return;
-        view.current = fitView(positions.values(), board.clientWidth, board.clientHeight);
+        // มีกลุ่ม: ต้องเห็นทั้งกรอบ fitView บวกขนาดการ์ดให้เอง จึงส่งมุมกรอบที่หักขนาดการ์ดออกแล้ว
+        const points = groups
+            ? groups.flatMap((group) => {
+                  const zone = zoneOf(group);
+                  return [
+                      { x: zone.x + CARD_WIDTH / 2, y: zone.y },
+                      { x: zone.x + zone.width - CARD_WIDTH / 2, y: zone.y + zone.height - CARD_HEIGHT },
+                  ];
+              })
+            : positions.values();
+        view.current = fitView(points, board.clientWidth, board.clientHeight, groups ? FIT_PADDING_GROUPED : undefined);
         applyView();
-    }, [positions, applyView]);
+    }, [positions, applyView, groups, zoneOf]);
 
     const zoomBy = useCallback(
         (factor: number, cx?: number, cy?: number) => {
@@ -228,13 +268,17 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             string.line.setAttribute('d', path);
             string.hit.setAttribute('d', path);
         }
-    }, [positions, links]);
+        for (const group of groups ?? []) {
+            const el = zones.current.get(group.id);
+            if (el) placeZone(el, zoneOf(group));
+        }
+    }, [positions, links, groups, zoneOf]);
 
     useLayoutEffect(() => {
-        if (fitted.current || positions.size === 0) return;
-        fitted.current = true;
+        if (fitted.current === pinScope || positions.size === 0) return;
+        fitted.current = pinScope;
         fit();
-    }, [positions, fit]);
+    }, [positions, fit, pinScope]);
 
     useEffect(() => {
         const board = boardRef.current;
@@ -255,8 +299,8 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             fit,
             zoom: (factor) => zoomBy(factor),
             resetLayout: () => {
-                clearPins(guildId);
-                fitted.current = false;
+                clearPins(guildId, pinScope);
+                fitted.current = null;
                 setLayoutVersion((version) => version + 1);
             },
             focusPerson: (userId) => {
@@ -268,7 +312,7 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
                 applyView();
             },
         }),
-        [fit, zoomBy, guildId, positions, applyView],
+        [fit, zoomBy, guildId, pinScope, positions, applyView],
     );
 
     const moveCard = (userId: string, point: Point) => {
@@ -284,6 +328,9 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             string.line.setAttribute('d', path);
             string.hit.setAttribute('d', path);
         }
+        const group = groupByUser.get(userId);
+        const zone = group && zones.current.get(group.id);
+        if (group && zone) placeZone(zone, zoneOf(group));
     };
 
     const localPoint = (event: PointerEvent<HTMLDivElement>) => {
@@ -378,7 +425,7 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
         if (!current || current.type === 'pan' || current.type === 'pinch') return;
         if (current.type === 'card') {
             cards.current.get(current.userId)?.removeAttribute('data-dragging');
-            if (current.moved) savePin(guildId, current.userId, positions.get(current.userId)!);
+            if (current.moved) savePin(guildId, current.userId, positions.get(current.userId)!, pinScope);
             else if (!cancelled) onSelectPerson(current.userId);
         } else if (!current.moved && !cancelled) {
             const link = links.find((item) => item.id === current.linkId);
@@ -396,7 +443,7 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             const point = positions.get(userId)!;
             const next = { x: point.x + offset[0], y: point.y + offset[1] };
             moveCard(userId, next);
-            savePin(guildId, userId, next);
+            savePin(guildId, userId, next, pinScope);
         } else if (event.key === 'Enter' || event.key === ' ') {
             event.preventDefault();
             onSelectPerson(userId);
@@ -426,6 +473,33 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             onKeyDown={onCardKeyDown}
         >
             <div ref={worldRef} className="rb-world">
+                {groups?.map((group) => {
+                    const zone = zoneOf(group);
+                    return (
+                        <div
+                            key={group.id}
+                            ref={(el) => {
+                                if (el) zones.current.set(group.id, el);
+                                else zones.current.delete(group.id);
+                            }}
+                            className="rb-zone"
+                            style={
+                                {
+                                    '--zone': group.color ?? undefined,
+                                    transform: `translate(${zone.x}px, ${zone.y}px)`,
+                                    width: zone.width,
+                                    height: zone.height,
+                                } as CSSProperties
+                            }
+                        >
+                            <div className="rb-zone-label">
+                                <span className="rb-zone-dot" />
+                                <span className="rb-zone-name">{group.name}</span>
+                                <span className="rb-zone-count">{group.members.length.toLocaleString('th-TH')} คน</span>
+                            </div>
+                        </div>
+                    );
+                })}
                 <svg className="rb-strings" aria-hidden="true">
                     {links.map((link) => {
                         const path = stringPath(positions.get(link.a) ?? { x: 0, y: 0 }, positions.get(link.b) ?? { x: 0, y: 0 });
