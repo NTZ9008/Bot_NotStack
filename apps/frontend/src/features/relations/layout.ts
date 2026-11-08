@@ -1,6 +1,6 @@
 // จัดวางการ์ดบนกระดานครั้งแรก + เก็บตำแหน่งที่ลากเองไว้ในเบราว์เซอร์ (ไฟล์นี้ไม่พึ่ง React เพื่อให้ทดสอบได้)
 export const CARD_WIDTH = 124;
-export const CARD_HEIGHT = 158;
+export const CARD_HEIGHT = 178;
 
 export interface Point {
     x: number;
@@ -25,7 +25,7 @@ export const MAX_ZOOM = 2.5;
 const IDEAL_DISTANCE = 250;
 const ITERATIONS = 220;
 const GRAVITY = 0.02;
-const GAP = 22;
+const GAP = 38; // เว้นที่ให้หัวหมุดที่โผล่พ้นขอบการ์ด
 
 // force-directed แบบกำหนดผลได้ — คนเดิมกับเส้นเดิมต้องได้ตำแหน่งเดิมทุกครั้ง
 export function computeLayout(ids: readonly string[], edges: readonly LayoutEdge[]): Map<string, Point> {

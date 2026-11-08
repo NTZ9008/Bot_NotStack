@@ -104,7 +104,7 @@ const PersonCard = memo(function PersonCard({
                 )}
             </span>
             <span className="rb-name">{person.name}</span>
-            <span className="rb-tag">{tag}</span>
+            {tag && <span className="rb-tag">{tag}</span>}
         </button>
     );
 });
