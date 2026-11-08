@@ -24,10 +24,14 @@ const {
     CARD_HEIGHT,
     CARD_WIDTH,
     assignGroups,
+    compactVoiceTime,
     computeGroupedLayout,
     computeLayout,
     fitView,
+    linkColorMix,
+    stringMidpoint,
     stringPath,
+    voiceHeat,
     zoneRect,
     zoomAt,
 } = require('../apps/frontend/src/features/relations/layout.ts');
@@ -271,4 +275,33 @@ test('the bot only requests the privileged presence intent when explicitly enabl
     assert.equal(create(false).client.options.intents.has(GatewayIntentBits.GuildPresences), false);
     assert.equal(create(true).client.options.intents.has(GatewayIntentBits.GuildPresences), true);
     assert.equal(create(false).client.options.intents.has(GatewayIntentBits.GuildMembers), true);
+});
+
+test('voice time stays readable on a card and only long sessions stand out', () => {
+    assert.deepEqual([45, 60, 150, 599, 600, 7200].map(compactVoiceTime), ['45 นาที', '1 ชม.', '2.5 ชม.', '10 ชม.', '10 ชม.', '120 ชม.']);
+    assert.deepEqual(
+        [
+            [0, 100],
+            [40, 40],
+            [60, 3000],
+            [1000, 3000],
+            [2000, 3000],
+            [3000, 3000],
+        ].map(([minutes, max]) => voiceHeat(minutes, max)),
+        [0, 1, 1, 2, 3, 3],
+    );
+    assert.deepEqual(stringMidpoint({ x: 0, y: 0 }, { x: 100, y: 0 }), { x: 50, y: 5 });
+});
+
+test('line color grows with the amount and is scaled within each kind of relationship', () => {
+    assert.equal(linkColorMix(0, 2000), 18);
+    assert.equal(linkColorMix(2000, 2000), 100);
+    const steps = [10, 100, 500, 2000].map((score) => linkColorMix(score, 2000));
+    assert.deepEqual(
+        steps,
+        [...steps].sort((a, b) => a - b),
+    );
+    assert.ok(new Set(steps).size === steps.length);
+    // ข้อมูลน้อยมากต้องไม่ได้สีสดเต็มที่
+    assert.ok(linkColorMix(5, 5) < 60);
 });

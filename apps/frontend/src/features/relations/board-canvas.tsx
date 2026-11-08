@@ -1,7 +1,9 @@
 import {
     RELATION_STATUS_LABELS,
     RELATION_STATUS_TEXT,
+    relationKindScore,
     relationPresenceLine,
+    type RelationKind,
     type RelationLink,
     type RelationPerson,
     type RelationPresence,
@@ -20,18 +22,23 @@ import {
     type PointerEvent,
     type Ref,
 } from 'react';
+import { Mic } from 'lucide-react';
 import { fallbackAvatar } from '@/lib/format';
 import {
     CARD_HEIGHT,
     CARD_WIDTH,
     clearPins,
     computeGroupedLayout,
+    compactVoiceTime,
     computeLayout,
     fitView,
+    linkColorMix,
     loadPins,
     savePin,
+    stringMidpoint,
     stringPath,
     zoneRect,
+    voiceHeat,
     zoomAt,
     type BoardGroup,
     type BoardView,
@@ -87,16 +94,28 @@ function placeZone(el: HTMLElement, zone: ZoneRect): void {
     el.style.height = `${zone.height}px`;
 }
 
+function linkSummary(link: RelationLink): string {
+    return [
+        link.voiceMinutes > 0 && `ห้องเสียง ${compactVoiceTime(link.voiceMinutes)}`,
+        link.chatExchanges > 0 && `คุย ${link.chatExchanges.toLocaleString('th-TH')} ครั้ง`,
+        link.modActions > 0 && `ลงมือ ${link.modActions.toLocaleString('th-TH')} ครั้ง`,
+    ]
+        .filter(Boolean)
+        .join(' · ');
+}
+
 const cardTransform = (point: Point, tilt: number) => `translate(${point.x - CARD_WIDTH / 2}px, ${point.y}px) rotate(${tilt}deg)`;
 
 const PersonCard = memo(function PersonCard({
     person,
     presence,
+    heat,
     point,
     selected,
     register,
 }: {
     person: RelationPerson;
+    heat: 0 | 1 | 2 | 3;
     presence: RelationPresence | undefined;
     point: Point;
     selected: boolean;
@@ -105,6 +124,8 @@ const PersonCard = memo(function PersonCard({
     const gone = person.status !== 'member';
     const tag = gone ? RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS] : person.isBot ? 'บอท' : '';
     const presenceLine = relationPresenceLine(presence);
+    const voiceTime = heat ? compactVoiceTime(person.voiceMinutes) : '';
+    const voiceText = voiceTime ? `, ห้องเสียง ${voiceTime}` : '';
     const statusText = presence ? `, ${RELATION_STATUS_TEXT[presence.status]}` : '';
     return (
         <button
@@ -113,8 +134,9 @@ const PersonCard = memo(function PersonCard({
             className="rb-card"
             data-person={person.userId}
             data-gone={gone || undefined}
+            data-heat={heat || undefined}
             data-selected={selected || undefined}
-            aria-label={`${person.name}${tag ? ` (${tag})` : ''}${statusText}${presenceLine ? `, ${presenceLine}` : ''} ดูประวัติ`}
+            aria-label={`${person.name}${tag ? ` (${tag})` : ''}${statusText}${presenceLine ? `, ${presenceLine}` : ''}${voiceText} ดูประวัติ`}
             style={{ transform: cardTransform(point, tiltOf(person.userId)) }}
         >
             <span className="rb-pin" />
@@ -140,6 +162,12 @@ const PersonCard = memo(function PersonCard({
                             strokeLinecap="round"
                         />
                     </svg>
+                )}
+                {voiceTime && (
+                    <span className="rb-voice">
+                        <Mic aria-hidden="true" />
+                        {voiceTime}
+                    </span>
                 )}
                 {presence && <span className="rb-status" data-status={presence.status} />}
             </span>
@@ -176,6 +204,7 @@ export function BoardCanvas({
     const hover = useRef<BoardSelection>(null);
     const fitted = useRef<string | null>(null);
     const zones = useRef(new Map<string, HTMLElement>());
+    const linkLabels = useRef(new Map<string, SVGTextElement>());
     const [layoutVersion, setLayoutVersion] = useState(0);
 
     const peopleKey = people.map((person) => person.userId).join(',');
@@ -196,6 +225,33 @@ export function BoardCanvas({
 
     const groupByUser = useMemo(() => new Map((groups ?? []).flatMap((group) => group.members.map((id) => [id, group] as const))), [groups]);
     const zoneOf = useCallback((group: BoardGroup) => zoneRect(group.members.map((id) => positions.get(id) ?? { x: 0, y: 0 })), [positions]);
+
+    const placeString = useCallback(
+        (link: RelationLink) => {
+            const a = positions.get(link.a);
+            const b = positions.get(link.b);
+            const string = strings.current.get(link.id);
+            if (!a || !b || !string) return;
+            const path = stringPath(a, b);
+            string.line.setAttribute('d', path);
+            string.hit.setAttribute('d', path);
+            const label = linkLabels.current.get(link.id);
+            if (label) {
+                const middle = stringMidpoint(a, b);
+                label.setAttribute('x', String(middle.x));
+                label.setAttribute('y', String(middle.y));
+            }
+        },
+        [positions],
+    );
+
+    const maxKindScores = useMemo(() => {
+        const max: Record<RelationKind, number> = { voice: 0, chat: 0, mod: 0 };
+        for (const link of layoutLinks) max[link.kind] = Math.max(max[link.kind], relationKindScore(link));
+        return max;
+    }, [layoutLinks]);
+
+    const maxVoiceMinutes = useMemo(() => Math.max(0, ...people.map((person) => person.voiceMinutes)), [people]);
 
     const linksByPerson = useMemo(() => {
         const map = new Map<string, RelationLink[]>();
@@ -285,20 +341,12 @@ export function BoardCanvas({
             const card = cards.current.get(id);
             if (card) card.style.transform = cardTransform(point, tiltOf(id));
         }
-        for (const link of links) {
-            const a = positions.get(link.a);
-            const b = positions.get(link.b);
-            const string = strings.current.get(link.id);
-            if (!a || !b || !string) continue;
-            const path = stringPath(a, b);
-            string.line.setAttribute('d', path);
-            string.hit.setAttribute('d', path);
-        }
+        for (const link of links) placeString(link);
         for (const group of groups ?? []) {
             const el = zones.current.get(group.id);
             if (el) placeZone(el, zoneOf(group));
         }
-    }, [positions, links, groups, zoneOf]);
+    }, [positions, links, groups, zoneOf, placeString]);
 
     useLayoutEffect(() => {
         if (fitted.current === pinScope || positions.size === 0) return;
@@ -345,15 +393,7 @@ export function BoardCanvas({
         positions.set(userId, point);
         const card = cards.current.get(userId);
         if (card) card.style.transform = cardTransform(point, tiltOf(userId));
-        for (const link of linksByPerson.get(userId) ?? []) {
-            const a = positions.get(link.a);
-            const b = positions.get(link.b);
-            const string = strings.current.get(link.id);
-            if (!a || !b || !string) continue;
-            const path = stringPath(a, b);
-            string.line.setAttribute('d', path);
-            string.hit.setAttribute('d', path);
-        }
+        for (const link of linksByPerson.get(userId) ?? []) placeString(link);
         const group = groupByUser.get(userId);
         const zone = group && zones.current.get(group.id);
         if (group && zone) placeZone(zone, zoneOf(group));
@@ -528,7 +568,10 @@ export function BoardCanvas({
                 })}
                 <svg className="rb-strings" aria-hidden="true">
                     {links.map((link) => {
-                        const path = stringPath(positions.get(link.a) ?? { x: 0, y: 0 }, positions.get(link.b) ?? { x: 0, y: 0 });
+                        const from = positions.get(link.a) ?? { x: 0, y: 0 };
+                        const to = positions.get(link.b) ?? { x: 0, y: 0 };
+                        const path = stringPath(from, to);
+                        const middle = stringMidpoint(from, to);
                         const refs = (part: 'line' | 'hit') => (el: SVGPathElement | null) => {
                             const entry = strings.current.get(link.id) ?? ({} as { line: SVGPathElement; hit: SVGPathElement });
                             if (el) {
@@ -538,8 +581,27 @@ export function BoardCanvas({
                         };
                         return (
                             <g key={link.id}>
-                                <path ref={refs('line')} className="rb-string" data-tier={link.tier} data-kind={link.kind} d={path} />
+                                <path
+                                    ref={refs('line')}
+                                    className="rb-string"
+                                    data-tier={link.tier}
+                                    data-kind={link.kind}
+                                    style={{ '--rb-mix': `${linkColorMix(relationKindScore(link), maxKindScores[link.kind])}%` } as CSSProperties}
+                                    d={path}
+                                />
                                 <path ref={refs('hit')} className="rb-string-hit" data-link={link.id} d={path} />
+                                <text
+                                    ref={(el) => {
+                                        if (el) linkLabels.current.set(link.id, el);
+                                        else linkLabels.current.delete(link.id);
+                                    }}
+                                    className="rb-link-label"
+                                    data-kind={link.kind}
+                                    x={middle.x}
+                                    y={middle.y}
+                                >
+                                    {linkSummary(link)}
+                                </text>
                             </g>
                         );
                     })}
@@ -549,6 +611,7 @@ export function BoardCanvas({
                         key={person.userId}
                         person={person}
                         presence={presences[person.userId]}
+                        heat={voiceHeat(person.voiceMinutes, maxVoiceMinutes)}
                         point={positions.get(person.userId) ?? { x: 0, y: 0 }}
                         selected={selectedPerson === person.userId}
                         register={registerCard}

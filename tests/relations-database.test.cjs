@@ -96,6 +96,8 @@ test('board combines voice, chat and moderation and keeps people who left', asyn
     assert.ok(former.leftAt);
     assert.deepEqual(fetched, [['10003']]);
 
+    assert.equal(board.people.find((person) => person.userId === '10001').voiceMinutes, 80);
+    assert.equal(board.people.find((person) => person.userId === '10002').voiceMinutes, 60);
     const friends = board.links.find((link) => link.id === '10001:10002');
     assert.deepEqual([friends.voiceMinutes, friends.chatExchanges, friends.modActions, friends.kind, friends.tier], [60, 2, 0, 'voice', 2]);
     const kicked = board.links.find((link) => link.id === '10001:10003');

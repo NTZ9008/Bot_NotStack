@@ -38,10 +38,10 @@ const LINE_FILTERS = [
     { tier: 3, label: 'เฉพาะคนที่สนิท' },
 ];
 
-const LEGEND: { kind: RelationKind; color: string; dashed?: boolean }[] = [
-    { kind: 'voice', color: 'var(--chart-2)' },
-    { kind: 'chat', color: 'var(--chart-4)' },
-    { kind: 'mod', color: 'var(--chart-5)', dashed: true },
+const LEGEND: { kind: RelationKind; color: string; unit: string }[] = [
+    { kind: 'voice', color: 'var(--chart-2)', unit: 'ชั่วโมง' },
+    { kind: 'chat', color: 'var(--chart-4)', unit: 'จำนวนครั้ง' },
+    { kind: 'mod', color: 'var(--chart-5)', unit: 'จำนวนครั้ง' },
 ];
 
 function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excluded: ReadonlySet<string>; onChange: (next: Set<string>) => void }) {
@@ -100,29 +100,16 @@ function Legend({ showPresence }: { showPresence: boolean }) {
     return (
         <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-lg border bg-neutral-900/90 px-3 py-2 text-xs text-neutral-100">
             <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {LEGEND.map(({ kind, color, dashed }) => (
+                {LEGEND.map(({ kind, color, unit }) => (
                     <li key={kind} className="flex items-center gap-1.5">
-                        <svg width="26" height="6" aria-hidden="true">
-                            <line
-                                x1="1"
-                                y1="3"
-                                x2="25"
-                                y2="3"
-                                stroke={color}
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeDasharray={dashed ? '6 5' : undefined}
-                            />
-                        </svg>
-                        {RELATION_KIND_LABELS[kind]}
+                        <span
+                            className="h-1 w-8 rounded-full"
+                            style={{ background: `linear-gradient(90deg, color-mix(in oklch, ${color} 18%, oklch(0.68 0 0)), ${color})` }}
+                            aria-hidden="true"
+                        />
+                        {RELATION_KIND_LABELS[kind]} ({unit})
                     </li>
                 ))}
-                <li className="flex items-center gap-1.5">
-                    <svg width="26" height="6" aria-hidden="true">
-                        <line x1="1" y1="3" x2="25" y2="3" stroke="oklch(0.68 0 0)" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    เบาบาง
-                </li>
             </ul>
             {showPresence && (
                 <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
@@ -134,7 +121,7 @@ function Legend({ showPresence }: { showPresence: boolean }) {
                     ))}
                 </ul>
             )}
-            <p className="mt-1 text-neutral-400">สีบอกว่าสัมพันธ์กันแบบไหน เส้นยิ่งหนายิ่งสนิท</p>
+            <p className="mt-1 text-neutral-400">สีจางคือน้อย ยิ่งมากสียิ่งสดและเส้นยิ่งหนา ชี้ที่เส้นเพื่อดูตัวเลข</p>
         </div>
     );
 }
@@ -306,6 +293,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                 guildId={guildId}
                 person={selection?.type === 'person' ? (peopleById.get(selection.userId) ?? null) : null}
                 presence={selection?.type === 'person' ? (presences[selection.userId] ?? null) : null}
+                days={days}
                 links={allLinks}
                 peopleById={peopleById}
                 onClose={() => setSelection(null)}

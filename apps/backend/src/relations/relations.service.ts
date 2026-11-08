@@ -199,6 +199,7 @@ export class RelationsService {
     private async buildPeople(
         guildId: string,
         candidates: { userId: string; name: string | null; isBot: boolean; events: number; lastSeen: Date | null }[],
+        voiceMs: ReadonlyMap<string, number>,
     ): Promise<{ people: RelationPerson[]; rolesById: Map<string, Role> }> {
         const userIds = candidates.map((person) => person.userId);
         const [{ members, complete }, membership] = await Promise.all([this.lookupMembers(guildId, userIds), this.membershipEvents(guildId, userIds)]);
@@ -223,6 +224,7 @@ export class RelationsService {
                 roleIds: roles.map((role) => role.id),
                 ...resolveStatus(member ? true : complete ? false : null, membership.get(person.userId) ?? []),
                 events: person.events,
+                voiceMinutes: Math.round((voiceMs.get(person.userId) ?? 0) / 60_000),
                 lastSeen: person.lastSeen ? new Date(person.lastSeen).toISOString() : null,
             };
         });
@@ -245,7 +247,10 @@ export class RelationsService {
             if (!entry) tallies.set(key, (entry = { a, b, voiceMs: 0, chatExchanges: 0, modActions: 0 }));
             return entry;
         };
-        forEachVoiceOverlap(buildVoiceSessions(voiceEvents, range.to.getTime()), ({ a, b, start, end }) => {
+        const voiceSessions = buildVoiceSessions(voiceEvents, range.to.getTime());
+        const voiceMs = new Map<string, number>();
+        for (const session of voiceSessions) voiceMs.set(session.userId, (voiceMs.get(session.userId) ?? 0) + session.end - session.start);
+        forEachVoiceOverlap(voiceSessions, ({ a, b, start, end }) => {
             tally(a, b).voiceMs += end - start;
         });
         for (const row of chatRows) tally(row.a, row.b).chatExchanges += Number(row.total);
@@ -278,7 +283,7 @@ export class RelationsService {
             weight.set(link.b, (weight.get(link.b) ?? 0) + link.score);
         }
         const ranked = [...candidates.values()].sort((x, y) => (weight.get(y.userId) ?? 0) - (weight.get(x.userId) ?? 0) || y.events - x.events);
-        const { people: resolved, rolesById } = await this.buildPeople(guildId, ranked.slice(0, MAX_PEOPLE));
+        const { people: resolved, rolesById } = await this.buildPeople(guildId, ranked.slice(0, MAX_PEOPLE), voiceMs);
         const people = includeBots ? resolved : resolved.filter((person) => !person.isBot);
         const usedRoles = new Set(people.flatMap((person) => person.roleIds));
         const roles: RelationRole[] = [...rolesById.values()]

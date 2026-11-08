@@ -39,6 +39,11 @@ export function relationKind(counts: RelationCounts): RelationKind {
     return parts(counts).reduce((best, part) => (part[1] > best[1] ? part : best))[0];
 }
 
+// คะแนนของประเภทที่เด่นที่สุด ใช้กำหนดความสดของสีเส้น
+export function relationKindScore(counts: RelationCounts): number {
+    return Math.max(...parts(counts).map(([, value]) => value));
+}
+
 export function relationTier(score: number): RelationTier {
     return (1 + RELATION_TIER_SCORES.filter((min) => score >= min).length) as RelationTier;
 }
@@ -137,6 +142,8 @@ export interface RelationPerson {
     status: RelationPersonStatus;
     leftAt: string | null;
     events: number;
+    // เวลารวมในห้องเสียงทุกห้องในช่วงที่เลือก (นับคนเดียวก็รวมด้วย)
+    voiceMinutes: number;
     lastSeen: string | null;
 }
 

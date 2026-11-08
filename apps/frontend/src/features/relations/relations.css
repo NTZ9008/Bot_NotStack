@@ -87,7 +87,7 @@
 
 .rb-string {
     fill: none;
-    stroke: var(--rb-thread);
+    stroke: color-mix(in oklch, var(--rb-link) var(--rb-mix, 100%), var(--rb-thread));
     stroke-linecap: round;
     pointer-events: none;
     opacity: 0.55;
@@ -98,6 +98,17 @@
 .rb-string[data-tier='3'],
 .rb-string[data-tier='4'] {
     opacity: 0.95;
+}
+
+.rb-string[data-kind='voice'] {
+    --rb-link: var(--rb-voice);
+}
+.rb-string[data-kind='chat'] {
+    --rb-link: var(--rb-chat);
+}
+.rb-string[data-kind='mod'] {
+    --rb-link: var(--rb-mod);
+    stroke-dasharray: 10 7;
 }
 
 .rb-string[data-tier='1'] {
@@ -113,21 +124,31 @@
     stroke-width: 5.5;
 }
 
-.rb-string[data-tier='2'][data-kind='voice'],
-.rb-string[data-tier='3'][data-kind='voice'],
-.rb-string[data-tier='4'][data-kind='voice'] {
-    stroke: var(--rb-voice);
+.rb-link-label {
+    display: none;
+    font-size: 15px;
+    font-weight: 700;
+    text-anchor: middle;
+    fill: var(--foreground);
+    stroke: var(--rb-surface);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+    paint-order: stroke;
+    pointer-events: none;
 }
-.rb-string[data-tier='2'][data-kind='chat'],
-.rb-string[data-tier='3'][data-kind='chat'],
-.rb-string[data-tier='4'][data-kind='chat'] {
-    stroke: var(--rb-chat);
+
+.rb-string[data-lit] ~ .rb-link-label {
+    display: block;
 }
-.rb-string[data-tier='2'][data-kind='mod'],
-.rb-string[data-tier='3'][data-kind='mod'],
-.rb-string[data-tier='4'][data-kind='mod'] {
-    stroke: var(--rb-mod);
-    stroke-dasharray: 10 7;
+
+.rb-link-label[data-kind='voice'] {
+    fill: var(--rb-voice);
+}
+.rb-link-label[data-kind='chat'] {
+    fill: var(--rb-chat);
+}
+.rb-link-label[data-kind='mod'] {
+    fill: var(--rb-mod);
 }
 
 .rb-string-hit {
@@ -245,6 +266,45 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
+}
+
+.rb-voice {
+    position: absolute;
+    left: 4px;
+    bottom: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px 1px 5px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+    color: oklch(0.9 0.06 232);
+    background: oklch(0.2 0.03 240 / 85%);
+}
+
+.rb-voice svg {
+    width: 11px;
+    height: 11px;
+}
+
+.rb-card[data-heat='2'] .rb-voice {
+    color: oklch(0.2 0.05 240);
+    background: oklch(from var(--rb-voice) l c h / 80%);
+}
+
+.rb-card[data-heat='3'] .rb-voice {
+    color: oklch(0.18 0.05 240);
+    background: var(--rb-voice);
+}
+
+.rb-card[data-heat='3'] {
+    border-color: var(--rb-voice);
+    box-shadow:
+        inset 0 1px 0 oklch(1 0 0 / 12%),
+        0 0 0 1px var(--rb-voice),
+        0 0 26px oklch(from var(--rb-voice) l c h / 55%);
 }
 
 .rb-status {
