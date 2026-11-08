@@ -2,7 +2,7 @@ import type { RelationPerson, RelationRole } from '@notstack/shared';
 
 // จัดวางการ์ดบนกระดานครั้งแรก + เก็บตำแหน่งที่ลากเองไว้ในเบราว์เซอร์ (ไฟล์นี้ไม่พึ่ง React เพื่อให้ทดสอบได้)
 export const CARD_WIDTH = 124;
-export const CARD_HEIGHT = 178;
+export const CARD_HEIGHT = 196;
 
 export interface Point {
     x: number;
@@ -187,6 +187,36 @@ export function computeGroupedLayout(groups: readonly BoardGroup[], edges: reado
 export function stringPath(a: Point, b: Point): string {
     const sag = Math.min(70, Math.hypot(a.x - b.x, a.y - b.y) * 0.1);
     return `M${a.x} ${a.y}Q${(a.x + b.x) / 2} ${(a.y + b.y) / 2 + sag} ${b.x} ${b.y}`;
+}
+
+// จุดกึ่งกลางของเส้นโค้งจาก stringPath
+export function stringMidpoint(a: Point, b: Point): Point {
+    return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 + Math.min(70, Math.hypot(a.x - b.x, a.y - b.y) * 0.1) / 2 };
+}
+
+// ข้อความสั้นสำหรับบนกระดาน เช่น 45 นาที, 2.5 ชม., 120 ชม.
+export function compactVoiceTime(minutes: number): string {
+    if (minutes < 60) return `${minutes} นาที`;
+    const hours = minutes / 60;
+    return `${(hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours)).toLocaleString('en-US')} ชม.`;
+}
+
+// ความเด่นเทียบกับคนที่อยู่นานสุดบนกระดาน — ต้องถึง 1 ชั่วโมงก่อนถึงจะเด่น ไม่อย่างนั้นกระดานที่เพิ่งมีข้อมูลจะดูเกินจริง
+export function voiceHeat(minutes: number, maxMinutes: number): 0 | 1 | 2 | 3 {
+    if (minutes < 1) return 0;
+    if (minutes < 60 || maxMinutes <= 0) return 1;
+    const share = minutes / maxMinutes;
+    return share >= 0.66 ? 3 : share >= 0.33 ? 2 : 1;
+}
+
+const MIN_COLOR = 18;
+// เทียบกับเส้นที่มากสุดของประเภทเดียวกัน แต่กันไว้ไม่ให้กระดานที่มีข้อมูลนิดเดียวได้สีสดทุกเส้น
+const MIN_COLOR_SCALE = 120;
+
+// ร้อยละของสีประเภทนั้นในเส้น (ที่เหลือเป็นสีด้ายเทา) — ใช้ log เพราะเส้นบนๆ มักทิ้งห่างเส้นทั่วไปมาก
+export function linkColorMix(kindScore: number, maxKindScore: number): number {
+    const position = Math.log1p(Math.max(0, kindScore)) / Math.log1p(Math.max(maxKindScore, MIN_COLOR_SCALE));
+    return Math.round(MIN_COLOR + (100 - MIN_COLOR) * Math.min(1, position));
 }
 
 export const clampZoom = (k: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, k));

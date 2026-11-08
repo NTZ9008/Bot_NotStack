@@ -9,6 +9,7 @@ require.extensions['.ts'] = (module, filename) => {
         filename,
     );
 };
+const { RelationsService } = require('../apps/backend/dist/relations/relations.service');
 const {
     buildVoiceSessions,
     createLink,
@@ -16,16 +17,21 @@ const {
     forEachVoiceOverlap,
     groupChatExchanges,
     resolveStatus,
+    toRelationPresence,
 } = require('../apps/backend/dist/relations/relations.util');
-const { relationKind, relationScore, relationTier } = require('../packages/shared/dist/index.js');
+const { relationKind, relationPresenceLine, relationPresenceQuerySchema, relationScore, relationTier } = require('../packages/shared/dist/index.js');
 const {
     CARD_HEIGHT,
     CARD_WIDTH,
     assignGroups,
+    compactVoiceTime,
     computeGroupedLayout,
     computeLayout,
     fitView,
+    linkColorMix,
+    stringMidpoint,
     stringPath,
+    voiceHeat,
     zoneRect,
     zoomAt,
 } = require('../apps/frontend/src/features/relations/layout.ts');
@@ -222,4 +228,80 @@ test('grouped layout keeps every group in its own zone', () => {
     const loose = { id: 'loose', name: 'loose', color: null, members: Array.from({ length: 20 }, (_, i) => `x${i}`) };
     const zone = zoneRect([...computeGroupedLayout([loose], []).values()]);
     assert.ok(zone.width < 1500 && zone.height < 1500, `zone too large: ${zone.width}x${zone.height}`);
+});
+
+test('presence keeps the game, the custom status and treats invisible as offline', () => {
+    const presence = toRelationPresence({
+        status: 'dnd',
+        activities: [
+            { type: 4, name: 'Custom Status', state: 'อย่ากวนนะ', emoji: { id: null, name: '🔥' } },
+            { type: 0, name: 'VALORANT', details: 'Ranked', state: 'In Game' },
+        ],
+    });
+    assert.deepEqual(presence, { status: 'dnd', activity: { kind: 'playing', name: 'VALORANT', detail: 'Ranked' }, customStatus: '🔥 อย่ากวนนะ' });
+    assert.equal(relationPresenceLine(presence), 'กำลังเล่น VALORANT');
+    assert.equal(relationPresenceLine({ ...presence, activity: null }), '🔥 อย่ากวนนะ');
+    assert.deepEqual(toRelationPresence({ status: 'invisible', activities: [] }), { status: 'offline', activity: null, customStatus: null });
+    // อีโมจิของเซิร์ฟเวอร์แสดงเป็นข้อความไม่ได้
+    assert.equal(
+        toRelationPresence({ status: 'online', activities: [{ type: 4, name: 'Custom Status', emoji: { id: '1', name: 'pepe' } }] }).customStatus,
+        null,
+    );
+});
+
+test('presence query accepts only user ids and reports when the intent is off', () => {
+    assert.deepEqual(relationPresenceQuerySchema.parse({ ids: '100001,abc,100002' }).ids, ['100001', '100002']);
+    assert.deepEqual(relationPresenceQuerySchema.parse({}).ids, []);
+    const guild = {
+        presences: { cache: new Map([['100001', { status: 'online', activities: [] }]]) },
+        members: { cache: new Map([['100002', {}]]) },
+    };
+    const service = (presenceEnabled) => new RelationsService(null, { guild: () => guild, presenceEnabled }, null);
+    assert.deepEqual(service(false).presence('g', ['100001']), { available: false, presences: {} });
+    assert.deepEqual(service(true).presence('g', ['100001', '100002', '100003']), {
+        available: true,
+        presences: {
+            100001: { status: 'online', activity: null, customStatus: null },
+            100002: { status: 'offline', activity: null, customStatus: null },
+        },
+    });
+});
+
+test('the bot only requests the privileged presence intent when explicitly enabled', () => {
+    const { GatewayIntentBits } = require('../apps/backend/node_modules/discord.js');
+    const { DiscordService } = require('../apps/backend/dist/discord/discord.service');
+    const create = (enabled) => new DiscordService({ get: (key) => (key === 'DISCORD_PRESENCE_INTENT' ? enabled : 'x') });
+    assert.equal(create(false).presenceEnabled, false);
+    assert.equal(create(false).client.options.intents.has(GatewayIntentBits.GuildPresences), false);
+    assert.equal(create(true).client.options.intents.has(GatewayIntentBits.GuildPresences), true);
+    assert.equal(create(false).client.options.intents.has(GatewayIntentBits.GuildMembers), true);
+});
+
+test('voice time stays readable on a card and only long sessions stand out', () => {
+    assert.deepEqual([45, 60, 150, 599, 600, 7200].map(compactVoiceTime), ['45 นาที', '1 ชม.', '2.5 ชม.', '10 ชม.', '10 ชม.', '120 ชม.']);
+    assert.deepEqual(
+        [
+            [0, 100],
+            [40, 40],
+            [60, 3000],
+            [1000, 3000],
+            [2000, 3000],
+            [3000, 3000],
+        ].map(([minutes, max]) => voiceHeat(minutes, max)),
+        [0, 1, 1, 2, 3, 3],
+    );
+    assert.deepEqual(stringMidpoint({ x: 0, y: 0 }, { x: 100, y: 0 }), { x: 50, y: 5 });
+});
+
+test('line color grows with the amount and is scaled within each kind of relationship', () => {
+    assert.equal(linkColorMix(0, 2000), 18);
+    assert.equal(linkColorMix(2000, 2000), 100);
+    const steps = [10, 100, 500, 2000].map((score) => linkColorMix(score, 2000));
+    assert.deepEqual(
+        steps,
+        [...steps].sort((a, b) => a - b),
+    );
+    assert.ok(new Set(steps).size === steps.length);
+    // ข้อมูลน้อยมากต้องไม่ได้สีสดเต็มที่
+    assert.ok(linkColorMix(5, 5) < 60);
 });

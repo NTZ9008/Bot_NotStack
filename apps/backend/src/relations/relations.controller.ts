@@ -1,5 +1,13 @@
 import { Controller, Get, HttpStatus, Param, Query, Res } from '@nestjs/common';
-import { relationBoardQuerySchema, relationHistoryQuerySchema, type RelationBoard, type RelationHistoryPage, type RelationLinkDetail } from '@notstack/shared';
+import {
+    relationBoardQuerySchema,
+    relationHistoryQuerySchema,
+    relationPresenceQuerySchema,
+    type RelationBoard,
+    type RelationHistoryPage,
+    type RelationLinkDetail,
+    type RelationPresenceResponse,
+} from '@notstack/shared';
 import type { Response } from 'express';
 import { createZodDto } from '../common/dto/create-zod-dto';
 import { ApiException } from '../common/exceptions/api.exception';
@@ -10,6 +18,7 @@ import { RelationsService } from './relations.service';
 
 class RelationBoardQueryDto extends createZodDto(relationBoardQuerySchema) {}
 class RelationHistoryQueryDto extends createZodDto(relationHistoryQuerySchema) {}
+class RelationPresenceQueryDto extends createZodDto(relationPresenceQuerySchema) {}
 
 const CACHE_MS = 60_000;
 const size = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
@@ -35,6 +44,11 @@ export class RelationsController {
         const includeBots = Boolean(query.includeBots);
         res.set('Cache-Control', 'no-store');
         return this.boards.get(`${guildId}:${query.days}:${includeBots}`, () => this.relations.board(guildId, query.days, includeBots));
+    }
+
+    @Get('presence')
+    presence(@GuildId() guildId: string, @Query() query: RelationPresenceQueryDto): RelationPresenceResponse {
+        return this.relations.presence(guildId, query.ids);
     }
 
     @Get('links/:a/:b')

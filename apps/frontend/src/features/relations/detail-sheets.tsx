@@ -1,10 +1,14 @@
 import {
     RELATION_CHAT_WINDOW_MINUTES,
     RELATION_KIND_LABELS,
+    RELATION_ACTIVITY_LABELS,
     RELATION_STATUS_LABELS,
+    RELATION_STATUS_TEXT,
     type RelationKind,
     type RelationLink,
     type RelationPerson,
+    type RelationPresence,
+    type RelationPresenceStatus,
     type RelationTimelineItem,
 } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -35,9 +39,50 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
     );
 }
 
+function VoiceStat({ label, minutes, days }: { label: string; minutes: number; days?: number }) {
+    return (
+        <div className="flex items-center gap-3 rounded-lg border border-sky-400/40 bg-sky-400/10 p-3">
+            <Mic className="size-5 shrink-0 text-sky-400" aria-hidden="true" />
+            <div className="min-w-0">
+                <div className="text-xs text-muted-foreground">
+                    {label}
+                    {days ? ` · ${days} วันล่าสุด` : ''}
+                </div>
+                <div className="text-xl font-bold text-sky-300">{formatMinutes(minutes)}</div>
+            </div>
+        </div>
+    );
+}
+
 function StatusBadge({ person }: { person: RelationPerson }) {
     if (person.status === 'member') return <Badge variant="secondary">อยู่ในเซิร์ฟเวอร์</Badge>;
     return <Badge variant="destructive">{RELATION_STATUS_LABELS[person.status]}</Badge>;
+}
+
+const STATUS_DOT: Record<RelationPresenceStatus, string> = {
+    online: 'bg-success',
+    idle: 'bg-warning',
+    dnd: 'bg-destructive',
+    offline: 'bg-neutral-500',
+};
+
+function PresenceBlock({ presence }: { presence: RelationPresence }) {
+    const { activity, customStatus, status } = presence;
+    return (
+        <div className="space-y-1 rounded-lg border bg-muted/40 p-3 text-sm">
+            <div className="flex items-center gap-2 font-medium">
+                <span className={`size-2.5 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
+                {RELATION_STATUS_TEXT[status]}
+            </div>
+            {activity && (
+                <p className="break-words">
+                    {RELATION_ACTIVITY_LABELS[activity.kind]} <span className="font-medium">{activity.name}</span>
+                    {activity.detail && <span className="text-muted-foreground"> · {activity.detail}</span>}
+                </p>
+            )}
+            {customStatus && <p className="break-words text-muted-foreground">“{customStatus}”</p>}
+        </div>
+    );
 }
 
 function ListSkeleton() {
@@ -56,6 +101,8 @@ function ListSkeleton() {
 export function PersonSheet({
     guildId,
     person,
+    presence,
+    days,
     links,
     peopleById,
     onClose,
@@ -63,6 +110,8 @@ export function PersonSheet({
 }: {
     guildId: string;
     person: RelationPerson | null;
+    presence: RelationPresence | null;
+    days: number;
     links: RelationLink[];
     peopleById: Map<string, RelationPerson>;
     onClose: () => void;
@@ -87,7 +136,9 @@ export function PersonSheet({
                             </div>
                         </SheetHeader>
                         <div className="space-y-5 px-4 pb-6">
+                            {presence && <PresenceBlock presence={presence} />}
                             {person.leftAt && <p className="text-sm text-muted-foreground">ออกจากเซิร์ฟเวอร์เมื่อ {formatDateTime(person.leftAt)}</p>}
+                            <VoiceStat label="เวลารวมในห้องเสียง" minutes={person.voiceMinutes} days={days} />
                             <div className="grid grid-cols-2 gap-2">
                                 <Stat label="เหตุการณ์ในช่วงนี้" value={person.events.toLocaleString('th-TH')} />
                                 <Stat label="คนที่เกี่ยวข้อง" value={connections.length.toLocaleString('th-TH')} />
@@ -112,6 +163,9 @@ export function PersonSheet({
                                                         <span className="block truncate text-sm font-medium">{other?.name ?? otherId}</span>
                                                         <span className="block text-xs text-muted-foreground">
                                                             {TIER_LABELS[link.tier]} · {RELATION_KIND_LABELS[link.kind]}
+                                                            {link.voiceMinutes > 0 && (
+                                                                <span className="text-sky-400"> · ห้องเสียง {formatMinutes(link.voiceMinutes)}</span>
+                                                            )}
                                                         </span>
                                                     </span>
                                                     <Icon className={`size-4 shrink-0 ${KIND_TEXT[link.kind]}`} aria-hidden="true" />
@@ -168,7 +222,11 @@ function TimelineRow({ item }: { item: RelationTimelineItem }) {
     let title: ReactNode;
     let detail: ReactNode = null;
     if (item.type === 'voice') {
-        title = `อยู่ห้องเสียงด้วยกัน ${formatMinutes(item.minutes)}`;
+        title = (
+            <>
+                อยู่ห้องเสียงด้วยกัน <span className="text-sky-400">{formatMinutes(item.minutes)}</span>
+            </>
+        );
         detail = item.channelName ? `ห้อง ${item.channelName}` : null;
     } else if (item.type === 'chat') {
         title = `คุยกัน ${item.exchanges.toLocaleString('th-TH')} ครั้ง`;
@@ -239,8 +297,8 @@ export function LinkSheet({
                                     ดูประวัติ {second?.name ?? link.b}
                                 </Button>
                             </div>
-                            <div className="grid grid-cols-3 gap-2">
-                                <Stat label="ห้องเสียง" value={formatMinutes(link.voiceMinutes)} />
+                            <VoiceStat label="อยู่ห้องเสียงด้วยกัน" minutes={link.voiceMinutes} />
+                            <div className="grid grid-cols-2 gap-2">
                                 <Stat label="คุยกัน" value={`${link.chatExchanges.toLocaleString('th-TH')} ครั้ง`} />
                                 <Stat label="แอดมินลงมือ" value={`${link.modActions.toLocaleString('th-TH')} ครั้ง`} />
                             </div>

@@ -1,8 +1,16 @@
-import { RELATION_KIND_LABELS, type RelationKind, type RelationLink, type RelationRole } from '@notstack/shared';
+import {
+    RELATION_KIND_LABELS,
+    RELATION_STATUS_TEXT,
+    type RelationKind,
+    type RelationLink,
+    type RelationPresence,
+    type RelationPresenceStatus,
+    type RelationRole,
+} from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { ListFilter, Maximize, Minus, Plus, RotateCcw } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
-import { relationBoardQuery } from '@/api/relations';
+import { relationBoardQuery, relationPresenceQuery } from '@/api/relations';
 import { useConfirm } from '@/components/confirm-dialog';
 import { SearchInput } from '@/components/search-input';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -30,10 +38,10 @@ const LINE_FILTERS = [
     { tier: 3, label: 'เฉพาะคนที่สนิท' },
 ];
 
-const LEGEND: { kind: RelationKind; color: string; dashed?: boolean }[] = [
-    { kind: 'voice', color: 'var(--chart-2)' },
-    { kind: 'chat', color: 'var(--chart-4)' },
-    { kind: 'mod', color: 'var(--chart-5)', dashed: true },
+const LEGEND: { kind: RelationKind; color: string; unit: string }[] = [
+    { kind: 'voice', color: 'var(--chart-2)', unit: 'ชั่วโมง' },
+    { kind: 'chat', color: 'var(--chart-4)', unit: 'จำนวนครั้ง' },
+    { kind: 'mod', color: 'var(--chart-5)', unit: 'จำนวนครั้ง' },
 ];
 
 function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excluded: ReadonlySet<string>; onChange: (next: Set<string>) => void }) {
@@ -80,35 +88,40 @@ function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excl
     );
 }
 
-function Legend() {
+const NO_PRESENCES: Record<string, RelationPresence> = {};
+const PRESENCE_LEGEND: { status: RelationPresenceStatus; className: string }[] = [
+    { status: 'online', className: 'bg-success' },
+    { status: 'idle', className: 'bg-warning' },
+    { status: 'dnd', className: 'bg-destructive' },
+    { status: 'offline', className: 'bg-neutral-500' },
+];
+
+function Legend({ showPresence }: { showPresence: boolean }) {
     return (
         <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-lg border bg-neutral-900/90 px-3 py-2 text-xs text-neutral-100">
             <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {LEGEND.map(({ kind, color, dashed }) => (
+                {LEGEND.map(({ kind, color, unit }) => (
                     <li key={kind} className="flex items-center gap-1.5">
-                        <svg width="26" height="6" aria-hidden="true">
-                            <line
-                                x1="1"
-                                y1="3"
-                                x2="25"
-                                y2="3"
-                                stroke={color}
-                                strokeWidth="3"
-                                strokeLinecap="round"
-                                strokeDasharray={dashed ? '6 5' : undefined}
-                            />
-                        </svg>
-                        {RELATION_KIND_LABELS[kind]}
+                        <span
+                            className="h-1 w-8 rounded-full"
+                            style={{ background: `linear-gradient(90deg, color-mix(in oklch, ${color} 18%, oklch(0.68 0 0)), ${color})` }}
+                            aria-hidden="true"
+                        />
+                        {RELATION_KIND_LABELS[kind]} ({unit})
                     </li>
                 ))}
-                <li className="flex items-center gap-1.5">
-                    <svg width="26" height="6" aria-hidden="true">
-                        <line x1="1" y1="3" x2="25" y2="3" stroke="oklch(0.68 0 0)" strokeWidth="1.5" strokeLinecap="round" />
-                    </svg>
-                    เบาบาง
-                </li>
             </ul>
-            <p className="mt-1 text-neutral-400">สีบอกว่าสัมพันธ์กันแบบไหน เส้นยิ่งหนายิ่งสนิท</p>
+            {showPresence && (
+                <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+                    {PRESENCE_LEGEND.map(({ status, className }) => (
+                        <li key={status} className="flex items-center gap-1.5">
+                            <span className={`size-2.5 rounded-full ${className}`} aria-hidden="true" />
+                            {RELATION_STATUS_TEXT[status]}
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <p className="mt-1 text-neutral-400">สีจางคือน้อย ยิ่งมากสียิ่งสดและเส้นยิ่งหนา ชี้ที่เส้นเพื่อดูตัวเลข</p>
         </div>
     );
 }
@@ -135,6 +148,10 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const groups = useMemo(() => (grouping === 'role' ? assignGroups(people, roles, excludedRoles) : null), [grouping, people, roles, excludedRoles]);
     const pinScope = grouping === 'role' ? `roles:${[...excludedRoles].sort().join(',')}` : '';
     const peopleById = useMemo(() => new Map(people.map((person) => [person.userId, person])), [people]);
+
+    const memberIds = useMemo(() => people.filter((person) => person.status === 'member').map((person) => person.userId), [people]);
+    const presence = useQuery({ ...relationPresenceQuery(guildId, memberIds), enabled: memberIds.length > 0 });
+    const presences = presence.data?.presences ?? NO_PRESENCES;
 
     const query = search.trim().toLowerCase();
     const matches = query ? people.filter((person) => person.name.toLowerCase().includes(query) || person.userId === query).slice(0, 6) : [];
@@ -239,6 +256,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         layoutLinks={allLinks}
                         groups={groups}
                         pinScope={pinScope}
+                        presences={presences}
                         selection={selection}
                         onSelectPerson={selectPerson}
                         onSelectLink={selectLink}
@@ -257,8 +275,13 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                             <RotateCcw />
                         </Button>
                     </div>
-                    <Legend />
+                    <Legend showPresence={presence.data?.available === true} />
                 </div>
+            )}
+            {presence.data?.available === false && (
+                <p className="text-xs text-muted-foreground">
+                    ยังแสดงสถานะออนไลน์ไม่ได้ ผู้ดูแลบอทต้องเปิด Presence Intent และตั้ง DISCORD_PRESENCE_INTENT=true ก่อน
+                </p>
             )}
             {board.data && board.data.hiddenPeople > 0 && (
                 <p className="text-xs text-muted-foreground">
@@ -269,6 +292,8 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
             <PersonSheet
                 guildId={guildId}
                 person={selection?.type === 'person' ? (peopleById.get(selection.userId) ?? null) : null}
+                presence={selection?.type === 'person' ? (presences[selection.userId] ?? null) : null}
+                days={days}
                 links={allLinks}
                 peopleById={peopleById}
                 onClose={() => setSelection(null)}

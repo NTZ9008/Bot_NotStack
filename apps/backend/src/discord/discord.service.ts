@@ -1,16 +1,6 @@
 import { HttpStatus, Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-    type Channel,
-    Client,
-    Events,
-    GatewayIntentBits,
-    type Guild,
-    OAuth2Scopes,
-    Partials,
-    PermissionFlagsBits,
-    type User,
-} from 'discord.js';
+import { type Channel, Client, Events, GatewayIntentBits, type Guild, OAuth2Scopes, Partials, PermissionFlagsBits, type User } from 'discord.js';
 import { ApiException } from '../common/exceptions/api.exception';
 import type { Env } from '../config/env.validation';
 
@@ -30,6 +20,21 @@ const INVITE_PERMISSIONS = [
     PermissionFlagsBits.ManageGuild,
 ];
 
+const BASE_INTENTS = [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
+    GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildModeration, // Log Manager: แบน / ปลดแบน / audit log
+    GatewayIntentBits.GuildInvites, // Log Manager: คำเชิญของเซิร์ฟเวอร์
+    GatewayIntentBits.GuildExpressions, // Log Manager: อีโมจิ / สติกเกอร์
+    GatewayIntentBits.GuildScheduledEvents, // Log Manager: กิจกรรมของเซิร์ฟเวอร์
+    GatewayIntentBits.AutoModerationConfiguration, // Log Manager: กฎ AutoMod
+    GatewayIntentBits.AutoModerationExecution, // Log Manager: AutoMod ทำงาน
+];
+
 // ==========================================
 // 🤖 DISCORD CLIENT — บอทตัวเดียวใช้ทั้งระบบ (ทุกเซิร์ฟเวอร์ที่บอทอยู่) ทั้ง event listener และ API ของหน้าเว็บ
 // login หลังจากทุกโมดูลผูก event เสร็จแล้ว (onApplicationBootstrap) และไม่บล็อกการเปิด HTTP server
@@ -38,32 +43,24 @@ const INVITE_PERMISSIONS = [
 export class DiscordService implements OnApplicationBootstrap, OnApplicationShutdown {
     private readonly logger = new Logger('Discord');
 
-    readonly client = new Client({
-        intents: [
-            GatewayIntentBits.Guilds,
-            GatewayIntentBits.GuildMembers,
-            GatewayIntentBits.GuildMessages,
-            GatewayIntentBits.MessageContent,
-            GatewayIntentBits.GuildVoiceStates,
-            GatewayIntentBits.GuildMessageReactions,
-            GatewayIntentBits.GuildModeration, // Log Manager: แบน / ปลดแบน / audit log
-            GatewayIntentBits.GuildInvites, // Log Manager: คำเชิญของเซิร์ฟเวอร์
-            GatewayIntentBits.GuildExpressions, // Log Manager: อีโมจิ / สติกเกอร์
-            GatewayIntentBits.GuildScheduledEvents, // Log Manager: กิจกรรมของเซิร์ฟเวอร์
-            GatewayIntentBits.AutoModerationConfiguration, // Log Manager: กฎ AutoMod
-            GatewayIntentBits.AutoModerationExecution, // Log Manager: AutoMod ทำงาน
-        ],
-        partials: [Partials.Message, Partials.Channel, Partials.Reaction],
-        // ค่าเริ่มต้นของทุกข้อความ: แท็กได้เฉพาะผู้ใช้ — ข้อความที่มีส่วนที่ผู้ใช้/AI พิมพ์มา (เช่น /random, AI Chat) จะแท็ก @everyone / ยศไม่ได้
-        // ข้อความที่แอดมินตั้งใจแท็กยศ (การ์ดต้อนรับ / รายงานอากาศ / PR Bot) ระบุ allowedMentions เองทุกครั้ง
-        allowedMentions: { parse: ['users'], repliedUser: true },
-    });
+    readonly client: Client;
+    // อ่านสถานะออนไลน์ของสมาชิกได้หรือไม่ (ดู DISCORD_PRESENCE_INTENT)
+    readonly presenceEnabled: boolean;
 
     // เซิร์ฟเวอร์หลัก (DISCORD_GUILD_ID) — คำสั่งเฉพาะของ NotStack และค่าเริ่มต้นแบบเดิม
     readonly homeGuildId: string;
     readonly clientId: string;
 
     constructor(private readonly config: ConfigService<Env, true>) {
+        this.presenceEnabled = config.get('DISCORD_PRESENCE_INTENT', { infer: true }) === true;
+        this.client = new Client({
+            // Privileged intent: ต้องเปิดใน Developer Portal ก่อน ไม่อย่างนั้น Discord จะปฏิเสธการ login ทั้งบอท
+            intents: this.presenceEnabled ? [...BASE_INTENTS, GatewayIntentBits.GuildPresences] : BASE_INTENTS,
+            partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+            // ค่าเริ่มต้นของทุกข้อความ: แท็กได้เฉพาะผู้ใช้ — ข้อความที่มีส่วนที่ผู้ใช้/AI พิมพ์มา (เช่น /random, AI Chat) จะแท็ก @everyone / ยศไม่ได้
+            // ข้อความที่แอดมินตั้งใจแท็กยศ (การ์ดต้อนรับ / รายงานอากาศ / PR Bot) ระบุ allowedMentions เองทุกครั้ง
+            allowedMentions: { parse: ['users'], repliedUser: true },
+        });
         this.homeGuildId = config.get('DISCORD_GUILD_ID', { infer: true });
         this.clientId = config.get('DISCORD_CLIENT_ID', { infer: true });
         this.client.once(Events.ClientReady, (client) => {
