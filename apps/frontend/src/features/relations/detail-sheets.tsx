@@ -102,7 +102,11 @@ export function PersonSheet({
                                         const Icon = KIND_ICON[link.kind];
                                         return (
                                             <li key={link.id}>
-                                                <button type="button" onClick={() => onSelectLink(link)} className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-accent">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onSelectLink(link)}
+                                                    className="flex w-full items-center gap-3 rounded-lg p-2 text-left hover:bg-accent"
+                                                >
                                                     <Avatar person={other} userId={otherId} />
                                                     <span className="min-w-0 flex-1">
                                                         <span className="block truncate text-sm font-medium">{other?.name ?? otherId}</span>
@@ -144,7 +148,9 @@ function PersonHistory({ guildId, userId }: { guildId: string; userId: string })
                         </div>
                         {item.summary && <p className="mt-1 text-sm break-words text-muted-foreground">{item.summary}</p>}
                         {item.executorName && item.executorId !== userId && <p className="mt-1 text-xs text-muted-foreground">โดย {item.executorName}</p>}
-                        {item.executorId === userId && item.userName && item.userId !== userId && <p className="mt-1 text-xs text-muted-foreground">ลงมือกับ {item.userName}</p>}
+                        {item.executorId === userId && item.userName && item.userId !== userId && (
+                            <p className="mt-1 text-xs text-muted-foreground">ลงมือกับ {item.userName}</p>
+                        )}
                     </li>
                 ))}
             </ol>
@@ -239,15 +245,22 @@ export function LinkSheet({
                                 <Stat label="แอดมินลงมือ" value={`${link.modActions.toLocaleString('th-TH')} ครั้ง`} />
                             </div>
                             <p className="text-xs leading-relaxed text-muted-foreground">
-                                “คุยกัน” นับเมื่อสองคนส่งข้อความต่อกันในห้องเดียวกันภายใน {RELATION_CHAT_WINDOW_MINUTES} นาที เป็นการประมาณจาก log ไม่ได้อ่านเนื้อหาข้อความ
+                                “คุยกัน” นับเมื่อสองคนส่งข้อความต่อกันในห้องเดียวกันภายใน {RELATION_CHAT_WINDOW_MINUTES} นาที เป็นการประมาณจาก log
+                                ไม่ได้อ่านเนื้อหาข้อความ
                             </p>
                             <section className="space-y-2">
                                 <h3 className="text-sm font-semibold">ไทม์ไลน์</h3>
                                 {detail.isPending && <ListSkeleton />}
                                 {detail.isError && <ErrorState error={detail.error} />}
                                 {detail.isSuccess && detail.data.timeline.length === 0 && <EmptyState>ไม่พบรายการในช่วงเวลานี้</EmptyState>}
-                                <ol className="space-y-2">{detail.data?.timeline.map((item, index) => <TimelineRow key={`${item.type}:${item.at}:${index}`} item={item} />)}</ol>
-                                {detail.data?.truncated && <p className="text-xs text-muted-foreground">แสดงเฉพาะรายการล่าสุด ตัวเลขสรุปด้านบนยังนับครบทุกรายการ</p>}
+                                <ol className="space-y-2">
+                                    {detail.data?.timeline.map((item, index) => (
+                                        <TimelineRow key={`${item.type}:${item.at}:${index}`} item={item} />
+                                    ))}
+                                </ol>
+                                {detail.data?.truncated && (
+                                    <p className="text-xs text-muted-foreground">แสดงเฉพาะรายการล่าสุด ตัวเลขสรุปด้านบนยังนับครบทุกรายการ</p>
+                                )}
                             </section>
                         </div>
                     </>

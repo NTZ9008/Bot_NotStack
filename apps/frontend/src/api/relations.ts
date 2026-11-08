@@ -14,7 +14,8 @@ export interface RelationFilters {
 export const relationBoardQuery = (guildId: string, filters: RelationFilters) =>
     queryOptions({
         queryKey: [...guildKey(guildId), 'relations', 'board', filters],
-        queryFn: () => api<RelationBoard>(`/guilds/${guildId}/relations`, { query: { days: filters.days, includeBots: filters.includeBots ? 'true' : undefined } }),
+        queryFn: () =>
+            api<RelationBoard>(`/guilds/${guildId}/relations`, { query: { days: filters.days, includeBots: filters.includeBots ? 'true' : undefined } }),
         staleTime: 60 * 1000,
     });
 

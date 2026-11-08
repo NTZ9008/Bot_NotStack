@@ -39,7 +39,18 @@ const DISCORD_LOOKUPS = 5;
 const MEMBER_CHUNK = 100; // จำนวน user id สูงสุดต่อคำขอของ Discord gateway
 const MEMBER_FETCH_MS = 8_000;
 
-const MOD_KEYS = ['memberBan', 'memberUnban', 'memberKick', 'memberTimeout', 'nicknameUpdate', 'roleGiven', 'roleRemoved', 'voiceMoved', 'voiceDisconnected', 'messageDelete'];
+const MOD_KEYS = [
+    'memberBan',
+    'memberUnban',
+    'memberKick',
+    'memberTimeout',
+    'nicknameUpdate',
+    'roleGiven',
+    'roleRemoved',
+    'voiceMoved',
+    'voiceDisconnected',
+    'messageDelete',
+];
 const MEMBERSHIP_KEYS = ['memberJoin', 'memberLeave', 'memberKick', 'memberBan', 'memberUnban'];
 
 const CHAT_WINDOW = Prisma.raw(`interval '${RELATION_CHAT_WINDOW_MINUTES} minutes'`);
@@ -88,7 +99,13 @@ export class RelationsService {
             orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
             take: MAX_VOICE_ROWS,
         });
-        return rows.map((row) => ({ eventKey: row.eventKey, userId: row.userId!, channelId: row.channelId!, channelName: row.channelName, at: row.createdAt.getTime() }));
+        return rows.map((row) => ({
+            eventKey: row.eventKey,
+            userId: row.userId!,
+            channelId: row.channelId!,
+            channelName: row.channelName,
+            at: row.createdAt.getTime(),
+        }));
     }
 
     private peopleRows({ guildId, from, to, includeBots }: Range) {
@@ -206,7 +223,12 @@ export class RelationsService {
 
     async board(guildId: string, days: number, includeBots: boolean): Promise<RelationBoard> {
         const range = this.range(guildId, days, includeBots);
-        const [peopleRows, chatRows, modRows, voiceEvents] = await Promise.all([this.peopleRows(range), this.chatPairs(range), this.modRows(range), this.voiceEvents(range)]);
+        const [peopleRows, chatRows, modRows, voiceEvents] = await Promise.all([
+            this.peopleRows(range),
+            this.chatPairs(range),
+            this.modRows(range),
+            this.voiceEvents(range),
+        ]);
 
         const tallies = new Map<string, Tally & { a: string; b: string }>();
         const tally = (a: string, b: string) => {
@@ -223,16 +245,24 @@ export class RelationsService {
 
         const links = [...tallies.values()]
             .map((entry) =>
-                createLink(entry.a, entry.b, { voiceMinutes: Math.round(entry.voiceMs / 60_000), chatExchanges: entry.chatExchanges, modActions: entry.modActions }),
+                createLink(entry.a, entry.b, {
+                    voiceMinutes: Math.round(entry.voiceMs / 60_000),
+                    chatExchanges: entry.chatExchanges,
+                    modActions: entry.modActions,
+                }),
             )
             .filter((link) => link.score > 0);
 
         const candidates = new Map(
-            peopleRows.map((row) => [row.user_id, { userId: row.user_id, name: row.user_name, isBot: row.is_bot, events: Number(row.events), lastSeen: row.last_seen as Date | null }]),
+            peopleRows.map((row) => [
+                row.user_id,
+                { userId: row.user_id, name: row.user_name, isBot: row.is_bot, events: Number(row.events), lastSeen: row.last_seen as Date | null },
+            ]),
         );
         // ผู้ลงมือบางคนไม่เคยเป็นเจ้าของเหตุการณ์ในช่วงนี้ แต่ต้องมีตัวตนบนกระดาน
         for (const row of modRows) {
-            if (!candidates.has(row.executor_id)) candidates.set(row.executor_id, { userId: row.executor_id, name: row.executor_name, isBot: false, events: 0, lastSeen: null });
+            if (!candidates.has(row.executor_id))
+                candidates.set(row.executor_id, { userId: row.executor_id, name: row.executor_name, isBot: false, events: 0, lastSeen: null });
         }
         const weight = new Map<string, number>();
         for (const link of links) {
@@ -302,9 +332,17 @@ export class RelationsService {
         let voiceMs = 0;
         forEachVoiceOverlap(buildVoiceSessions(voiceEvents, range.to.getTime()), ({ channelName, start, end }) => {
             voiceMs += end - start;
-            timeline.push({ type: 'voice', at: new Date(start).toISOString(), endAt: new Date(end).toISOString(), minutes: Math.max(1, Math.round((end - start) / 60_000)), channelName });
+            timeline.push({
+                type: 'voice',
+                at: new Date(start).toISOString(),
+                endAt: new Date(end).toISOString(),
+                minutes: Math.max(1, Math.round((end - start) / 60_000)),
+                channelName,
+            });
         });
-        for (const group of groupChatExchanges(chatRows.map((row) => ({ at: new Date(row.created_at), channelId: row.channel_id, channelName: row.channel_name })))) {
+        for (const group of groupChatExchanges(
+            chatRows.map((row) => ({ at: new Date(row.created_at), channelId: row.channel_id, channelName: row.channel_name })),
+        )) {
             timeline.push({ type: 'chat', at: group.at.toISOString(), exchanges: group.exchanges, channelName: group.channelName });
         }
         for (const row of modRows) {
@@ -338,5 +376,3 @@ export class RelationsService {
         return this.activity.query({ guildId, participantId: userId, includeBots: true, cursor, limit: 40 });
     }
 }
-
-

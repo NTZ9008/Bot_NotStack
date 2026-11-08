@@ -4,11 +4,19 @@ const fs = require('node:fs');
 const ts = require('../apps/backend/node_modules/typescript');
 require.extensions['.ts'] = (module, filename) => {
     module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText,
+        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
+            .outputText,
         filename,
     );
 };
-const { buildVoiceSessions, createLink, departureFromEvents, forEachVoiceOverlap, groupChatExchanges, resolveStatus } = require('../apps/backend/dist/relations/relations.util');
+const {
+    buildVoiceSessions,
+    createLink,
+    departureFromEvents,
+    forEachVoiceOverlap,
+    groupChatExchanges,
+    resolveStatus,
+} = require('../apps/backend/dist/relations/relations.util');
 const { relationKind, relationScore, relationTier } = require('../packages/shared/dist/index.js');
 const { CARD_HEIGHT, CARD_WIDTH, computeLayout, fitView, stringPath, zoomAt } = require('../apps/frontend/src/features/relations/layout.ts');
 
@@ -22,7 +30,13 @@ const overlapsOf = (sessions) => {
 
 test('voice overlap counts only time two people shared the same room', () => {
     const sessions = buildVoiceSessions(
-        [voice('voiceJoin', 'a', 0), voice('voiceJoin', 'b', 10), voice('voiceLeave', 'b', 40), voice('voiceSwitch', 'a', 30, 'v2'), voice('voiceLeave', 'a', 50, 'v2')],
+        [
+            voice('voiceJoin', 'a', 0),
+            voice('voiceJoin', 'b', 10),
+            voice('voiceLeave', 'b', 40),
+            voice('voiceSwitch', 'a', 30, 'v2'),
+            voice('voiceLeave', 'a', 50, 'v2'),
+        ],
         100 * MIN,
     );
     assert.deepEqual(
@@ -44,7 +58,10 @@ test('voice sessions ignore a leave with no join, close at range end and cap mis
 });
 
 test('a visit shorter than a minute is not a shared voice session', () => {
-    const sessions = buildVoiceSessions([voice('voiceJoin', 'a', 0), voice('voiceJoin', 'b', 10), voice('voiceLeave', 'b', 10.5), voice('voiceLeave', 'a', 20)], 30 * MIN);
+    const sessions = buildVoiceSessions(
+        [voice('voiceJoin', 'a', 0), voice('voiceJoin', 'b', 10), voice('voiceLeave', 'b', 10.5), voice('voiceLeave', 'a', 20)],
+        30 * MIN,
+    );
     assert.deepEqual(overlapsOf(sessions), []);
 });
 
@@ -59,10 +76,34 @@ test('strength tiers and dominant kind follow the combined score', () => {
 
 test('departure keeps the harshest reason since the latest join and clears on rejoin or unban', () => {
     const at = (minute) => new Date(minute * MIN);
-    assert.equal(departureFromEvents([{ eventKey: 'memberBan', at: at(1) }, { eventKey: 'memberLeave', at: at(2) }]).status, 'banned');
-    assert.equal(departureFromEvents([{ eventKey: 'memberLeave', at: at(1) }, { eventKey: 'memberKick', at: at(2) }]).status, 'kicked');
-    assert.equal(departureFromEvents([{ eventKey: 'memberLeave', at: at(1) }, { eventKey: 'memberJoin', at: at(2) }]), null);
-    assert.equal(departureFromEvents([{ eventKey: 'memberBan', at: at(1) }, { eventKey: 'memberUnban', at: at(2) }]), null);
+    assert.equal(
+        departureFromEvents([
+            { eventKey: 'memberBan', at: at(1) },
+            { eventKey: 'memberLeave', at: at(2) },
+        ]).status,
+        'banned',
+    );
+    assert.equal(
+        departureFromEvents([
+            { eventKey: 'memberLeave', at: at(1) },
+            { eventKey: 'memberKick', at: at(2) },
+        ]).status,
+        'kicked',
+    );
+    assert.equal(
+        departureFromEvents([
+            { eventKey: 'memberLeave', at: at(1) },
+            { eventKey: 'memberJoin', at: at(2) },
+        ]),
+        null,
+    );
+    assert.equal(
+        departureFromEvents([
+            { eventKey: 'memberBan', at: at(1) },
+            { eventKey: 'memberUnban', at: at(2) },
+        ]),
+        null,
+    );
 });
 
 test('only a confirmed absence or a logged departure crosses someone out', () => {
@@ -110,7 +151,14 @@ test('zoom keeps the point under the cursor and fit shows the whole board', () =
     assert.equal((200 - next.y) / next.k, 200 - view.y);
     assert.equal(zoomAt(view, 99, 0, 0).k, 2.5);
 
-    const fit = fitView([{ x: -1000, y: -1000 }, { x: 1000, y: 1000 }], 800, 600);
+    const fit = fitView(
+        [
+            { x: -1000, y: -1000 },
+            { x: 1000, y: 1000 },
+        ],
+        800,
+        600,
+    );
     assert.ok(fit.k < 1);
     assert.ok(fit.x + -1062 * fit.k >= 0 && fit.x + 1062 * fit.k <= 800);
     assert.match(stringPath({ x: 0, y: 0 }, { x: 100, y: 0 }), /^M0 0Q50 10 100 0$/);

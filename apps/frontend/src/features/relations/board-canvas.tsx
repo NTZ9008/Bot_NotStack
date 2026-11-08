@@ -1,5 +1,17 @@
 import { RELATION_STATUS_LABELS, type RelationLink, type RelationPerson } from '@notstack/shared';
-import { memo, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent, type Ref } from 'react';
+import {
+    memo,
+    useCallback,
+    useEffect,
+    useImperativeHandle,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+    type KeyboardEvent,
+    type PointerEvent,
+    type Ref,
+} from 'react';
 import { fallbackAvatar } from '@/lib/format';
 import { CARD_WIDTH, clearPins, computeLayout, fitView, loadPins, savePin, stringPath, zoomAt, type BoardView, type Point } from './layout';
 import './relations.css';
@@ -42,7 +54,17 @@ function tiltOf(userId: string): number {
 
 const cardTransform = (point: Point, tilt: number) => `translate(${point.x - CARD_WIDTH / 2}px, ${point.y}px) rotate(${tilt}deg)`;
 
-const PersonCard = memo(function PersonCard({ person, point, selected, register }: { person: RelationPerson; point: Point; selected: boolean; register: (id: string, el: HTMLElement | null) => void }) {
+const PersonCard = memo(function PersonCard({
+    person,
+    point,
+    selected,
+    register,
+}: {
+    person: RelationPerson;
+    point: Point;
+    selected: boolean;
+    register: (id: string, el: HTMLElement | null) => void;
+}) {
     const gone = person.status !== 'member';
     const tag = gone ? RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS] : person.isBot ? 'บอท' : '';
     return (
@@ -304,7 +326,10 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
             const link = linkId ? links.find((item) => item.id === linkId) : undefined;
             const next: BoardSelection = userId ? { type: 'person', userId } : link ? { type: 'link', link } : null;
             const previous = hover.current;
-            const same = (previous?.type === 'person' && next?.type === 'person' && previous.userId === next.userId) || (previous?.type === 'link' && next?.type === 'link' && previous.link.id === next.link.id) || (!previous && !next);
+            const same =
+                (previous?.type === 'person' && next?.type === 'person' && previous.userId === next.userId) ||
+                (previous?.type === 'link' && next?.type === 'link' && previous.link.id === next.link.id) ||
+                (!previous && !next);
             if (!same) {
                 hover.current = next;
                 applyFocus();
@@ -382,7 +407,7 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
     return (
         <div
             ref={boardRef}
-            className="rb-board absolute inset-0"
+            className="rb-board"
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={(event) => endPointer(event, false)}
@@ -414,7 +439,13 @@ export function BoardCanvas({ ref, guildId, people, links, layoutLinks, selectio
                     })}
                 </svg>
                 {people.map((person) => (
-                    <PersonCard key={person.userId} person={person} point={positions.get(person.userId) ?? { x: 0, y: 0 }} selected={selectedPerson === person.userId} register={registerCard} />
+                    <PersonCard
+                        key={person.userId}
+                        person={person}
+                        point={positions.get(person.userId) ?? { x: 0, y: 0 }}
+                        selected={selectedPerson === person.userId}
+                        register={registerCard}
+                    />
                 ))}
             </div>
         </div>

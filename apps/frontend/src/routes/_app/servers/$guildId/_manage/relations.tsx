@@ -13,7 +13,11 @@ function RelationsPage() {
     const guildId = useGuildId();
     return (
         <>
-            <PageHeader help="relations" title="กระดานความสัมพันธ์" description="ดูว่าใครเกี่ยวข้องกับใคร จากประวัติห้องเสียง แชท และการลงมือของแอดมินในเซิร์ฟเวอร์" />
+            <PageHeader
+                help="relations"
+                title="กระดานความสัมพันธ์"
+                description="ดูว่าใครเกี่ยวข้องกับใคร จากประวัติห้องเสียง แชท และการลงมือของแอดมินในเซิร์ฟเวอร์"
+            />
             <RelationBoardView guildId={guildId} />
         </>
     );

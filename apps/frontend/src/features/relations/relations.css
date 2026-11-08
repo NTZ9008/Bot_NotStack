@@ -6,7 +6,8 @@
     --rb-thread: #d8c9a8;
     --rb-paper: #f4ecdc;
     --rb-ink: #2a211a;
-    position: relative;
+    position: absolute;
+    inset: 0;
     overflow: hidden;
     touch-action: none;
     user-select: none;

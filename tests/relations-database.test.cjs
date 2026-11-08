@@ -41,7 +41,14 @@ const activity = new ActivityService(prisma, discord, { publish() {} }, { get: (
 const relations = new RelationsService(prisma, discord, activity);
 
 const ago = (minutes) => new Date(Date.now() - minutes * 60_000);
-const row = (eventKey, userId, minutesAgo, extra = {}) => ({ guildId: 'g1', eventKey, userId, userName: `name-${userId}`, createdAt: ago(minutesAgo), ...extra });
+const row = (eventKey, userId, minutesAgo, extra = {}) => ({
+    guildId: 'g1',
+    eventKey,
+    userId,
+    userName: `name-${userId}`,
+    createdAt: ago(minutesAgo),
+    ...extra,
+});
 const chat = (userId, minutesAgo, channelId = '20001') => row('messageSent', userId, minutesAgo, { channelId, channelName: 'general' });
 const vc = (eventKey, userId, minutesAgo) => row(eventKey, userId, minutesAgo, { channelId: '30001', channelName: 'Lobby' });
 
@@ -133,7 +140,12 @@ test('link detail matches the board totals and explains the connection', async (
 
 test('person history includes what they did to others and pages by cursor', async () => {
     await prisma.activityEvent.createMany({
-        data: [chat('10001', 30), row('memberKick', '10003', 20, { executorId: '10001', executorName: 'Boat' }), chat('10002', 10), ...Array.from({ length: 45 }, (_, i) => chat('10001', 5 - i / 100))],
+        data: [
+            chat('10001', 30),
+            row('memberKick', '10003', 20, { executorId: '10001', executorName: 'Boat' }),
+            chat('10002', 10),
+            ...Array.from({ length: 45 }, (_, i) => chat('10001', 5 - i / 100)),
+        ],
     });
     const first = await relations.history('g1', '10001');
     assert.equal(first.items.length, 40);

@@ -40,7 +40,16 @@ function Legend() {
                 {LEGEND.map(({ kind, color, dashed }) => (
                     <li key={kind} className="flex items-center gap-1.5">
                         <svg width="26" height="6" aria-hidden="true">
-                            <line x1="1" y1="3" x2="25" y2="3" stroke={color} strokeWidth="3" strokeLinecap="round" strokeDasharray={dashed ? '6 5' : undefined} />
+                            <line
+                                x1="1"
+                                y1="3"
+                                x2="25"
+                                y2="3"
+                                stroke={color}
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeDasharray={dashed ? '6 5' : undefined}
+                            />
                         </svg>
                         {RELATION_KIND_LABELS[kind]}
                     </li>
@@ -79,14 +88,19 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const matches = query ? people.filter((person) => person.name.toLowerCase().includes(query) || person.userId === query).slice(0, 6) : [];
     const goneCount = people.filter((person) => person.status !== 'member').length;
 
-    const selectPerson = (userId: string) => {
-        setSelection({ type: 'person', userId });
+    const selectPerson = (userId: string) => setSelection({ type: 'person', userId });
+    const findPerson = (userId: string) => {
         setSearch('');
         canvas.current?.focusPerson(userId);
+        selectPerson(userId);
     };
     const selectLink = (link: RelationLink) => setSelection({ type: 'link', link });
     const resetLayout = async () => {
-        const accepted = await confirm({ title: 'จัดกระดานใหม่?', description: 'ตำแหน่งการ์ดที่ลากไว้ในเบราว์เซอร์นี้จะหายไป และระบบจะจัดวางให้ใหม่', confirmText: 'จัดใหม่' });
+        const accepted = await confirm({
+            title: 'จัดกระดานใหม่?',
+            description: 'ตำแหน่งการ์ดที่ลากไว้ในเบราว์เซอร์นี้จะหายไป และระบบจะจัดวางให้ใหม่',
+            confirmText: 'จัดใหม่',
+        });
         if (accepted) canvas.current?.resetLayout();
     };
 
@@ -99,7 +113,11 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         <ul className="absolute top-full z-20 mt-1 w-full rounded-lg border bg-popover p-1 shadow-lg">
                             {matches.map((person) => (
                                 <li key={person.userId}>
-                                    <button type="button" className="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-sm hover:bg-accent" onClick={() => selectPerson(person.userId)}>
+                                    <button
+                                        type="button"
+                                        className="flex w-full items-center gap-2 rounded-md p-1.5 text-left text-sm hover:bg-accent"
+                                        onClick={() => findPerson(person.userId)}
+                                    >
                                         <Avatar person={person} userId={person.userId} className="size-6" />
                                         <span className="truncate">{person.name}</span>
                                     </button>
@@ -179,7 +197,9 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                 </div>
             )}
             {board.data && board.data.hiddenPeople > 0 && (
-                <p className="text-xs text-muted-foreground">แสดงเฉพาะคนที่มีความสัมพันธ์มากที่สุด ยังมีอีก {board.data.hiddenPeople.toLocaleString('th-TH')} คนที่ไม่ได้ขึ้นกระดาน</p>
+                <p className="text-xs text-muted-foreground">
+                    แสดงเฉพาะคนที่มีความสัมพันธ์มากที่สุด ยังมีอีก {board.data.hiddenPeople.toLocaleString('th-TH')} คนที่ไม่ได้ขึ้นกระดาน
+                </p>
             )}
 
             <PersonSheet
