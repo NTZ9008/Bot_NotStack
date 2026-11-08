@@ -36,6 +36,8 @@ export interface ActivityFilters {
     guildId: string;
     eventKeys?: string[];
     userId?: string;
+    // เจ้าของเหตุการณ์หรือผู้ลงมือ (ประวัติทั้งหมดของคนหนึ่งคน)
+    participantId?: string;
     channelId?: string;
     q?: string;
     from?: Date;
@@ -190,10 +192,11 @@ export class ActivityService implements OnApplicationBootstrap, OnApplicationShu
     // ==========================================
     // 🔎 ค้นหาเหตุการณ์ (ตาราง Activity Log — แบ่งหน้าด้วย cursor = id ตัวสุดท้ายของหน้าก่อน)
     // ==========================================
-    private buildWhere({ guildId, eventKeys, userId, channelId, q, from, to, includeBots }: ActivityFilters): Prisma.ActivityEventWhereInput {
+    private buildWhere({ guildId, eventKeys, userId, participantId, channelId, q, from, to, includeBots }: ActivityFilters): Prisma.ActivityEventWhereInput {
         const where: Prisma.ActivityEventWhereInput = { guildId };
         if (eventKeys?.length) where.eventKey = { in: eventKeys };
         if (userId) where.userId = userId;
+        if (participantId) where.AND = [{ OR: [{ userId: participantId }, { executorId: participantId }] }];
         if (channelId) where.channelId = channelId;
         if (!includeBots) where.isBot = false;
         if (from || to) where.createdAt = { ...(from && { gte: from }), ...(to && { lte: to }) };

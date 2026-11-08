@@ -22,6 +22,7 @@ import {
     Trophy,
     UserPlus,
     Users,
+    Waypoints,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -178,6 +179,14 @@ const GUILD_GROUPS: NavGroup[] = [
                 icon: Trophy,
                 guild: 'view',
                 keywords: 'levels xp เลเวล อันดับ rank ประสบการณ์',
+            },
+            {
+                to: '/servers/$guildId/relations',
+                label: PAGE_GUIDES.relations.title,
+                guide: 'relations',
+                icon: Waypoints,
+                guild: 'manage',
+                keywords: 'relations relationship board detective กระดาน นักสืบ ความสัมพันธ์ เส้น สมาชิก diagram graph',
             },
             {
                 to: '/servers/$guildId/audit-logs',

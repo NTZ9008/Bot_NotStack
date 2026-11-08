@@ -35,6 +35,7 @@ import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
+import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
 import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/_app/servers/$guildId/_manage/voice-guard'
 import { Route as AppServersGuildIdManageWeatherRouteImport } from './routes/_app/servers/$guildId/_manage/weather'
@@ -177,6 +178,12 @@ const AppServersGuildIdManagePrBotRoute =
     path: '/pr-bot',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageRelationsRoute =
+  AppServersGuildIdManageRelationsRouteImport.update({
+    id: '/relations',
+    path: '/relations',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageRoomAccessRoute =
   AppServersGuildIdManageRoomAccessRouteImport.update({
     id: '/room-access',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -254,6 +262,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -287,6 +296,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/_app/servers/$guildId/_manage/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/_app/servers/$guildId/_manage/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/weather'
@@ -346,6 +357,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/weather'
@@ -378,6 +390,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/news'
     | '/_app/servers/$guildId/_manage/overview'
     | '/_app/servers/$guildId/_manage/pr-bot'
+    | '/_app/servers/$guildId/_manage/relations'
     | '/_app/servers/$guildId/_manage/room-access'
     | '/_app/servers/$guildId/_manage/voice-guard'
     | '/_app/servers/$guildId/_manage/weather'
@@ -576,6 +589,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManagePrBotRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/relations': {
+      id: '/_app/servers/$guildId/_manage/relations'
+      path: '/relations'
+      fullPath: '/servers/$guildId/relations'
+      preLoaderRoute: typeof AppServersGuildIdManageRelationsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/room-access': {
       id: '/_app/servers/$guildId/_manage/room-access'
       path: '/room-access'
@@ -634,6 +654,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
+  AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
   AppServersGuildIdManageVoiceGuardRoute: typeof AppServersGuildIdManageVoiceGuardRoute
   AppServersGuildIdManageWeatherRoute: typeof AppServersGuildIdManageWeatherRoute
@@ -655,6 +676,8 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
     AppServersGuildIdManageNewsRoute: AppServersGuildIdManageNewsRoute,
     AppServersGuildIdManageOverviewRoute: AppServersGuildIdManageOverviewRoute,
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
+    AppServersGuildIdManageRelationsRoute:
+      AppServersGuildIdManageRelationsRoute,
     AppServersGuildIdManageRoomAccessRoute:
       AppServersGuildIdManageRoomAccessRoute,
     AppServersGuildIdManageVoiceGuardRoute:
