@@ -27,6 +27,7 @@ import { LevelsModule } from './levels/levels.module';
 import { LiveModule } from './live/live.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
+import { RelationsModule } from './relations/relations.module';
 import { MetricsService } from './monitoring/metrics.service';
 import { NewsModule } from './news/news.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
@@ -83,6 +84,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         LogFilesModule,
         LiveModule,
         LogManagerModule,
+        RelationsModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,
         RankModule,

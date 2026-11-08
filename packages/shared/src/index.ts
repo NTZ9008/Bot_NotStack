@@ -5,6 +5,7 @@ export * from './bot-config';
 export * from './guild';
 export * from './levels';
 export * from './log-manager';
+export * from './relations';
 export * from './log-embed';
 export * from './log-appearance';
 export * from './news';

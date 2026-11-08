@@ -1,0 +1,277 @@
+/* กระดานความสัมพันธ์ — พื้นเทาเข้มไม่อมฟ้า ใช้ indigo กับสีกราฟชุดเดียวกับ Dashboard */
+.rb-board {
+    --rb-voice: var(--chart-2);
+    --rb-chat: var(--chart-4);
+    --rb-mod: var(--chart-5);
+    --rb-thread: oklch(0.68 0 0);
+    --rb-surface: oklch(0.2 0 0);
+    --rb-card: oklch(0.27 0 0);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    cursor: grab;
+    background-color: var(--rb-surface);
+    background-image: radial-gradient(oklch(1 0 0 / 11%) 1px, transparent 1.5px);
+    background-size: 26px 26px;
+}
+
+.rb-board[data-panning] {
+    cursor: grabbing;
+}
+
+.rb-world {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+}
+
+.rb-zone {
+    --zone: oklch(0.62 0 0);
+    position: absolute;
+    left: 0;
+    top: 0;
+    border: 1.5px solid color-mix(in oklch, var(--zone) 55%, transparent);
+    border-radius: 24px;
+    background: color-mix(in oklch, var(--zone) 9%, transparent);
+    pointer-events: none;
+    transition: opacity 120ms linear;
+}
+
+.rb-world[data-focus] .rb-zone {
+    opacity: 0.55;
+}
+
+.rb-zone-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 22px 0;
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--foreground);
+}
+
+.rb-zone-dot {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--zone);
+}
+
+.rb-zone-name {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rb-zone-count {
+    flex: none;
+    margin-left: auto;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+}
+
+.rb-strings {
+    position: absolute;
+    overflow: visible;
+    width: 1px;
+    height: 1px;
+}
+
+.rb-string {
+    fill: none;
+    stroke: var(--rb-thread);
+    stroke-linecap: round;
+    pointer-events: none;
+    opacity: 0.55;
+    transition: opacity 120ms linear;
+}
+
+.rb-string[data-tier='2'],
+.rb-string[data-tier='3'],
+.rb-string[data-tier='4'] {
+    opacity: 0.95;
+}
+
+.rb-string[data-tier='1'] {
+    stroke-width: 1.25;
+}
+.rb-string[data-tier='2'] {
+    stroke-width: 2.25;
+}
+.rb-string[data-tier='3'] {
+    stroke-width: 3.5;
+}
+.rb-string[data-tier='4'] {
+    stroke-width: 5.5;
+}
+
+.rb-string[data-tier='2'][data-kind='voice'],
+.rb-string[data-tier='3'][data-kind='voice'],
+.rb-string[data-tier='4'][data-kind='voice'] {
+    stroke: var(--rb-voice);
+}
+.rb-string[data-tier='2'][data-kind='chat'],
+.rb-string[data-tier='3'][data-kind='chat'],
+.rb-string[data-tier='4'][data-kind='chat'] {
+    stroke: var(--rb-chat);
+}
+.rb-string[data-tier='2'][data-kind='mod'],
+.rb-string[data-tier='3'][data-kind='mod'],
+.rb-string[data-tier='4'][data-kind='mod'] {
+    stroke: var(--rb-mod);
+    stroke-dasharray: 10 7;
+}
+
+.rb-string-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 18;
+    stroke-linecap: round;
+    pointer-events: stroke;
+    cursor: pointer;
+}
+
+.rb-world[data-focus] .rb-string:not([data-lit]) {
+    opacity: 0.1;
+}
+.rb-world[data-focus] .rb-string[data-lit] {
+    opacity: 1;
+}
+.rb-world[data-focus] .rb-card:not([data-lit]) {
+    opacity: 0.4;
+}
+
+.rb-card {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 124px;
+    padding: 7px 7px 9px;
+    border: 1px solid oklch(1 0 0 / 14%);
+    border-radius: 14px;
+    color: var(--card-foreground);
+    text-align: center;
+    background: linear-gradient(165deg, oklch(0.34 0 0), var(--rb-card) 55%);
+    box-shadow:
+        inset 0 1px 0 oklch(1 0 0 / 12%),
+        0 2px 4px oklch(0 0 0 / 40%),
+        0 12px 24px oklch(0 0 0 / 38%);
+    cursor: grab;
+    transition:
+        opacity 120ms linear,
+        border-color 120ms linear,
+        box-shadow 120ms linear;
+    will-change: transform;
+}
+
+.rb-card:hover {
+    border-color: oklch(from var(--primary) 0.72 c h / 80%);
+}
+
+.rb-card:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+}
+
+.rb-card[data-dragging] {
+    z-index: 30;
+    cursor: grabbing;
+    box-shadow:
+        inset 0 1px 0 oklch(1 0 0 / 12%),
+        0 24px 40px oklch(0 0 0 / 55%);
+}
+
+.rb-card[data-selected] {
+    border-color: var(--primary);
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.rb-card[data-gone] {
+    border-color: oklch(from var(--destructive) l c h / 45%);
+}
+
+/* หมุดปัก: ปลายเข็มแทงลงขอบบนของการ์ด (จุดที่เส้นมาบรรจบ) — เป็นรูปเดียวใช้ซ้ำ ไม่เพิ่ม DOM ต่อการ์ด */
+.rb-pin {
+    position: absolute;
+    z-index: 2;
+    top: -34px;
+    left: calc(50% - 16px);
+    width: 40px;
+    height: 44px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 44'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23a5b4fc'/%3E%3Cstop offset='.45' stop-color='%236366f1'/%3E%3Cstop offset='1' stop-color='%233730a3'/%3E%3C/linearGradient%3E%3ClinearGradient id='n' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23f1f5f9'/%3E%3Cstop offset='1' stop-color='%2364748b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='26' cy='40.5' rx='10' ry='2.6' fill='%23000' opacity='.4' transform='rotate%28-10 26 40.5%29'/%3E%3Cg transform='rotate%2814 16 42%29'%3E%3Cpath d='M15 25h2l-.6 17h-.8z' fill='url%28%23n%29'/%3E%3Cellipse cx='16' cy='25' rx='10' ry='3.4' fill='url%28%23h%29'/%3E%3Cpath d='M11.5 8.5 13.2 24h5.6l1.7-15.5z' fill='url%28%23h%29'/%3E%3Cellipse cx='16' cy='8' rx='8.5' ry='5' fill='url%28%23h%29'/%3E%3Cellipse cx='13' cy='6.4' rx='3' ry='1.4' fill='%23fff' opacity='.6'/%3E%3C/g%3E%3C/svg%3E")
+        center / contain no-repeat;
+    pointer-events: none;
+}
+
+.rb-card[data-gone] .rb-pin {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 44'%3E%3Cdefs%3E%3ClinearGradient id='h' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23fca5a5'/%3E%3Cstop offset='.45' stop-color='%23dc2626'/%3E%3Cstop offset='1' stop-color='%237f1d1d'/%3E%3C/linearGradient%3E%3ClinearGradient id='n' x1='0' x2='1'%3E%3Cstop offset='0' stop-color='%23f1f5f9'/%3E%3Cstop offset='1' stop-color='%2364748b'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cellipse cx='26' cy='40.5' rx='10' ry='2.6' fill='%23000' opacity='.4' transform='rotate%28-10 26 40.5%29'/%3E%3Cg transform='rotate%2814 16 42%29'%3E%3Cpath d='M15 25h2l-.6 17h-.8z' fill='url%28%23n%29'/%3E%3Cellipse cx='16' cy='25' rx='10' ry='3.4' fill='url%28%23h%29'/%3E%3Cpath d='M11.5 8.5 13.2 24h5.6l1.7-15.5z' fill='url%28%23h%29'/%3E%3Cellipse cx='16' cy='8' rx='8.5' ry='5' fill='url%28%23h%29'/%3E%3Cellipse cx='13' cy='6.4' rx='3' ry='1.4' fill='%23fff' opacity='.6'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.rb-photo {
+    position: relative;
+    display: block;
+    width: 108px;
+    height: 108px;
+    overflow: hidden;
+    border-radius: 9px;
+    background: oklch(0.34 0 0);
+    box-shadow: inset 0 0 0 1px oklch(1 0 0 / 10%);
+}
+
+.rb-photo img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+}
+
+.rb-card[data-gone] .rb-photo img {
+    filter: grayscale(1) contrast(0.85) brightness(0.8);
+}
+
+.rb-cross {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.rb-name {
+    display: block;
+    margin-top: 8px;
+    padding: 0 3px;
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.3;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.rb-tag {
+    display: inline-block;
+    margin-top: 5px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 16px;
+    color: oklch(0.85 0.07 277);
+    background: oklch(from var(--primary) l c h / 24%);
+}
+
+.rb-card[data-gone] .rb-tag {
+    color: oklch(0.86 0.08 25);
+    background: oklch(from var(--destructive) l c h / 26%);
+}
