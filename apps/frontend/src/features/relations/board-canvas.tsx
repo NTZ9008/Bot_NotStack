@@ -69,6 +69,8 @@ interface BoardCanvasProps {
     selection: BoardSelection;
     onSelectPerson: (userId: string) => void;
     onSelectLink: (link: RelationLink) => void;
+    // false = ล้อเมาส์เลื่อนหน้าตามปกติ ซูมได้เฉพาะตอนกด Ctrl/⌘ (หรือ pinch บน trackpad) — ใช้ตอนกระดานฝังอยู่กลางหน้า
+    wheelZoom?: boolean;
 }
 
 type Gesture =
@@ -193,6 +195,7 @@ export function BoardCanvas({
     selection,
     onSelectPerson,
     onSelectLink,
+    wheelZoom = true,
 }: BoardCanvasProps) {
     const boardRef = useRef<HTMLDivElement>(null);
     const worldRef = useRef<HTMLDivElement>(null);
@@ -359,13 +362,14 @@ export function BoardCanvas({
         if (!board) return;
         // ต้องเป็น non-passive ถึงจะกันไม่ให้ทั้งหน้าเลื่อนตอนซูมกระดาน
         const onWheel = (event: WheelEvent) => {
+            if (!wheelZoom && !event.ctrlKey && !event.metaKey) return;
             event.preventDefault();
             const rect = board.getBoundingClientRect();
             zoomBy(Math.exp(-event.deltaY * 0.0015), event.clientX - rect.left, event.clientY - rect.top);
         };
         board.addEventListener('wheel', onWheel, { passive: false });
         return () => board.removeEventListener('wheel', onWheel);
-    }, [zoomBy]);
+    }, [zoomBy, wheelZoom]);
 
     useImperativeHandle(
         ref,

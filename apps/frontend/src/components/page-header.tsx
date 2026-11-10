@@ -1,9 +1,11 @@
 import type { ReactNode } from 'react';
 import { PageHelp } from '@/components/page-help';
+import { useDocumentTitle } from '@/hooks/use-document-title';
 import { PAGE_GUIDES, type PageGuideKey } from '@/lib/page-guides';
 
 // หัวของแต่ละหน้า: ชื่อ + คำอธิบาย + คู่มือ + ปุ่ม/สวิตช์ด้านขวา
 export function PageHeader({ title, description, actions, help }: { title: string; description?: ReactNode; actions?: ReactNode; help?: PageGuideKey }) {
+    useDocumentTitle(title);
     return (
         <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1 basis-72 space-y-1">

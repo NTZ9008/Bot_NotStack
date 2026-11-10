@@ -9,7 +9,7 @@ import { activityStatsQuery, type StatsParams } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { GettingStarted } from '@/components/getting-started';
-import { LiveGlobe } from '@/features/live/live-globe';
+import { MiniRelationBoard } from '@/features/relations/mini-board';
 import { RankBadge } from '@/components/rank-badge';
 import { OverviewStatsSkeleton } from '@/components/skeleton/guild-pages';
 import { ErrorState } from '@/components/states';
@@ -213,7 +213,7 @@ function OverviewPage() {
                     </CardContent>
                 </Card>
             </Link>
-            <LiveGlobe guildId={guildId} />
+            <MiniRelationBoard guildId={guildId} />
             <Card>
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
