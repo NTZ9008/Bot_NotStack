@@ -28,6 +28,7 @@ import { Route as AppServersGuildIdLevelsRouteImport } from './routes/_app/serve
 import { Route as AppServersGuildIdManageAiRouteImport } from './routes/_app/servers/$guildId/_manage/ai'
 import { Route as AppServersGuildIdManageAuditLogsRouteImport } from './routes/_app/servers/$guildId/_manage/audit-logs'
 import { Route as AppServersGuildIdManageConfigRouteImport } from './routes/_app/servers/$guildId/_manage/config'
+import { Route as AppServersGuildIdManageCustomSummaryRouteImport } from './routes/_app/servers/$guildId/_manage/custom-summary'
 import { Route as AppServersGuildIdManageFundsRouteImport } from './routes/_app/servers/$guildId/_manage/funds'
 import { Route as AppServersGuildIdManageGrafanaAlertsRouteImport } from './routes/_app/servers/$guildId/_manage/grafana-alerts'
 import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/servers/$guildId/_manage/jira'
@@ -136,6 +137,12 @@ const AppServersGuildIdManageConfigRoute =
     path: '/config',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageCustomSummaryRoute =
+  AppServersGuildIdManageCustomSummaryRouteImport.update({
+    id: '/custom-summary',
+    path: '/custom-summary',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageFundsRoute =
   AppServersGuildIdManageFundsRouteImport.update({
     id: '/funds',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
   '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
@@ -255,6 +263,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
   '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
@@ -289,6 +298,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/ai': typeof AppServersGuildIdManageAiRoute
   '/_app/servers/$guildId/_manage/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/_app/servers/$guildId/_manage/config': typeof AppServersGuildIdManageConfigRoute
+  '/_app/servers/$guildId/_manage/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/_app/servers/$guildId/_manage/funds': typeof AppServersGuildIdManageFundsRoute
   '/_app/servers/$guildId/_manage/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/_app/servers/$guildId/_manage/jira': typeof AppServersGuildIdManageJiraRoute
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/custom-summary'
     | '/servers/$guildId/funds'
     | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/custom-summary'
     | '/servers/$guildId/funds'
     | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
@@ -383,6 +395,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/ai'
     | '/_app/servers/$guildId/_manage/audit-logs'
     | '/_app/servers/$guildId/_manage/config'
+    | '/_app/servers/$guildId/_manage/custom-summary'
     | '/_app/servers/$guildId/_manage/funds'
     | '/_app/servers/$guildId/_manage/grafana-alerts'
     | '/_app/servers/$guildId/_manage/jira'
@@ -540,6 +553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageConfigRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/custom-summary': {
+      id: '/_app/servers/$guildId/_manage/custom-summary'
+      path: '/custom-summary'
+      fullPath: '/servers/$guildId/custom-summary'
+      preLoaderRoute: typeof AppServersGuildIdManageCustomSummaryRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/funds': {
       id: '/_app/servers/$guildId/_manage/funds'
       path: '/funds'
@@ -647,6 +667,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageAiRoute: typeof AppServersGuildIdManageAiRoute
   AppServersGuildIdManageAuditLogsRoute: typeof AppServersGuildIdManageAuditLogsRoute
   AppServersGuildIdManageConfigRoute: typeof AppServersGuildIdManageConfigRoute
+  AppServersGuildIdManageCustomSummaryRoute: typeof AppServersGuildIdManageCustomSummaryRoute
   AppServersGuildIdManageFundsRoute: typeof AppServersGuildIdManageFundsRoute
   AppServersGuildIdManageGrafanaAlertsRoute: typeof AppServersGuildIdManageGrafanaAlertsRoute
   AppServersGuildIdManageJiraRoute: typeof AppServersGuildIdManageJiraRoute
@@ -667,6 +688,8 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
     AppServersGuildIdManageAuditLogsRoute:
       AppServersGuildIdManageAuditLogsRoute,
     AppServersGuildIdManageConfigRoute: AppServersGuildIdManageConfigRoute,
+    AppServersGuildIdManageCustomSummaryRoute:
+      AppServersGuildIdManageCustomSummaryRoute,
     AppServersGuildIdManageFundsRoute: AppServersGuildIdManageFundsRoute,
     AppServersGuildIdManageGrafanaAlertsRoute:
       AppServersGuildIdManageGrafanaAlertsRoute,

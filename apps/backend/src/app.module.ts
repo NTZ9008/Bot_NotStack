@@ -27,6 +27,7 @@ import { LevelsModule } from './levels/levels.module';
 import { LiveModule } from './live/live.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
+import { CustomSummaryModule } from './custom-summary/custom-summary.module';
 import { RelationsModule } from './relations/relations.module';
 import { MetricsService } from './monitoring/metrics.service';
 import { NewsModule } from './news/news.module';
@@ -84,6 +85,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         LogFilesModule,
         LiveModule,
         LogManagerModule,
+        CustomSummaryModule,
         RelationsModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,

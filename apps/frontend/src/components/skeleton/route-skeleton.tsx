@@ -31,6 +31,7 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     jira: JiraPageSkeleton,
     funds: FundsPageSkeleton,
     'audit-logs': AuditLogsPageSkeleton,
+    'custom-summary': AuditLogsPageSkeleton,
 };
 
 const APP_PAGES: Record<string, ComponentType> = {
