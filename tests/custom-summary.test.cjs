@@ -14,7 +14,11 @@ const {
     buildBangkokBuckets,
     bangkokBucketKey,
 } = backendRequire('./custom-summary/voice-pairing.util.js');
-const { renderCustomSummaryPdf, closePdfBrowser } = backendRequire('./custom-summary/custom-summary-pdf.service.js');
+const {
+    renderCustomSummaryPdf,
+    closePdfBrowser,
+    findBrowserExecutable,
+} = backendRequire('./custom-summary/custom-summary-pdf.service.js');
 const {
     customSummaryRequestSchema,
     customSummaryPdfRequestSchema,
@@ -520,6 +524,83 @@ describe('renderCustomSummaryPdf (Chromium formal Thai business report)', () => 
                 return; // ข้ามเฉพาะกรณีเครื่องไม่มีไบนารี pdftotext
             }
             throw err;
+        }
+    });
+
+    it('findBrowserExecutable checks env vars, PATH binaries, and Puppeteer/Playwright cache directories', () => {
+        const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'notstack-browser-find-'));
+        try {
+            const makeExec = (relPath) => {
+                const fullPath = path.join(tmpRoot, relPath);
+                fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+                fs.writeFileSync(fullPath, 'stub-binary', 'utf8');
+                if (process.platform !== 'win32') {
+                    fs.chmodSync(fullPath, 0o755);
+                }
+                return fullPath;
+            };
+
+            const isWin = process.platform === 'win32';
+            const pathBinName = isWin ? 'chrome.exe' : 'google-chrome-stable';
+            const cacheBinName = isWin ? 'chrome-headless-shell.exe' : 'chrome-headless-shell';
+
+            const envBrowser = makeExec(`custom/${pathBinName}`);
+            const pathDir = path.join(tmpRoot, 'bin');
+            const pathBrowser = makeExec(`bin/${pathBinName}`);
+            const oldCached = makeExec(
+                `cache/chrome-headless-shell/linux-140.0.0.0/chrome-headless-shell-linux64/${cacheBinName}`,
+            );
+            const newCached = makeExec(
+                `cache/chrome-headless-shell/linux-157.0.8103.50/chrome-headless-shell-linux64/${cacheBinName}`,
+            );
+            assert.ok(fs.existsSync(oldCached));
+
+            // 1. คืนค่าจาก env พร้อมตัดเครื่องหมายคำพูดรอบ path
+            assert.equal(
+                findBrowserExecutable({
+                    includeSystemPaths: false,
+                    homeDir: '',
+                    env: { PUPPETEER_EXECUTABLE_PATH: `"${envBrowser}"` },
+                }),
+                envBrowser,
+            );
+
+            // 2. ข้าม env ที่ไม่มีไฟล์จริงแล้วตกหล่นไปค้นหาจาก PATH
+            assert.equal(
+                findBrowserExecutable({
+                    includeSystemPaths: false,
+                    homeDir: '',
+                    env: {
+                        PUPPETEER_EXECUTABLE_PATH: path.join(tmpRoot, 'missing/chrome'),
+                        PATH: pathDir,
+                    },
+                }),
+                pathBrowser,
+            );
+
+            // 3. ค้นหาใน PUPPETEER_CACHE_DIR โดยเลือกเวอร์ชันใหม่ล่าสุดก่อน
+            assert.equal(
+                findBrowserExecutable({
+                    includeSystemPaths: false,
+                    homeDir: '',
+                    env: {
+                        PUPPETEER_CACHE_DIR: path.join(tmpRoot, 'cache'),
+                    },
+                }),
+                newCached,
+            );
+
+            // 4. คืน null เมื่อไม่พบในทุกแหล่ง
+            assert.equal(
+                findBrowserExecutable({
+                    includeSystemPaths: false,
+                    homeDir: path.join(tmpRoot, 'empty-home'),
+                    env: {},
+                }),
+                null,
+            );
+        } finally {
+            fs.rmSync(tmpRoot, { recursive: true, force: true });
         }
     });
 });

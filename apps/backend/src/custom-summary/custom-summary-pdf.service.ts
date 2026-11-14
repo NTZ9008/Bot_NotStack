@@ -1,4 +1,4 @@
-import { Injectable, type OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
 import type {
     CustomSummaryChannelGroup,
     CustomSummaryChannelRow,
@@ -7,13 +7,16 @@ import type {
     CustomSummaryPdfTheme,
     CustomSummaryResponse,
 } from '@notstack/shared';
-import { existsSync, readFileSync } from 'node:fs';
+import { accessSync, constants as fsConstants, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import os from 'node:os';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import puppeteer, { type Browser } from 'puppeteer-core';
 
 const requireFromHere = createRequire(__filename);
 const BANGKOK_TZ = 'Asia/Bangkok';
+const pdfLogger = new Logger('CustomSummaryPdfService');
 
 export interface RenderCustomSummaryPdfOptions {
     title: string;
@@ -35,6 +38,305 @@ const FONT_SOURCES: Array<{ pkgFile: string; family: string; weight: number }> =
 
 let cachedFontCss: string | null = null;
 let sharedBrowserPromise: Promise<Browser> | null = null;
+let sharedBrowserInstallPromise: Promise<string> | null = null;
+
+export interface BrowserDiscoveryOptions {
+    env?: NodeJS.ProcessEnv;
+    platform?: NodeJS.Platform;
+    includeSystemPaths?: boolean;
+    homeDir?: string;
+}
+
+interface PuppeteerBrowsersModule {
+    Browser: { CHROMEHEADLESSSHELL: string; CHROME: string };
+    detectBrowserPlatform: () => string | undefined;
+    computeExecutablePath: (opts: {
+        cacheDir: string | null;
+        browser: string;
+        buildId: string;
+        platform?: string;
+    }) => string;
+    resolveBuildId: (browser: string, platform: string, tag: string) => Promise<string>;
+    install: (opts: {
+        cacheDir: string;
+        browser: string;
+        buildId: string;
+        platform?: string;
+    }) => Promise<{ executablePath: string }>;
+}
+
+/** ตรวจสอบว่าไฟล์มีอยู่จริงและสามารถรันได้บนระบบปฏิบัติการปัจจุบัน */
+function isExecutableFile(filePath: string): boolean {
+    try {
+        const stat = statSync(filePath);
+        if (!stat.isFile()) return false;
+        if (process.platform !== 'win32') {
+            accessSync(filePath, fsConstants.X_OK);
+        }
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function cleanEnvPath(raw: string | undefined): string {
+    return (raw ?? '').trim().replace(/^["']|["']$/g, '');
+}
+
+/** ค้นหาไบนารี Chromium/Chrome ในโฟลเดอร์แคชของ Puppeteer หรือ Playwright (ความลึกสูงสุด 4 ชั้น) */
+function findBinaryInCacheDir(rootDir: string, binaryNames: readonly string[], maxDepth = 4): string | null {
+    if (!rootDir) return null;
+
+    const visit = (dir: string, depth: number): string | null => {
+        for (const name of binaryNames) {
+            const candidate = path.join(dir, name);
+            if (isExecutableFile(candidate)) return candidate;
+        }
+        if (depth >= maxDepth) return null;
+
+        let entries;
+        try {
+            entries = readdirSync(dir, { withFileTypes: true });
+        } catch {
+            return null;
+        }
+
+        const subdirs = entries
+            .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
+            .map((entry) => entry.name)
+            .sort((a, b) => b.localeCompare(a, 'en'));
+
+        for (const sub of subdirs) {
+            const found = visit(path.join(dir, sub), depth + 1);
+            if (found) return found;
+        }
+        return null;
+    };
+
+    return visit(rootDir, 0);
+}
+
+function getStaticBrowserCandidates(platform: NodeJS.Platform, env: NodeJS.ProcessEnv): string[] {
+    if (platform === 'win32') {
+        const localAppData = cleanEnvPath(env.LOCALAPPDATA);
+        return [
+            'C:/Program Files/Google/Chrome/Application/chrome.exe',
+            'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
+            localAppData ? path.join(localAppData, 'Google/Chrome/Application/chrome.exe') : '',
+            'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+            'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+            localAppData ? path.join(localAppData, 'Microsoft/Edge/Application/msedge.exe') : '',
+        ];
+    }
+
+    if (platform === 'darwin') {
+        return [
+            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+            '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+            '/Applications/Chromium.app/Contents/MacOS/Chromium',
+        ];
+    }
+
+    return [
+        '/usr/bin/google-chrome',
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
+        '/usr/local/bin/google-chrome',
+        '/usr/local/bin/chromium',
+        '/snap/bin/chromium',
+        '/opt/google/chrome/chrome',
+        '/opt/google/chrome/google-chrome',
+        '/usr/lib/chromium/chromium',
+        '/usr/lib/chromium-browser/chromium-browser',
+        '/usr/bin/microsoft-edge',
+        '/usr/bin/microsoft-edge-stable',
+        '/var/lib/flatpak/exports/bin/com.google.Chrome',
+        '/var/lib/flatpak/exports/bin/org.chromium.Chromium',
+    ];
+}
+
+/** ค้นหาเบราว์เซอร์ Chromium/Chrome/Edge จาก env, PATH, โฟลเดอร์ระบบ และแคช Puppeteer/Playwright */
+export function findBrowserExecutable(options: BrowserDiscoveryOptions = {}): string | null {
+    const env = options.env ?? process.env;
+    const platform = options.platform ?? process.platform;
+    const includeSystemPaths = options.includeSystemPaths ?? true;
+    const homeDir = options.homeDir ?? os.homedir();
+
+    const envKeys = [
+        'PUPPETEER_EXECUTABLE_PATH',
+        'CHROME_PATH',
+        'CHROMIUM_PATH',
+        'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
+    ] as const;
+
+    for (const key of envKeys) {
+        const configured = cleanEnvPath(env[key]);
+        if (!configured) continue;
+        if (isExecutableFile(configured)) return configured;
+        pdfLogger.warn(`ตัวแปร ${key}="${configured}" ไม่พบไฟล์ที่รันได้ จะค้นหาจากแหล่งอื่นแทน`);
+    }
+
+    if (includeSystemPaths) {
+        for (const candidate of getStaticBrowserCandidates(platform, env)) {
+            if (candidate && isExecutableFile(candidate)) return candidate;
+        }
+    }
+
+    const pathEnv = cleanEnvPath(env.PATH);
+    if (pathEnv) {
+        const pathSep = platform === 'win32' ? ';' : ':';
+        const binNames =
+            platform === 'win32'
+                ? ['chrome.exe', 'msedge.exe']
+                : [
+                      'google-chrome',
+                      'google-chrome-stable',
+                      'chromium',
+                      'chromium-browser',
+                      'microsoft-edge',
+                      'microsoft-edge-stable',
+                      'chrome-headless-shell',
+                  ];
+
+        for (const dir of pathEnv.split(pathSep)) {
+            const trimmedDir = dir.trim();
+            if (!trimmedDir) continue;
+            for (const binName of binNames) {
+                const candidate = path.join(trimmedDir, binName);
+                if (isExecutableFile(candidate)) return candidate;
+            }
+        }
+    }
+
+    const cacheRoots = [
+        cleanEnvPath(env.PUPPETEER_CACHE_DIR),
+        homeDir ? path.join(homeDir, '.cache', 'notstack-puppeteer') : '',
+        homeDir ? path.join(homeDir, '.cache', 'puppeteer') : '',
+        homeDir ? path.join(homeDir, '.cache', 'ms-playwright') : '',
+        includeSystemPaths && platform === 'linux' && homeDir !== '/root' ? '/root/.cache/puppeteer' : '',
+    ].filter((dir, index, arr): dir is string => Boolean(dir) && arr.indexOf(dir) === index);
+
+    const cacheBinaryNames =
+        platform === 'win32'
+            ? ['chrome-headless-shell.exe', 'chrome.exe']
+            : ['chrome-headless-shell', 'headless_shell', 'chrome'];
+
+    for (const rootDir of cacheRoots) {
+        const cached = findBinaryInCacheDir(rootDir, cacheBinaryNames);
+        if (cached) return cached;
+    }
+
+    return null;
+}
+
+function pickWritableCacheDir(): string {
+    const candidates = [
+        cleanEnvPath(process.env.PUPPETEER_CACHE_DIR),
+        os.homedir() ? path.join(os.homedir(), '.cache', 'notstack-puppeteer') : '',
+        path.join(os.tmpdir(), 'notstack-puppeteer'),
+    ].filter((dir): dir is string => Boolean(dir));
+
+    for (const dir of candidates) {
+        try {
+            mkdirSync(dir, { recursive: true });
+            return dir;
+        } catch {
+            // ลองตำแหน่งถัดไปหากไม่มีสิทธิ์เขียน
+        }
+    }
+
+    return path.join(os.tmpdir(), 'notstack-puppeteer');
+}
+
+async function downloadPuppeteerHeadlessShell(): Promise<string> {
+    if (sharedBrowserInstallPromise) return sharedBrowserInstallPromise;
+
+    sharedBrowserInstallPromise = (async () => {
+        const corePkgPath = requireFromHere.resolve('puppeteer-core/package.json');
+        const requireFromCore = createRequire(corePkgPath);
+        const browsersEntryPath = requireFromCore.resolve('@puppeteer/browsers');
+        const browsers = (await import(pathToFileURL(browsersEntryPath).href)) as PuppeteerBrowsersModule;
+
+        const platform = browsers.detectBrowserPlatform();
+        if (!platform) {
+            throw new Error(`ไม่รองรับการดาวน์โหลด Chromium อัตโนมัติบนแพลตฟอร์ม ${process.platform} (${process.arch})`);
+        }
+
+        let buildId = '';
+        try {
+            const revisionsPath = requireFromHere.resolve('puppeteer-core/internal/revisions.js');
+            const revisionsMod = (await import(pathToFileURL(revisionsPath).href)) as {
+                PUPPETEER_REVISIONS?: Record<string, string>;
+            };
+            buildId = revisionsMod.PUPPETEER_REVISIONS?.['chrome-headless-shell'] ?? '';
+        } catch {
+            // ตกหล่นไปใช้ resolveBuildId ด้านล่าง
+        }
+
+        if (!buildId) {
+            buildId = await browsers.resolveBuildId(browsers.Browser.CHROMEHEADLESSSHELL, platform, 'stable');
+        }
+
+        const cacheDir = pickWritableCacheDir();
+        const expectedPath = browsers.computeExecutablePath({
+            cacheDir,
+            browser: browsers.Browser.CHROMEHEADLESSSHELL,
+            buildId,
+            platform,
+        });
+        if (isExecutableFile(expectedPath)) return expectedPath;
+
+        pdfLogger.log(`ไม่พบเบราว์เซอร์ในระบบ กำลังดาวน์โหลด chrome-headless-shell (${buildId}) ไปยัง ${cacheDir}...`);
+        const installed = await browsers.install({
+            cacheDir,
+            browser: browsers.Browser.CHROMEHEADLESSSHELL,
+            buildId,
+            platform,
+        });
+        if (!isExecutableFile(installed.executablePath)) {
+            throw new Error(`ดาวน์โหลดเสร็จสิ้นแต่ไม่พบไฟล์ไบนารีที่ ${installed.executablePath}`);
+        }
+        pdfLogger.log(`ติดตั้ง chrome-headless-shell สำเร็จที่ ${installed.executablePath}`);
+        return installed.executablePath;
+    })().finally(() => {
+        sharedBrowserInstallPromise = null;
+    });
+
+    return sharedBrowserInstallPromise;
+}
+
+/** หาเบราว์เซอร์ที่พร้อมใช้งาน หรือดาวน์โหลด chrome-headless-shell อัตโนมัติครั้งเดียวเมื่อไม่มีในระบบ */
+async function ensureBrowserExecutable(): Promise<string> {
+    const existing = findBrowserExecutable();
+    if (existing) return existing;
+
+    const skipAutoDownload = ['1', 'true', 'yes'].includes((process.env.SKIP_AUTO_BROWSER_DOWNLOAD ?? '').trim().toLowerCase());
+    if (skipAutoDownload) {
+        throw new Error(
+            'ไม่พบเบราว์เซอร์ Chromium/Chrome/Edge สำหรับสร้างไฟล์ PDF กรุณากำหนดตัวแปร PUPPETEER_EXECUTABLE_PATH',
+        );
+    }
+
+    try {
+        return await downloadPuppeteerHeadlessShell();
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        throw new Error(
+            `ไม่พบเบราว์เซอร์ Chromium/Chrome สำหรับสร้างไฟล์ PDF และไม่สามารถดาวน์โหลดอัตโนมัติได้ (${msg}) — กรุณาติดตั้ง Chromium บนเครื่อง (เช่น sudo apt-get update && sudo apt-get install -y chromium) หรือกำหนดตัวแปร PUPPETEER_EXECUTABLE_PATH`,
+        );
+    }
+}
+
+function formatBrowserLaunchError(executablePath: string, err: unknown): Error {
+    const rawMsg = err instanceof Error ? err.message : String(err);
+    if (/shared libraries|cannot open shared object file|libnss3|libgbm|libatk/i.test(rawMsg)) {
+        return new Error(
+            `ไม่สามารถเปิด Chromium (${executablePath}) เพื่อสร้างไฟล์ PDF เนื่องจากขาดไลบรารีระบบ (${rawMsg}) — บน Ubuntu/Debian ให้รัน: sudo apt-get update && sudo apt-get install -y chromium หรือติดตั้ง shared libs ของ Chromium`,
+        );
+    }
+    return new Error(`ไม่สามารถเปิดเบราว์เซอร์ (${executablePath}) สำหรับสร้างไฟล์ PDF: ${rawMsg}`);
+}
 
 /** สร้าง @font-face CSS แบบฝังไฟล์ TTF เป็น Data URI เพื่อรับประกันฟอนต์ภาษาไทยบน Chromium */
 function getEmbeddedFontCss(): string {
@@ -57,31 +359,6 @@ function getEmbeddedFontCss(): string {
     return cachedFontCss;
 }
 
-function findBrowserExecutable(): string {
-    const localAppData = process.env.LOCALAPPDATA ?? '';
-    const candidates = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        process.env.CHROME_PATH,
-        'C:/Program Files/Google/Chrome/Application/chrome.exe',
-        'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
-        localAppData ? path.join(localAppData, 'Google/Chrome/Application/chrome.exe') : '',
-        'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-        'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
-        localAppData ? path.join(localAppData, 'Microsoft/Edge/Application/msedge.exe') : '',
-        '/usr/bin/google-chrome',
-        '/usr/bin/chromium',
-        '/usr/bin/chromium-browser',
-    ].filter((value): value is string => Boolean(value && value.trim()));
-
-    for (const candidate of candidates) {
-        if (existsSync(candidate)) return candidate;
-    }
-
-    throw new Error(
-        'ไม่พบเบราว์เซอร์ Chromium/Chrome/Edge สำหรับสร้างไฟล์ PDF กรุณากำหนดตัวแปร PUPPETEER_EXECUTABLE_PATH',
-    );
-}
-
 async function getPdfBrowser(): Promise<Browser> {
     if (sharedBrowserPromise) {
         try {
@@ -92,29 +369,31 @@ async function getPdfBrowser(): Promise<Browser> {
         }
     }
 
-    const executablePath = findBrowserExecutable();
-    sharedBrowserPromise = puppeteer
-        .launch({
-            executablePath,
-            headless: true,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--font-render-hinting=none',
-            ],
-        })
-        .then((browser) => {
+    sharedBrowserPromise = (async () => {
+        const executablePath = await ensureBrowserExecutable();
+        try {
+            const browser = await puppeteer.launch({
+                executablePath,
+                headless: true,
+                args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--font-render-hinting=none',
+                ],
+            });
             browser.once('disconnected', () => {
                 sharedBrowserPromise = null;
             });
             return browser;
-        })
-        .catch((err) => {
-            sharedBrowserPromise = null;
-            throw err;
-        });
+        } catch (err) {
+            throw formatBrowserLaunchError(executablePath, err);
+        }
+    })().catch((err) => {
+        sharedBrowserPromise = null;
+        throw err;
+    });
 
     return sharedBrowserPromise;
 }
