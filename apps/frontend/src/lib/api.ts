@@ -77,6 +77,25 @@ export function refreshSession(signal = sessionRequests.capture()): Promise<bool
     return promise;
 }
 
+export interface ApiBlobResponse {
+    blob: Blob;
+    filename: string | null;
+}
+
+function parseContentDispositionFilename(header: string | null): string | null {
+    if (!header) return null;
+    const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header);
+    if (utf8Match?.[1]) {
+        try {
+            return decodeURIComponent(utf8Match[1].trim().replace(/^["']|["']$/g, ''));
+        } catch {
+            return utf8Match[1].trim();
+        }
+    }
+    const basicMatch = /filename="?([^";]+)"?/i.exec(header);
+    return basicMatch?.[1]?.trim() || null;
+}
+
 export interface ApiOptions {
     method?: 'GET' | 'POST' | 'PATCH';
     // body แบบ JSON
@@ -85,7 +104,7 @@ export interface ApiOptions {
     raw?: BodyInit;
     contentType?: string;
     query?: Record<string, string | number | boolean | null | undefined>;
-    responseType?: 'json' | 'text' | 'preview';
+    responseType?: 'json' | 'text' | 'preview' | 'blob';
     // ไม่พาไปหน้า login เมื่อ session หมด (เช่นตอนเช็คว่า login อยู่ไหม)
     allowUnauthenticated?: boolean;
     // ข้อมูลสาธารณะที่ไม่ขึ้นกับว่าใคร login (เช่นช่องทาง login) — ไม่ถูกยกเลิกตอนเปลี่ยน/หมด session และไม่ refresh เมื่อเจอ 401
@@ -149,7 +168,16 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     }
 
     const result: unknown =
-        options.responseType === 'preview' ? await decodePreviewResponse(res) : options.responseType === 'text' ? await res.text() : await res.json();
+        options.responseType === 'preview'
+            ? await decodePreviewResponse(res)
+            : options.responseType === 'blob'
+              ? ({
+                    blob: await res.blob(),
+                    filename: parseContentDispositionFilename(res.headers.get('Content-Disposition')),
+                } satisfies ApiBlobResponse)
+              : options.responseType === 'text'
+                ? await res.text()
+                : await res.json();
     sessionSignal.throwIfAborted();
     return result as T;
 }
