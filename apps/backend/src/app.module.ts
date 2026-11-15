@@ -37,6 +37,7 @@ import { RankModule } from './rank/rank.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
+import { VoiceListenModule } from './voice-listen/voice-listen.module';
 import { WeatherModule } from './weather/weather.module';
 import { WelcomeModule } from './welcome/welcome.module';
 
@@ -93,6 +94,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         NewsModule,
         RoomAccessModule,
         VoiceGuardModule,
+        VoiceListenModule,
         WelcomeModule,
         WeatherModule,
         PrBotModule,
