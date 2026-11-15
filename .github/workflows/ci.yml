@@ -29,6 +29,9 @@ jobs:
       XP_TEST_DATABASE_URL: postgresql://xp_test:xp_test@127.0.0.1:5432/notstack_xp_test
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # SonarQube ต้องใช้ประวัติ git เต็มเพื่อหาโค้ดใหม่ / blame
+          fetch-depth: 0
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -49,6 +52,15 @@ jobs:
           use_oidc: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) }}
           # อัปโหลดไม่ผ่าน (เช่น Codecov ยังไม่ได้เปิดใช้กับ repo) ไม่ทำให้ CI ล้ม
           fail_ci_if_error: false
+      # ข้ามเมื่อยังไม่ได้ตั้ง secret SONAR_TOKEN หรือเป็น PR จาก fork (ไม่ได้รับ secret)
+      - id: sonar
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: echo "enabled=${{ env.SONAR_TOKEN != '' }}" >> "$GITHUB_OUTPUT"
+      - uses: SonarSource/sonarqube-scan-action@59202af334b4ba7b5db01b701b8e79f8b3bef0f4 # v8.5.0
+        if: steps.sonar.outputs.enabled == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - run: pnpm db:migrate
       - run: pnpm --filter @notstack/backend exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
       - run: node --test tests/xp-database.test.cjs tests/security-database.test.cjs
