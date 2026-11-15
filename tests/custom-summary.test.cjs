@@ -512,7 +512,7 @@ describe('renderCustomSummaryPdf (Chromium formal Thai business report)', () => 
             assert.ok(!extracted.includes('PR แจ้งเตือน'), 'expected "PR แจ้งเตือน" to be renamed to "เปิด PR"');
             assert.ok(extracted.includes('เปิด PR'), 'expected "เปิด PR" in extracted PDF text');
             assert.ok(extracted.includes('PR #42 ปรับปรุงระบบอื่นๆ และข้อความ'), 'expected markdown link label kept as plain text');
-            assert.ok(!extracted.includes('https://github.com/notstack/bot-v4/pull/42'), 'expected markdown link URL dropped');
+            assert.doesNotMatch(extracted, /github\.com\/notstack\/bot-v4\/pull\/42/, 'expected markdown link URL dropped');
             assert.ok(extracted.includes('#พูดคุย-ทั่วไป'), 'expected channel emoji stripped in PDF');
             assert.ok(!extracted.includes('🟢'), 'expected emoji stripped from channel name');
 
