@@ -1,15 +1,15 @@
 import type { ActivityStats } from '@notstack/shared';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { RefreshCw } from 'lucide-react';
+import { Bot, RefreshCw } from 'lucide-react';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ViewportContent } from '@/components/viewport-content';
 import { activityStatsQuery, type StatsParams } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { GettingStarted } from '@/components/getting-started';
-import { LiveGlobe } from '@/features/live/live-globe';
+import { MiniRelationBoard } from '@/features/relations/mini-board';
 import { RankBadge } from '@/components/rank-badge';
 import { OverviewStatsSkeleton } from '@/components/skeleton/guild-pages';
 import { ErrorState } from '@/components/states';
@@ -205,7 +205,15 @@ function OverviewPage() {
                 description="ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด"
             />
             <GettingStarted />
-            <LiveGlobe guildId={guildId} />
+            <Link to="/servers/$guildId/ai" params={{ guildId }} className="block">
+                <Card className="transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/5">
+                    <CardContent className="flex items-center gap-3 py-4">
+                        <Bot className="size-5 text-indigo-300" />
+                        <div><div className="font-medium">ตั้งค่า AI Chat</div><p className="text-sm text-muted-foreground">เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage</p></div>
+                    </CardContent>
+                </Card>
+            </Link>
+            <MiniRelationBoard guildId={guildId} />
             <Card>
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">

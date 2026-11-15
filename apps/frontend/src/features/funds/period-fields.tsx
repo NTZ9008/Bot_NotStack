@@ -54,7 +54,7 @@ export function PeriodFields({
                 )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Field label="ตั้งแต่วันที่" htmlFor={`${idPrefix}-period-start`}>
                     <Input id={`${idPrefix}-period-start`} type="date" value={start} onChange={(e) => onChange(e.target.value, end)} />
                 </Field>

@@ -91,6 +91,10 @@ export const envSchema = z.object({
     ADMIN_DISCORD_IDS: stringList,
     AUDIT_LOG_RETENTION_DAYS: positiveInt(180),
     ACTIVITY_LOG_RETENTION_DAYS: positiveInt(90),
+    DISCORD_PRESENCE_INTENT: z
+        .string()
+        .optional()
+        .transform((value) => value === 'true'),
 
     // รหัสผ่านรับยศของเซิร์ฟเวอร์หลัก — ไม่ตั้ง = ปิดการรับยศด้วยรหัสผ่าน (/verify รุ่น DST, /addroles บัตร VIP)
     VERIFY_PASSWORD: optionalString,
@@ -98,12 +102,18 @@ export const envSchema = z.object({
 
     // บริการภายนอก
     GEMINI_KEY: optionalString,
+    AI_KEY_ENCRYPTION_SECRET: optionalString,
     // โควตา Gemini ต่อวัน (เวลาไทย) รวมทุกเซิร์ฟเวอร์ / ต่อเซิร์ฟเวอร์อื่นที่ไม่ใช่เซิร์ฟเวอร์หลัก — นับทั้ง AI Chat และตัวกรองคำหยาบ
     AI_DAILY_LIMIT: positiveInt(250),
     AI_GUILD_DAILY_LIMIT: positiveInt(50),
     OPENWEATHER_KEY: optionalString,
     // secret ของ webhook เดิม /webhook/github (เซิร์ฟเวอร์หลัก) — เซิร์ฟเวอร์อื่นสร้าง secret ของตัวเองที่หน้า PR Bot
     GITHUB_WEBHOOK_SECRET: optionalString,
+    // Grafana Alertmanager webhook/API integration (optional).
+    GRAFANA_API_URL: optionalString,
+    GRAFANA_API_TOKEN: optionalString,
+    GRAFANA_WEBHOOK_SECRET: optionalString,
+    GRAFANA_DISCORD_CHANNEL_ID: optionalString,
 
     // ที่เก็บไฟล์ log (ค่าเริ่มต้น: <repo>/logs เหมือนเดิม)
     LOG_DIR: optionalString,

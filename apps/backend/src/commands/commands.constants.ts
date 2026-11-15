@@ -3,6 +3,7 @@ import { AddRolesCommand } from './slash/add-roles.command';
 import { AdminInfoCommand } from './slash/admin-info.command';
 import { BotInfoCommand } from './slash/bot-info.command';
 import { HelpCommand } from './slash/help.command';
+import { GrafanaCommand } from './slash/grafana.command';
 import { LeaderboardCommand } from './slash/leaderboard.command';
 import { PingCommand } from './slash/ping.command';
 import { PollCommand } from './slash/poll.command';
@@ -23,6 +24,7 @@ export const COMMANDS = [
     AdminInfoCommand,
     BotInfoCommand,
     HelpCommand,
+    GrafanaCommand,
     LeaderboardCommand,
     PingCommand,
     PollCommand,

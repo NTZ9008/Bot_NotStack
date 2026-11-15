@@ -66,7 +66,7 @@ function useMountWhenNear<T extends Element>(): [React.RefObject<T | null>, bool
 }
 
 // re-render ทุก 10 วินาที ให้ "x วินาทีที่แล้ว" เดินเอง
-function useNow(intervalMs = 10_000): number {
+export function useNow(intervalMs = 10_000): number {
     const [now, setNow] = useState(Date.now);
     useEffect(() => {
         const timer = setInterval(() => setNow(Date.now()), intervalMs);
@@ -235,21 +235,33 @@ export function LiveGlobe({ guildId, className }: { guildId?: string; className?
                         </div>
                     </div>
                 </div>
-                <div className="flex min-h-0 flex-col border-t border-white/10 lg:border-t-0 lg:border-l">
-                    <p className="px-4 pt-4 text-xs font-medium tracking-wider text-slate-400 uppercase">ล่าสุด</p>
-                    {live.status === 'unauthorized' ? (
-                        <p className="px-4 py-6 text-sm text-slate-400">session หมดอายุ — รีเฟรชหน้าเพื่อ login ใหม่</p>
-                    ) : live.feed.length === 0 ? (
-                        <p className="px-4 py-6 text-sm text-slate-400">ยังเงียบอยู่ — มีคนส่งข้อความหรือเข้าห้องเสียงเมื่อไหร่ จะเห็นเส้นวิ่งเข้ามาที่นี่</p>
-                    ) : (
-                        <ul aria-live="polite" className="max-h-[22rem] divide-y divide-white/5 overflow-y-auto px-4 pb-2 lg:max-h-[24rem]">
-                            {live.feed.slice(0, 12).map((event) => (
-                                <FeedItem key={event.id} event={event} now={now} />
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                <LiveFeedPanel live={live} now={now} />
             </div>
         </section>
+    );
+}
+
+// ==========================================
+// 📰 รายการ "ล่าสุด" ด้านขวาของการ์ดกิจกรรมสด — ใช้ทั้งลูกโลกและกระดานความสัมพันธ์ย่อ
+// ==========================================
+export function LiveFeedPanel({ live, now, header }: { live: ReturnType<typeof useLiveStream>; now: number; header?: React.ReactNode }) {
+    return (
+        <div className="flex min-h-0 flex-col border-t border-white/10 lg:border-t-0 lg:border-l">
+            <div className="flex items-center justify-between gap-2 px-4 pt-4">
+                <p className="text-xs font-medium tracking-wider text-slate-400 uppercase">ล่าสุด</p>
+                {header}
+            </div>
+            {live.status === 'unauthorized' ? (
+                <p className="px-4 py-6 text-sm text-slate-400">session หมดอายุ — รีเฟรชหน้าเพื่อ login ใหม่</p>
+            ) : live.feed.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-slate-400">ยังเงียบอยู่ — มีคนส่งข้อความหรือเข้าห้องเสียงเมื่อไหร่ จะเห็นเส้นวิ่งเข้ามาที่นี่</p>
+            ) : (
+                <ul aria-live="polite" className="max-h-[22rem] divide-y divide-white/5 overflow-y-auto px-4 pb-2 lg:max-h-[24rem]">
+                    {live.feed.slice(0, 12).map((event) => (
+                        <FeedItem key={event.id} event={event} now={now} />
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }

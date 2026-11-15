@@ -1,0 +1,16 @@
+name: Release
+# ทุก push เข้า main: เปิด/อัปเดต PR "chore(main): release x.y.z" ที่เขียน CHANGELOG.md + bump version
+# merge PR นั้นแล้ว = ติด tag vX.Y.Z และสร้าง GitHub Release ให้อัตโนมัติ
+on:
+  push:
+    branches: [main]
+permissions: {}
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0

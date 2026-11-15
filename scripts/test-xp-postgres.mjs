@@ -53,6 +53,7 @@ try {
             'tests/jira-database.test.cjs',
             'tests/fund-database.test.cjs',
             'tests/activity-database.test.cjs',
+            'tests/relations-database.test.cjs',
         ],
         {
             cwd: root,

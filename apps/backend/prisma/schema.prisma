@@ -33,6 +33,15 @@ model Guild {
   @@map("guilds")
 }
 
+model GuildAiConfig {
+  guildId               String  @id @map("guild_id")
+  aiEnabled             Boolean @default(false) @map("ai_enabled")
+  geminiApiKeyEncrypted String? @map("gemini_api_key_encrypted")
+  aiDailyLimit           Int     @default(500) @map("ai_daily_limit")
+
+  @@map("guild_ai_config")
+}
+
 // ค่าคอนฟิกของแต่ละเซิร์ฟเวอร์ (LOG_CHANNEL_ID, PR_CHANNEL_ID, สวิตช์ความสามารถในแชท ฯลฯ)
 model Config {
   guildId     String  @map("guild_id")
@@ -407,6 +416,18 @@ model AiUsage {
 
   @@id([day, guildId])
   @@map("ai_usage")
+}
+
+model AiModelUsage {
+  day          String
+  guildId      String   @map("guild_id")
+  modelName    String   @map("model_name")
+  requestCount Int      @default(0) @map("request_count")
+  tokenCount   Int      @default(0) @map("token_count")
+
+  @@id([day, guildId, modelName])
+  @@index([guildId, day])
+  @@map("ai_model_usage")
 }
 
 // ==========================================

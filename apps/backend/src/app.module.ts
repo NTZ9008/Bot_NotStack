@@ -17,6 +17,7 @@ import { validateEnv, type Env } from './config/env.validation';
 import { ENV_FILES } from './config/paths';
 import { DiscordModule } from './discord/discord.module';
 import { FundModule } from './fund/fund.module';
+import { GrafanaModule } from './grafana/grafana.module';
 import { GuildsModule } from './guilds/guilds.module';
 import { GrowthController } from './growth/growth.controller';
 import { GrowthService } from './growth/growth.service';
@@ -26,6 +27,8 @@ import { LevelsModule } from './levels/levels.module';
 import { LiveModule } from './live/live.module';
 import { LogFilesModule } from './log-files/log-files.module';
 import { LogManagerModule } from './log-manager/log-manager.module';
+import { CustomSummaryModule } from './custom-summary/custom-summary.module';
+import { RelationsModule } from './relations/relations.module';
 import { MetricsService } from './monitoring/metrics.service';
 import { NewsModule } from './news/news.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
@@ -34,6 +37,7 @@ import { RankModule } from './rank/rank.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
+import { VoiceListenModule } from './voice-listen/voice-listen.module';
 import { WeatherModule } from './weather/weather.module';
 import { WelcomeModule } from './welcome/welcome.module';
 
@@ -82,15 +86,19 @@ import { WelcomeModule } from './welcome/welcome.module';
         LogFilesModule,
         LiveModule,
         LogManagerModule,
+        CustomSummaryModule,
+        RelationsModule,
         // ความสามารถของบอท (ตั้งค่าแยกต่อเซิร์ฟเวอร์)
         LevelsModule,
         RankModule,
         NewsModule,
         RoomAccessModule,
         VoiceGuardModule,
+        VoiceListenModule,
         WelcomeModule,
         WeatherModule,
         PrBotModule,
+        GrafanaModule,
         JiraModule,
         FundModule,
         ChatModule,

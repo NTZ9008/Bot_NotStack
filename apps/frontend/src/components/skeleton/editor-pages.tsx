@@ -315,9 +315,9 @@ export function LogManagerPageSkeleton() {
 // แผงของหัวข้อที่เลือก: สรุปยอด + ส่งรายงาน + แท็บรายชื่อ
 export function FundTopicPanelSkeleton() {
     return (
-        <div className="space-y-4" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อ">
+        <div className="min-w-0 space-y-4" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อ">
             <Card>
-                <CardHeader className="flex-row items-start justify-between gap-2">
+                <CardHeader className="flex flex-col items-start justify-between gap-2 sm:flex-row">
                     <div className="min-w-0 flex-1 space-y-1">
                         <Line size="base" className="w-48" />
                         <Line size="xs" className="w-40" />
@@ -355,7 +355,7 @@ export function FundTopicPanelSkeleton() {
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                         <TabsBone count={3} />
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <ButtonBone size="sm" className="w-48" />
                             <ButtonBone size="sm" className="w-32" />
                         </div>
@@ -374,7 +374,7 @@ export function FundTopicPanelSkeleton() {
 // รายการหัวข้อด้านซ้าย + แผงหัวข้อ
 export function FundsBodySkeleton() {
     return (
-        <div className="grid gap-4 lg:grid-cols-[18rem_1fr]" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อเก็บเงิน">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อเก็บเงิน">
             <div className="space-y-2">
                 {Array.from({ length: 3 }, (_, i) => (
                     <div key={i} className="space-y-2 rounded-lg border px-3 py-2.5">

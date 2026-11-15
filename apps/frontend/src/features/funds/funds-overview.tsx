@@ -43,8 +43,8 @@ export function TemplateIcon({ icon, className }: { icon: TopicTemplateIcon; cla
 // ภาพรวมทุกหัวข้อของเซิร์ฟเวอร์ (แบนเนอร์สรุป + กราฟเปรียบเทียบ) และรายการหัวข้อด้านซ้าย
 // ==========================================
 const overviewTopicsChartConfig = {
-    collected: { label: 'เก็บได้แล้ว (บาท)', color: '#10b981' },
-    remaining: { label: 'คงค้าง (บาท)', color: '#f59e0b' },
+    collected: { label: 'เก็บได้แล้ว', color: '#10b981' },
+    remaining: { label: 'คงค้าง', color: '#f59e0b' },
 } satisfies ChartConfig;
 
 export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] }) {
@@ -81,8 +81,8 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
     if (topics.length <= 1) return null;
 
     return (
-        <Card className="mb-4 border-primary/15 bg-gradient-to-br from-card via-card to-primary/5">
-            <CardContent className="space-y-3 pt-4">
+        <Card className="mb-4">
+            <CardContent className="space-y-4 p-4 sm:p-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
                         <div className="flex size-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
@@ -98,13 +98,13 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                             </Badge>
                         )}
                     </div>
-                    <Button variant="outline" size="xs" onClick={() => setShowChart((v) => !v)}>
+                    <Button variant="outline" size="xs" className="w-full sm:w-auto" onClick={() => setShowChart((v) => !v)}>
                         <BarChart3 className="size-3.5" />
                         {showChart ? 'ซ่อนกราฟเปรียบเทียบ' : 'เปรียบเทียบทุกหัวข้อ'}
                     </Button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
                     <StatTile
                         label="เป้ารวมทุกหัวข้อ"
                         value={formatBaht(totals.target)}
@@ -133,7 +133,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                     <StatTile
                         label="ความคืบหน้ารวม"
                         value={`${totals.pct}%`}
-                        subtext={`จ่ายครบ ${totals.memberPaid}/${totals.memberTotal} รายการคน`}
+                        subtext={`จ่ายครบ ${totals.memberPaid} จาก ${totals.memberTotal} คน`}
                         icon={<TrendingUp className="size-3.5 text-sky-400" />}
                         tone="sky"
                         variant="overview"
@@ -146,12 +146,12 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                 </div>
 
                 {showChart && (
-                    <div className="rounded-lg border bg-background/50 p-3 pt-4">
-                        <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-60 w-full">
-                            <BarChart data={chartData} margin={{ left: 4, right: 12, top: 8, bottom: 4 }}>
+                    <div className="min-w-0 overflow-hidden rounded-lg border bg-background/50 p-2.5 pt-3 sm:p-3 sm:pt-4">
+                        <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-52 w-full sm:h-60">
+                            <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
                                 <CartesianGrid vertical={false} />
-                                <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} className="text-xs" />
-                                <YAxis tickLine={false} axisLine={false} width={48} />
+                                <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={16} className="text-[11px] sm:text-xs" />
+                                <YAxis tickLine={false} axisLine={false} width={42} className="text-[11px]" />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <ChartLegend content={<ChartLegendContent />} />
                                 <Bar dataKey="collected" stackId="a" fill="var(--color-collected)" radius={[0, 0, 4, 4]} />
@@ -177,9 +177,8 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
             type="button"
             onClick={onSelect}
             className={cn(
-                'group relative w-full space-y-2 rounded-xl border px-3.5 py-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40',
-                active ? 'border-primary border-l-4 bg-primary/8 shadow-xs' : 'bg-card/60',
-                topic.closed && !active && 'opacity-70',
+                'group relative w-full min-w-0 space-y-2 overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all hover:border-primary/40 hover:bg-muted/40',
+                active ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/15' : 'bg-card hover:bg-muted/30',
             )}
         >
             <div className="flex items-start justify-between gap-2">
@@ -239,18 +238,18 @@ export function FundsEmptyOnboarding({
     onSelectTemplate: (template: TopicTemplate) => void;
 }) {
     return (
-        <Card className="border-dashed bg-gradient-to-b from-card to-muted/20">
-            <CardContent className="flex flex-col items-center py-10 text-center">
+        <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center px-4 py-8 text-center sm:px-6 sm:py-10">
                 <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                     <Wallet className="size-6" />
                 </div>
-                <h2 className="text-lg font-semibold">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
-                <p className="mt-1 max-w-lg text-sm text-muted-foreground">
+                <h2 className="text-base font-semibold sm:text-lg">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
+                <p className="mt-1 max-w-lg text-xs text-muted-foreground sm:text-sm">
                     จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งการ์ดรูปภาพรายงานเข้าห้อง Discord อัตโนมัติ
                 </p>
 
-                <div className="mt-5">
-                    <Button size="lg" onClick={onCreateBlank}>
+                <div className="mt-5 w-full sm:w-auto">
+                    <Button size="lg" className="w-full sm:w-auto" onClick={onCreateBlank}>
                         <Plus /> สร้างหัวข้อเก็บเงินใหม่
                     </Button>
                 </div>

@@ -122,6 +122,7 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'rank.my_card_reset': 'รีเซ็ตการ์ด Rank ของตัวเอง',
     'rank.level_up_update': 'ตั้งค่าประกาศเลเวลอัป / ยศรางวัล',
     'rank.rewards_sync': 'ปรับยศรางวัลให้สมาชิกเดิม',
+    'custom_summary.export_pdf': 'ส่งออกรายงานสรุปเป็น PDF',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -137,6 +138,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     weather: 'Weather',
     rank: 'การ์ด Rank & เลเวลอัป',
     fund: 'เก็บเงินตามเป้า',
+    custom_summary: 'สร้างรายงานสรุป (Custom Summary)',
 };
 
 export function auditLabel(action: string): string {

@@ -25,16 +25,21 @@ import { Route as AppServersGuildIdRouteImport } from './routes/_app/servers/$gu
 import { Route as AppServersGuildIdIndexRouteImport } from './routes/_app/servers/$guildId/index'
 import { Route as AppServersGuildIdManageRouteImport } from './routes/_app/servers/$guildId/_manage'
 import { Route as AppServersGuildIdLevelsRouteImport } from './routes/_app/servers/$guildId/levels'
+import { Route as AppServersGuildIdManageAiRouteImport } from './routes/_app/servers/$guildId/_manage/ai'
 import { Route as AppServersGuildIdManageAuditLogsRouteImport } from './routes/_app/servers/$guildId/_manage/audit-logs'
 import { Route as AppServersGuildIdManageConfigRouteImport } from './routes/_app/servers/$guildId/_manage/config'
+import { Route as AppServersGuildIdManageCustomSummaryRouteImport } from './routes/_app/servers/$guildId/_manage/custom-summary'
 import { Route as AppServersGuildIdManageFundsRouteImport } from './routes/_app/servers/$guildId/_manage/funds'
+import { Route as AppServersGuildIdManageGrafanaAlertsRouteImport } from './routes/_app/servers/$guildId/_manage/grafana-alerts'
 import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/servers/$guildId/_manage/jira'
 import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/_app/servers/$guildId/_manage/log-manager'
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
+import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
 import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/_app/servers/$guildId/_manage/voice-guard'
+import { Route as AppServersGuildIdManageVoiceListenRouteImport } from './routes/_app/servers/$guildId/_manage/voice-listen'
 import { Route as AppServersGuildIdManageWeatherRouteImport } from './routes/_app/servers/$guildId/_manage/weather'
 import { Route as AppServersGuildIdManageWelcomeRouteImport } from './routes/_app/servers/$guildId/_manage/welcome'
 
@@ -115,6 +120,12 @@ const AppServersGuildIdLevelsRoute = AppServersGuildIdLevelsRouteImport.update({
   path: '/levels',
   getParentRoute: () => AppServersGuildIdRoute,
 } as any)
+const AppServersGuildIdManageAiRoute =
+  AppServersGuildIdManageAiRouteImport.update({
+    id: '/ai',
+    path: '/ai',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageAuditLogsRoute =
   AppServersGuildIdManageAuditLogsRouteImport.update({
     id: '/audit-logs',
@@ -127,10 +138,22 @@ const AppServersGuildIdManageConfigRoute =
     path: '/config',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageCustomSummaryRoute =
+  AppServersGuildIdManageCustomSummaryRouteImport.update({
+    id: '/custom-summary',
+    path: '/custom-summary',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageFundsRoute =
   AppServersGuildIdManageFundsRouteImport.update({
     id: '/funds',
     path: '/funds',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
+const AppServersGuildIdManageGrafanaAlertsRoute =
+  AppServersGuildIdManageGrafanaAlertsRouteImport.update({
+    id: '/grafana-alerts',
+    path: '/grafana-alerts',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
 const AppServersGuildIdManageJiraRoute =
@@ -163,6 +186,12 @@ const AppServersGuildIdManagePrBotRoute =
     path: '/pr-bot',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageRelationsRoute =
+  AppServersGuildIdManageRelationsRouteImport.update({
+    id: '/relations',
+    path: '/relations',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageRoomAccessRoute =
   AppServersGuildIdManageRoomAccessRouteImport.update({
     id: '/room-access',
@@ -173,6 +202,12 @@ const AppServersGuildIdManageVoiceGuardRoute =
   AppServersGuildIdManageVoiceGuardRouteImport.update({
     id: '/voice-guard',
     path: '/voice-guard',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
+const AppServersGuildIdManageVoiceListenRoute =
+  AppServersGuildIdManageVoiceListenRouteImport.update({
+    id: '/voice-listen',
+    path: '/voice-listen',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
 const AppServersGuildIdManageWeatherRoute =
@@ -202,16 +237,21 @@ export interface FileRoutesByFullPath {
   '/servers/': typeof AppServersIndexRoute
   '/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
   '/servers/$guildId/': typeof AppServersGuildIdIndexRoute
+  '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
+  '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
+  '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
   '/servers/$guildId/welcome': typeof AppServersGuildIdManageWelcomeRoute
 }
@@ -228,16 +268,21 @@ export interface FileRoutesByTo {
   '/servers': typeof AppServersIndexRoute
   '/servers/$guildId': typeof AppServersGuildIdIndexRoute
   '/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
+  '/servers/$guildId/ai': typeof AppServersGuildIdManageAiRoute
   '/servers/$guildId/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/servers/$guildId/config': typeof AppServersGuildIdManageConfigRoute
+  '/servers/$guildId/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/servers/$guildId/funds': typeof AppServersGuildIdManageFundsRoute
+  '/servers/$guildId/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/servers/$guildId/jira': typeof AppServersGuildIdManageJiraRoute
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
+  '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
   '/servers/$guildId/welcome': typeof AppServersGuildIdManageWelcomeRoute
 }
@@ -259,16 +304,21 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage': typeof AppServersGuildIdManageRouteWithChildren
   '/_app/servers/$guildId/levels': typeof AppServersGuildIdLevelsRoute
   '/_app/servers/$guildId/': typeof AppServersGuildIdIndexRoute
+  '/_app/servers/$guildId/_manage/ai': typeof AppServersGuildIdManageAiRoute
   '/_app/servers/$guildId/_manage/audit-logs': typeof AppServersGuildIdManageAuditLogsRoute
   '/_app/servers/$guildId/_manage/config': typeof AppServersGuildIdManageConfigRoute
+  '/_app/servers/$guildId/_manage/custom-summary': typeof AppServersGuildIdManageCustomSummaryRoute
   '/_app/servers/$guildId/_manage/funds': typeof AppServersGuildIdManageFundsRoute
+  '/_app/servers/$guildId/_manage/grafana-alerts': typeof AppServersGuildIdManageGrafanaAlertsRoute
   '/_app/servers/$guildId/_manage/jira': typeof AppServersGuildIdManageJiraRoute
   '/_app/servers/$guildId/_manage/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/_app/servers/$guildId/_manage/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
+  '/_app/servers/$guildId/_manage/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/_app/servers/$guildId/_manage/weather': typeof AppServersGuildIdManageWeatherRoute
   '/_app/servers/$guildId/_manage/welcome': typeof AppServersGuildIdManageWelcomeRoute
 }
@@ -288,16 +338,21 @@ export interface FileRouteTypes {
     | '/servers/'
     | '/servers/$guildId/levels'
     | '/servers/$guildId/'
+    | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/custom-summary'
     | '/servers/$guildId/funds'
+    | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/voice-guard'
+    | '/servers/$guildId/voice-listen'
     | '/servers/$guildId/weather'
     | '/servers/$guildId/welcome'
   fileRoutesByTo: FileRoutesByTo
@@ -314,16 +369,21 @@ export interface FileRouteTypes {
     | '/servers'
     | '/servers/$guildId'
     | '/servers/$guildId/levels'
+    | '/servers/$guildId/ai'
     | '/servers/$guildId/audit-logs'
     | '/servers/$guildId/config'
+    | '/servers/$guildId/custom-summary'
     | '/servers/$guildId/funds'
+    | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/voice-guard'
+    | '/servers/$guildId/voice-listen'
     | '/servers/$guildId/weather'
     | '/servers/$guildId/welcome'
   id:
@@ -344,16 +404,21 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage'
     | '/_app/servers/$guildId/levels'
     | '/_app/servers/$guildId/'
+    | '/_app/servers/$guildId/_manage/ai'
     | '/_app/servers/$guildId/_manage/audit-logs'
     | '/_app/servers/$guildId/_manage/config'
+    | '/_app/servers/$guildId/_manage/custom-summary'
     | '/_app/servers/$guildId/_manage/funds'
+    | '/_app/servers/$guildId/_manage/grafana-alerts'
     | '/_app/servers/$guildId/_manage/jira'
     | '/_app/servers/$guildId/_manage/log-manager'
     | '/_app/servers/$guildId/_manage/news'
     | '/_app/servers/$guildId/_manage/overview'
     | '/_app/servers/$guildId/_manage/pr-bot'
+    | '/_app/servers/$guildId/_manage/relations'
     | '/_app/servers/$guildId/_manage/room-access'
     | '/_app/servers/$guildId/_manage/voice-guard'
+    | '/_app/servers/$guildId/_manage/voice-listen'
     | '/_app/servers/$guildId/_manage/weather'
     | '/_app/servers/$guildId/_manage/welcome'
   fileRoutesById: FileRoutesById
@@ -480,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdLevelsRouteImport
       parentRoute: typeof AppServersGuildIdRoute
     }
+    '/_app/servers/$guildId/_manage/ai': {
+      id: '/_app/servers/$guildId/_manage/ai'
+      path: '/ai'
+      fullPath: '/servers/$guildId/ai'
+      preLoaderRoute: typeof AppServersGuildIdManageAiRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/audit-logs': {
       id: '/_app/servers/$guildId/_manage/audit-logs'
       path: '/audit-logs'
@@ -494,11 +566,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageConfigRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/custom-summary': {
+      id: '/_app/servers/$guildId/_manage/custom-summary'
+      path: '/custom-summary'
+      fullPath: '/servers/$guildId/custom-summary'
+      preLoaderRoute: typeof AppServersGuildIdManageCustomSummaryRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/funds': {
       id: '/_app/servers/$guildId/_manage/funds'
       path: '/funds'
       fullPath: '/servers/$guildId/funds'
       preLoaderRoute: typeof AppServersGuildIdManageFundsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
+    '/_app/servers/$guildId/_manage/grafana-alerts': {
+      id: '/_app/servers/$guildId/_manage/grafana-alerts'
+      path: '/grafana-alerts'
+      fullPath: '/servers/$guildId/grafana-alerts'
+      preLoaderRoute: typeof AppServersGuildIdManageGrafanaAlertsRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
     '/_app/servers/$guildId/_manage/jira': {
@@ -536,6 +622,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManagePrBotRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/relations': {
+      id: '/_app/servers/$guildId/_manage/relations'
+      path: '/relations'
+      fullPath: '/servers/$guildId/relations'
+      preLoaderRoute: typeof AppServersGuildIdManageRelationsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/room-access': {
       id: '/_app/servers/$guildId/_manage/room-access'
       path: '/room-access'
@@ -548,6 +641,13 @@ declare module '@tanstack/react-router' {
       path: '/voice-guard'
       fullPath: '/servers/$guildId/voice-guard'
       preLoaderRoute: typeof AppServersGuildIdManageVoiceGuardRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
+    '/_app/servers/$guildId/_manage/voice-listen': {
+      id: '/_app/servers/$guildId/_manage/voice-listen'
+      path: '/voice-listen'
+      fullPath: '/servers/$guildId/voice-listen'
+      preLoaderRoute: typeof AppServersGuildIdManageVoiceListenRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
     '/_app/servers/$guildId/_manage/weather': {
@@ -584,36 +684,50 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 )
 
 interface AppServersGuildIdManageRouteChildren {
+  AppServersGuildIdManageAiRoute: typeof AppServersGuildIdManageAiRoute
   AppServersGuildIdManageAuditLogsRoute: typeof AppServersGuildIdManageAuditLogsRoute
   AppServersGuildIdManageConfigRoute: typeof AppServersGuildIdManageConfigRoute
+  AppServersGuildIdManageCustomSummaryRoute: typeof AppServersGuildIdManageCustomSummaryRoute
   AppServersGuildIdManageFundsRoute: typeof AppServersGuildIdManageFundsRoute
+  AppServersGuildIdManageGrafanaAlertsRoute: typeof AppServersGuildIdManageGrafanaAlertsRoute
   AppServersGuildIdManageJiraRoute: typeof AppServersGuildIdManageJiraRoute
   AppServersGuildIdManageLogManagerRoute: typeof AppServersGuildIdManageLogManagerRoute
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
+  AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
   AppServersGuildIdManageVoiceGuardRoute: typeof AppServersGuildIdManageVoiceGuardRoute
+  AppServersGuildIdManageVoiceListenRoute: typeof AppServersGuildIdManageVoiceListenRoute
   AppServersGuildIdManageWeatherRoute: typeof AppServersGuildIdManageWeatherRoute
   AppServersGuildIdManageWelcomeRoute: typeof AppServersGuildIdManageWelcomeRoute
 }
 
 const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren =
   {
+    AppServersGuildIdManageAiRoute: AppServersGuildIdManageAiRoute,
     AppServersGuildIdManageAuditLogsRoute:
       AppServersGuildIdManageAuditLogsRoute,
     AppServersGuildIdManageConfigRoute: AppServersGuildIdManageConfigRoute,
+    AppServersGuildIdManageCustomSummaryRoute:
+      AppServersGuildIdManageCustomSummaryRoute,
     AppServersGuildIdManageFundsRoute: AppServersGuildIdManageFundsRoute,
+    AppServersGuildIdManageGrafanaAlertsRoute:
+      AppServersGuildIdManageGrafanaAlertsRoute,
     AppServersGuildIdManageJiraRoute: AppServersGuildIdManageJiraRoute,
     AppServersGuildIdManageLogManagerRoute:
       AppServersGuildIdManageLogManagerRoute,
     AppServersGuildIdManageNewsRoute: AppServersGuildIdManageNewsRoute,
     AppServersGuildIdManageOverviewRoute: AppServersGuildIdManageOverviewRoute,
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
+    AppServersGuildIdManageRelationsRoute:
+      AppServersGuildIdManageRelationsRoute,
     AppServersGuildIdManageRoomAccessRoute:
       AppServersGuildIdManageRoomAccessRoute,
     AppServersGuildIdManageVoiceGuardRoute:
       AppServersGuildIdManageVoiceGuardRoute,
+    AppServersGuildIdManageVoiceListenRoute:
+      AppServersGuildIdManageVoiceListenRoute,
     AppServersGuildIdManageWeatherRoute: AppServersGuildIdManageWeatherRoute,
     AppServersGuildIdManageWelcomeRoute: AppServersGuildIdManageWelcomeRoute,
   }
