@@ -4,7 +4,7 @@ import { type Channel, Client, Events, GatewayIntentBits, type Guild, OAuth2Scop
 import { ApiException } from '../common/exceptions/api.exception';
 import type { Env } from '../config/env.validation';
 
-// สิทธิ์ที่ขอตอนเชิญบอทเข้าเซิร์ฟเวอร์ — ครบทุกความสามารถ (ส่ง log / การ์ด / รายงานอากาศ, Room Access, Voice Guard, Log Manager)
+// สิทธิ์ที่ขอตอนเชิญบอทเข้าเซิร์ฟเวอร์ — ครบทุกความสามารถ (ส่ง log / การ์ด / รายงานอากาศ, Room Access, Voice Guard, Voice Listen, Log Manager)
 const INVITE_PERMISSIONS = [
     PermissionFlagsBits.ViewChannel,
     PermissionFlagsBits.SendMessages,
@@ -16,6 +16,7 @@ const INVITE_PERMISSIONS = [
     PermissionFlagsBits.ManageRoles,
     PermissionFlagsBits.ManageChannels,
     PermissionFlagsBits.MoveMembers,
+    PermissionFlagsBits.Connect, // Voice Listen: เข้าห้องเสียงเพื่อถ่ายทอดเสียงไปหน้าเว็บ
     PermissionFlagsBits.ViewAuditLog,
     PermissionFlagsBits.ManageGuild,
 ];

@@ -17,6 +17,7 @@
     "discord:deploy-commands": "node dist/scripts/deploy-commands.js"
   },
   "dependencies": {
+    "@discordjs/voice": "^0.19.2",
     "@expo-google-fonts/kanit": "^0.4.1",
     "@expo-google-fonts/noto-color-emoji": "^0.4.6",
     "@expo-google-fonts/noto-sans-thai": "^0.4.2",
@@ -45,6 +46,7 @@
     "express-rate-limit": "^8.6.2",
     "gifenc": "^1.0.3",
     "helmet": "^8.3.0",
+    "opusscript": "^0.1.1",
     "passport": "^0.7.0",
     "passport-custom": "^1.2.1",
     "passport-jwt": "^4.0.1",

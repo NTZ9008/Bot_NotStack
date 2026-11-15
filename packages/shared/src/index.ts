@@ -12,6 +12,7 @@ export * from './news';
 export * from './pr-bot';
 export * from './room-access';
 export * from './voice-guard';
+export * from './voice-listen';
 export * from './weather';
 export * from './welcome';
 export * from './rank-card';
