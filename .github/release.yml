@@ -1,0 +1,15 @@
+# จัดหมวด changelog ใน GitHub Release ตาม label ของ PR (label ติดอัตโนมัติจาก labeler.yml)
+changelog:
+  categories:
+    - title: ฐานข้อมูล
+      labels: [database]
+    - title: Backend
+      labels: [backend]
+    - title: Frontend
+      labels: [frontend]
+    - title: CI / เครื่องมือ
+      labels: [ci, tests]
+    - title: Dependencies
+      labels: [dependencies]
+    - title: อื่นๆ
+      labels: ['*']
