@@ -1,0 +1,177 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import { Headphones, LogOut, Play, Square, Volume2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { voiceChannelsQuery } from '@/api/guilds';
+import { voiceListenApi, voiceListenQuery } from '@/api/voice-listen';
+import { PageHeader } from '@/components/page-header';
+import { EmptyState, ErrorState } from '@/components/states';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { useVoiceStream, type VoiceStreamStatus } from '@/features/voice-listen/use-voice-stream';
+import { useGuildId } from '@/hooks/use-guild';
+import { errorMessage } from '@/lib/api';
+import { cn } from '@/lib/utils';
+
+export const Route = createFileRoute('/_app/servers/$guildId/_manage/voice-listen')({
+    loader: ({ context: { queryClient }, params, preload }) => {
+        const loading = Promise.all([
+            queryClient.prefetchQuery(voiceListenQuery(params.guildId)),
+            queryClient.prefetchQuery(voiceChannelsQuery(params.guildId)),
+        ]);
+        return preload ? loading : undefined;
+    },
+    component: VoiceListenPage,
+});
+
+const STREAM_LABEL: Record<VoiceStreamStatus, string> = {
+    stopped: 'ยังไม่ได้ฟัง',
+    connecting: 'กำลังเชื่อมต่อ...',
+    live: 'กำลังฟังสด',
+    reconnecting: 'หลุด — กำลังต่อใหม่...',
+};
+
+function VoiceListenPage() {
+    const guildId = useGuildId();
+    const queryClient = useQueryClient();
+    const status = useQuery(voiceListenQuery(guildId));
+    const channels = useQuery(voiceChannelsQuery(guildId));
+    const [channelId, setChannelId] = useState('');
+    const stream = useVoiceStream(guildId);
+
+    const refresh = () => queryClient.invalidateQueries({ queryKey: voiceListenQuery(guildId).queryKey });
+    const onError = (err: unknown) => toast.error('ข้อผิดพลาด', { description: errorMessage(err) });
+    const join = useMutation({
+        mutationFn: (id: string) => voiceListenApi.join(guildId, id),
+        onSuccess: (next) => {
+            queryClient.setQueryData(voiceListenQuery(guildId).queryKey, next);
+            toast.success(`บอทเข้าห้อง ${next.channel?.name ?? ''} แล้ว`);
+        },
+        onError,
+    });
+    const leave = useMutation({
+        mutationFn: () => voiceListenApi.leave(guildId),
+        onSuccess: () => {
+            stream.stop();
+            toast.success('บอทออกจากห้องเสียงแล้ว');
+            void refresh();
+        },
+        onError,
+    });
+
+    if (status.isError) return <ErrorState error={status.error} />;
+    const data = status.data;
+    const inRoom = data?.state === 'ready' && !!data.channel;
+    const selected = channelId || data?.channel?.id || '';
+
+    return (
+        <>
+            <PageHeader help="voiceListen" title="ฟังห้องเสียง" description="ให้บอทเข้าห้องเสียงแล้วฟังเสียงในห้องสดๆ ผ่านหน้าเว็บ" />
+            <div className="grid gap-4 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>ห้องเสียง</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <Select value={selected} onValueChange={setChannelId}>
+                                <SelectTrigger className="w-full sm:flex-1" aria-label="เลือกห้องเสียง">
+                                    <SelectValue placeholder="เลือกห้องเสียง" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {(channels.data ?? []).map((channel) => (
+                                        <SelectItem key={channel.id} value={channel.id}>
+                                            🔊 {channel.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <Button disabled={!selected || join.isPending || (inRoom && selected === data?.channel?.id)} onClick={() => join.mutate(selected)}>
+                                <Headphones />
+                                {join.isPending ? 'กำลังเข้าห้อง...' : inRoom ? 'ย้ายไปห้องนี้' : 'ให้บอทเข้าห้อง'}
+                            </Button>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                            <span className="truncate">
+                                {data?.state === 'connecting'
+                                    ? 'กำลังเชื่อมต่อห้องเสียง...'
+                                    : inRoom
+                                      ? `บอทอยู่ใน 🔊 ${data?.channel?.name}`
+                                      : 'บอทยังไม่ได้อยู่ในห้องเสียง'}
+                            </span>
+                            {data?.state !== 'idle' && (
+                                <Button variant="outline" size="sm" disabled={leave.isPending} onClick={() => leave.mutate()}>
+                                    <LogOut />
+                                    ให้บอทออก
+                                </Button>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader className="flex-row items-center justify-between gap-2">
+                        <CardTitle>ฟังเสียง</CardTitle>
+                        <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL[stream.status]}</Badge>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {stream.status === 'stopped' ? (
+                            <Button className="w-full" disabled={!inRoom} onClick={stream.start}>
+                                <Play />
+                                เริ่มฟัง
+                            </Button>
+                        ) : (
+                            <Button className="w-full" variant="outline" onClick={stream.stop}>
+                                <Square />
+                                หยุดฟัง
+                            </Button>
+                        )}
+                        <div className="flex items-center gap-3">
+                            <Volume2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                            <Slider
+                                aria-label="ระดับเสียง"
+                                min={0}
+                                max={2}
+                                step={0.05}
+                                value={[stream.volume]}
+                                onValueChange={([value]) => stream.setVolume(value ?? 1)}
+                            />
+                            <span className="w-12 text-right text-sm tabular-nums text-muted-foreground">{Math.round(stream.volume * 100)}%</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">ผู้ฟังในหน้าเว็บตอนนี้: {data?.listeners ?? 0} คน</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            <Card className="mt-4">
+                <CardHeader>
+                    <CardTitle>คนในห้อง</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {!inRoom || !data?.members.length ? (
+                        <EmptyState>{inRoom ? 'ไม่มีใครอยู่ในห้อง' : 'ให้บอทเข้าห้องก่อนเพื่อดูว่าใครอยู่บ้าง'}</EmptyState>
+                    ) : (
+                        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                            {data.members.map((member) => (
+                                <li key={member.userId} className="flex items-center gap-3 rounded-lg border px-3 py-2">
+                                    <img
+                                        src={member.avatar}
+                                        alt=""
+                                        className={cn('size-8 rounded-full ring-2 ring-transparent transition-shadow', member.speaking && 'ring-green-500')}
+                                    />
+                                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{member.name}</span>
+                                    {member.bot && <Badge variant="secondary">BOT</Badge>}
+                                    {member.speaking && <span className="text-xs text-green-600 dark:text-green-400">กำลังพูด</span>}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </CardContent>
+            </Card>
+        </>
+    );
+}

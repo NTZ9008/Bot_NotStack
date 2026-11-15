@@ -65,7 +65,14 @@ export class VoiceListenController {
 
         let closed = false;
         let unsubscribe = () => {};
-        let recheck: NodeJS.Timeout | undefined;
+        // สิทธิ์เปลี่ยนได้ระหว่างที่เปิดฟังค้างไว้ (ถูกถอดยศ / บอทออกจากเซิร์ฟเวอร์)
+        const recheck = setInterval(() => {
+            void this.access
+                .resolve(user, guildId)
+                .then((level) => level === 'manage' || close())
+                .catch(close);
+        }, ACCESS_RECHECK_MS);
+        recheck.unref?.();
         const close = () => {
             if (closed) return;
             closed = true;
@@ -102,14 +109,5 @@ export class VoiceListenController {
         res.flushHeaders();
         req.on('close', close);
         res.on('error', close);
-
-        // สิทธิ์เปลี่ยนได้ระหว่างที่เปิดฟังค้างไว้ (ถูกถอดยศ / บอทออกจากเซิร์ฟเวอร์)
-        recheck = setInterval(() => {
-            void this.access
-                .resolve(user, guildId)
-                .then((level) => level === 'manage' || close())
-                .catch(close);
-        }, ACCESS_RECHECK_MS);
-        recheck.unref?.();
     }
 }

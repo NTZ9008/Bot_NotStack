@@ -10,6 +10,7 @@ import {
     FileSpreadsheet,
     FileText,
     GitPullRequest,
+    Headphones,
     History,
     LineChart,
     Lock,
@@ -127,6 +128,14 @@ const GUILD_GROUPS: NavGroup[] = [
                 icon: Mic,
                 guild: 'manage',
                 keywords: 'voice guard ห้องเสียง whitelist blacklist กันคนเข้า',
+            },
+            {
+                to: '/servers/$guildId/voice-listen',
+                label: PAGE_GUIDES.voiceListen.title,
+                guide: 'voiceListen',
+                icon: Headphones,
+                guild: 'manage',
+                keywords: 'voice listen ฟัง ห้องเสียง เสียงสด stream audio บอทเข้าห้อง headphones',
             },
             {
                 to: '/servers/$guildId/log-manager',
