@@ -19,6 +19,11 @@
       "dependencyDashboardApproval": true
     },
     {
+      "description": "hold prom-client replacement until repo drops Node 20 support",
+      "matchPackageNames": ["prom-client"],
+      "enabled": false
+    },
+    {
       "groupName": "nestjs",
       "matchPackageNames": ["@nestjs/**"]
     },
