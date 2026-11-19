@@ -27,7 +27,6 @@ import mascotThumbs2 from './mascot/thumbs-up-2.webp';
 import mascotThumbs3 from './mascot/thumbs-up-3.webp';
 import mascotThumbs from './mascot/thumbs-up.webp';
 import showcaseLevelUp from './showcase/level-up.webp';
-import showcaseRank from './showcase/rank.webp';
 import showcaseWeather from './showcase/weather.webp';
 import showcaseWelcome from './showcase/welcome.webp';
 
@@ -74,7 +73,7 @@ function Mascot({
     className = '',
 }: {
     src: string;
-    motion?: 'bob' | 'sway' | 'jump' | 'pop';
+    motion?: 'bob' | 'sway' | 'jump' | 'pop' | 'none';
     delay?: number;
     eager?: boolean;
     className?: string;
@@ -345,24 +344,57 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
     );
 }
 
-// ภาพจริงที่บอทสร้าง (เรนเดอร์จาก renderer ของ backend ด้วยข้อมูลตัวอย่าง) ลอยรอบมาสคอตใน hero — จอไม่กว้างพอซ่อนไว้ ให้มาสคอตเด่น
-function WorkCard({ src, label, className }: { src: string; label: string; className: string }) {
+// ฟีเจอร์เด่นที่มาสคอตถืออยู่ — ภาพจริงจาก renderer ของ backend (วาดด้วยข้อมูลตัวอย่าง) + ป้ายชื่อฟีเจอร์
+function HeldCard({ src, label, className }: { src: string; label: string; className: string }) {
     return (
         <figure
             aria-hidden
-            className={`landing-float absolute z-20 hidden rounded-2xl border border-white/15 bg-[var(--ld-card)]/80 p-1.5 shadow-2xl shadow-black/50 backdrop-blur-md lg:block ${className}`}
+            className={`absolute z-20 rounded-xl border border-white/20 bg-[var(--ld-card)]/90 p-1 shadow-2xl shadow-black/50 backdrop-blur ${className}`}
         >
-            <img src={src} alt="" className="w-full rounded-xl" />
-            <figcaption className="px-1.5 pt-1.5 pb-0.5 text-xs text-slate-400">{label}</figcaption>
+            <img src={src} alt="" className="w-full rounded-lg" />
+            <figcaption className="absolute -top-3 left-3 rounded-full bg-[var(--ld-blue)] px-2.5 py-0.5 text-[11px] font-bold whitespace-nowrap text-white shadow-lg">
+                {label}
+            </figcaption>
         </figure>
     );
 }
 
-// สามคนยืนบนเวที: ซ้ายผายมือไปทางการ์ดฝั่งซ้าย (กลับด้านภาพ), กลางล้วงกระเป๋า, ขวาชี้ไปการ์ดฝั่งขวา
+// สามคนยืนบนเวที แต่ละคนโชว์ฟีเจอร์เด่นของตัวเอง:
+// ซ้ายหงายมือชูการ์ดเลเวลอัป (กลับด้านภาพให้มืออยู่ฝั่งซ้าย) · กลางถือป้ายการ์ดต้อนรับไว้หน้าอก · ขวาชี้ไปที่กราฟพยากรณ์อากาศ
+// ตำแหน่งการ์ดเป็น % ของภาพมาสคอต จะได้อยู่ที่มือเสมอไม่ว่ามาสคอตสูงเท่าไร (จอเล็ก การ์ดของคนข้างๆ ย้ายไปลอยเหนือหัว ไม่งั้นล้นจอ)
 const HERO_CREW = [
-    { src: mascotPresent, mirror: true, center: false, delay: 250, idle: -1300 },
-    { src: mascotPockets, mirror: false, center: true, delay: 100, idle: 0 },
-    { src: mascotPoint, mirror: false, center: false, delay: 400, idle: -2600 },
+    {
+        src: mascotPresent,
+        mirror: true,
+        center: false,
+        delay: 250,
+        idle: -1300,
+        card: {
+            src: showcaseLevelUp,
+            label: '🏆 เลเวล & XP',
+            className: 'bottom-[101%] left-0 w-28 -rotate-6 md:right-[78%] md:bottom-[69%] md:left-auto md:w-36 lg:w-64',
+        },
+    },
+    {
+        src: mascotPockets,
+        mirror: false,
+        center: true,
+        delay: 100,
+        idle: 0,
+        card: { src: showcaseWelcome, label: '👋 การ์ดต้อนรับ', className: 'top-[41%] left-1/2 w-[150%] -translate-x-1/2 rotate-2' },
+    },
+    {
+        src: mascotPoint,
+        mirror: false,
+        center: false,
+        delay: 400,
+        idle: -2600,
+        card: {
+            src: showcaseWeather,
+            label: '☀️ รายงานอากาศ',
+            className: 'right-0 bottom-[101%] w-28 rotate-6 md:right-auto md:bottom-[50%] md:left-[82%] md:w-36 lg:w-64',
+        },
+    },
 ];
 
 function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
@@ -410,22 +442,21 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                     className="absolute bottom-0 left-1/2 -z-10 h-20 w-[min(92%,46rem)] -translate-x-1/2 rounded-[50%] bg-[var(--ld-blue)]/50 blur-2xl"
                 />
 
-                <WorkCard src={showcaseWelcome} label="# ยินดีต้อนรับ · การ์ดต้อนรับคนใหม่" className="top-[2%] left-0 w-64 -rotate-3" />
-                <WorkCard src={showcaseWeather} label="# สภาพอากาศ · ส่งทุกเช้า 07:00" className="bottom-[10%] left-6 w-72 rotate-2 [animation-delay:-1.5s]" />
-                <WorkCard src={showcaseLevelUp} label="# เลเวลอัป · เก็บ XP จากการคุย" className="top-0 right-0 w-72 rotate-3 [animation-delay:-3s]" />
-                <WorkCard src={showcaseRank} label="/rank · การ์ดอันดับ" className="right-6 bottom-[14%] w-72 -rotate-2 [animation-delay:-4s]" />
-
                 <div className="flex items-end">
                     {HERO_CREW.map((crew) => (
                         <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-3 sm:-mx-5' : ''}>
-                            <Mascot
-                                src={crew.src}
-                                delay={crew.idle}
-                                eager
-                                className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
-                                    crew.center ? 'h-[clamp(16rem,54svh,38rem)]' : 'h-[clamp(13rem,45svh,31rem)]'
-                                }`}
-                            />
+                            {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
+                            <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
+                                <Mascot
+                                    src={crew.src}
+                                    motion="none"
+                                    eager
+                                    className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
+                                        crew.center ? 'h-[clamp(16rem,54svh,38rem)]' : 'h-[clamp(13rem,45svh,31rem)]'
+                                    }`}
+                                />
+                                <HeldCard {...crew.card} />
+                            </div>
                         </Reveal>
                     ))}
                 </div>
