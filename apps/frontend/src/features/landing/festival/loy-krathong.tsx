@@ -245,10 +245,6 @@ export function LoyKrathong() {
                     ))}
                 </div>
             </div>
-
-            <p className="absolute bottom-[20%] left-4 hidden items-center gap-1.5 rounded-full border border-amber-200/30 bg-[#0b1030]/70 px-3.5 py-1.5 text-sm font-semibold text-amber-100 backdrop-blur sm:flex lg:left-8">
-                🪷 สุขสันต์วันลอยกระทง
-            </p>
         </div>
     );
 }
