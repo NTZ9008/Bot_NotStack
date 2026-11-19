@@ -1,7 +1,7 @@
+import { randomBytes } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { isValidUsername, normalizeUsername, type UserRole } from '@notstack/shared';
 import bcrypt from 'bcryptjs';
-import { randomBytes } from 'node:crypto';
 import { AuthConfig } from '../auth/auth.config';
 import { AUTH } from '../auth/auth.constants';
 import type { DiscordProfile } from '../auth/interfaces/discord-profile.interface';

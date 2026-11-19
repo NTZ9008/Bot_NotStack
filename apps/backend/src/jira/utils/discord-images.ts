@@ -1,6 +1,5 @@
-import { trimChar } from '@notstack/shared/text';
 import { readBoundedResponse } from '../../common/utils/safe-image';
-import { JIRA_LIMITS } from '@notstack/shared';
+import { JIRA_LIMITS, trimChar } from '@notstack/shared';
 import type { UploadFile } from '../clients/jira.client';
 
 // ไฟล์ที่ผู้ใช้แนบใน pop-up อยู่บน CDN ของ Discord เสมอ — ไม่ดาวน์โหลดจาก host อื่น

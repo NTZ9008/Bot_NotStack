@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import type { GuildSummary } from '@notstack/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
@@ -15,7 +16,6 @@ import {
     VoiceGuardPageSkeleton,
 } from './guild-pages';
 import { LevelsPageSkeleton } from './levels';
-import { trimChar } from '@notstack/shared/text';
 
 // หน้าในเซิร์ฟเวอร์ (/servers/:guildId/<หน้า>) → โครงร่างของหน้านั้น
 const GUILD_PAGES: Record<string, ComponentType> = {

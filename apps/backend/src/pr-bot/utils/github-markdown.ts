@@ -1,9 +1,9 @@
-import { trimChar } from '@notstack/shared/text';
 // ==========================================
 // แปลง markdown ของ GitHub (GFM) ให้แสดงใน Discord ได้ใกล้เคียงที่สุด
 // Discord รองรับ bold / italic / ~~strike~~ / `code` / ```block``` / > quote / list / [link](url) อยู่แล้ว
 // ส่วนที่ Discord ไม่มี (heading ใหญ่, รูป, task list, HTML) แปลงเป็นแบบที่ใกล้เคียง
 // ==========================================
+import { trimChar } from '@notstack/shared/text';
 
 const FENCE = /^\s*(`{3,}|~{3,})\s*([\w+-]*)/;
 const TAG = /<\/?[a-zA-Z][\w-]*(?:\s[^<>]*)?\/?>/g;
@@ -34,9 +34,7 @@ function convertLine(line: string): string {
         .split(/(`[^`\n]+`)/)
         .map((part, index) => {
             if (index % 2) return part;
-            return inlineHtml(
-                part.replace(/!\[([^[\]]*)\]\(([^)\s]+)(?:\s[^)]*)?\)/g, (_, alt: string, url: string) => `[🖼️ ${alt.trim() || 'image'}](${url})`),
-            );
+            return inlineHtml(part.replace(/!\[([^[\]]*)\]\(([^)\s]+)(?:\s[^)]*)?\)/g, (_, alt: string, url: string) => `[🖼️ ${alt.trim() || 'image'}](${url})`));
         })
         .join('');
     // <br> ใน > quote ต้องขึ้นบรรทัดใหม่ที่ยังอยู่ใน quote

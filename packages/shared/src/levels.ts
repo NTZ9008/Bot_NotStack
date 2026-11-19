@@ -182,7 +182,11 @@ export interface XpContext {
 }
 export function matchingXpRules(settings: XpSettings, ctx: XpContext): XpRule[] {
     const channels = [ctx.channelId, ctx.parentId, ctx.categoryId].filter((id): id is string => Boolean(id));
-    if (!settings.enabled || channels.some((id) => settings.excludedChannelIds.includes(id)) || ctx.roleIds.some((id) => settings.excludedRoleIds.includes(id)))
+    if (
+        !settings.enabled ||
+        channels.some((id) => settings.excludedChannelIds.includes(id)) ||
+        ctx.roleIds.some((id) => settings.excludedRoleIds.includes(id))
+    )
         return [];
     if (ctx.source === 'message' && (ctx.messageLength ?? 0) < settings.messageMinLength) return [];
     if (

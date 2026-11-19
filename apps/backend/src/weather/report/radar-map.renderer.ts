@@ -62,24 +62,8 @@ const FRAMES_CACHE_MS = 2 * 60 * 1000;
 const BASEMAP_CACHE_MS = 24 * 60 * 60 * 1000;
 
 const THEMES = {
-    light: {
-        filter: 'grayscale(1) brightness(1.05) contrast(0.85)',
-        bg: '#E5E7EB',
-        text: '#1F2937',
-        muted: 'rgba(0, 0, 0, 0.62)',
-        panel: 'rgba(255, 255, 255, 0.9)',
-        halo: '#FFFFFF',
-        track: 'rgba(0, 0, 0, 0.15)',
-    },
-    dark: {
-        filter: 'grayscale(1) invert(1) brightness(0.85) contrast(0.9)',
-        bg: '#1E1F22',
-        text: '#F2F3F5',
-        muted: 'rgba(255, 255, 255, 0.72)',
-        panel: 'rgba(20, 21, 24, 0.84)',
-        halo: '#111111',
-        track: 'rgba(255, 255, 255, 0.2)',
-    },
+    light: { filter: 'grayscale(1) brightness(1.05) contrast(0.85)', bg: '#E5E7EB', text: '#1F2937', muted: 'rgba(0, 0, 0, 0.62)', panel: 'rgba(255, 255, 255, 0.9)', halo: '#FFFFFF', track: 'rgba(0, 0, 0, 0.15)' },
+    dark: { filter: 'grayscale(1) invert(1) brightness(0.85) contrast(0.9)', bg: '#1E1F22', text: '#F2F3F5', muted: 'rgba(255, 255, 255, 0.72)', panel: 'rgba(20, 21, 24, 0.84)', halo: '#111111', track: 'rgba(255, 255, 255, 0.2)' },
 };
 type Theme = (typeof THEMES)['light'];
 
@@ -264,9 +248,7 @@ const rainViewer: RadarSource = {
     async layer(view, frame) {
         const span = TILE * 2 ** (view.zoom - RADAR_ZOOM);
         const tiles = coveringTiles(view, span, 2 ** RADAR_ZOOM);
-        const images = await Promise.all(
-            tiles.map((t) => loadRadarTile(`${frame.url}/${RADAR_TILE}/${RADAR_ZOOM}/${t.x}/${t.y}/${RADAR_STYLE}.png`).catch(() => null)),
-        );
+        const images = await Promise.all(tiles.map((t) => loadRadarTile(`${frame.url}/${RADAR_TILE}/${RADAR_ZOOM}/${t.x}/${t.y}/${RADAR_STYLE}.png`).catch(() => null)));
         if (!images.some(Boolean)) throw new Error('โหลดภาพเรดาร์จาก RainViewer ไม่ได้');
         const canvas = createCanvas(WIDTH, HEIGHT);
         const ctx = canvas.getContext('2d');
@@ -302,10 +284,7 @@ const tmd: RadarSource = {
         }
         const frames = list.split('\n').flatMap((line): RadarFrame[] => {
             const m = TMD_LIST_LINE.exec(line.trim());
-            const file = m?.[3]
-                ?.split(',')
-                .map((f) => f.trim())
-                .find((f) => /\.png$/i.test(f));
+            const file = m?.[3]?.split(',').map((f) => f.trim()).find((f) => /\.png$/i.test(f));
             const time = m ? Date.parse(`${m[1]}T${m[2]}:00Z`) / 1000 : Number.NaN;
             if (!file || !Number.isFinite(time)) return [];
             // ไฟล์ zr/00..24.png ถูกเขียนทับวนไปทุก 15 นาที — ใส่เวลาไว้ใน URL ให้ cache แยกภาพตามเวลา
@@ -342,9 +321,7 @@ const tmd: RadarSource = {
             const sx = image.width / (x1 - x0);
             const sy = image.height / (y1 - y0);
             const canvas = createCanvas(WIDTH, HEIGHT);
-            canvas
-                .getContext('2d')
-                .drawImage(image, (left - x0) * sx, (top - y0) * sy, (right - left) * sx, (bottom - top) * sy, left, top, right - left, bottom - top);
+            canvas.getContext('2d').drawImage(image, (left - x0) * sx, (top - y0) * sy, (right - left) * sx, (bottom - top) * sy, left, top, right - left, bottom - top);
             return canvas;
         });
     },

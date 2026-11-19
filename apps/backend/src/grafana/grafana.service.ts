@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -6,7 +7,6 @@ import { BotConfigService } from '../bot-config/bot-config.service';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { trimChar } from '@notstack/shared/text';
 
 const KEYS = { channel: 'GRAFANA_CHANNEL_ID', secret: 'GRAFANA_WEBHOOK_SECRET', mapping: 'GRAFANA_LABEL_CHANNEL_MAP' } as const;
 
@@ -20,14 +20,7 @@ type Alert = {
     dashboardURL?: string;
     panelURL?: string;
 };
-type AlertPayload = {
-    status?: string;
-    receiver?: string;
-    alerts?: Alert[];
-    externalURL?: string;
-    commonLabels?: Record<string, unknown>;
-    commonAnnotations?: Record<string, unknown>;
-};
+type AlertPayload = { status?: string; receiver?: string; alerts?: Alert[]; externalURL?: string; commonLabels?: Record<string, unknown>; commonAnnotations?: Record<string, unknown> };
 
 const clip = (value: unknown, max = 1000): string => String(value ?? '').slice(0, max) || '—';
 const safeUrl = (value: unknown): string | null => {
@@ -48,12 +41,7 @@ export class GrafanaService {
     private readonly webhookSecret: string;
     private readonly legacyChannelId: string;
 
-    constructor(
-        config: ConfigService<Env, true>,
-        private readonly discord: DiscordService,
-        private readonly botConfig: BotConfigService,
-        private readonly prisma: PrismaService,
-    ) {
+    constructor(config: ConfigService<Env, true>, private readonly discord: DiscordService, private readonly botConfig: BotConfigService, private readonly prisma: PrismaService) {
         this.baseUrl = trimChar(config.get('GRAFANA_API_URL', { infer: true }) ?? '', '/', 'end');
         this.apiToken = config.get('GRAFANA_API_TOKEN', { infer: true }) ?? '';
         this.webhookSecret = config.get('GRAFANA_WEBHOOK_SECRET', { infer: true }) ?? '';
@@ -79,7 +67,7 @@ export class GrafanaService {
 
     async sendAlert(guildId: string, payload: AlertPayload, channelOverride?: string): Promise<void> {
         const mapping = await this.labelChannelMap(guildId);
-        const defaultChannel = (await this.botConfig.get(guildId, KEYS.channel)) ?? (guildId === this.discord.homeGuildId ? this.legacyChannelId : '');
+        const defaultChannel = await this.botConfig.get(guildId, KEYS.channel) ?? (guildId === this.discord.homeGuildId ? this.legacyChannelId : '');
         const alerts = Array.isArray(payload.alerts) ? payload.alerts.slice(0, 10) : [];
         const groups = new Map<string, Alert[]>();
         if (alerts.length) {
@@ -119,9 +107,7 @@ export class GrafanaService {
         const commonAnnotations = payload.commonAnnotations ?? {};
         const externalUrl = safeUrl(payload.externalURL);
         if (externalUrl) embed.setURL(externalUrl);
-        const usefulCommon = Object.entries(common)
-            .filter(([key]) => key !== 'alertname')
-            .slice(0, 5);
+        const usefulCommon = Object.entries(common).filter(([key]) => key !== 'alertname').slice(0, 5);
         for (let index = 0; index < Math.min(alerts.length, 5); index++) {
             const alert = alerts[index]!;
             const labels = alert.labels ?? {};
@@ -134,17 +120,10 @@ export class GrafanaService {
                 safeUrl(alert.generatorURL),
             ].filter((url): url is string => !!url);
             const fields = [
-                ...Object.entries(labels)
-                    .filter(([key]) => key !== 'alertname')
-                    .slice(0, 4)
-                    .map(([key, value]) => `**${clip(key, 80)}:** ${clip(value, 180)}`),
+                ...Object.entries(labels).filter(([key]) => key !== 'alertname').slice(0, 4).map(([key, value]) => `**${clip(key, 80)}:** ${clip(value, 180)}`),
                 ...usefulCommon.map(([key, value]) => `**${clip(key, 80)}:** ${clip(value, 180)}`),
             ].slice(0, 4);
-            const details = [
-                summary,
-                fields.join(' · '),
-                links.length ? links.map((url, i) => `[${['Dashboard', 'Panel', 'Explore'][i] ?? 'Details'}](${url})`).join(' · ') : '',
-            ]
+            const details = [summary, fields.join(' · '), links.length ? links.map((url, i) => `[${['Dashboard', 'Panel', 'Explore'][i] ?? 'Details'}](${url})`).join(' · ') : '']
                 .filter(Boolean)
                 .join('\n');
             embed.addFields({ name: alertName, value: clip(details, 1024), inline: false });
@@ -156,13 +135,7 @@ export class GrafanaService {
     async sendTest(guildId: string): Promise<void> {
         await this.sendAlert(guildId, {
             status: 'firing',
-            alerts: [
-                {
-                    status: 'firing',
-                    labels: { alertname: 'Grafana Test Alert', env: 'test', severity: 'info', service: 'Bot_NotStack' },
-                    annotations: { summary: 'This is a test notification from the Grafana dashboard.' },
-                },
-            ],
+            alerts: [{ status: 'firing', labels: { alertname: 'Grafana Test Alert', env: 'test', severity: 'info', service: 'Bot_NotStack' }, annotations: { summary: 'This is a test notification from the Grafana dashboard.' } }],
         });
     }
 
@@ -172,19 +145,12 @@ export class GrafanaService {
         try {
             const parsed: unknown = JSON.parse((await this.botConfig.get(guildId, KEYS.mapping)) ?? '{}');
             if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-                labelChannels = Object.fromEntries(
-                    Object.entries(parsed).filter(([key, value]) => /^(env|severity):[^:]+$/i.test(key) && typeof value === 'string'),
-                );
+                labelChannels = Object.fromEntries(Object.entries(parsed).filter(([key, value]) => /^(env|severity):[^:]+$/i.test(key) && typeof value === 'string'));
             }
         } catch {
             // Ignore invalid legacy values and return an empty mapping.
         }
-        return {
-            defaultChannelId: (await this.botConfig.get(guildId, KEYS.channel)) ?? '',
-            labelChannels,
-            webhookPath: `/webhook/grafana/${guildId}`,
-            webhookSecret: secret,
-        };
+        return { defaultChannelId: (await this.botConfig.get(guildId, KEYS.channel)) ?? '', labelChannels, webhookPath: `/webhook/grafana/${guildId}`, webhookSecret: secret };
     }
 
     async updateSettings(guildId: string, input: { defaultChannelId: string; labelChannels: Record<string, string> }) {
@@ -192,8 +158,7 @@ export class GrafanaService {
             if (!/^(env|severity):[^:]+$/i.test(key)) throw new Error(`Invalid Grafana label mapping key: ${key}`);
             if (value && !(await this.discord.fetchGuildChannel(guildId, value))) throw new Error(`Channel ${value} does not belong to this guild`);
         }
-        if (input.defaultChannelId && !(await this.discord.fetchGuildChannel(guildId, input.defaultChannelId)))
-            throw new Error('Default channel does not belong to this guild');
+        if (input.defaultChannelId && !(await this.discord.fetchGuildChannel(guildId, input.defaultChannelId))) throw new Error('Default channel does not belong to this guild');
         await this.botConfig.set(guildId, KEYS.channel, input.defaultChannelId, 'Grafana alerts default Discord channel');
         await this.botConfig.set(guildId, KEYS.mapping, JSON.stringify(input.labelChannels), 'Grafana label to Discord channel mappings');
         return this.readSettings(guildId);
@@ -208,8 +173,7 @@ export class GrafanaService {
     private async labelChannelMap(guildId: string): Promise<Record<string, string>> {
         try {
             const parsed: unknown = JSON.parse((await this.botConfig.get(guildId, KEYS.mapping)) ?? '{}');
-            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed))
-                return Object.fromEntries(Object.entries(parsed).filter(([, value]) => typeof value === 'string'));
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return Object.fromEntries(Object.entries(parsed).filter(([, value]) => typeof value === 'string'));
         } catch {
             // Ignore invalid legacy values and use the default channel.
         }
@@ -220,8 +184,7 @@ export class GrafanaService {
         for (const label of ['env', 'severity']) {
             const value = labels[label];
             if (typeof value !== 'string') continue;
-            const channelId =
-                mapping[`${label}:${value}`] ?? Object.entries(mapping).find(([key]) => key.toLowerCase() === `${label}:${value}`.toLowerCase())?.[1];
+            const channelId = mapping[`${label}:${value}`] ?? Object.entries(mapping).find(([key]) => key.toLowerCase() === `${label}:${value}`.toLowerCase())?.[1];
             if (channelId) return channelId;
         }
         return null;
@@ -248,12 +211,7 @@ export class GrafanaService {
         const today = Math.floor((now.getTime() + thaiOffset) / dayMs) * dayMs;
         const firstDay = today - (days - 1) * dayMs;
         const from = new Date(firstDay - thaiOffset);
-        const daily = Array.from({ length: days }, (_, i) => ({
-            label: new Date(firstDay + i * dayMs).toISOString().slice(0, 10),
-            firing: 0,
-            resolved: 0,
-            sent: 0,
-        }));
+        const daily = Array.from({ length: days }, (_, i) => ({ label: new Date(firstDay + i * dayMs).toISOString().slice(0, 10), firing: 0, resolved: 0, sent: 0 }));
         const totals = { firing: 0, resolved: 0, sent: 0 };
         const rows = await this.prisma.$queryRaw<{ day: string; kind: string; total: bigint }[]>`
             SELECT to_char(created_at AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD') AS day, kind, count(*) AS total
@@ -281,11 +239,7 @@ export class GrafanaService {
         const body: unknown = await response.json();
         if (!body || typeof body !== 'object') throw new Error('Grafana API returned invalid health data');
         const data = body as Record<string, unknown>;
-        return {
-            status: 'ok',
-            ...(typeof data.version === 'string' ? { version: data.version } : {}),
-            ...(typeof data.commit === 'string' ? { commit: data.commit } : {}),
-        };
+        return { status: 'ok', ...(typeof data.version === 'string' ? { version: data.version } : {}), ...(typeof data.commit === 'string' ? { commit: data.commit } : {}) };
     }
 
     logDeliveryError(error: unknown): void {

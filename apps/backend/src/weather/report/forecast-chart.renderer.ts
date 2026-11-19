@@ -26,15 +26,7 @@ const TIME_Y = 528;
 
 const THEMES = {
     light: { bg: '#FFFFFF', text: '#1F2937', muted: '#6B7280', grid: '#E5E7EB', rain: '#3B82F6', rainText: '#2563EB', divider: '#CBD5E1' },
-    dark: {
-        bg: '#232428',
-        text: '#F2F3F5',
-        muted: '#B5BAC1',
-        grid: 'rgba(255, 255, 255, 0.08)',
-        rain: '#60A5FA',
-        rainText: '#93C5FD',
-        divider: 'rgba(255, 255, 255, 0.22)',
-    },
+    dark: { bg: '#232428', text: '#F2F3F5', muted: '#B5BAC1', grid: 'rgba(255, 255, 255, 0.08)', rain: '#60A5FA', rainText: '#93C5FD', divider: 'rgba(255, 255, 255, 0.22)' },
 };
 type Theme = (typeof THEMES)['light'];
 

@@ -1,8 +1,8 @@
+import { trimChar } from '@notstack/shared/text';
 import { decodePreviewResponse } from './preview-response';
 import { sessionRequests } from './session-state';
 import type { ApiErrorBody } from '@notstack/shared';
 import { AUTH_ERROR_CODES } from '@notstack/shared/auth-codes';
-import { trimChar } from '@notstack/shared/text';
 
 // ==========================================
 // 🌐 API CLIENT — เรียก /api/* แบบมี cookie session

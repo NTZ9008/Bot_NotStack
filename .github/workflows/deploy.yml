@@ -3,144 +3,144 @@ name: Deploy BotNotStack
 # กด Deploy backend เองจากแท็บ Actions
 # frontend deploy แยกผ่าน Cloudflare Workers ตาม apps/frontend/wrangler.jsonc
 on:
-    workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
-    contents: read
+  contents: read
 
 concurrency:
-    group: deploy-${{ github.ref }}
-    cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-    backend:
-        # อนุญาตให้กด Deploy ได้เฉพาะ branch main และ branch ที่ขึ้นต้นด้วย release/ เท่านั้น
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
-        runs-on: ubuntu-latest
-        environment: prod
-        # ส่ง secret ผ่าน env แทนการแทนค่าลงใน run โดยตรง (กัน script injection)
+  backend:
+    # อนุญาตให้กด Deploy ได้เฉพาะ branch main และ branch ที่ขึ้นต้นด้วย release/ เท่านั้น
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
+    runs-on: ubuntu-latest
+    environment: prod
+    # ส่ง secret ผ่าน env แทนการแทนค่าลงใน run โดยตรง (กัน script injection)
+    env:
+      SSH_TARGET: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Build backend
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm turbo run build --filter=@notstack/backend...
+
+      # ไฟล์ที่เซิร์ฟเวอร์ต้องใช้เท่านั้น (ไม่มีหน้าเว็บ) — package.json ของ frontend ติดไปด้วยเพื่อให้ lockfile ตรงกับ workspace
+      - name: Prepare backend bundle
+        run: |
+          mkdir -p bundle/apps/backend bundle/apps/frontend bundle/packages/shared
+          cp package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs bundle/
+          cp -r apps/backend/dist apps/backend/prisma apps/backend/scripts apps/backend/package.json apps/backend/prisma.config.ts bundle/apps/backend/
+          cp apps/frontend/package.json bundle/apps/frontend/
+          cp -r packages/shared/dist packages/shared/package.json bundle/packages/shared/
+
+      - name: Connect Tailscale
+        uses: tailscale/github-action@4e4c49acaa9818630ce0bd7a564372c17e33fb4d # v2
+        with:
+          authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+
+      # ใส่ secret SERVER_SSH_KNOWN_HOSTS (ผลของ `ssh-keyscan <host>` ที่ตรวจแล้วว่าเป็นเครื่องจริง) เพื่อให้เช็ค host key เต็มรูปแบบ
+      # ไม่มี verified host key = หยุด deploy
+      - name: Setup SSH Key
         env:
-            SSH_TARGET: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.SERVER_SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          test -n "$KNOWN_HOSTS" || { echo "::error::SERVER_SSH_KNOWN_HOSTS is required"; exit 1; }
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          echo "SSH_OPTS=-o StrictHostKeyChecking=yes" >> "$GITHUB_ENV"
 
-        steps:
-            - name: Checkout Code
-              uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # สำรองเวอร์ชันที่รันอยู่ไว้ที่ BotNotStack-prev ก่อนอัปโหลด (ไม่รวม node_modules / log / .env)
+      # ย้อนกลับเอง: rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' ../BotNotStack-prev/ ./
+      #   แล้ว pnpm --filter '@notstack/backend...' install --frozen-lockfile --prod && pm2 restart BotNotStack
+      #   (migration ที่รันไปแล้วไม่ถูกย้อน — migration ของ repo นี้เป็นแบบเพิ่มอย่างเดียว เวอร์ชันเก่าจึงยังรันได้)
+      - name: Backup current release
+        run: |
+          ssh $SSH_OPTS "$SSH_TARGET" "
+            set -e
+            cd /home/arlifzs
+            if [ -d BotNotStack ]; then
+              rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' BotNotStack/ BotNotStack-prev/
+            fi
+          "
 
-            - name: Setup pnpm
-              uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - name: Upload (rsync)
+        run: |
+          echo "กำลังอัปโหลดไฟล์ไปยัง Server..."
+          # --delete ลบไฟล์ของเวอร์ชันก่อนที่ไม่ได้ใช้แล้ว — ยกเว้นไฟล์บนเซิร์ฟเวอร์ที่ต้องเก็บไว้
+          # (.env, log, node_modules, ข้อมูล SQLite เดิม, Prisma client ที่ generate ตอนติดตั้ง)
+          rsync -avz -e "ssh $SSH_OPTS" \
+            --exclude '.env*' \
+            --exclude 'node_modules' \
+            --exclude '/logs' \
+            --exclude '/levels*.json' \
+            --exclude '/database.sqlite' \
+            --exclude '/prbot' \
+            --exclude 'apps/backend/src/generated' \
+            --delete bundle/ "$SSH_TARGET":/home/arlifzs/BotNotStack/
 
-            - name: Setup Node.js
-              uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - name: Install, Migrate, Register Commands & Restart
+        run: |
+          ssh $SSH_OPTS "$SSH_TARGET" "
+            set -e
+            source ~/.bashrc
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
+            export PATH=\"\$PATH:\$HOME/.local/bin\"
 
-            - name: Build backend
-              run: |
-                  pnpm install --frozen-lockfile
-                  pnpm turbo run build --filter=@notstack/backend...
+            cd /home/arlifzs/BotNotStack
+            command -v pnpm >/dev/null || corepack enable pnpm || npm install -g pnpm@10.6.5
 
-            # ไฟล์ที่เซิร์ฟเวอร์ต้องใช้เท่านั้น (ไม่มีหน้าเว็บ) — package.json ของ frontend ติดไปด้วยเพื่อให้ lockfile ตรงกับ workspace
-            - name: Prepare backend bundle
-              run: |
-                  mkdir -p bundle/apps/backend bundle/apps/frontend bundle/packages/shared
-                  cp package.json pnpm-lock.yaml pnpm-workspace.yaml ecosystem.config.cjs bundle/
-                  cp -r apps/backend/dist apps/backend/prisma apps/backend/scripts apps/backend/package.json apps/backend/prisma.config.ts bundle/apps/backend/
-                  cp apps/frontend/package.json bundle/apps/frontend/
-                  cp -r packages/shared/dist packages/shared/package.json bundle/packages/shared/
+            echo 'Installing dependencies...'
+            pnpm --filter '@notstack/backend...' install --frozen-lockfile --prod
 
-            - name: Connect Tailscale
-              uses: tailscale/github-action@4e4c49acaa9818630ce0bd7a564372c17e33fb4d # v2
-              with:
-                  authkey: ${{ secrets.TAILSCALE_AUTHKEY }}
+            echo 'Applying Prisma migrations...'
+            pnpm db:migrate
 
-            # ใส่ secret SERVER_SSH_KNOWN_HOSTS (ผลของ `ssh-keyscan <host>` ที่ตรวจแล้วว่าเป็นเครื่องจริง) เพื่อให้เช็ค host key เต็มรูปแบบ
-            # ไม่มี verified host key = หยุด deploy
-            - name: Setup SSH Key
-              env:
-                  SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
-                  KNOWN_HOSTS: ${{ secrets.SERVER_SSH_KNOWN_HOSTS }}
-              run: |
-                  mkdir -p ~/.ssh
-                  printf '%s\n' "$SSH_KEY" > ~/.ssh/id_rsa
-                  chmod 600 ~/.ssh/id_rsa
-                  test -n "$KNOWN_HOSTS" || { echo "::error::SERVER_SSH_KNOWN_HOSTS is required"; exit 1; }
-                  printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-                  echo "SSH_OPTS=-o StrictHostKeyChecking=yes" >> "$GITHUB_ENV"
+            # ลงทะเบียนคำสั่ง / ให้ตรงกับโค้ดเวอร์ชันนี้ (ใช้ TOKEN จาก .env บนเซิร์ฟเวอร์) — ไม่สำเร็จก็ deploy ต่อ แค่คำสั่งยังเป็นแบบเดิม
+            echo 'Registering slash commands...'
+            pnpm discord:deploy-commands || echo 'WARNING: ลงทะเบียนคำสั่ง / ไม่สำเร็จ — คำสั่งใน Discord ยังเป็นเวอร์ชันก่อน'
 
-            # สำรองเวอร์ชันที่รันอยู่ไว้ที่ BotNotStack-prev ก่อนอัปโหลด (ไม่รวม node_modules / log / .env)
-            # ย้อนกลับเอง: rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' ../BotNotStack-prev/ ./
-            #   แล้ว pnpm --filter '@notstack/backend...' install --frozen-lockfile --prod && pm2 restart BotNotStack
-            #   (migration ที่รันไปแล้วไม่ถูกย้อน — migration ของ repo นี้เป็นแบบเพิ่มอย่างเดียว เวอร์ชันเก่าจึงยังรันได้)
-            - name: Backup current release
-              run: |
-                  ssh $SSH_OPTS "$SSH_TARGET" "
-                    set -e
-                    cd /home/arlifzs
-                    if [ -d BotNotStack ]; then
-                      rsync -a --delete --exclude node_modules --exclude '/logs' --exclude '.env*' BotNotStack/ BotNotStack-prev/
-                    fi
-                  "
+            # บอท Discord รันได้ทีละโปรเซสเดียว (ถ้ารัน 2 ตัวพร้อมกัน ทุก event จะถูกทำซ้ำ) จึงเป็นการรีสตาร์ท ไม่ใช่ zero-downtime
+            echo 'Restarting PM2 process...'
+            pm2 startOrReload ecosystem.config.cjs --update-env
+            pm2 save
+          "
 
-            - name: Upload (rsync)
-              run: |
-                  echo "กำลังอัปโหลดไฟล์ไปยัง Server..."
-                  # --delete ลบไฟล์ของเวอร์ชันก่อนที่ไม่ได้ใช้แล้ว — ยกเว้นไฟล์บนเซิร์ฟเวอร์ที่ต้องเก็บไว้
-                  # (.env, log, node_modules, ข้อมูล SQLite เดิม, Prisma client ที่ generate ตอนติดตั้ง)
-                  rsync -avz -e "ssh $SSH_OPTS" \
-                    --exclude '.env*' \
-                    --exclude 'node_modules' \
-                    --exclude '/logs' \
-                    --exclude '/levels*.json' \
-                    --exclude '/database.sqlite' \
-                    --exclude '/prbot' \
-                    --exclude 'apps/backend/src/generated' \
-                    --delete bundle/ "$SSH_TARGET":/home/arlifzs/BotNotStack/
-
-            - name: Install, Migrate, Register Commands & Restart
-              run: |
-                  ssh $SSH_OPTS "$SSH_TARGET" "
-                    set -e
-                    source ~/.bashrc
-                    export NVM_DIR=\"\$HOME/.nvm\"
-                    [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
-                    export PATH=\"\$PATH:\$HOME/.local/bin\"
-
-                    cd /home/arlifzs/BotNotStack
-                    command -v pnpm >/dev/null || corepack enable pnpm || npm install -g pnpm@10.6.5
-
-                    echo 'Installing dependencies...'
-                    pnpm --filter '@notstack/backend...' install --frozen-lockfile --prod
-
-                    echo 'Applying Prisma migrations...'
-                    pnpm db:migrate
-
-                    # ลงทะเบียนคำสั่ง / ให้ตรงกับโค้ดเวอร์ชันนี้ (ใช้ TOKEN จาก .env บนเซิร์ฟเวอร์) — ไม่สำเร็จก็ deploy ต่อ แค่คำสั่งยังเป็นแบบเดิม
-                    echo 'Registering slash commands...'
-                    pnpm discord:deploy-commands || echo 'WARNING: ลงทะเบียนคำสั่ง / ไม่สำเร็จ — คำสั่งใน Discord ยังเป็นเวอร์ชันก่อน'
-
-                    # บอท Discord รันได้ทีละโปรเซสเดียว (ถ้ารัน 2 ตัวพร้อมกัน ทุก event จะถูกทำซ้ำ) จึงเป็นการรีสตาร์ท ไม่ใช่ zero-downtime
-                    echo 'Restarting PM2 process...'
-                    pm2 startOrReload ecosystem.config.cjs --update-env
-                    pm2 save
-                  "
-
-            - name: Health check
-              run: |
-                  ssh $SSH_OPTS "$SSH_TARGET" "
-                    source ~/.bashrc
-                    export NVM_DIR=\"\$HOME/.nvm\"
-                    [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
-                    cd /home/arlifzs/BotNotStack
-                    PORT=\$(grep -E '^PORT=[0-9]+' .env 2>/dev/null | tail -1 | cut -d= -f2)
-                    URL=\"http://127.0.0.1:\${PORT:-3035}/api/health\"
-                    for i in \$(seq 1 30); do
-                      if curl -fsS --max-time 5 \"\$URL\"; then echo; echo 'Health check ผ่าน'; exit 0; fi
-                      sleep 2
-                    done
-                    echo 'Health check ไม่ผ่านภายใน 60 วินาที — log ล่าสุด:'
-                    pm2 logs BotNotStack --lines 80 --nostream || true
-                    echo 'ย้อนกลับเวอร์ชันก่อนได้จาก /home/arlifzs/BotNotStack-prev (ดูวิธีในไฟล์ deploy.yml)'
-                    exit 1
-                  "
-                  echo "Deploy backend สำเร็จแล้ว! 🚀"
+      - name: Health check
+        run: |
+          ssh $SSH_OPTS "$SSH_TARGET" "
+            source ~/.bashrc
+            export NVM_DIR=\"\$HOME/.nvm\"
+            [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"
+            cd /home/arlifzs/BotNotStack
+            PORT=\$(grep -E '^PORT=[0-9]+' .env 2>/dev/null | tail -1 | cut -d= -f2)
+            URL=\"http://127.0.0.1:\${PORT:-3035}/api/health\"
+            for i in \$(seq 1 30); do
+              if curl -fsS --max-time 5 \"\$URL\"; then echo; echo 'Health check ผ่าน'; exit 0; fi
+              sleep 2
+            done
+            echo 'Health check ไม่ผ่านภายใน 60 วินาที — log ล่าสุด:'
+            pm2 logs BotNotStack --lines 80 --nostream || true
+            echo 'ย้อนกลับเวอร์ชันก่อนได้จาก /home/arlifzs/BotNotStack-prev (ดูวิธีในไฟล์ deploy.yml)'
+            exit 1
+          "
+          echo "Deploy backend สำเร็จแล้ว! 🚀"

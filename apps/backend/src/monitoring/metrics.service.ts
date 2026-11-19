@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +8,6 @@ import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { trimChar } from '@notstack/shared/text';
 
 @Injectable()
 export class MetricsService {

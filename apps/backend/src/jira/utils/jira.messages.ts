@@ -1,5 +1,4 @@
-import { trimChar } from '@notstack/shared/text';
-import { JIRA_LIMITS, type JiraIssueTypeOption, type JiraPanelAppearance } from '@notstack/shared';
+import { JIRA_LIMITS, trimChar, type JiraIssueTypeOption, type JiraPanelAppearance } from '@notstack/shared';
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -189,7 +188,12 @@ const linkButton = (url: string) => new ButtonBuilder().setStyle(ButtonStyle.Lin
 
 // ส่งในห้องส่วนตัวหลังสร้าง card สำเร็จ
 // autoCloseAt = เวลาที่ห้องจะถูกปิดอัตโนมัติ (null = ไม่ปิดเอง)
-export function cardCreatedMessage(card: CardInfo, description: string, images: CardImages = NO_IMAGES, autoCloseAt: Date | null = null): MessagePayload {
+export function cardCreatedMessage(
+    card: CardInfo,
+    description: string,
+    images: CardImages = NO_IMAGES,
+    autoCloseAt: Date | null = null,
+): MessagePayload {
     const embed = new EmbedBuilder()
         .setColor(color(images.failed.length ? WARNING_ORANGE : SUCCESS_GREEN))
         .setAuthor({ name: `✅ สร้าง card แล้ว · ${card.issueKey}` })
