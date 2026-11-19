@@ -6,13 +6,14 @@ import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { LandingGlobe } from '@/features/live/live-globe';
 import { CommandSearch } from './command-search';
+import { LoyKrathong, LoyKrathongRaft } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
 import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
-import { StatusLine, SystemStatus } from './system-status';
+import { SystemStatus } from './system-status';
 import './landing.css';
 import crewGold from './mascot/crew-gold.webp';
 import crewNavy from './mascot/crew-navy.webp';
@@ -410,13 +411,11 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                 className="landing-stage-rings absolute bottom-[-40%] left-1/2 -z-10 aspect-square w-[170vw] -translate-x-1/2 md:w-[min(110vw,90rem)]"
             />
             <div aria-hidden className="landing-stage-floor absolute -inset-x-1/2 bottom-0 -z-10 h-[45%]" />
-
+            {/* 🪷 ชั่วคราว: ลบได้หลังเทศกาล */}
+            <LoyKrathong />
             <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
-                <Reveal className="flex justify-center">
-                    <StatusLine />
-                </Reveal>
                 <Reveal delay={100}>
-                    <h1 className="mt-4 text-[clamp(2.2rem,5.5vw,3.75rem)] leading-[1.1] font-black tracking-tight">
+                    <h1 className="text-[clamp(2.2rem,5.5vw,3.75rem)] leading-[1.1] font-black tracking-tight">
                         บอท Discord <span className="whitespace-nowrap text-[var(--ld-blue-ink)]">ที่ตั้งค่าบนเว็บ</span>
                     </h1>
                 </Reveal>
@@ -430,7 +429,6 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                     <DashboardLink className="h-12 px-6" />
                 </Reveal>
             </div>
-
             {/* เวที: สามคนยืนด้วยกัน + การ์ดผลงานลอยรอบๆ */}
             <div className="relative mx-auto mt-2 flex min-h-[18rem] w-full max-w-6xl flex-1 items-end justify-center px-4 md:min-h-[30rem]">
                 <p
@@ -445,24 +443,27 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                     className="absolute bottom-0 left-1/2 -z-10 h-20 w-[min(92%,46rem)] -translate-x-1/2 rounded-[50%] bg-[var(--ld-blue)]/50 blur-2xl"
                 />
 
-                <div className="flex items-end">
-                    {HERO_CREW.map((crew) => (
-                        <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
-                            {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
-                            <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
-                                <Mascot
-                                    src={crew.src}
-                                    motion="none"
-                                    eager
-                                    className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
-                                        crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
-                                    }`}
-                                />
-                                <HeldCard {...crew.card} />
-                            </div>
-                        </Reveal>
-                    ))}
-                </div>
+                {/* 🪷 ชั่วคราว: ช่วงลอยกระทงให้มาสคอตยืนบนกระทงยักษ์ — หลังเทศกาลถอด wrapper นี้ออก */}
+                <LoyKrathongRaft>
+                    <div className="flex items-end">
+                        {HERO_CREW.map((crew) => (
+                            <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
+                                {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
+                                <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
+                                    <Mascot
+                                        src={crew.src}
+                                        motion="none"
+                                        eager
+                                        className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
+                                            crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
+                                        }`}
+                                    />
+                                    <HeldCard {...crew.card} />
+                                </div>
+                            </Reveal>
+                        ))}
+                    </div>
+                </LoyKrathongRaft>
             </div>
         </section>
     );
