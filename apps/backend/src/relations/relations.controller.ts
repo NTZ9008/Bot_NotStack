@@ -54,7 +54,9 @@ export class RelationsController {
     @Get('links/:a/:b')
     link(@GuildId() guildId: string, @Param('a') a: string, @Param('b') b: string, @Query() query: RelationBoardQueryDto): Promise<RelationLinkDetail> {
         assertUserId(a, b);
-        return this.links.get(`${guildId}:${[a, b].sort().join(':')}:${query.days}`, () => this.relations.linkDetail(guildId, a, b, query.days));
+        return this.links.get(`${guildId}:${[a, b].sort((x, y) => x.localeCompare(y)).join(':')}:${query.days}`, () =>
+            this.relations.linkDetail(guildId, a, b, query.days),
+        );
     }
 
     @Get('people/:userId/history')

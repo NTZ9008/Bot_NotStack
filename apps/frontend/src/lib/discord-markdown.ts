@@ -47,7 +47,7 @@ export function renderDiscordMarkdown(text: string): string {
 
     // ลิงก์ — รับเฉพาะ http/https กัน javascript: ที่ผู้ใช้อาจพิมพ์เข้ามา
     html = html.replace(
-        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        /\[([^[\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
         (_, label: string, url: string) => `<a class="dc-link" href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`,
     );
     html = html.replace(

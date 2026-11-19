@@ -50,19 +50,9 @@ export interface BrowserDiscoveryOptions {
 interface PuppeteerBrowsersModule {
     Browser: { CHROMEHEADLESSSHELL: string; CHROME: string };
     detectBrowserPlatform: () => string | undefined;
-    computeExecutablePath: (opts: {
-        cacheDir: string | null;
-        browser: string;
-        buildId: string;
-        platform?: string;
-    }) => string;
+    computeExecutablePath: (opts: { cacheDir: string | null; browser: string; buildId: string; platform?: string }) => string;
     resolveBuildId: (browser: string, platform: string, tag: string) => Promise<string>;
-    install: (opts: {
-        cacheDir: string;
-        browser: string;
-        buildId: string;
-        platform?: string;
-    }) => Promise<{ executablePath: string }>;
+    install: (opts: { cacheDir: string; browser: string; buildId: string; platform?: string }) => Promise<{ executablePath: string }>;
 }
 
 /** ตรวจสอบว่าไฟล์มีอยู่จริงและสามารถรันได้บนระบบปฏิบัติการปัจจุบัน */
@@ -163,12 +153,7 @@ export function findBrowserExecutable(options: BrowserDiscoveryOptions = {}): st
     const includeSystemPaths = options.includeSystemPaths ?? true;
     const homeDir = options.homeDir ?? os.homedir();
 
-    const envKeys = [
-        'PUPPETEER_EXECUTABLE_PATH',
-        'CHROME_PATH',
-        'CHROMIUM_PATH',
-        'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH',
-    ] as const;
+    const envKeys = ['PUPPETEER_EXECUTABLE_PATH', 'CHROME_PATH', 'CHROMIUM_PATH', 'PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH'] as const;
 
     for (const key of envKeys) {
         const configured = cleanEnvPath(env[key]);
@@ -189,15 +174,7 @@ export function findBrowserExecutable(options: BrowserDiscoveryOptions = {}): st
         const binNames =
             platform === 'win32'
                 ? ['chrome.exe', 'msedge.exe']
-                : [
-                      'google-chrome',
-                      'google-chrome-stable',
-                      'chromium',
-                      'chromium-browser',
-                      'microsoft-edge',
-                      'microsoft-edge-stable',
-                      'chrome-headless-shell',
-                  ];
+                : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser', 'microsoft-edge', 'microsoft-edge-stable', 'chrome-headless-shell'];
 
         for (const dir of pathEnv.split(pathSep)) {
             const trimmedDir = dir.trim();
@@ -217,10 +194,7 @@ export function findBrowserExecutable(options: BrowserDiscoveryOptions = {}): st
         includeSystemPaths && platform === 'linux' && homeDir !== '/root' ? '/root/.cache/puppeteer' : '',
     ].filter((dir, index, arr): dir is string => Boolean(dir) && arr.indexOf(dir) === index);
 
-    const cacheBinaryNames =
-        platform === 'win32'
-            ? ['chrome-headless-shell.exe', 'chrome.exe']
-            : ['chrome-headless-shell', 'headless_shell', 'chrome'];
+    const cacheBinaryNames = platform === 'win32' ? ['chrome-headless-shell.exe', 'chrome.exe'] : ['chrome-headless-shell', 'headless_shell', 'chrome'];
 
     for (const rootDir of cacheRoots) {
         const cached = findBinaryInCacheDir(rootDir, cacheBinaryNames);
@@ -313,9 +287,7 @@ async function ensureBrowserExecutable(): Promise<string> {
 
     const skipAutoDownload = ['1', 'true', 'yes'].includes((process.env.SKIP_AUTO_BROWSER_DOWNLOAD ?? '').trim().toLowerCase());
     if (skipAutoDownload) {
-        throw new Error(
-            'ไม่พบเบราว์เซอร์ Chromium/Chrome/Edge สำหรับสร้างไฟล์ PDF กรุณากำหนดตัวแปร PUPPETEER_EXECUTABLE_PATH',
-        );
+        throw new Error('ไม่พบเบราว์เซอร์ Chromium/Chrome/Edge สำหรับสร้างไฟล์ PDF กรุณากำหนดตัวแปร PUPPETEER_EXECUTABLE_PATH');
     }
 
     try {
@@ -375,13 +347,7 @@ async function getPdfBrowser(): Promise<Browser> {
             const browser = await puppeteer.launch({
                 executablePath,
                 headless: true,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-gpu',
-                    '--font-render-hinting=none',
-                ],
+                args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--font-render-hinting=none'],
             });
             browser.once('disconnected', () => {
                 sharedBrowserPromise = null;
@@ -414,27 +380,28 @@ export async function closePdfBrowser(): Promise<void> {
 }
 
 function escapeHtml(text: string): string {
-    return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+    return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function escapeCssString(text: string): string {
-    return text.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/[\r\n]+/g, ' ');
+    return text
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/[\r\n]+/g, ' ');
 }
 
 /** ตัดอีโมจิออกจากชื่อห้องเฉพาะในรายงาน PDF เพื่อความเป็นทางการของเอกสาร */
 function stripEmojiForPdf(name: string): string {
-    const cleaned = name.replace(/\p{Extended_Pictographic}|\uFE0F/gu, '').replace(/\s+/g, ' ').trim();
+    const cleaned = name
+        .replace(/\p{Extended_Pictographic}|\uFE0F/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
     return cleaned || name.trim();
 }
 
 /** แปลงลิงก์ Markdown [text](url) ให้เหลือเฉพาะข้อความธรรมดาในตาราง Log */
 function stripMarkdownLinks(text: string): string {
-    return text.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^)\s]+|[^)\s]+)\)/g, '$1');
+    return text.replace(/\[([^[\]\n]+)\]\([^)\s]+\)/g, '$1');
 }
 
 /** ปรับชื่อเหตุการณ์ใน PDF ให้กระชับตรงบริบทรายงานทางการ */
@@ -524,8 +491,7 @@ function buildVoiceMinutesTimelineSvg(points: CustomSummaryResponse['timeline'])
     const totalVoice = values.reduce((sum, v) => sum + v, 0);
     const { niceMax, ticks } = computeNiceScale(maxVal, 4);
 
-    const xAt = (idx: number) =>
-        points.length <= 1 ? padL + plotW / 2 : padL + (idx / (points.length - 1)) * plotW;
+    const xAt = (idx: number) => (points.length <= 1 ? padL + plotW / 2 : padL + (idx / (points.length - 1)) * plotW);
     const yAt = (val: number) => padT + plotH - (val / niceMax) * plotH;
 
     const gridLines = ticks
@@ -550,12 +516,7 @@ function buildVoiceMinutesTimelineSvg(points: CustomSummaryResponse['timeline'])
 
     const markers =
         coords.length <= 35
-            ? coords
-                  .map(
-                      (c) =>
-                          `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2.6" fill="#1E3A5F" stroke="#FFFFFF" stroke-width="0.9" />`,
-                  )
-                  .join('')
+            ? coords.map((c) => `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="2.6" fill="#1E3A5F" stroke="#FFFFFF" stroke-width="0.9" />`).join('')
             : '';
 
     const labelStride = Math.max(1, Math.ceil(points.length / 8));
@@ -584,10 +545,7 @@ function buildVoiceMinutesTimelineSvg(points: CustomSummaryResponse['timeline'])
     </div>`;
 }
 
-function buildEventCountsTimelineSvg(
-    points: CustomSummaryResponse['timeline'],
-    enabled: Set<string>,
-): string {
+function buildEventCountsTimelineSvg(points: CustomSummaryResponse['timeline'], enabled: Set<string>): string {
     const seriesList: Array<{
         key: string;
         label: string;
@@ -647,8 +605,7 @@ function buildEventCountsTimelineSvg(
     }
     const { niceMax, ticks } = computeNiceScale(maxVal, 4);
 
-    const xAt = (idx: number) =>
-        points.length <= 1 ? padL + plotW / 2 : padL + (idx / (points.length - 1)) * plotW;
+    const xAt = (idx: number) => (points.length <= 1 ? padL + plotW / 2 : padL + (idx / (points.length - 1)) * plotW);
     const yAt = (val: number) => padT + plotH - (val / niceMax) * plotH;
 
     const gridLines = ticks
@@ -976,11 +933,7 @@ function renderChannelBreakdownSection(summary: CustomSummaryResponse, detailMod
     </section>`;
 }
 
-function renderContributorsSection(
-    summary: CustomSummaryResponse,
-    detailMode: CustomSummaryDetailMode,
-    maskIds: boolean,
-): string {
+function renderContributorsSection(summary: CustomSummaryResponse, detailMode: CustomSummaryDetailMode, maskIds: boolean): string {
     const maxRows = detailMode === 'detailed' ? summary.topContributors.length : Math.min(20, summary.topContributors.length);
     const rows = summary.topContributors.slice(0, maxRows);
 
@@ -1123,10 +1076,7 @@ function buildReportHtml(summary: CustomSummaryResponse, opts: RenderCustomSumma
           ? `ค้นหาผู้ใช้: ${summary.filters.userQuery}`
           : 'สมาชิกทุกคน';
 
-    const dataModeLabel =
-        opts.detailMode === 'detailed'
-            ? 'รายงานฉบับสมบูรณ์ (รวมภาคผนวกบันทึกกิจกรรมรายบรรทัด)'
-            : 'รายงานสรุปสำหรับผู้บริหาร';
+    const dataModeLabel = opts.detailMode === 'detailed' ? 'รายงานฉบับสมบูรณ์ (รวมภาคผนวกบันทึกกิจกรรมรายบรรทัด)' : 'รายงานสรุปสำหรับผู้บริหาร';
 
     const footerLeft = `${summary.guild.name} · รายงานสรุปกิจกรรมเซิร์ฟเวอร์ · พิมพ์เมื่อ ${printedLabel}`;
 
@@ -1470,10 +1420,7 @@ code {
  * สร้างไฟล์ PDF รายงานธุรกิจภาษาไทยขนาด A4 ด้วย headless Chromium (page.pdf)
  * พร้อมฝังฟอนต์ Sarabun และจัดวางข้อความภาษาไทยอย่างสมบูรณ์เพื่อให้สระ/วรรณยุกต์ไม่ตกหล่นเวลาเลือกหรือคัดลอกข้อความ
  */
-export async function renderCustomSummaryPdf(
-    summary: CustomSummaryResponse,
-    opts: RenderCustomSummaryPdfOptions,
-): Promise<Buffer> {
+export async function renderCustomSummaryPdf(summary: CustomSummaryResponse, opts: RenderCustomSummaryPdfOptions): Promise<Buffer> {
     const printedAt = opts.printedAt ?? new Date();
     const html = buildReportHtml(summary, opts, printedAt);
     const browser = await getPdfBrowser();

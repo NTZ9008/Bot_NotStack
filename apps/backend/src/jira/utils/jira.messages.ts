@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { JIRA_LIMITS, type JiraIssueTypeOption, type JiraPanelAppearance } from '@notstack/shared';
 import {
     ActionRowBuilder,
@@ -43,18 +44,14 @@ export function parseJiraCustomId(customId: string): JiraCustomId | null {
     return { action: match[1] === 'close-yes' ? 'closeConfirm' : (match[1] as 'form' | 'modal' | 'close'), ticketId };
 }
 
-const color = (hex: string) => parseInt(hex.slice(1), 16);
+const color = (hex: string) => Number.parseInt(hex.slice(1), 16);
 const JIRA_BLUE = '#2684FF';
 const SUCCESS_GREEN = '#36B37E';
 const WARNING_ORANGE = '#FFAB00';
 
 // ชื่อห้อง: jira-<ชื่อผู้ใช้>-<เลข ticket> (ชื่อที่เป็นภาษาไทย/อีโมจิล้วนจะเหลือแค่ jira-<เลข>)
 export function ticketChannelName(userName: string, ticketId: number): string {
-    const slug = userName
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 40);
+    const slug = trimChar(userName.toLowerCase().replace(/[^a-z0-9]+/g, '-'), '-').slice(0, 40);
     return slug ? `jira-${slug}-${ticketId}` : `jira-${ticketId}`;
 }
 
@@ -186,16 +183,13 @@ export interface CardImages {
     failed: string[];
 }
 
+const NO_IMAGES: CardImages = { files: [], failed: [] };
+
 const linkButton = (url: string) => new ButtonBuilder().setStyle(ButtonStyle.Link).setURL(url).setLabel('เปิดใน Jira').setEmoji('🔗');
 
 // ส่งในห้องส่วนตัวหลังสร้าง card สำเร็จ
 // autoCloseAt = เวลาที่ห้องจะถูกปิดอัตโนมัติ (null = ไม่ปิดเอง)
-export function cardCreatedMessage(
-    card: CardInfo,
-    description: string,
-    images: CardImages = { files: [], failed: [] },
-    autoCloseAt: Date | null = null,
-): MessagePayload {
+export function cardCreatedMessage(card: CardInfo, description: string, images: CardImages = NO_IMAGES, autoCloseAt: Date | null = null): MessagePayload {
     const embed = new EmbedBuilder()
         .setColor(color(images.failed.length ? WARNING_ORANGE : SUCCESS_GREEN))
         .setAuthor({ name: `✅ สร้าง card แล้ว · ${card.issueKey}` })

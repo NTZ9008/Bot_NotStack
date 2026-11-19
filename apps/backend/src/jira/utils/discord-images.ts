@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { readBoundedResponse } from '../../common/utils/safe-image';
 import { JIRA_LIMITS } from '@notstack/shared';
 import type { UploadFile } from '../clients/jira.client';
@@ -30,11 +31,7 @@ function safeName(name: string, index: number, used: Set<string>): string {
                   .slice(0, 8)
                   .toLowerCase()
             : '';
-    const base =
-        (dot > 0 ? name.slice(0, dot) : name)
-            .replace(/[^\w-]+/g, '_')
-            .replace(/^_+|_+$/g, '')
-            .slice(0, 60) || `image-${index + 1}`;
+    const base = trimChar((dot > 0 ? name.slice(0, dot) : name).replace(/[^\w-]+/g, '_'), '_').slice(0, 60) || `image-${index + 1}`;
     let candidate = ext ? `${base}.${ext}` : base;
     for (let n = 2; used.has(candidate.toLowerCase()); n++) candidate = ext ? `${base}-${n}.${ext}` : `${base}-${n}`;
     used.add(candidate.toLowerCase());

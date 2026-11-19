@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 // ==========================================
 // 🌐 ALLOWED ORIGINS — หน้าเว็บที่อยู่คนละ origin กับ API (ค่าจาก CORS_ORIGINS / DASHBOARD_URL)
 // เขียนได้หลายแบบ:
@@ -28,11 +29,14 @@ export interface AllowedOrigins {
 
 function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatcher: (host: string) => boolean } {
     // ตัดเครื่องหมายคำพูดรอบข้าง, ช่องว่าง และ trailing slash
-    const trimmed = pattern
-        .trim()
-        .replace(/^["']|["']$/g, '')
-        .trim()
-        .replace(/\/+$/, '');
+    const trimmed = trimChar(
+        pattern
+            .trim()
+            .replace(/^["']|["']$/g, '')
+            .trim(),
+        '/',
+        'end',
+    );
     if (!trimmed) {
         return { cors: '', hostMatcher: () => false };
     }

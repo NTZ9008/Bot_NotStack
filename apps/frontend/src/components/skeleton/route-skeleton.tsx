@@ -15,6 +15,7 @@ import {
     VoiceGuardPageSkeleton,
 } from './guild-pages';
 import { LevelsPageSkeleton } from './levels';
+import { trimChar } from '@notstack/shared/text';
 
 // หน้าในเซิร์ฟเวอร์ (/servers/:guildId/<หน้า>) → โครงร่างของหน้านั้น
 const GUILD_PAGES: Record<string, ComponentType> = {
@@ -47,7 +48,7 @@ const APP_PAGES: Record<string, ComponentType> = {
 // อยู่ใน bundle หลักเสมอ จึงขึ้นได้ทันทีแม้โค้ดของหน้านั้นยังโหลดไม่เสร็จ
 // ==========================================
 export function RouteSkeleton() {
-    const pathname = useRouterState({ select: (state) => state.location.pathname.replace(/\/+$/, '') || '/' });
+    const pathname = useRouterState({ select: (state) => trimChar(state.location.pathname, '/', 'end') || '/' });
     const queryClient = useQueryClient();
 
     const guildPage = pathname.match(/^\/servers\/([^/]+)\/([^/]+)/);

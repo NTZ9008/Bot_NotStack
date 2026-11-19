@@ -1,21 +1,9 @@
-import type {
-    CustomSummaryDetailMode,
-    CustomSummaryPdfRequestInput,
-    CustomSummaryPdfTheme,
-    CustomSummaryResponse,
-} from '@notstack/shared';
+import type { CustomSummaryDetailMode, CustomSummaryPdfRequestInput, CustomSummaryPdfTheme, CustomSummaryResponse } from '@notstack/shared';
 import { CheckCircle2, Download, FileText, Loader2, Moon, Sun } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { exportCustomSummaryPdf } from '@/api/custom-summary';
 import { Button } from '@/components/ui/button';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { errorMessage } from '@/lib/api';
@@ -130,9 +118,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 onClick={() => setTheme('dark')}
                                 className={cn(
                                     'flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
-                                    theme === 'dark'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
-                                        : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
+                                    theme === 'dark' ? 'border-indigo-500 bg-indigo-600/15' : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
                                 )}
                             >
                                 <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-[#0b0e17] text-indigo-400">
@@ -149,9 +135,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 onClick={() => setTheme('light')}
                                 className={cn(
                                     'flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
-                                    theme === 'light'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
-                                        : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
+                                    theme === 'light' ? 'border-indigo-500 bg-indigo-600/15' : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
                                 )}
                             >
                                 <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-amber-600">
@@ -174,9 +158,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 onClick={() => setDetailMode('executive')}
                                 className={cn(
                                     'rounded-xl border p-3 text-left transition-all',
-                                    detailMode === 'executive'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
-                                        : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
+                                    detailMode === 'executive' ? 'border-indigo-500 bg-indigo-600/15' : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
                                 )}
                             >
                                 <div className="text-xs font-semibold text-slate-100">Executive Summary</div>
@@ -188,9 +170,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 onClick={() => setDetailMode('detailed')}
                                 className={cn(
                                     'rounded-xl border p-3 text-left transition-all',
-                                    detailMode === 'detailed'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
-                                        : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
+                                    detailMode === 'detailed' ? 'border-indigo-500 bg-indigo-600/15' : 'border-[#1e2638] bg-[#0b0e17] hover:border-slate-700',
                                 )}
                             >
                                 <div className="text-xs font-semibold text-slate-100">Full Detailed Report</div>
@@ -202,17 +182,15 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                     </div>
 
                     {/* ตัวเลือกความเป็นส่วนตัวในไฟล์ PDF */}
-                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#1e2638] bg-[#0b0e17] px-3.5 py-2.5 text-xs">
+                    <label
+                        aria-label="ซ่อน Discord User ID และ Server ID ในเอกสาร PDF"
+                        className="flex cursor-pointer items-center justify-between rounded-xl border border-[#1e2638] bg-[#0b0e17] px-3.5 py-2.5 text-xs"
+                    >
                         <div>
                             <div className="font-medium text-slate-200">ซ่อน Discord User ID และ Server ID ในเอกสาร PDF</div>
                             <p className="mt-0.5 text-[11px] text-slate-400">เปิดใช้งานเมื่อต้องการส่งต่อรายงานออกนอกองค์กร (ค่าเริ่มต้น: แสดง ID)</p>
                         </div>
-                        <input
-                            type="checkbox"
-                            checked={maskIds}
-                            onChange={(e) => setMaskIds(e.target.checked)}
-                            className="size-4 accent-indigo-600"
-                        />
+                        <input type="checkbox" checked={maskIds} onChange={(e) => setMaskIds(e.target.checked)} className="size-4 accent-indigo-600" />
                     </label>
 
                     {/* 4. ตัวอย่างหัว-ท้ายหน้ากระดาษ A4 */}
@@ -256,12 +234,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                 </div>
 
                 <DialogFooter className="shrink-0 gap-2 pt-1">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => onOpenChange(false)}
-                        className="text-slate-300 hover:bg-slate-800 hover:text-white"
-                    >
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-slate-300 hover:bg-slate-800 hover:text-white">
                         ปิดหน้าต่าง
                     </Button>
                     <Button

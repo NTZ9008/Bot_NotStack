@@ -156,7 +156,9 @@ export interface XpHistoryPage {
     nextCursor: number | null;
 }
 
-export const xpAtLevel = (level: number, curve: Pick<XpSettings, 'curveBase' | 'curveExponent'> = { curveBase: 100, curveExponent: 2 }): number =>
+const DEFAULT_XP_CURVE = { curveBase: 100, curveExponent: 2 };
+
+export const xpAtLevel = (level: number, curve: Pick<XpSettings, 'curveBase' | 'curveExponent'> = DEFAULT_XP_CURVE): number =>
     Math.ceil(curve.curveBase * Math.pow(Math.max(0, level), curve.curveExponent));
 export const xpForNextLevel = (level: number, curve?: Pick<XpSettings, 'curveBase' | 'curveExponent'>): number => xpAtLevel(level + 1, curve);
 export function levelForXp(xp: number, curve: Pick<XpSettings, 'curveBase' | 'curveExponent'>): number {
@@ -180,11 +182,7 @@ export interface XpContext {
 }
 export function matchingXpRules(settings: XpSettings, ctx: XpContext): XpRule[] {
     const channels = [ctx.channelId, ctx.parentId, ctx.categoryId].filter((id): id is string => Boolean(id));
-    if (
-        !settings.enabled ||
-        channels.some((id) => settings.excludedChannelIds.includes(id)) ||
-        ctx.roleIds.some((id) => settings.excludedRoleIds.includes(id))
-    )
+    if (!settings.enabled || channels.some((id) => settings.excludedChannelIds.includes(id)) || ctx.roleIds.some((id) => settings.excludedRoleIds.includes(id)))
         return [];
     if (ctx.source === 'message' && (ctx.messageLength ?? 0) < settings.messageMinLength) return [];
     if (

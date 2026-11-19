@@ -6,7 +6,9 @@ const root = path.resolve(process.argv[2] ?? 'apps/frontend/dist');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const paths = [...new Set([...html.matchAll(/(?:src|href)="(\/assets\/[^"?]+\.(?:js|css))"/g)].map((match) => match[1]))];
 const resources = paths.map((file) => {
-    const bytes = fs.readFileSync(path.join(root, file));
+    const full = path.join(root, file);
+    if (!full.startsWith(root + path.sep)) throw new Error(`path outside build dir: ${file}`);
+    const bytes = fs.readFileSync(full);
     return { file, bytes: bytes.length, gzip: gzipSync(bytes).length };
 });
 console.log(

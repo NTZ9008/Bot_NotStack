@@ -36,8 +36,8 @@ const VERBS: Record<string, XpCommandAction> = {
 };
 // คำเชื่อมที่ข้ามได้ ("give 500 xp to boat", "ให้ 500 xp แก่ boat")
 const FILLERS = new Set(['to', 'from', 'for', 'of', 'แก่', 'กับ', 'ของ', 'ให้', 'จาก', 'เป็น', 'คุณ', 'ไป']);
-const REASON_RE = /\s+(?:เพราะ(?:ว่า)?|เนื่องจาก|เหตุผล\s*:?|because|reason\s*:?|\/\/)\s*(.+)$/i;
-const ACTIVITY_RE = /^(?:(?:ค้นหา|หา|search|find)\s+)?(?:log|logs|activity|ล็อก|ล็อค|ประวัติ|กิจกรรม)\s+(.+)$/i;
+const REASON_RE = /\s(?:เพราะ(?:ว่า)?|เนื่องจาก|เหตุผล\s*:?|because|reason\s*:?|\/\/)\s*(\S.*)$/i;
+const ACTIVITY_RE = /^(?:(?:ค้นหา|หา|search|find)\s+)?(?:log|logs|activity|ล็อก|ล็อค|ประวัติ|กิจกรรม)\s+(\S.*)$/i;
 const AMOUNT_RE = /^([+-])?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)(k|m|พัน|หมื่น|แสน|ล้าน)?(?:xp|exp)?$/i;
 const MULTIPLIER: Record<string, number> = { k: 1e3, m: 1e6, พัน: 1e3, หมื่น: 1e4, แสน: 1e5, ล้าน: 1e6 };
 

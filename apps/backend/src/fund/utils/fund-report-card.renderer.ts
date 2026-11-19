@@ -34,7 +34,9 @@ function truncateText(ctx: SKRSContext2D, text: string, maxWidth: number): strin
 }
 
 function plainAmount(value: number): string {
-    return formatBaht(value).replace(/\s*บาท\s*$/, '');
+    return formatBaht(value)
+        .replace(/บาท\s*$/, '')
+        .trimEnd();
 }
 
 // นับถอยหลังวันครบกำหนด (เทียบวันตามเวลาไทย)

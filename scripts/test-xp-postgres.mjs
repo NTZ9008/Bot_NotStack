@@ -2,9 +2,11 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
-const dir = mkdtempSync('/tmp/notstack-xp-test-');
+const dir = mkdtempSync(join(tmpdir(), 'notstack-xp-test-'));
 const server = createServer();
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const port = server.address().port;
