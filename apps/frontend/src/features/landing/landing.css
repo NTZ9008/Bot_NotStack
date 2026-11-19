@@ -1,6 +1,13 @@
 /* ==========================================
-   🎬 สไตล์เฉพาะหน้า landing — ตัวหนังสือวิ่ง / ตัวอักษรเส้นขอบ / เม็ด noise
+   🎬 สไตล์เฉพาะหน้า landing — โทนกรมท่าเข้ม + น้ำเงินไฟฟ้า, แผ่นสีเฉียง, ตัวหนังสือลายน้ำ, ตัวหนังสือวิ่ง
    ========================================== */
+
+.landing {
+    --ld-bg: #060818;
+    --ld-card: #0b1030;
+    --ld-blue: #2a45ff;
+    --ld-blue-ink: #8a9bff; /* น้ำเงินอ่อน สำหรับตัวหนังสือบนพื้นเข้ม (คอนทราสต์พอ) */
+}
 
 @keyframes landing-marquee {
     from {
@@ -20,17 +27,203 @@
 }
 
 /* ตัวอักษรกลวง (เห็นแค่เส้นขอบ) — วาดเส้นก่อนแล้วเทสีพื้นทับ (paint-order)
-   เส้นซ้อนข้างในตัวอักษรของ variable font จะได้ถูกปิดไว้ เหลือแค่ขอบนอก ; เส้นจึงต้องหนาเป็น 2 เท่า */
-.landing-outline {
-    color: #05060a;
+   เส้นซ้อนข้างในตัวอักษรของ variable font จะได้ถูกปิดไว้ เหลือแค่ขอบนอก ; เส้นจึงต้องหนาเป็น 2 เท่า
+   สีเติมต้องตรงกับพื้นหลัง: ตั้ง --outline-fill บน element ที่อยู่บนพื้นสีอื่น */
+.landing-outline,
+.landing-watermark {
+    color: var(--outline-fill, var(--ld-bg));
     paint-order: stroke fill;
+}
+
+.landing-outline {
     -webkit-text-stroke: 3px rgb(255 255 255 / 0.8);
+}
+
+/* ตัวหนังสือลายน้ำตัวโตหลังหัวข้อ section */
+.landing-watermark {
+    -webkit-text-stroke: 2px rgb(255 255 255 / 0.1);
 }
 
 @media (min-width: 768px) {
     .landing-outline {
         -webkit-text-stroke-width: 4px;
     }
+}
+
+/* ==========================================
+   🎤 hero แบบเวที — ไฟส่อง / วงคลื่น / พื้นเวที
+   ========================================== */
+.landing-stage-light {
+    background:
+        radial-gradient(55% 40% at 50% 0%, rgb(58 85 255 / 0.4), transparent 70%), radial-gradient(45% 35% at 50% 92%, rgb(42 69 255 / 0.45), transparent 70%);
+}
+
+/* วงแหวนซ้อนรอบตัวมาสคอต + คลื่นที่ขยายออกเป็นจังหวะ (เหมือนสัญญาณ "ออนไลน์") */
+.landing-stage-rings {
+    border-radius: 50%;
+    background: repeating-radial-gradient(circle, transparent 0 54px, rgb(138 155 255 / 0.13) 55px 56px);
+    mask-image: radial-gradient(circle, black 15%, transparent 60%);
+}
+
+.landing-stage-rings::before,
+.landing-stage-rings::after {
+    content: '';
+    position: absolute;
+    inset: 20%;
+    border-radius: 50%;
+    border: 2px solid rgb(138 155 255 / 0.5);
+    animation: landing-stage-pulse 6s ease-out infinite;
+}
+
+.landing-stage-rings::after {
+    animation-delay: -3s;
+}
+
+@keyframes landing-stage-pulse {
+    from {
+        transform: scale(0.15);
+        opacity: 1;
+    }
+    to {
+        transform: scale(1);
+        opacity: 0;
+    }
+}
+
+/* พื้นเวที: เส้นตารางเอียงหายไปทางขอบฟ้า */
+.landing-stage-floor {
+    background-image:
+        linear-gradient(to right, rgb(138 155 255 / 0.22) 1px, transparent 1px), linear-gradient(to bottom, rgb(138 155 255 / 0.22) 1px, transparent 1px);
+    background-size: 72px 72px;
+    transform: perspective(520px) rotateX(64deg);
+    transform-origin: 50% 100%;
+    mask-image: linear-gradient(to top, black 15%, transparent 85%);
+}
+
+/* แถบน้ำเงินเอียงเหมือนเทปแปะ ล้นขอบจอทั้งสองข้าง */
+.landing-band {
+    rotate: -2deg;
+    margin-inline: -3rem;
+}
+
+/* บล็อกปิดท้าย ขอบบนโค้งเหมือนโดม */
+.landing-cta {
+    border-radius: 50% 50% 0 0 / 6rem 6rem 0 0;
+}
+
+/* แถบความคืบหน้าของขั้นที่กำลังโชว์ (key ใหม่ = เริ่มนับใหม่) */
+@keyframes landing-progress {
+    from {
+        transform: scaleX(0);
+    }
+    to {
+        transform: scaleX(1);
+    }
+}
+
+.landing-progress {
+    transform-origin: left;
+    animation: landing-progress var(--step-ms, 4500ms) linear forwards;
+}
+
+/* ป้ายลอยรอบภาพใน hero */
+@keyframes landing-float {
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.landing-float {
+    animation: landing-float 5s ease-in-out infinite;
+}
+
+/* ==========================================
+   🧑‍💻 มาสคอต — ท่าเคลื่อนไหวตอนอยู่เฉยๆ / ตอนชี้เมาส์ / ตอนเปลี่ยนท่า
+   ========================================== */
+.landing-mascot {
+    transform-origin: 50% 100%; /* หมุน/ยืดจากเท้า เหมือนยืนอยู่บนพื้น */
+    filter: drop-shadow(0 18px 22px rgb(0 0 0 / 0.45));
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* หายใจขึ้นลงเบาๆ */
+@keyframes landing-mascot-bob {
+    50% {
+        transform: translateY(-8px) scaleY(1.01);
+    }
+}
+
+/* โยกตัวซ้ายขวา (ท่านั่ง / ท่าผายมือ) */
+@keyframes landing-mascot-sway {
+    0%,
+    100% {
+        transform: rotate(-2.5deg);
+    }
+    50% {
+        transform: rotate(2.5deg) translateY(-4px);
+    }
+}
+
+/* กระโดดเป็นจังหวะ (เว้นช่วงนิ่งไว้ก่อน แล้วค่อยเด้ง) */
+@keyframes landing-mascot-jump {
+    0%,
+    70%,
+    100% {
+        transform: none;
+    }
+    76% {
+        transform: scale(1.04, 0.94);
+    }
+    84% {
+        transform: translateY(-22px) scale(0.97, 1.04);
+    }
+    92% {
+        transform: scale(1.03, 0.96);
+    }
+}
+
+/* เด้งรับตอนชี้เมาส์ */
+@keyframes landing-mascot-hop {
+    30% {
+        transform: translateY(-16px) rotate(-3deg) scale(1.03);
+    }
+    60% {
+        transform: translateY(0) scale(1.04, 0.95);
+    }
+}
+
+/* โผล่เข้ามาตอนเปลี่ยนท่า */
+@keyframes landing-mascot-pop {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.7);
+    }
+    60% {
+        opacity: 1;
+        transform: translateY(-6px) scale(1.05);
+    }
+    to {
+        transform: none;
+    }
+}
+
+.landing-mascot-bob {
+    animation: landing-mascot-bob 4s ease-in-out infinite;
+}
+.landing-mascot-sway {
+    animation: landing-mascot-sway 5s ease-in-out infinite;
+}
+.landing-mascot-jump {
+    animation: landing-mascot-jump 3.6s ease-in-out infinite;
+}
+.landing-mascot-pop {
+    animation:
+        landing-mascot-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both,
+        landing-mascot-bob 4s ease-in-out 0.6s infinite;
+}
+.landing-mascot:hover {
+    animation: landing-mascot-hop 0.6s ease-out;
 }
 
 /* เม็ด noise บางๆ ทับพื้นหลัง ให้ดูมีผิวสัมผัส */
@@ -45,7 +238,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .landing-marquee {
+    .landing-marquee,
+    .landing-float,
+    .landing-mascot,
+    .landing-mascot:hover,
+    .landing-stage-rings::before,
+    .landing-stage-rings::after {
         animation: none;
+    }
+    .landing-progress {
+        animation: none;
+        transform: scaleX(1);
     }
 }
