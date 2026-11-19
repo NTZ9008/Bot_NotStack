@@ -1,5 +1,8 @@
 import type { CSSProperties, ReactNode } from 'react';
 import './loy-krathong.css';
+import lkGold from './lk-gold.webp';
+import lkNavy from './lk-navy.webp';
+import lkWhite from './lk-white.webp';
 
 // ==========================================
 // 🪷 ธีมลอยกระทง (ชั่วคราว) — พระจันทร์เต็มดวง, แม่น้ำมีกระทงหลายแบบลอย, โคมลอยขึ้นฟ้า ใน hero
@@ -163,6 +166,11 @@ const GLINTS = [
     [35, 90, 34, -1.9],
     [12, 86, 24, -2.8],
 ] as const;
+
+// ชุดลอยกระทงของมาสคอต 3 คน (เรียงซ้าย→ขวาแบบเดียวกับ hero) — นอกช่วงเทศกาลคืน null ให้ใช้ชุดปกติ
+export function loyKrathongCrew(): readonly [string, string, string] | null {
+    return isFestival() ? [lkGold, lkWhite, lkNavy] : null;
+}
 
 export function LoyKrathong() {
     if (!isFestival()) return null;

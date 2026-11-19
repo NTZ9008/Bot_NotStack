@@ -6,7 +6,7 @@ import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { LandingGlobe } from '@/features/live/live-globe';
 import { CommandSearch } from './command-search';
-import { LoyKrathong, LoyKrathongRaft } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
+import { LoyKrathong, LoyKrathongRaft, loyKrathongCrew } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
@@ -402,6 +402,7 @@ const HERO_CREW = [
 ];
 
 function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
+    const festivalCrew = loyKrathongCrew(); // 🪷 ชั่วคราว: ชุดลอยกระทง (null นอกช่วงเทศกาล)
     return (
         <section className="landing-grain relative isolate flex min-h-svh flex-col overflow-hidden pt-24">
             {/* พื้นหลังแบบเวที: ไฟส่องจากบน + วงคลื่นรอบตัวมาสคอต + พื้นเวทีเส้นตารางแบบมีมุมมอง */}
@@ -446,19 +447,20 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                 {/* 🪷 ชั่วคราว: ช่วงลอยกระทงให้มาสคอตยืนบนกระทงยักษ์ — หลังเทศกาลถอด wrapper นี้ออก */}
                 <LoyKrathongRaft>
                     <div className="flex items-end">
-                        {HERO_CREW.map((crew) => (
+                        {HERO_CREW.map((crew, index) => (
                             <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
                                 {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
                                 <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
                                     <Mascot
-                                        src={crew.src}
+                                        src={festivalCrew?.[index] ?? crew.src}
                                         motion="none"
                                         eager
                                         className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
                                             crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
                                         }`}
                                     />
-                                    <HeldCard {...crew.card} />
+                                    {/* ช่วงลอยกระทงคนกลางถือโคมอยู่ ไม่ให้ป้ายบังโคม */}
+                                    {!(festivalCrew && crew.center) && <HeldCard {...crew.card} />}
                                 </div>
                             </Reveal>
                         ))}
