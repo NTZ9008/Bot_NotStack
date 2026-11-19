@@ -14,8 +14,11 @@ import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 import './landing.css';
-import headPockets from './mascot/head-pockets.webp';
-import headThumbs from './mascot/head-thumbs-up-3.webp';
+import crewGold from './mascot/crew-gold.webp';
+import crewNavy from './mascot/crew-navy.webp';
+import crewWhite from './mascot/crew-white.webp';
+import headNavy from './mascot/head-navy.webp';
+import headWhite from './mascot/head-white.webp';
 import mascotKneel from './mascot/kneel.webp';
 import mascotLaptop2 from './mascot/laptop-2.webp';
 import mascotLaptop from './mascot/laptop.webp';
@@ -272,7 +275,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                     <a href="#top" className="group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
                         <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
                             <img
-                                src={headPockets}
+                                src={headWhite}
                                 alt=""
                                 className="size-11 translate-y-1 transition-transform duration-300 group-hover:translate-y-0 group-hover:scale-110"
                             />
@@ -299,7 +302,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                         <span className="hidden sm:block">
                             <InviteButton
                                 inviteUrl={inviteUrl}
-                                icon={<img src={headThumbs} alt="" className="landing-nav-head size-7 rounded-full bg-white/20" />}
+                                icon={<img src={headNavy} alt="" className="landing-nav-head size-7 rounded-full bg-white/20" />}
                                 className="group h-10 bg-[var(--ld-blue)] pr-4 pl-1.5 text-sm text-white hover:bg-[#3d56ff]"
                             />
                         </span>
@@ -360,31 +363,31 @@ function HeldCard({ src, label, className }: { src: string; label: string; class
 }
 
 // สามคนยืนบนเวที แต่ละคนโชว์ฟีเจอร์เด่นของตัวเอง:
-// ซ้ายหงายมือชูการ์ดเลเวลอัป (กลับด้านภาพให้มืออยู่ฝั่งซ้าย) · กลางถือป้ายการ์ดต้อนรับไว้หน้าอก · ขวาชี้ไปที่กราฟพยากรณ์อากาศ
+// ซ้ายชูนิ้วให้การ์ดเลเวลอัป · กลางถือป้ายการ์ดต้อนรับไว้หน้าอก · ขวากอดอกยืนข้างกราฟพยากรณ์อากาศ
 // ตำแหน่งการ์ดเป็น % ของภาพมาสคอต จะได้อยู่ที่มือเสมอไม่ว่ามาสคอตสูงเท่าไร (จอเล็ก การ์ดของคนข้างๆ ย้ายไปลอยเหนือหัว ไม่งั้นล้นจอ)
 const HERO_CREW = [
     {
-        src: mascotPresent,
-        mirror: true,
+        src: crewGold,
+        mirror: false,
         center: false,
         delay: 250,
         idle: -1300,
         card: {
             src: showcaseLevelUp,
             label: '🏆 เลเวล & XP',
-            className: 'bottom-[101%] left-0 w-28 -rotate-6 md:right-[78%] md:bottom-[69%] md:left-auto md:w-36 lg:w-64',
+            className: 'bottom-[101%] left-0 w-28 -rotate-6 md:right-[94%] md:bottom-[64%] md:left-auto md:w-36 lg:w-64',
         },
     },
     {
-        src: mascotPockets,
+        src: crewWhite,
         mirror: false,
         center: true,
         delay: 100,
         idle: 0,
-        card: { src: showcaseWelcome, label: '👋 การ์ดต้อนรับ', className: 'top-[41%] left-1/2 w-[150%] -translate-x-1/2 rotate-2' },
+        card: { src: showcaseWelcome, label: '👋 การ์ดต้อนรับ', className: 'top-[38%] left-1/2 w-[150%] -translate-x-1/2 rotate-2' },
     },
     {
-        src: mascotPoint,
+        src: crewNavy,
         mirror: false,
         center: false,
         delay: 400,
@@ -392,7 +395,7 @@ const HERO_CREW = [
         card: {
             src: showcaseWeather,
             label: '☀️ รายงานอากาศ',
-            className: 'right-0 bottom-[101%] w-28 rotate-6 md:right-auto md:bottom-[50%] md:left-[82%] md:w-36 lg:w-64',
+            className: 'right-0 bottom-[101%] w-28 rotate-6 md:right-auto md:bottom-[56%] md:left-[94%] md:w-36 lg:w-64',
         },
     },
 ];
@@ -444,7 +447,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
 
                 <div className="flex items-end">
                     {HERO_CREW.map((crew) => (
-                        <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-3 sm:-mx-5' : ''}>
+                        <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
                             {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
                             <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
                                 <Mascot
@@ -452,7 +455,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                                     motion="none"
                                     eager
                                     className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
-                                        crew.center ? 'h-[clamp(16rem,54svh,38rem)]' : 'h-[clamp(13rem,45svh,31rem)]'
+                                        crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
                                     }`}
                                 />
                                 <HeldCard {...crew.card} />
