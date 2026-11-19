@@ -79,6 +79,8 @@ export function githubMarkdownToDiscord(body: string, limit: number): string {
     }
     if (fence) out.push('```');
     const text = out
+        .join('\n')
+        .split('\n')
         .map((line) => line.trimEnd())
         .join('\n')
         .replace(/\n{3,}/g, '\n\n')
