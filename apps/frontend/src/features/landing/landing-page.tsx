@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { LandingGlobe } from '@/features/live/live-globe';
@@ -212,9 +212,9 @@ function useActiveSection(ids: string[]) {
     return active;
 }
 
-// คลิกลิงก์ #section (navbar / โลโก้ / "ดูสถานะ") → เลื่อนแบบ smooth ไปหาเนื้อหา (คนที่ปิด animation จะกระโดดไปทันที)
+// คลิกลิงก์ #section (navbar / โลโก้ / เมนูมือถือ) → เลื่อนแบบ smooth ไปหาเนื้อหา (คนที่ปิด animation จะกระโดดไปทันที)
 // ไม่แก้ #hash ใน URL เพราะ router จะกระโดดไปที่ section ทันทีแล้วตัด smooth scroll ทิ้ง
-function scrollToSection(event: MouseEvent<HTMLElement>) {
+function scrollToSection(event: MouseEvent) {
     if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const link = (event.target as HTMLElement).closest<HTMLAnchorElement>('a[href^="#"]');
     const id = link?.getAttribute('href')?.slice(1);
@@ -231,6 +231,8 @@ function scrollToSection(event: MouseEvent<HTMLElement>) {
 // บนสุดของหน้าโปร่งใส เลื่อนลงแล้วเป็นกระจกฝ้า · จอเล็กมีปุ่มเปิดแผงเมนู · ขอบล่างเป็นแถบความคืบหน้าการเลื่อน
 function TopNav({ active, botName, inviteUrl }: { active: string | null; botName: string; inviteUrl?: string | null }) {
     const [open, setOpen] = useState(false);
+    // กดลิงก์ในเมนูแล้วปิดแผง (การเลื่อนไป section ทำที่ scrollToSection)
+    const closeMenu = () => setOpen(false);
     const [scrolled, setScrolled] = useState(false);
     const progressRef = useRef<HTMLDivElement>(null);
 
@@ -266,14 +268,12 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
         <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
             <nav
                 aria-label="ส่วนของหน้า"
-                // กดลิงก์ในแผงเมนูแล้วปิดแผง (การเลื่อนไป section ทำที่ scrollToSection ของหน้า)
-                onClick={(event) => (event.target as HTMLElement).closest('a') && setOpen(false)}
                 className={`relative mx-auto max-w-6xl rounded-2xl border transition-[background-color,border-color,box-shadow] duration-300 ${
                     scrolled || open ? 'border-white/12 bg-[var(--ld-card)]/85 shadow-2xl shadow-black/40 backdrop-blur-xl' : 'border-transparent'
                 }`}
             >
                 <div className="flex h-16 items-center gap-2 px-2.5">
-                    <a href="#top" className="group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
+                    <a href="#top" onClick={closeMenu} className="group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
                         <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
                             <img
                                 src={headWhite}
@@ -324,13 +324,14 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                     <div id="landing-menu" className="flex items-end gap-3 overflow-hidden border-t border-white/10 px-3 pt-3 lg:hidden">
                         <div className="grid flex-1 grid-cols-2 gap-2 pb-4">
                             {NAV_LINKS.map((link) => (
-                                <a key={link.href} href={link.href} className={`bg-white/[0.04] ${linkClass(link.href, true)}`}>
+                                <a key={link.href} href={link.href} onClick={closeMenu} className={`bg-white/[0.04] ${linkClass(link.href, true)}`}>
                                     {link.label}
                                 </a>
                             ))}
                             <InviteButton inviteUrl={inviteUrl} className="col-span-2 h-12 bg-[var(--ld-blue)] text-sm text-white sm:hidden" />
                             <Link
                                 to="/dashboard"
+                                onClick={closeMenu}
                                 className="col-span-2 rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold hover:bg-white/10"
                             >
                                 เข้า Dashboard →
@@ -705,6 +706,12 @@ export function LandingPage() {
     const bot = info?.bot ?? DEFAULT_BOT;
     const inviteUrl = info?.inviteUrl;
     const active = useActiveSection(SECTION_IDS);
+
+    // ดักคลิกลิงก์ #section ทั้งหน้าที่ document (แทนการใส่ onClick บน div ที่ไม่ใช่ element กดได้)
+    useEffect(() => {
+        document.addEventListener('click', scrollToSection);
+        return () => document.removeEventListener('click', scrollToSection);
+    }, []);
     const featureNames = FEATURE_GROUPS.flatMap((group) => group.features.map((feature) => feature.title));
 
     usePageMeta({
@@ -715,7 +722,7 @@ export function LandingPage() {
     });
 
     return (
-        <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground" onClick={scrollToSection}>
+        <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
             <TopNav active={active} botName={bot.name} inviteUrl={inviteUrl} />
 
             <main id="top">
