@@ -226,6 +226,37 @@
     animation: landing-mascot-hop 0.6s ease-out;
 }
 
+/* กล่องคำพูดของมาสคอตพิธีกร — หางชี้ไปทางมาสคอต (ซ้ายเป็นค่าเริ่มต้น) */
+.landing-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: 0.9rem;
+    left: -0.45rem;
+    border-block: 0.5rem solid transparent;
+    border-right: 0.55rem solid white;
+}
+
+.landing-bubble-right::before {
+    left: auto;
+    right: -0.45rem;
+    border-right: 0;
+    border-left: 0.55rem solid white;
+}
+
+/* หัวมาสคอตในปุ่มเชิญ โบกตอนชี้ปุ่ม */
+@keyframes landing-nav-wave {
+    25% {
+        transform: rotate(-14deg);
+    }
+    75% {
+        transform: rotate(12deg);
+    }
+}
+
+.group:hover .landing-nav-head {
+    animation: landing-nav-wave 0.6s ease-in-out 2;
+}
+
 /* เม็ด noise บางๆ ทับพื้นหลัง ให้ดูมีผิวสัมผัส */
 .landing-grain::after {
     content: '';
@@ -243,7 +274,8 @@
     .landing-mascot,
     .landing-mascot:hover,
     .landing-stage-rings::before,
-    .landing-stage-rings::after {
+    .landing-stage-rings::after,
+    .group:hover .landing-nav-head {
         animation: none;
     }
     .landing-progress {

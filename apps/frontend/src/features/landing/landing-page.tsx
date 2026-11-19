@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowUpRight, Check } from 'lucide-react';
-import { useEffect, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
+import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
 import { LandingGlobe } from '@/features/live/live-globe';
@@ -14,6 +14,8 @@ import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 import './landing.css';
+import headPockets from './mascot/head-pockets.webp';
+import headThumbs from './mascot/head-thumbs-up-3.webp';
 import mascotKneel from './mascot/kneel.webp';
 import mascotLaptop2 from './mascot/laptop-2.webp';
 import mascotLaptop from './mascot/laptop.webp';
@@ -68,11 +70,13 @@ function Mascot({
     src,
     motion = 'bob',
     delay = 0,
+    eager = false,
     className = '',
 }: {
     src: string;
     motion?: 'bob' | 'sway' | 'jump' | 'pop';
     delay?: number;
+    eager?: boolean;
     className?: string;
 }) {
     return (
@@ -81,6 +85,7 @@ function Mascot({
             alt=""
             aria-hidden
             draggable={false}
+            loading={eager ? 'eager' : 'lazy'}
             decoding="async"
             style={delay ? { animationDelay: `${delay}ms` } : undefined}
             className={`landing-mascot landing-mascot-${motion} ${className}`}
@@ -91,18 +96,18 @@ function Mascot({
 const pad2 = (value: number) => String(value).padStart(2, '0');
 
 // ปุ่มเชิญบอท — ลิงก์มาจาก /version (null = บอทยังไม่ออนไลน์ / backend รุ่นเก่า)
-function InviteButton({ inviteUrl, className = '' }: { inviteUrl?: string | null; className?: string }) {
+function InviteButton({ inviteUrl, className = '', icon = <DiscordIcon /> }: { inviteUrl?: string | null; className?: string; icon?: ReactNode }) {
     const style = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[transform,background-color] active:scale-[0.97] ${className}`;
     if (!inviteUrl) {
         return (
             <span aria-disabled title="บอทยังไม่ออนไลน์ ลองใหม่อีกครั้งภายหลัง" className={`${style} cursor-not-allowed opacity-50`}>
-                <DiscordIcon /> เพิ่มเข้า Discord
+                {icon} เพิ่มเข้า Discord
             </span>
         );
     }
     return (
         <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={`${style} hover:scale-[1.03]`}>
-            <DiscordIcon /> เพิ่มเข้า Discord
+            {icon} เพิ่มเข้า Discord
         </a>
     );
 }
@@ -119,21 +124,52 @@ function DashboardLink({ className = '' }: { className?: string }) {
     );
 }
 
-// หัว section: คำอังกฤษตัวโตเป็นลายน้ำด้านหลัง แล้วชื่อไทยวางทับ (ท่อนท้ายเป็นสีน้ำเงิน)
-function SectionHead({ eyebrow, title, accent, aside }: { eyebrow: string; title: string; accent?: string; aside?: ReactNode }) {
+// หัว section ที่มีมาสคอตเป็นพิธีกร: มาสคอตยืนข้างๆ พูดผ่านกล่องคำพูด แล้วชื่อ section ตัวโต (flip = มาสคอตอยู่ขวา)
+function SectionHead({
+    eyebrow,
+    title,
+    accent,
+    aside,
+    host,
+    say,
+    flip = false,
+}: {
+    eyebrow: string;
+    title: string;
+    accent?: string;
+    aside?: ReactNode;
+    host: string;
+    say: string;
+    flip?: boolean;
+}) {
     return (
-        <Reveal className="relative mb-12 text-center sm:mb-16">
+        <div className={`relative isolate mb-12 flex items-end gap-3 sm:mb-16 sm:gap-8 ${flip ? 'flex-row-reverse text-right' : ''}`}>
             <p
                 aria-hidden
-                className="landing-watermark text-[clamp(3.5rem,13vw,10rem)] leading-none font-black tracking-[-0.04em] whitespace-nowrap uppercase select-none"
+                className="landing-watermark absolute inset-x-0 top-0 -z-10 text-center text-[clamp(3.5rem,13vw,10rem)] leading-none font-black tracking-[-0.04em] whitespace-nowrap uppercase select-none"
             >
                 {eyebrow}
             </p>
-            <h2 className="relative -mt-[0.55em] text-[clamp(2rem,5.5vw,3.75rem)] leading-tight font-black tracking-tight sm:-mt-[0.9em]">
-                {title} {accent && <span className="text-[var(--ld-blue-ink)]">{accent}</span>}
-            </h2>
-            {aside && <p className="mx-auto mt-3 max-w-md text-pretty text-muted-foreground">{aside}</p>}
-        </Reveal>
+            <Reveal from={flip ? 'right' : 'left'} className="shrink-0">
+                <Mascot src={host} className="h-36 w-auto sm:h-48 lg:h-60" />
+            </Reveal>
+            <div className="min-w-0 flex-1 pb-3">
+                <Reveal delay={150}>
+                    <p
+                        className={`landing-bubble ${flip ? 'landing-bubble-right' : ''} relative inline-block max-w-sm rounded-2xl bg-white px-4 py-2.5 text-left text-sm font-semibold text-slate-900 shadow-xl shadow-black/30 sm:text-base`}
+                    >
+                        {say}
+                    </p>
+                </Reveal>
+                <Reveal delay={250}>
+                    <p className="mt-5 font-mono text-xs tracking-[0.3em] text-[var(--ld-blue-ink)] uppercase">{eyebrow}</p>
+                    <h2 className="mt-1.5 text-[clamp(2rem,5.5vw,3.75rem)] leading-tight font-black tracking-tight">
+                        {title} {accent && <span className="text-[var(--ld-blue-ink)]">{accent}</span>}
+                    </h2>
+                    {aside && <p className={`mt-2 max-w-md text-pretty text-muted-foreground ${flip ? 'ml-auto' : ''}`}>{aside}</p>}
+                </Reveal>
+            </div>
+        </div>
     );
 }
 
@@ -188,39 +224,124 @@ function scrollToSection(event: MouseEvent<HTMLElement>) {
     else window.scrollTo({ top: 0, behavior });
 }
 
-// navbar ลอยด้านบน แยกเป็น 2 เม็ด: ซ้าย = โลโก้ + เมนู, ขวา = ปุ่มหลัก
-function TopNav({ active, botName, botAvatar, inviteUrl }: { active: string | null; botName: string; botAvatar: string; inviteUrl?: string | null }) {
-    const pill = 'flex items-center gap-1 rounded-full border border-white/10 bg-[var(--ld-card)]/80 p-1.5 shadow-xl shadow-black/40 backdrop-blur-xl';
+// navbar แถบเดียวลอยด้านบน: โลโก้หัวมาสคอต + เมนู (ไฮไลต์ section ปัจจุบัน) + ปุ่มเชิญที่หัวมาสคอตโบกตอนชี้
+// บนสุดของหน้าโปร่งใส เลื่อนลงแล้วเป็นกระจกฝ้า · จอเล็กมีปุ่มเปิดแผงเมนู · ขอบล่างเป็นแถบความคืบหน้าการเลื่อน
+function TopNav({ active, botName, inviteUrl }: { active: string | null; botName: string; inviteUrl?: string | null }) {
+    const [open, setOpen] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
+    const progressRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        // เขียน transform ลง element ตรงๆ ไม่ต้อง re-render ทุกครั้งที่เลื่อน
+        const update = () => {
+            const max = document.documentElement.scrollHeight - window.innerHeight;
+            progressRef.current?.style.setProperty('transform', `scaleX(${max > 0 ? Math.min(window.scrollY / max, 1) : 0})`);
+            setScrolled(window.scrollY > 24);
+        };
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+        return () => {
+            window.removeEventListener('scroll', update);
+            window.removeEventListener('resize', update);
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!open) return;
+        const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [open]);
+
+    const linkClass = (href: string, mobile = false) =>
+        `${mobile ? 'rounded-xl px-4 py-3 font-semibold' : 'rounded-lg px-3.5 py-2'} text-sm transition-colors ${
+            active === href.slice(1) ? 'bg-[var(--ld-blue)] text-white shadow-lg shadow-[#2a45ff]/30' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+        }`;
+
     return (
-        <nav aria-label="ส่วนของหน้า" className="fixed inset-x-0 top-3 z-40 px-3 sm:px-6">
-            <div className="mx-auto flex max-w-6xl items-center justify-between gap-2">
-                <div className={`${pill} min-w-0`}>
-                    <a href="#top" className="flex min-w-0 items-center gap-2 rounded-full py-0.5 pr-3 pl-0.5 font-bold">
-                        <img src={botAvatar} alt="" className="size-8 shrink-0 rounded-full ring-2 ring-[var(--ld-blue)]" />
-                        <span className="truncate">{botName}</span>
+        <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+            <nav
+                aria-label="ส่วนของหน้า"
+                // กดลิงก์ในแผงเมนูแล้วปิดแผง (การเลื่อนไป section ทำที่ scrollToSection ของหน้า)
+                onClick={(event) => (event.target as HTMLElement).closest('a') && setOpen(false)}
+                className={`relative mx-auto max-w-6xl rounded-2xl border transition-[background-color,border-color,box-shadow] duration-300 ${
+                    scrolled || open ? 'border-white/12 bg-[var(--ld-card)]/85 shadow-2xl shadow-black/40 backdrop-blur-xl' : 'border-transparent'
+                }`}
+            >
+                <div className="flex h-16 items-center gap-2 px-2.5">
+                    <a href="#top" className="group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
+                        <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
+                            <img
+                                src={headPockets}
+                                alt=""
+                                className="size-11 translate-y-1 transition-transform duration-300 group-hover:translate-y-0 group-hover:scale-110"
+                            />
+                        </span>
+                        <span className="leading-none">
+                            <span className="block text-[15px] font-black tracking-tight">{botName}</span>
+                            <span className="mt-1 block font-mono text-[10px] tracking-[0.25em] text-[var(--ld-blue-ink)] uppercase">Discord bot</span>
+                        </span>
                     </a>
-                    <div className="hidden items-center whitespace-nowrap lg:flex">
+
+                    <div className="mx-auto hidden items-center gap-0.5 rounded-xl bg-white/[0.04] p-1 whitespace-nowrap lg:flex">
                         {NAV_LINKS.map((link) => (
-                            <a
-                                key={link.href}
-                                href={link.href}
-                                className={`rounded-full px-3 py-1.5 text-sm transition-colors ${
-                                    active === link.href.slice(1) ? 'bg-[var(--ld-blue)] text-white' : 'text-muted-foreground hover:text-white'
-                                }`}
-                            >
+                            <a key={link.href} href={link.href} className={linkClass(link.href)}>
                                 {link.label}
                             </a>
                         ))}
                     </div>
+
+                    <div className="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
+                        <Link to="/dashboard" className="hidden rounded-xl px-3 py-2 text-sm text-slate-300 hover:text-white sm:block">
+                            Dashboard
+                        </Link>
+                        {/* จอเล็กมาก ปุ่มเชิญย้ายไปอยู่ในแผงเมนู ไม่ให้แถบล้นจอ */}
+                        <span className="hidden sm:block">
+                            <InviteButton
+                                inviteUrl={inviteUrl}
+                                icon={<img src={headThumbs} alt="" className="landing-nav-head size-7 rounded-full bg-white/20" />}
+                                className="group h-10 bg-[var(--ld-blue)] pr-4 pl-1.5 text-sm text-white hover:bg-[#3d56ff]"
+                            />
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setOpen((value) => !value)}
+                            aria-expanded={open}
+                            aria-controls="landing-menu"
+                            aria-label={open ? 'ปิดเมนู' : 'เปิดเมนู'}
+                            className="grid size-10 place-items-center rounded-xl text-slate-200 hover:bg-white/10 lg:hidden"
+                        >
+                            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+                        </button>
+                    </div>
                 </div>
-                <div className={`${pill} shrink-0`}>
-                    <Link to="/dashboard" className="hidden rounded-full px-3 py-1.5 text-sm whitespace-nowrap text-muted-foreground hover:text-white sm:block">
-                        Dashboard
-                    </Link>
-                    <InviteButton inviteUrl={inviteUrl} className="h-9 bg-[var(--ld-blue)] px-4 text-sm text-white hover:bg-[#3d56ff]" />
+
+                {open && (
+                    <div id="landing-menu" className="flex items-end gap-3 overflow-hidden border-t border-white/10 px-3 pt-3 lg:hidden">
+                        <div className="grid flex-1 grid-cols-2 gap-2 pb-4">
+                            {NAV_LINKS.map((link) => (
+                                <a key={link.href} href={link.href} className={`bg-white/[0.04] ${linkClass(link.href, true)}`}>
+                                    {link.label}
+                                </a>
+                            ))}
+                            <InviteButton inviteUrl={inviteUrl} className="col-span-2 h-12 bg-[var(--ld-blue)] text-sm text-white sm:hidden" />
+                            <Link
+                                to="/dashboard"
+                                className="col-span-2 rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold hover:bg-white/10"
+                            >
+                                เข้า Dashboard →
+                            </Link>
+                        </div>
+                        <Mascot src={mascotPresent} motion="pop" className="h-44 w-auto shrink-0 -scale-x-100" />
+                    </div>
+                )}
+
+                <div aria-hidden className="absolute inset-x-4 bottom-0 h-0.5 overflow-hidden rounded-full">
+                    <div ref={progressRef} className="h-full origin-left scale-x-0 bg-gradient-to-r from-[var(--ld-blue)] to-[var(--ld-blue-ink)]" />
                 </div>
-            </div>
-        </nav>
+            </nav>
+        </header>
     );
 }
 
@@ -300,6 +421,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                             <Mascot
                                 src={crew.src}
                                 delay={crew.idle}
+                                eager
                                 className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
                                     crew.center ? 'h-[clamp(16rem,54svh,38rem)]' : 'h-[clamp(13rem,45svh,31rem)]'
                                 }`}
@@ -394,9 +516,7 @@ function Manifesto() {
 
 function Features({ botName, botAvatar }: { botName: string; botAvatar: string }) {
     return (
-        <div className="relative grid gap-5 lg:grid-cols-6">
-            {/* มาสคอตนั่งเล่นโน้ตบุ๊กอยู่บนขอบการ์ด */}
-            <Mascot src={mascotSit} motion="sway" className="absolute right-6 bottom-full z-10 -mb-7 w-28 sm:w-32 lg:right-[10%] lg:w-36" />
+        <div className="grid gap-5 lg:grid-cols-6">
             {FEATURE_GROUPS.map((group, index) => {
                 const wide = BENTO_SPANS[index % BENTO_SPANS.length] === 'lg:col-span-4';
                 return (
@@ -559,7 +679,7 @@ export function LandingPage() {
 
     return (
         <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground" onClick={scrollToSection}>
-            <TopNav active={active} botName={bot.name} botAvatar={bot.avatar} inviteUrl={inviteUrl} />
+            <TopNav active={active} botName={bot.name} inviteUrl={inviteUrl} />
 
             <main id="top">
                 <Hero inviteUrl={inviteUrl} />
@@ -572,21 +692,35 @@ export function LandingPage() {
 
                 <section id="features" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <SectionHead eyebrow="Features" title="ทำอะไรได้" accent="บ้าง" aside="เปิด / ปิดแต่ละอย่างได้เองจาก Dashboard" />
+                        <SectionHead
+                            eyebrow="Features"
+                            title="ทำอะไรได้"
+                            accent="บ้าง"
+                            aside="เปิด / ปิดแต่ละอย่างได้เองจาก Dashboard"
+                            host={mascotPresent}
+                            say="ดูนี่! บอทเราทำได้เยอะกว่าที่คิดนะ 👀"
+                        />
                         <Features botName={bot.name} botAvatar={bot.avatar} />
                     </div>
                 </section>
 
                 <section id="start" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <SectionHead eyebrow="Get started" title="เริ่มใช้ใน" accent="3 ขั้น" />
+                        <SectionHead eyebrow="Get started" title="เริ่มใช้ใน" accent="3 ขั้น" host={mascotSit} say="ง่ายจนนั่งทำสบายๆ ได้เลย 😆" flip />
                         <Steps botName={bot.name} botAvatar={bot.avatar} />
                     </div>
                 </section>
 
                 <section id="commands" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <SectionHead eyebrow="Commands" title="รวม" accent="คำสั่ง" aside="ค้นหา แล้วกดดูวิธีใช้" />
+                        <SectionHead
+                            eyebrow="Commands"
+                            title="รวม"
+                            accent="คำสั่ง"
+                            aside="ค้นหา แล้วกดดูวิธีใช้"
+                            host={mascotLaptop}
+                            say="พิมพ์ / ในแชท แล้วเลือกคำสั่งได้เลย ⌨️"
+                        />
                         <Reveal delay={100}>
                             <CommandSearch />
                         </Reveal>
@@ -595,10 +729,15 @@ export function LandingPage() {
 
                 <section id="status" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <div className="relative">
-                            <SectionHead eyebrow="Status" title="สถานะ" accent="ระบบ" aside="ข้อมูลสด อัปเดตทุกนาที" />
-                            <Mascot src={mascotKneel} className="absolute right-0 bottom-0 hidden w-28 md:block lg:w-32" />
-                        </div>
+                        <SectionHead
+                            eyebrow="Status"
+                            title="สถานะ"
+                            accent="ระบบ"
+                            aside="ข้อมูลสด อัปเดตทุกนาที"
+                            host={mascotKneel}
+                            say="ผมเฝ้าระบบให้ตลอด 24 ชม. 🛡️"
+                            flip
+                        />
                         <Reveal delay={100}>
                             <SystemStatus />
                         </Reveal>
@@ -607,7 +746,14 @@ export function LandingPage() {
 
                 <section id="growth" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <SectionHead eyebrow="Growth" title="การ" accent="เติบโต" aside="commit และ PR ตั้งแต่วันแรก" />
+                        <SectionHead
+                            eyebrow="Growth"
+                            title="การ"
+                            accent="เติบโต"
+                            aside="commit และ PR ตั้งแต่วันแรก"
+                            host={mascotLaptop2}
+                            say="โค้ดเพิ่มขึ้นทุกวัน ไม่เคยหยุดพัฒนา 🚀"
+                        />
                         <Reveal delay={100}>
                             <GrowthSection />
                         </Reveal>
@@ -616,10 +762,15 @@ export function LandingPage() {
 
                 <section id="team" className="scroll-mt-20 px-4 pb-32 sm:px-8 sm:pb-40">
                     <div className="mx-auto max-w-6xl">
-                        <div className="relative">
-                            <SectionHead eyebrow="Team" title="คนทำ" accent="บอท" aside="เจอบั๊ก ทักมาในเซิร์ฟได้เลย" />
-                            <Mascot src={mascotPockets} delay={-2000} className="absolute bottom-0 left-0 hidden w-24 md:block lg:w-28" />
-                        </div>
+                        <SectionHead
+                            eyebrow="Team"
+                            title="คนทำ"
+                            accent="บอท"
+                            aside="เจอบั๊ก ทักมาในเซิร์ฟได้เลย"
+                            host={mascotPockets}
+                            say="นี่ทีมเราเอง มีอะไรทักมาได้เลย ✌️"
+                            flip
+                        />
                         <ul className="grid gap-4 md:grid-cols-2">
                             {TEAM.map((member, index) => (
                                 <Reveal
