@@ -155,6 +155,17 @@ export class DiscordService implements OnApplicationBootstrap, OnApplicationShut
         return this.client.users.cache.get(userId) ?? (await this.client.users.fetch(userId).catch(() => null));
     }
 
+    // ดึงสมาชิกที่ยังไม่อยู่ในแคชทีเดียวผ่าน gateway (แทนการยิง REST ทีละคน) — คนที่ออกจากเซิร์ฟเวอร์ไปแล้วยังใช้ fetchUser ตามเดิม
+    // ล้มเหลว (เช่นโดน rate limit) = ไม่ทำอะไร ให้โค้ดเดิมดึงทีละคนต่อ
+    async cacheMembers(guildId: string, userIds: string[]): Promise<void> {
+        const guild = this.guild(guildId);
+        if (!guild) return;
+        const missing = [...new Set(userIds)].filter((id) => !guild.members.cache.has(id) && !this.client.users.cache.has(id));
+        for (let i = 0; i < missing.length; i += 100) {
+            await guild.members.fetch({ user: missing.slice(i, i + 100), time: 3000 }).catch(() => null);
+        }
+    }
+
     // ชื่อที่แสดงของผู้ใช้ (global name ก่อน username) — หาไม่เจอคืน null
     async displayName(userId: string): Promise<string | null> {
         const user = await this.fetchUser(userId);

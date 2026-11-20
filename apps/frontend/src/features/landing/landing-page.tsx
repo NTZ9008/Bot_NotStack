@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
-import { LandingGlobe } from '@/features/live/live-globe';
 import { CommandSearch } from './command-search';
 import { LoyKrathong, LoyKrathongRaft, loyKrathongCrew } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
@@ -33,6 +32,9 @@ import mascotThumbs from './mascot/thumbs-up.webp';
 import showcaseLevelUp from './showcase/level-up.webp';
 import showcaseWeather from './showcase/weather.webp';
 import showcaseWelcome from './showcase/welcome.webp';
+
+// ลูกโลกเป็นแค่ฉากหลัง — แยก chunk ไม่ให้ live-globe (+ zod ที่ติดมากับ @notstack/shared) ขวางการแสดงหน้าแรก
+const LandingGlobe = lazy(() => import('@/features/live/live-globe').then((m) => ({ default: m.LandingGlobe })));
 
 // ==========================================
 // 🏠 หน้า landing (สาธารณะ) — แนะนำบอท ค้นหาคำสั่ง สถานะระบบ และทีมผู้พัฒนา
@@ -852,7 +854,9 @@ export function LandingPage() {
             {/* ปิดท้าย + footer ในบล็อกน้ำเงินเดียวกัน ขอบบนโค้ง */}
             <footer className="landing-cta landing-grain relative isolate overflow-hidden bg-gradient-to-b from-[var(--ld-blue)] to-[#1726b8] px-4 pt-36 pb-10 text-white sm:px-8">
                 {/* ลูกโลก (ข้อมูลจำลอง ไม่ใช่กิจกรรมจริง) */}
-                <LandingGlobe className="absolute top-10 -right-[30vw] -z-10 aspect-square w-[80vw] opacity-30 [mask-image:radial-gradient(circle,black_50%,transparent_70%)] md:-right-[12vw] md:w-[min(60vw,48rem)] md:opacity-50" />
+                <Suspense fallback={null}>
+                    <LandingGlobe className="absolute top-10 -right-[30vw] -z-10 aspect-square w-[80vw] opacity-30 [mask-image:radial-gradient(circle,black_50%,transparent_70%)] md:-right-[12vw] md:w-[min(60vw,48rem)] md:opacity-50" />
+                </Suspense>
                 <div className="mx-auto max-w-6xl">
                     <div className="grid items-end gap-10 md:grid-cols-[1fr_auto]">
                         <div>

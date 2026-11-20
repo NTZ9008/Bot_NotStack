@@ -101,6 +101,8 @@ export class RoomAccessService {
                     await revokeRoomAccess(channel, input.userId);
                     await this.prisma.roomAccess.deleteMany({ where: { userId: input.userId, roomId: id } });
                 }
+                // discord.js ไม่อัปเดตแคชหลังแก้ permission เอง (รอ gateway) — ดึงใหม่ให้หน้า Room Access เห็นผลทันทีหลังกดบันทึก
+                await this.discord.fetchGuildChannel(guildId, id, true);
                 successCount++;
             } catch (err) {
                 errors.push(`เกิดข้อผิดพลาดกับห้อง ${id}: ${(err as Error).message}`);
@@ -121,8 +123,8 @@ export class RoomAccessService {
         ]);
         const accessByRoomUser = new Map(activeAccess.map((entry) => [`${entry.roomId}:${entry.userId}`, entry]));
         const channels = await mapConcurrent(rooms, 5, async (room) => {
-            // force: true เพื่อให้ได้ permission ล่าสุด ไม่ใช่ค่าในแคช
-            const channel = await this.discord.fetchGuildChannel(guildId, room.channelId, true);
+            // แคชห้องถูกอัปเดตสดจาก gateway (CHANNEL_UPDATE) อยู่แล้ว — ส่วนที่ระบบนี้แก้เอง change() ดึงใหม่ให้หลังแก้ทุกครั้ง
+            const channel = await this.discord.fetchGuildChannel(guildId, room.channelId);
             return isGuildChannel(channel) ? channel : null;
         });
         const entries = channels.flatMap((channel, index) => {
@@ -132,6 +134,10 @@ export class RoomAccessService {
                 .filter(([, overwrite]) => overwrite.allow.has('ViewChannel'))
                 .map(([userId]) => ({ userId, roomId: rooms[index]!.channelId, roomName: channel.name }));
         });
+        await this.discord.cacheMembers(
+            guildId,
+            entries.map((entry) => entry.userId),
+        );
         const profiles = new Map(
             await mapConcurrent(
                 [...new Set(entries.map((entry) => entry.userId))],
