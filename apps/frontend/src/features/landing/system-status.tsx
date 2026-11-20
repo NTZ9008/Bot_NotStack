@@ -56,22 +56,6 @@ function Dot({ ok }: { ok: boolean | undefined }) {
     );
 }
 
-// บรรทัดสั้นๆ บน hero: ● ออนไลน์ · เปิดมา 3 วัน
-export function StatusLine() {
-    const { data, isError } = useQuery(healthQuery);
-    const online = data ? data.discord : isError ? false : undefined;
-    const days = data ? splitDuration(data.uptimeSec).days : 0;
-    return (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Dot ok={online} />
-            {online === undefined ? 'กำลังเช็ค…' : online ? `บอทออนไลน์${days > 0 ? ` · ต่อเนื่อง ${days} วัน` : ''}` : 'บอทออฟไลน์'}
-            <a href="#status" className="underline decoration-dotted underline-offset-4 hover:text-foreground">
-                ดูสถานะ
-            </a>
-        </p>
-    );
-}
-
 export function SystemStatus() {
     const { data, isError, isPending } = useQuery(healthQuery);
     const now = useNow(1000);

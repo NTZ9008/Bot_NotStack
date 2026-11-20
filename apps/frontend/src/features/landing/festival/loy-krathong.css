@@ -1,0 +1,242 @@
+/* ==========================================
+   🪷 ธีมลอยกระทง (ชั่วคราว) — ลบทั้งไฟล์พร้อม loy-krathong.tsx ได้เลยหลังเทศกาล
+   ========================================== */
+
+/* พระจันทร์เต็มดวง: เนื้อดวง + แสงฟุ้งรอบๆ ค่อยๆ หายใจ */
+.lk-moon {
+    background:
+        radial-gradient(circle at 62% 38%, rgb(214 180 90 / 0.35) 0 9%, transparent 10%),
+        radial-gradient(circle at 38% 64%, rgb(214 180 90 / 0.3) 0 6%, transparent 7%), radial-gradient(circle at 35% 35%, #fffdf2, #fde68a 60%, #f2c45a);
+    box-shadow:
+        0 0 40px 10px rgb(253 230 138 / 0.45),
+        0 0 140px 50px rgb(253 230 138 / 0.18);
+    animation: lk-moon-glow 6s ease-in-out infinite;
+}
+
+@keyframes lk-moon-glow {
+    50% {
+        box-shadow:
+            0 0 54px 16px rgb(253 230 138 / 0.55),
+            0 0 180px 70px rgb(253 230 138 / 0.22);
+    }
+}
+
+/* ==========================================
+   🌊 แม่น้ำ — ไกลสีอ่อนสะท้อนฟ้า ใกล้สีเข้ม, ขอบบนจางเข้ากับพื้นหลัง
+   ========================================== */
+.lk-river {
+    background: linear-gradient(to bottom, transparent 0%, rgb(46 74 190 / 0.35) 18%, #18287e 40%, #0d1856 72%, #070d33 100%);
+    mask-image: linear-gradient(to bottom, transparent, black 20%);
+}
+
+/* เส้นขอบฟ้า: แสงบางๆ ตรงรอยต่อน้ำกับฟ้า */
+.lk-horizon {
+    background: linear-gradient(to right, transparent, rgb(253 230 138 / 0.35) 70%, rgb(138 155 255 / 0.35) 85%, transparent);
+    box-shadow: 0 0 12px 2px rgb(138 155 255 / 0.25);
+}
+
+/* ระลอกคลื่น 3 ชั้น: ไกล = ถี่ บาง ช้า · ใกล้ = ห่าง หนา เร็ว (ให้ความรู้สึกลึก) */
+.lk-waves {
+    background-repeat: repeat;
+    animation: lk-waves linear infinite;
+}
+
+.lk-waves-far {
+    --lk-wave: 60px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='9'%3E%3Cpath d='M0 5 Q7.5 2 15 5 T30 5 T45 5 T60 5' fill='none' stroke='%23a5b4fc' stroke-opacity='0.28' stroke-width='0.8'/%3E%3C/svg%3E");
+    background-size: 60px 9px;
+    animation-duration: 16s;
+    mask-image: linear-gradient(to bottom, transparent, black 40%, transparent);
+}
+
+.lk-waves-mid {
+    --lk-wave: 110px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='110' height='16'%3E%3Cpath d='M0 9 Q14 3 27.5 9 T55 9 T82.5 9 T110 9' fill='none' stroke='%238a9bff' stroke-opacity='0.3' stroke-width='1.2'/%3E%3C/svg%3E");
+    background-size: 110px 16px;
+    animation-duration: 11s;
+    animation-direction: reverse;
+    mask-image: linear-gradient(to bottom, transparent, black 30%, black 70%, transparent);
+}
+
+.lk-waves-near {
+    --lk-wave: 180px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='28'%3E%3Cpath d='M0 15 Q22 5 45 15 T90 15 T135 15 T180 15' fill='none' stroke='%23c7d2fe' stroke-opacity='0.22' stroke-width='1.8'/%3E%3C/svg%3E");
+    background-size: 180px 28px;
+    animation-duration: 8s;
+    mask-image: linear-gradient(to bottom, transparent, black 35%);
+}
+
+@keyframes lk-waves {
+    to {
+        background-position-x: var(--lk-wave);
+    }
+}
+
+/* ประกายแสงวิบวับบนผิวน้ำ */
+.lk-glint {
+    background: linear-gradient(to right, transparent, rgb(224 231 255 / 0.85), transparent);
+    opacity: 0;
+    animation: lk-glint 3.4s ease-in-out infinite;
+}
+
+@keyframes lk-glint {
+    40%,
+    60% {
+        opacity: 0.9;
+        transform: scaleX(1.25);
+    }
+}
+
+/* แสงจันทร์สะท้อน: เส้นแสงซ้อนกันที่ส่ายเล็กน้อยตามคลื่น */
+.lk-moon-path {
+    background: repeating-linear-gradient(to bottom, rgb(253 230 138 / 0.55) 0 3px, transparent 3px 8px);
+    mask-image: radial-gradient(ellipse 50% 100% at 50% 0%, black, transparent);
+    animation: lk-moon-path 3s ease-in-out infinite;
+}
+
+@keyframes lk-moon-path {
+    50% {
+        opacity: 0.55;
+        transform: skewX(-6deg) scaleX(1.12);
+    }
+}
+
+/* ==========================================
+   🪷 กระทงลอยข้ามจอ + โคลงตามคลื่น + เงาสะท้อน
+   ========================================== */
+.lk-drift {
+    animation: lk-drift linear infinite;
+}
+
+@keyframes lk-drift {
+    from {
+        transform: translateX(-15vw);
+    }
+    to {
+        transform: translateX(115vw);
+    }
+}
+
+.lk-bob {
+    position: relative;
+    animation: lk-bob 3.2s ease-in-out infinite;
+}
+
+@keyframes lk-bob {
+    50% {
+        transform: translateY(-3px) rotate(2.5deg);
+    }
+}
+
+/* เงาในน้ำ: กลับหัว หดแนวตั้ง จาง เบลอ แล้วค่อยๆ หายลงไป */
+.lk-reflection {
+    margin-top: -8%;
+    transform: scaleY(-0.55);
+    transform-origin: top;
+    opacity: 0.3;
+    filter: blur(1.2px) saturate(0.8);
+    mask-image: linear-gradient(to top, black, transparent 80%);
+}
+
+/* แสงเทียนส่องบนผิวน้ำรอบกระทง */
+.lk-candle-glow {
+    background: radial-gradient(ellipse, rgb(255 179 71 / 0.45), transparent 70%);
+    animation: lk-glow 1.8s ease-in-out infinite;
+}
+
+.lk-flame {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: lk-flame 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes lk-flame {
+    to {
+        transform: scale(0.85, 1.12) rotate(-3deg);
+        opacity: 0.85;
+    }
+}
+
+.lk-glow {
+    animation: lk-glow 1.8s ease-in-out infinite;
+}
+
+@keyframes lk-glow {
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ==========================================
+   🛶 กระทงยักษ์ที่มาสคอตยืนอยู่ — โคลงขึ้นลงทั้งลำพร้อมคนบนกระทง
+   ========================================== */
+.lk-raft-bob {
+    animation: lk-raft-bob 4.5s ease-in-out infinite;
+}
+
+@keyframes lk-raft-bob {
+    50% {
+        transform: translateY(-6px) rotate(-0.6deg);
+    }
+}
+
+/* ==========================================
+   🏮 โคมลอย: ลอยขึ้นช้าๆ พร้อมส่ายเบาๆ แล้วจางหายบนฟ้า
+   ========================================== */
+.lk-lantern-track {
+    animation: lk-rise linear infinite;
+}
+
+@keyframes lk-rise {
+    0% {
+        transform: translate(0, 0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    50% {
+        transform: translate(18px, -45vh);
+    }
+    85% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translate(-10px, -85vh);
+        opacity: 0;
+    }
+}
+
+.lk-lantern {
+    width: 14px;
+    height: 18px;
+    border-radius: 45% 45% 25% 25%;
+    background: radial-gradient(ellipse at 50% 80%, #fff3c4, #ffb347 45%, #e5602a);
+    box-shadow: 0 0 16px 5px rgb(255 170 70 / 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .lk-moon,
+    .lk-waves,
+    .lk-glint,
+    .lk-moon-path,
+    .lk-bob,
+    .lk-flame,
+    .lk-glow,
+    .lk-candle-glow,
+    .lk-raft-bob {
+        animation: none;
+    }
+    .lk-glint {
+        opacity: 0.5;
+    }
+    /* ไม่เคลื่อนที่: กระทงกับโคมหยุดอยู่ตำแหน่งกลางทาง */
+    .lk-drift {
+        animation: none;
+        transform: translateX(45vw);
+    }
+    .lk-lantern-track {
+        animation: none;
+        transform: translateY(-30vh);
+    }
+}
