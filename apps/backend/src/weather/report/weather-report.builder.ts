@@ -111,7 +111,8 @@ export async function buildWeatherReport({ content, options }: { content: string
         embed.addFields(
             style.fields.flatMap((key) => {
                 const render = FIELD_RENDERERS.get(key);
-                return render ? [{ name: FIELD_LABELS.get(key)!, value: render(weather, summary), inline: true }] : [];
+                if (typeof render !== 'function') return [];
+                return [{ name: FIELD_LABELS.get(key)!, value: render(weather, summary), inline: true }];
             }),
         );
     }
