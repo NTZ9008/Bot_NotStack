@@ -289,6 +289,7 @@ const tmd: RadarSource = {
             if (!file || !Number.isFinite(time)) return [];
             // ไฟล์ zr/00..24.png ถูกเขียนทับวนไปทุก 15 นาที — ใส่เวลาไว้ใน URL ให้ cache แยกภาพตามเวลา
             const url = new URL(`images/${file.includes('/') ? file : `zr/${file}`}`, TMD_BASE_URL);
+            if (url.origin !== new URL(TMD_BASE_URL).origin) return [];
             url.searchParams.set('t', String(time));
             return [{ time, url: url.href, bounds: TMD_BOUNDS }];
         });

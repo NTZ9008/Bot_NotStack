@@ -106,7 +106,7 @@ export async function buildWeatherReport({ content, options }: { content: string
     const description = fillWeatherPlaceholders(style.description, vars).trim().slice(0, 4096);
     if (description) embed.setDescription(description);
     if (style.fields.length) {
-        embed.addFields(style.fields.map((key) => ({ name: FIELD_LABELS.get(key)!, value: FIELD_VALUES[key](weather, summary), inline: true })));
+        embed.addFields(style.fields.filter((key) => Object.hasOwn(FIELD_VALUES, key)).map((key) => ({ name: FIELD_LABELS.get(key)!, value: FIELD_VALUES[key](weather, summary), inline: true })));
     }
     if (style.thumbnail && weather.current.icon) {
         embed.setThumbnail(`https://openweathermap.org/img/wn/${weather.current.icon}@2x.png`);
