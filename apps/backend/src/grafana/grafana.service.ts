@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -41,7 +42,7 @@ export class GrafanaService {
     private readonly legacyChannelId: string;
 
     constructor(config: ConfigService<Env, true>, private readonly discord: DiscordService, private readonly botConfig: BotConfigService, private readonly prisma: PrismaService) {
-        this.baseUrl = (config.get('GRAFANA_API_URL', { infer: true }) ?? '').replace(/\/+$/, '');
+        this.baseUrl = trimChar(config.get('GRAFANA_API_URL', { infer: true }) ?? '', '/', 'end');
         this.apiToken = config.get('GRAFANA_API_TOKEN', { infer: true }) ?? '';
         this.webhookSecret = config.get('GRAFANA_WEBHOOK_SECRET', { infer: true }) ?? '';
         this.legacyChannelId = config.get('GRAFANA_DISCORD_CHANNEL_ID', { infer: true }) ?? '';

@@ -27,7 +27,9 @@ export function humanizeMentions(text: unknown, resolve: MentionResolvers): stri
                 new Date(Number(sec) * 1000).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' }),
             )
             .replace(/`/g, '')
-            .replace(/\s*\n\s*/g, ' · ')
-            .trim()
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .join(' · ')
     );
 }

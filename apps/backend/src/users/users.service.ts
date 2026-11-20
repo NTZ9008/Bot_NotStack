@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import { isValidUsername, normalizeUsername, type UserRole } from '@notstack/shared';
 import bcrypt from 'bcryptjs';
@@ -9,7 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 // hash ของรหัสสุ่มที่ไม่มีใครรู้ — ใช้ compare ตอนหา username ไม่เจอ ให้เวลาตอบกลับเท่ากับกรณีรหัสผิด
 // (กันการเดาว่ามี username นี้อยู่ในระบบหรือไม่จากเวลาที่ใช้)
-const DUMMY_HASH = '$2b$12$uEIq99m7fXJsMb7av/MB6eIiDrF1KhOZhToA.hJtllxofZrcdnzH.';
+const DUMMY_HASH = bcrypt.hash(randomBytes(32).toString('hex'), AUTH.BCRYPT_ROUNDS);
 const BCRYPT_HASH_RE = /^\$2[aby]\$\d{2}\$.{53}$/;
 const CACHE_TTL_MS = 30 * 1000;
 
@@ -77,7 +78,7 @@ export class UsersService {
         const username = normalizeUsername(rawUsername);
         const user = isValidUsername(username) ? await this.prisma.user.findUnique({ where: { username } }) : null;
 
-        const matches = await this.comparePassword(password, user?.passwordHash || DUMMY_HASH);
+        const matches = await this.comparePassword(password, user?.passwordHash || (await DUMMY_HASH));
         if (!user || !user.passwordHash) {
             return { ok: false, reason: 'invalid' };
         }

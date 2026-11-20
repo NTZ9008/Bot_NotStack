@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import { decodePreviewResponse } from './preview-response';
 import { sessionRequests } from './session-state';
 import type { ApiErrorBody } from '@notstack/shared';
@@ -26,7 +27,7 @@ export class ApiError extends Error {
     }
 }
 
-export const API_BASE = String(import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
+export const API_BASE = trimChar(String(import.meta.env.VITE_API_URL ?? ''), '/', 'end');
 
 // URL เต็มของ path ใน API (ใช้กับ <img src> / ลิงก์ที่เปิดตรงๆ เช่น login ด้วย Discord)
 export const apiUrl = (path: string): string => (path.startsWith('/api') ? `${API_BASE}${path}` : `${API_BASE}/api${path}`);

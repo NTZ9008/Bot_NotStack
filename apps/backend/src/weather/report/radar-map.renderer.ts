@@ -285,7 +285,7 @@ const tmd: RadarSource = {
         const frames = list.split('\n').flatMap((line): RadarFrame[] => {
             const m = TMD_LIST_LINE.exec(line.trim());
             const file = m?.[3]?.split(',').map((f) => f.trim()).find((f) => /\.png$/i.test(f));
-            const time = m ? Date.parse(`${m[1]}T${m[2]}:00Z`) / 1000 : NaN;
+            const time = m ? Date.parse(`${m[1]}T${m[2]}:00Z`) / 1000 : Number.NaN;
             if (!file || !Number.isFinite(time)) return [];
             // ไฟล์ zr/00..24.png ถูกเขียนทับวนไปทุก 15 นาที — ใส่เวลาไว้ใน URL ให้ cache แยกภาพตามเวลา
             const url = new URL(`images/${file.includes('/') ? file : `zr/${file}`}`, TMD_BASE_URL);

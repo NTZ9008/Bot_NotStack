@@ -49,7 +49,7 @@ const COMMENT_BODY_LIMIT = 1000;
 const EPOCH = new Date(0).toISOString();
 
 const toIso = (value: string | null | undefined): string => {
-    const time = value ? Date.parse(value) : NaN;
+    const time = value ? Date.parse(value) : Number.NaN;
     return Number.isNaN(time) ? EPOCH : new Date(time).toISOString();
 };
 

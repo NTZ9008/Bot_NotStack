@@ -550,6 +550,9 @@ test('GitHub comment markdown is converted to what Discord can render', () => {
     assert.equal(md('```suggestion\nconst a = 1;\n```'), '**Suggested change:**\n```\nconst a = 1;\n```');
     assert.equal(md('```js\nunclosed'), '```js\nunclosed\n```');
     assert.equal(md('a\r\n\r\n\r\n\r\nb'), 'a\n\nb');
+    // \n ที่ได้จาก <summary> / <br> ต้องไม่หาย และตัดช่องว่างท้ายทุกบรรทัดย่อย
+    assert.equal(md('<details><summary>Logs</summary>\nhidden</details>'), '**▸ Logs**\n\nhidden');
+    assert.equal(md('foo   <br>bar   '), 'foo\nbar');
     const cut = md(`text\n\`\`\`\n${'x\n'.repeat(100)}\`\`\``, 60);
     assert.ok(cut.length <= 60);
     assert.ok(cut.endsWith('…\n```'));

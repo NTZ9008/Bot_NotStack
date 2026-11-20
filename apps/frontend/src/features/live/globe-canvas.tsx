@@ -94,7 +94,7 @@ function alpha(hex: string, value: number): string {
 function focusPoint(hubs: HubDatum[]): { lat: number; lng: number } {
     if (!hubs.length) return { lat: 13.7, lng: 100.5 }; // ยังไม่มีเซิร์ฟเวอร์ → เอเชียตะวันออกเฉียงใต้
     const near = (a: HubDatum, b: HubDatum) => Math.abs(a.lat - b.lat) < 30 && Math.abs(((a.lng - b.lng + 540) % 360) - 180) < 45;
-    const best = hubs.reduce((top, hub) => (hubs.filter((other) => near(hub, other)).length > hubs.filter((other) => near(top, other)).length ? hub : top));
+    const best = hubs.reduce((top, hub) => (hubs.filter((other) => near(hub, other)).length > hubs.filter((other) => near(top, other)).length ? hub : top), hubs[0]);
     return { lat: best.lat, lng: best.lng };
 }
 
