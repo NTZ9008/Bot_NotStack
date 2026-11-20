@@ -66,8 +66,7 @@ export function truncateMarkdown(text: string, limit: number): string {
 export function githubMarkdownToDiscord(body: string, limit: number): string {
     const out: string[] = [];
     let fence: string | null = null;
-    for (const line of stripRepeated(body.replace(/\r\n?/g, '\n'), /<!--[\s\S]*?-->/g)
-        .replace(/<!--/g, '')
+    for (const line of stripRepeated(body.replace(/\r\n?/g, '\n'), /<!--[\s\S]*?-->|<!--/g)
         .split('\n')) {
         const marker = line.match(FENCE);
         if (fence) {
