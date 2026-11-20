@@ -2,7 +2,7 @@
   <br/>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg?color=3F51B5&style=for-the-badge&label=License&labelColor=ececec" alt="License: Apache 2.0"></a>
   <a href="https://github.com/NTZ9008/Bot_NotStack/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/NTZ9008/Bot_NotStack/ci.yml?branch=main&style=for-the-badge&label=CI&logo=githubactions&logoColor=000000&labelColor=ececec" alt="CI status"></a>
-  <img src="https://img.shields.io/badge/Node.js-%E2%89%A520.19-339933?style=for-the-badge&logo=nodedotjs&logoColor=000000&labelColor=ececec" alt="Node.js 20.19 or later">
+  <img src="https://img.shields.io/badge/Node.js-%E2%89%A522.12-339933?style=for-the-badge&logo=nodedotjs&logoColor=000000&labelColor=ececec" alt="Node.js 22.12 or later">
   <img src="https://img.shields.io/badge/discord.js-v14-5865F2?style=for-the-badge&logo=discord&logoColor=000000&labelColor=ececec" alt="discord.js v14">
   <br/>
   <br/>
@@ -230,7 +230,7 @@ Bot_NotStack/
 
 ### Prerequisites
 
-- **Node.js 20.19+ or 22.12+** and **pnpm 10** (`corepack enable pnpm` or `npm i -g pnpm`)
+- **Node.js 22.12+ (or 24+)** and **pnpm 10** (`corepack enable pnpm` or `npm i -g pnpm`)
 - **PostgreSQL** (CI runs version 18)
 - A **Discord application** with a bot token and the **Message Content** and **Server Members** privileged intents enabled
 - Optional: a [Google Gemini](https://ai.google.dev/) API key for AI chat and the bad-word filter, and an
