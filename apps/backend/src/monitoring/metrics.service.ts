@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Events, type Interaction, type Message } from 'discord.js';
 import type { Request, Response, NextFunction } from 'express';
-import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -63,11 +63,11 @@ export class MetricsService {
         this.observeDiscord();
     }
 
-    private gauge(name: string, help: string, labelNames: string[] = []): Gauge {
+    private gauge(name: string, help: string, labelNames: string[] = []): Gauge<string> {
         return new Gauge({ name: `notstack_${name}`, help, labelNames, registers: [this.registry] });
     }
 
-    private counter(name: string, help: string, labelNames: string[]): Counter {
+    private counter(name: string, help: string, labelNames: string[]): Counter<string> {
         return new Counter({ name: `notstack_${name}`, help, labelNames, registers: [this.registry] });
     }
 

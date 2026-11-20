@@ -129,4 +129,4 @@ CPU 100% หมายถึงหนึ่ง CPU core; memory/CPU เป็น�
 
 อ้างอิง: [Prometheus scrape/authorization configuration](https://prometheus.io/docs/prometheus/latest/configuration/configuration/)
 
-หมายเหตุ dependency: ใช้ `prom-client` 15.x เพื่อรองรับ Node 20 ตาม engines ของ repo; upstream เปลี่ยนชื่อเป็น `@prometheus-io/client` ซึ่งรุ่นปัจจุบันต้องใช้ Node 22/24/26 ขึ้นไป ควรย้ายเมื่อปรับ Node baseline ของโปรเจกต์
+หมายเหตุ dependency: ใช้ `@prometheus-io/client` (ชื่อใหม่ของ `prom-client`) ซึ่งต้องใช้ Node 22/24/26 ขึ้นไป — ตั้งแต่ 0.16 gauge ที่ยังไม่เคย set จะไม่โผล่ใน output (ไม่ใช่ค่า 0) เช่น `notstack_db_*` ตอน query สถิติล้มตั้งแต่ครั้งแรก ให้ดู `notstack_db_stats_up`

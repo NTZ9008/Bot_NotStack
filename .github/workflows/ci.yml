@@ -63,4 +63,5 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - run: pnpm db:migrate
       - run: pnpm --filter @notstack/backend exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
-      - run: node --test tests/xp-database.test.cjs tests/security-database.test.cjs
+      # ทุกไฟล์ *-database.test.cjs (ชุดเดียวกับ pnpm test:integration) — ไฟล์ใหม่ไม่ต้องมาเพิ่มชื่อที่นี่
+      - run: node --test tests/*-database.test.cjs
