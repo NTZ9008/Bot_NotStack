@@ -558,3 +558,9 @@ test('GitHub comment markdown is converted to what Discord can render', () => {
     assert.ok(cut.endsWith('…\n```'));
     assert.equal(md('word '.repeat(50), 30).length <= 30, true);
 });
+
+test('githubMarkdownToDiscord strips nested tags and comments that reassemble after one pass', () => {
+    const { githubMarkdownToDiscord } = require('../apps/backend/dist/pr-bot/utils/github-markdown');
+    const out = githubMarkdownToDiscord('a <scr<i>ipt>x <!<!-- -->-- hidden --> b', 2000);
+    assert.ok(!/<script|<!--/i.test(out), out);
+});

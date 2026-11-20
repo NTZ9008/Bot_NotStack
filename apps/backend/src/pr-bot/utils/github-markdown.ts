@@ -9,7 +9,7 @@ const FENCE = /^\s*(`{3,}|~{3,})\s*([\w+-]*)/;
 const TAG = /<\/?[a-zA-Z][\w-]*(?:\s[^<>]*)?\/?>/g;
 
 function inlineHtml(text: string): string {
-    return text
+    text = text
         .replace(/<br\s*\/?>/gi, '\n')
         .replace(/<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/gi, '[🖼️ image]($1)')
         .replace(/<a\b[^>]*\bhref=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)')
@@ -17,8 +17,18 @@ function inlineHtml(text: string): string {
         .replace(/<\/?(?:b|strong)>/gi, '**')
         .replace(/<\/?(?:i|em)>/gi, '*')
         .replace(/<\/?(?:s|del|strike)>/gi, '~~')
-        .replace(/<\/?(?:code|kbd)>/gi, '`')
-        .replace(TAG, '');
+        .replace(/<\/?(?:code|kbd)>/gi, '`');
+    return stripRepeated(text, TAG);
+}
+
+// ลบซ้ำจนไม่เปลี่ยน — กันกรณีซ้อนกันอย่าง <scr<b>ipt> หรือ <!<!---->-- ที่ลบรอบเดียวแล้วประกอบกลับเป็น tag
+function stripRepeated(text: string, pattern: RegExp): string {
+    let prev;
+    do {
+        prev = text;
+        text = text.replace(pattern, '');
+    } while (text !== prev);
+    return text;
 }
 
 function convertLine(line: string): string {
@@ -56,9 +66,7 @@ export function truncateMarkdown(text: string, limit: number): string {
 export function githubMarkdownToDiscord(body: string, limit: number): string {
     const out: string[] = [];
     let fence: string | null = null;
-    for (const line of body
-        .replace(/\r\n?/g, '\n')
-        .replace(/<!--[\s\S]*?-->/g, '')
+    for (const line of stripRepeated(body.replace(/\r\n?/g, '\n'), /<!--[\s\S]*?-->|<!--/g)
         .split('\n')) {
         const marker = line.match(FENCE);
         if (fence) {
