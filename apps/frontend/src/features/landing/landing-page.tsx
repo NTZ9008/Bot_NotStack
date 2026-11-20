@@ -1,10 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowDown, ArrowUpRight } from 'lucide-react';
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
-import { LandingGlobe } from '@/features/live/live-globe';
 import { CommandSearch } from './command-search';
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
@@ -14,6 +13,9 @@ import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { StatusLine, SystemStatus } from './system-status';
 import './landing.css';
+
+// ลูกโลกเป็นแค่ฉากหลัง — แยก chunk ไม่ให้ live-globe (+ zod ที่ติดมากับ @notstack/shared) ขวางการแสดงหน้าแรก
+const LandingGlobe = lazy(() => import('@/features/live/live-globe').then((m) => ({ default: m.LandingGlobe })));
 
 // ==========================================
 // 🏠 หน้า landing (สาธารณะ) — แนะนำบอท ค้นหาคำสั่ง สถานะระบบ และทีมผู้พัฒนา
@@ -200,9 +202,9 @@ function Hero({ botName, botAvatar, inviteUrl }: { botName: string; botAvatar: s
                 className="absolute inset-0 -z-10 bg-[radial-gradient(600px_circle_at_var(--spot-x)_var(--spot-y),rgb(99_102_241/0.28),transparent_60%)]"
             />
             {/* ลูกโลก (ข้อมูลจำลอง ไม่ใช่กิจกรรมจริง) — ชิดขวา ล้นขอบจอ อยู่หลังตัวหนังสือ (จอเล็กจางลงให้อ่านหัวข้อออก) */}
-            <LandingGlobe
-                className="absolute top-1/2 left-1/2 -z-10 aspect-square w-[150vw] -translate-x-1/2 -translate-y-1/2 md:translate-x-0 opacity-45 [mask-image:radial-gradient(circle,black_55%,transparent_71%)] sm:w-[min(115svh,95vw)] md:left-auto md:-right-[18vw] md:opacity-90 lg:-right-[8vw]"
-            />
+            <Suspense fallback={null}>
+                <LandingGlobe className="absolute top-1/2 left-1/2 -z-10 aspect-square w-[150vw] -translate-x-1/2 -translate-y-1/2 md:translate-x-0 opacity-45 [mask-image:radial-gradient(circle,black_55%,transparent_71%)] sm:w-[min(115svh,95vw)] md:left-auto md:-right-[18vw] md:opacity-90 lg:-right-[8vw]" />
+            </Suspense>
 
             {/* มุมบน (ไม่ใช่แถบ navbar) */}
             <div className="flex items-center justify-between gap-4 text-sm">
