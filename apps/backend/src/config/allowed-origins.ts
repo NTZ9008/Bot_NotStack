@@ -7,6 +7,7 @@
 // - wildcard port เช่น http://localhost:*
 // ใช้ทั้ง CORS (เทียบ origin) และ CSRF guard (เทียบ host)
 // ==========================================
+import { trimChar } from '@notstack/shared/text';
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -28,11 +29,11 @@ export interface AllowedOrigins {
 
 function parseOriginPattern(pattern: string): { cors: string | RegExp; hostMatcher: (host: string) => boolean } {
     // ตัดเครื่องหมายคำพูดรอบข้าง, ช่องว่าง และ trailing slash
-    const trimmed = pattern
+    const unquoted = pattern
         .trim()
         .replace(/^["']|["']$/g, '')
-        .trim()
-        .replace(/\/+$/, '');
+        .trim();
+    const trimmed = trimChar(unquoted, '/', 'end');
     if (!trimmed) {
         return { cors: '', hostMatcher: () => false };
     }

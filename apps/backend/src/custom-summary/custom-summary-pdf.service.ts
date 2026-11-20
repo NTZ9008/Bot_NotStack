@@ -434,7 +434,7 @@ function stripEmojiForPdf(name: string): string {
 
 /** แปลงลิงก์ Markdown [text](url) ให้เหลือเฉพาะข้อความธรรมดาในตาราง Log */
 function stripMarkdownLinks(text: string): string {
-    return text.replace(/\[([^\]\n]+)\]\(((?:https?:\/\/|mailto:)[^)\s]+|[^)\s]+)\)/g, '$1');
+    return text.replace(/\[([^[\]\n]+)\]\([^)\s]+\)/g, '$1');
 }
 
 /** ปรับชื่อเหตุการณ์ใน PDF ให้กระชับตรงบริบทรายงานทางการ */

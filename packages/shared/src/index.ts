@@ -1,4 +1,5 @@
 export * from './common';
+export * from './text';
 export * from './auth';
 export * from './admin';
 export * from './bot-config';

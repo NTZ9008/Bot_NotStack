@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared/text';
 import type { GuildSummary } from '@notstack/shared';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouterState } from '@tanstack/react-router';
@@ -47,7 +48,7 @@ const APP_PAGES: Record<string, ComponentType> = {
 // อยู่ใน bundle หลักเสมอ จึงขึ้นได้ทันทีแม้โค้ดของหน้านั้นยังโหลดไม่เสร็จ
 // ==========================================
 export function RouteSkeleton() {
-    const pathname = useRouterState({ select: (state) => state.location.pathname.replace(/\/+$/, '') || '/' });
+    const pathname = useRouterState({ select: (state) => trimChar(state.location.pathname, '/', 'end') || '/' });
     const queryClient = useQueryClient();
 
     const guildPage = pathname.match(/^\/servers\/([^/]+)\/([^/]+)/);

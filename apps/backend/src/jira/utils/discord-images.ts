@@ -1,5 +1,5 @@
 import { readBoundedResponse } from '../../common/utils/safe-image';
-import { JIRA_LIMITS } from '@notstack/shared';
+import { JIRA_LIMITS, trimChar } from '@notstack/shared';
 import type { UploadFile } from '../clients/jira.client';
 
 // ไฟล์ที่ผู้ใช้แนบใน pop-up อยู่บน CDN ของ Discord เสมอ — ไม่ดาวน์โหลดจาก host อื่น
@@ -30,11 +30,7 @@ function safeName(name: string, index: number, used: Set<string>): string {
                   .slice(0, 8)
                   .toLowerCase()
             : '';
-    const base =
-        (dot > 0 ? name.slice(0, dot) : name)
-            .replace(/[^\w-]+/g, '_')
-            .replace(/^_+|_+$/g, '')
-            .slice(0, 60) || `image-${index + 1}`;
+    const base = trimChar((dot > 0 ? name.slice(0, dot) : name).replace(/[^\w-]+/g, '_'), '_').slice(0, 60) || `image-${index + 1}`;
     let candidate = ext ? `${base}.${ext}` : base;
     for (let n = 2; used.has(candidate.toLowerCase()); n++) candidate = ext ? `${base}-${n}.${ext}` : `${base}-${n}`;
     used.add(candidate.toLowerCase());

@@ -202,7 +202,10 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                     </div>
 
                     {/* ตัวเลือกความเป็นส่วนตัวในไฟล์ PDF */}
-                    <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[#1e2638] bg-[#0b0e17] px-3.5 py-2.5 text-xs">
+                    <label
+                        aria-label="ซ่อน Discord User ID และ Server ID ในเอกสาร PDF"
+                        className="flex cursor-pointer items-center justify-between rounded-xl border border-[#1e2638] bg-[#0b0e17] px-3.5 py-2.5 text-xs"
+                    >
                         <div>
                             <div className="font-medium text-slate-200">ซ่อน Discord User ID และ Server ID ในเอกสาร PDF</div>
                             <p className="mt-0.5 text-[11px] text-slate-400">เปิดใช้งานเมื่อต้องการส่งต่อรายงานออกนอกองค์กร (ค่าเริ่มต้น: แสดง ID)</p>
