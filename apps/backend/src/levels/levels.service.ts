@@ -175,6 +175,11 @@ export class LevelsService {
                 }),
             ]),
         ]);
+        if (this.discord.ready)
+            await this.discord.cacheMembers(
+                guildId,
+                rows.map((row) => row.userId),
+            );
         // Keep five lookups moving; a slow Discord response must not hold back the next batch.
         const items: LevelRow[] = await mapConcurrent(rows, 5, async (row, i) => {
             const cached = this.discord.guild(guildId)?.members.cache.get(row.userId);
