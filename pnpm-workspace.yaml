@@ -21,3 +21,4 @@ overrides:
   'seroval@<1.6.11': 1.6.12
   'seroval-plugins@<1.6.11': 1.6.12
   minimatch: ^11.0.3
+  'effect@<3.22.1': 3.22.5
