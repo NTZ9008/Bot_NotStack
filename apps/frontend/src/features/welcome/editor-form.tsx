@@ -1,5 +1,5 @@
 import type { GuildChannel, WelcomeAsset, WelcomeCard, WelcomeDesign, WelcomeFontId, WelcomeMeta, WelcomeWeight } from '@notstack/shared';
-import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, Copy, Plus, Trash2 } from '@/components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { ChannelSelect } from '@/components/channel-select';
 import { ColorField } from '@/components/color-field';

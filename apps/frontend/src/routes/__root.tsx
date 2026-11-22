@@ -1,5 +1,5 @@
 import { createRootRouteWithContext, Link, Outlet, useRouter, type ErrorComponentProps } from '@tanstack/react-router';
-import { RefreshCw, Unplug } from 'lucide-react';
+import { RefreshCw, Unplug } from '@/components/icons';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

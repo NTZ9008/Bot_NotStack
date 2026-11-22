@@ -1,7 +1,7 @@
 import { useObjectUrl } from '@/hooks/use-object-url';
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { welcomeApi, type PreviewInput } from '@/api/welcome';
 import { DiscordMessage } from '@/components/discord-message';

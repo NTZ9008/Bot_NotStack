@@ -1,4 +1,5 @@
 import { DEFAULT_LOG_APPEARANCE } from '@notstack/shared';
+import { Brush, Filter, ListTree } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -92,14 +93,14 @@ function LogManagerPage() {
                         )}
                         <Tabs defaultValue="events" className="gap-5">
                             <TabsList variant="line" className="overflow-x-auto">
-                                <TabsTrigger value="events" className="px-4 py-2">
-                                    เหตุการณ์และห้อง
+                                <TabsTrigger value="events">
+                                    <ListTree /> เหตุการณ์และห้อง
                                 </TabsTrigger>
-                                <TabsTrigger value="appearance" className="px-4 py-2">
-                                    รูปแบบข้อความ
+                                <TabsTrigger value="appearance">
+                                    <Brush /> รูปแบบข้อความ
                                 </TabsTrigger>
-                                <TabsTrigger value="filters" className="px-4 py-2">
-                                    ตัวกรอง
+                                <TabsTrigger value="filters">
+                                    <Filter /> ตัวกรอง
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="appearance" forceMount className="data-[state=inactive]:hidden">

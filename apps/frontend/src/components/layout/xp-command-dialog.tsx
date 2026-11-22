@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { levelsQuery } from '@/api/bot';

@@ -12,7 +12,7 @@ import {
     type RelationTimelineItem,
 } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
-import { MessagesSquare, Mic, ShieldAlert, type LucideIcon } from 'lucide-react';
+import { MessagesSquare, Mic, ShieldAlert, type LucideIcon } from '@/components/icons';
 import type { ReactNode } from 'react';
 import { relationHistoryQuery, relationLinkQuery } from '@/api/relations';
 import { EmptyState, ErrorState } from '@/components/states';

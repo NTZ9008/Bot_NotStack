@@ -1,6 +1,6 @@
 import type { GuildChannel, GuildRole, LogOptions, UpdateLogOptionsInput } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Plus, X } from 'lucide-react';
+import { Plus, X } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { logSettingsApi } from '@/api/bot';

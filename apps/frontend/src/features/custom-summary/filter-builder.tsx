@@ -15,7 +15,7 @@ import {
     UserRound,
     Volume2,
     X,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
 import { Button } from '@/components/ui/button';

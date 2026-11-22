@@ -2,7 +2,7 @@ import type { ActivityStats } from '@notstack/shared';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Bot, RefreshCw } from 'lucide-react';
+import { Bot, RefreshCw } from '@/components/icons';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ViewportContent } from '@/components/viewport-content';
 import { activityStatsQuery, type StatsParams } from '@/api/admin';

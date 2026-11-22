@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, Save, ShieldAlert, Trash2 } from 'lucide-react';
+import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, Save, ShieldAlert, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { aiSettingsQuery, testAiKey, updateAiSettings } from '@/api/ai';

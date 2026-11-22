@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '@/components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { logFileQuery, logFilesQuery } from '@/api/bot';
 import { Field } from '@/components/field';

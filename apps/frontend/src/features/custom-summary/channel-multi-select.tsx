@@ -1,5 +1,5 @@
 import type { CustomSummaryChannelGroup, CustomSummaryChannelOption } from '@notstack/shared';
-import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from 'lucide-react';
+import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

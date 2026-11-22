@@ -1,5 +1,5 @@
 import type { CustomSummaryResponse } from '@notstack/shared';
-import { Activity, AlertTriangle, GitPullRequest, MessageSquareText, Terminal, Users, Volume2 } from 'lucide-react';
+import { Activity, AlertTriangle, GitPullRequest, MessageSquareText, Terminal, Users, Volume2 } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';

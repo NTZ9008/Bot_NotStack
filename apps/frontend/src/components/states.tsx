@@ -1,4 +1,4 @@
-import { AlertCircle, Inbox } from 'lucide-react';
+import { AlertCircle, Inbox } from '@/components/icons';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/api';

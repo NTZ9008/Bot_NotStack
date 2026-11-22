@@ -1,6 +1,6 @@
 import { formatBaht, roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Loader2, Trash2, Users, X } from 'lucide-react';
+import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Loader2, Trash2, Users, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';

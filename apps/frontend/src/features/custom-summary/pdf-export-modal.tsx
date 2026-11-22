@@ -4,7 +4,7 @@ import type {
     CustomSummaryPdfTheme,
     CustomSummaryResponse,
 } from '@notstack/shared';
-import { CheckCircle2, Download, FileText, Loader2, Moon, Sun } from 'lucide-react';
+import { CheckCircle2, Download, FileText, Loader2, Moon, Sun } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { exportCustomSummaryPdf } from '@/api/custom-summary';
 import { Button } from '@/components/ui/button';

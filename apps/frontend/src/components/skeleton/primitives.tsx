@@ -37,7 +37,7 @@ export function SwitchBone({ className }: { className?: string }) {
 }
 
 export function BadgeBone({ className }: { className?: string }) {
-    return <Skeleton className={cn('h-5 w-16 shrink-0 rounded-4xl', className)} />;
+    return <Skeleton className={cn('h-5 w-16 shrink-0 rounded-md', className)} />;
 }
 
 // ป้ายชื่อ (Label: text-sm leading-none)

@@ -1,6 +1,6 @@
 import type { MemberSearchResult } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X } from '@/components/icons';
 import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
 import { Button } from '@/components/ui/button';

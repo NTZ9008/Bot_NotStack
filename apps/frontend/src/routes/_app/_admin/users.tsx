@@ -3,7 +3,7 @@ import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { KeyRound, Loader2, LockOpen, LogOut, Trash2, UserPlus } from 'lucide-react';
+import { KeyRound, Loader2, LockOpen, LogOut, Trash2, UserPlus } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';

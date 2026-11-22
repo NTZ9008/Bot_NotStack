@@ -1,7 +1,7 @@
 import { positiveSearchId } from '@/lib/search-params';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Plus } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';

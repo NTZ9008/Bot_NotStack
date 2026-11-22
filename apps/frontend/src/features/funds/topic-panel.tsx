@@ -18,7 +18,7 @@ import {
     Target,
     Trash2,
     Users,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi, fundQuery } from '@/api/fund';

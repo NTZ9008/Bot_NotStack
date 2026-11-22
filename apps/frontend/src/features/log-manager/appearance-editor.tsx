@@ -1,6 +1,6 @@
 import { DEFAULT_LOG_APPEARANCE, formatLogEmbed, type LogAppearance, type LogEmbedContent, type LogEventSetting } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Check, RotateCcw, Save } from 'lucide-react';
+import { Check, RotateCcw, Save } from '@/components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { logSettingsApi } from '@/api/bot';

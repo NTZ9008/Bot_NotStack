@@ -1,4 +1,5 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
+import { Award, History, IdCard, Palette, Settings, Trophy, Users } from '@/components/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -202,24 +203,28 @@ function LevelsPage() {
             <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList variant="line" className="mb-4">
-                    <TabsTrigger value="leaderboard">อันดับสมาชิก</TabsTrigger>
+                    <TabsTrigger value="leaderboard">
+                        <Trophy /> อันดับสมาชิก
+                    </TabsTrigger>
                     <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
-                        การ์ดของฉัน
+                        <IdCard /> การ์ดของฉัน
                     </TabsTrigger>
                     {manage && (
                         <>
                             <TabsTrigger value="card-theme" {...intent(['meta', 'theme', 'welcome-meta', 'assets', 'cards'])}>
-                                ธีมการ์ด
+                                <Palette /> ธีมการ์ด
                             </TabsTrigger>
                             <TabsTrigger value="level-up" {...intent(['meta', 'theme', 'level-up', 'channels', 'roles'])}>
-                                เลเวลอัป & ยศรางวัล
+                                <Award /> เลเวลอัป & ยศรางวัล
                             </TabsTrigger>
                             <TabsTrigger value="settings" {...intent(['settings', 'channels', 'roles'])}>
-                                กฎและอัตรา XP
+                                <Settings /> กฎและอัตรา XP
                             </TabsTrigger>
-                            <TabsTrigger value="members">จัดการสมาชิก</TabsTrigger>
+                            <TabsTrigger value="members">
+                                <Users /> จัดการสมาชิก
+                            </TabsTrigger>
                             <TabsTrigger value="history" {...intent(['history'])}>
-                                ประวัติ
+                                <History /> ประวัติ
                             </TabsTrigger>
                         </>
                     )}

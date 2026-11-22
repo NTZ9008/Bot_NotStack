@@ -6,7 +6,7 @@ import type {
     CustomSummaryResponse,
 } from '@notstack/shared';
 import type { ColumnDef } from '@tanstack/react-table';
-import { ChevronDown, ChevronUp, FileSpreadsheet, ListTree, Search, Trophy, Volume2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, FileSpreadsheet, ListTree, Search, Trophy, Volume2 } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import { RankBadge } from '@/components/rank-badge';

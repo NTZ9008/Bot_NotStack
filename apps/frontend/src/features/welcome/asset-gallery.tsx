@@ -1,6 +1,6 @@
 import { WELCOME_UPLOAD_TYPES, type WelcomeAsset, type WelcomeCard, type WelcomeMeta } from '@notstack/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Trash2, Upload } from 'lucide-react';
+import { Loader2, Pencil, Trash2, Upload } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { assetImageUrl, welcomeApi, welcomeAssetsQuery, welcomeCardsQuery } from '@/api/welcome';

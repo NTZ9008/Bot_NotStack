@@ -1,7 +1,7 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Loader2, Send } from 'lucide-react';
+import { Loader2, Send } from '@/components/icons';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { sendNews } from '@/api/bot';

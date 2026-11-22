@@ -24,7 +24,7 @@ import {
     UserRound,
     Wand2,
     type LucideIcon,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { guildQuery, guildsQuery, searchMembersQuery } from '@/api/guilds';

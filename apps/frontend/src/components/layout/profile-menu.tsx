@@ -1,7 +1,7 @@
 import { replaceSession } from '@/lib/session';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronsUpDown, CircleUser, LogOut } from 'lucide-react';
+import { ChevronsUpDown, CircleUser, LogOut } from '@/components/icons';
 import { authApi } from '@/api/auth';
 import { useConfirm } from '@/components/confirm-dialog';
 import { RoleBadge } from '@/components/role-badge';

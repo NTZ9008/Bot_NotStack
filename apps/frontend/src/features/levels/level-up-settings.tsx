@@ -7,7 +7,7 @@ import {
     type RankCardTheme,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';

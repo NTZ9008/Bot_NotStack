@@ -1,7 +1,7 @@
 import type { GuildSummary } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { AlertTriangle, ChevronRight, Plus, RefreshCw, ShieldCheck, Users } from 'lucide-react';
+import { AlertTriangle, ChevronRight, Plus, RefreshCw, ShieldCheck, Users } from '@/components/icons';
 import { guildsQuery } from '@/api/guilds';
 import { DiscordIcon } from '@/components/discord-icon';
 import { LiveGlobe } from '@/features/live/live-globe';

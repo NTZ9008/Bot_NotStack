@@ -1,6 +1,6 @@
 import type { FundTopicDetail } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bell, Eye, EyeOff, Image as ImageIcon, Loader2, MessageSquareShare, Send } from 'lucide-react';
+import { Bell, Eye, EyeOff, Image as ImageIcon, Loader2, MessageSquareShare, Send } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';

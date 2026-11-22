@@ -1,7 +1,7 @@
 import type { PrBotSettings, UpdatePrBotInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, X } from 'lucide-react';
+import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, X } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { prBotQuery, rotatePrBotSecret, updatePrBot } from '@/api/bot';

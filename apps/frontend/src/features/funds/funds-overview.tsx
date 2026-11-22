@@ -14,7 +14,7 @@ import {
     Target,
     TrendingUp,
     Wallet,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';

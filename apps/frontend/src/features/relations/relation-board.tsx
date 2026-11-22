@@ -8,7 +8,7 @@ import {
     type RelationRole,
 } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { ListFilter, Maximize, Minus, Plus, RotateCcw } from 'lucide-react';
+import { ListFilter, Maximize, Minus, Plus, RotateCcw } from '@/components/icons';
 import { useMemo, useRef, useState } from 'react';
 import { relationBoardQuery, relationPresenceQuery } from '@/api/relations';
 import { useConfirm } from '@/components/confirm-dialog';

@@ -1,7 +1,7 @@
 import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from 'lucide-react';
+import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';

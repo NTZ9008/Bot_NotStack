@@ -1,6 +1,6 @@
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';

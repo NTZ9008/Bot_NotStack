@@ -1,7 +1,7 @@
 import type { GrafanaSettings, UpdateGrafanaSettingsInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from 'lucide-react';
+import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from '@/components/icons';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';

@@ -1,4 +1,4 @@
-import { Bold, Code, Eye, Heading1, Heading2, Heading3, Italic, Link, List, Quote, SquareCode, Strikethrough, Underline, type LucideIcon } from 'lucide-react';
+import { Bold, Code, Eye, Heading1, Heading2, Heading3, Italic, Link, List, Quote, SquareCode, Strikethrough, Underline, type LucideIcon } from '@/components/icons';
 import type { RefObject } from 'react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';

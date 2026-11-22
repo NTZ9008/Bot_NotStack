@@ -1,7 +1,7 @@
 import type { WeatherSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertTriangle, Loader2, RotateCcw, Save, Send } from 'lucide-react';
+import { AlertTriangle, Loader2, RotateCcw, Save, Send } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';

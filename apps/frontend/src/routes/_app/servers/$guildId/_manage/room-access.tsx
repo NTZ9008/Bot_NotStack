@@ -2,7 +2,7 @@ import { ALL_ROOMS, type AccessRoom, type GrantAccessInput, type RoomAccessItem 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, Plus, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { accessRoomsQuery, roomAccessApi, roomAccessQuery } from '@/api/bot';

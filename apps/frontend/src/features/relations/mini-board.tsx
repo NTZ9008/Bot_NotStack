@@ -1,7 +1,7 @@
 import type { RelationLink, RelationPerson, RelationPresence } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowUpRight, Waypoints } from 'lucide-react';
+import { ArrowUpRight, Waypoints } from '@/components/icons';
 import { useMemo, useRef } from 'react';
 import { relationBoardQuery, relationPresenceQuery } from '@/api/relations';
 import { LiveFeedPanel, LiveStatus, useNow } from '@/features/live/live-globe';

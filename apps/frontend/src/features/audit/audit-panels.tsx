@@ -1,7 +1,7 @@
 import { AUDIT_GROUP_LABELS, auditLabel, type ActivityItem, type AuditLogItem } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search } from '@/components/icons';
 import { useState, type ReactNode } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery, type ActivityFilters, type AuditFilters } from '@/api/admin';
 import { DataTable } from '@/components/data-table';

@@ -1,7 +1,7 @@
 import { CUSTOM_SUMMARY_MODULES, type CustomSummaryRequestInput } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Clock, Layers3, Sparkles } from 'lucide-react';
+import { Clock, Layers3, Sparkles } from '@/components/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { customSummaryChannelsQuery, fetchCustomSummary } from '@/api/custom-summary';
 import { PageHeader } from '@/components/page-header';

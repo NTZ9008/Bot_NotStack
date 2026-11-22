@@ -1,6 +1,6 @@
 import type { GuildChannel, GuildRole, PreviewEmbed, WeatherOptions } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle, Loader2 } from '@/components/icons';
 import { weatherApi } from '@/api/weather';
 import { DiscordMessage } from '@/components/discord-message';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';

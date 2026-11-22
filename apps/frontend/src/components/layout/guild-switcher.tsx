@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
-import { Check, ChevronsUpDown, LayoutGrid, Plus } from 'lucide-react';
+import { Check, ChevronsUpDown, LayoutGrid, Plus } from '@/components/icons';
 import { guildQuery, guildsQuery } from '@/api/guilds';
 import { GuildIcon } from '@/components/guild-icon';
 import {
@@ -42,7 +42,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                                 className="border border-input bg-background hover:bg-background data-[state=open]:border-ring group-data-[collapsible=icon]:border-0"
                                 tooltip="เลือกเซิร์ฟเวอร์"
                             >
-                                {current ? <GuildIcon guild={current} /> : <LayoutGrid className="size-8 p-1.5" />}
+                                {current ? <GuildIcon guild={current} /> : <LayoutGrid className="mx-1.5 size-5! shrink-0 text-muted-foreground" />}
                                 <div className="grid min-w-0 flex-1 text-left leading-tight">
                                     <span className="truncate text-sm font-medium">{current?.name ?? 'เลือกเซิร์ฟเวอร์'}</span>
                                     <span className="truncate text-xs text-muted-foreground">

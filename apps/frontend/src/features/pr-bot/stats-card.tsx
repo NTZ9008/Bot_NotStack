@@ -1,6 +1,6 @@
 import type { PrBotStatsDays } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '@/components/icons';
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { prBotStatsQuery } from '@/api/bot';

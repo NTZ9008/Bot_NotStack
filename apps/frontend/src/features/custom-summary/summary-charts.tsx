@@ -1,5 +1,5 @@
 import type { CustomSummaryResponse } from '@notstack/shared';
-import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Volume2 } from 'lucide-react';
+import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Volume2 } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/states';

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Check, Menu, X } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';

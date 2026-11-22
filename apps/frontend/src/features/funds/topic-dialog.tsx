@@ -1,6 +1,6 @@
 import { calculateDailyAmount, calculateDays, formatBaht, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from 'lucide-react';
+import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';

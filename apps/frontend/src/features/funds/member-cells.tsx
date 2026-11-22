@@ -1,6 +1,6 @@
 import { formatBaht, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Pencil, X } from 'lucide-react';
+import { Pencil, X } from '@/components/icons';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';

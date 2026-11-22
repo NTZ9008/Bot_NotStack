@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { BrandDiscord, LayoutDashboard } from '@/components/icons';
 import { useMemo } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
 import { PageHeader } from '@/components/page-header';
@@ -66,7 +67,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
                             >
-                                การตั้งค่าบน Dashboard
+                                <LayoutDashboard /> การตั้งค่าบน Dashboard
                             </TabsTrigger>
                             <TabsTrigger
                                 value="discord"
@@ -74,7 +75,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:discord`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
                             >
-                                เหตุการณ์ในเซิร์ฟเวอร์ Discord
+                                <BrandDiscord /> เหตุการณ์ในเซิร์ฟเวอร์ Discord
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">

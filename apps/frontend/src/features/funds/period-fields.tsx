@@ -1,5 +1,5 @@
 import { formatBaht } from '@notstack/shared';
-import { AlertCircle, Calendar } from 'lucide-react';
+import { AlertCircle, Calendar } from '@/components/icons';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

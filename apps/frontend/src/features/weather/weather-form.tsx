@@ -1,5 +1,5 @@
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
-import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { weatherApi } from '@/api/weather';

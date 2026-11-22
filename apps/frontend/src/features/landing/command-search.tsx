@@ -1,4 +1,4 @@
-import { Check, ChevronDown, Copy, Search, X } from 'lucide-react';
+import { Check, ChevronDown, Copy, Search, X } from '@/components/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_CATEGORIES, COMMANDS, type Command, type CommandCategory } from './content';
 

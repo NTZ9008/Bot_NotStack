@@ -1,7 +1,7 @@
 import type { JiraConnectionResult, JiraOptions, JiraSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2, RotateCcw, Save, Send } from 'lucide-react';
+import { Loader2, RotateCcw, Save, Send } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';

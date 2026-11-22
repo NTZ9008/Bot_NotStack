@@ -1,6 +1,6 @@
 import { PAGE_GUIDES, type PageGuideKey } from '../../lib/page-guides';
 import type { GuildSummary } from '@notstack/shared';
-import type { LucideIcon } from 'lucide-react';
+import type { LucideIcon } from '@/components/icons';
 import {
     CircleUser,
     CloudSun,
@@ -25,7 +25,7 @@ import {
     UserPlus,
     Users,
     Waypoints,
-} from 'lucide-react';
+} from '@/components/icons';
 
 export interface NavItem {
     // path ของ route (หน้าของเซิร์ฟเวอร์มี $guildId — ใส่ params ตอนสร้างลิงก์)

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Headphones, LogOut, Play, Square, Volume2 } from 'lucide-react';
+import { Headphones, LogOut, Play, Square, Volume2 } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { voiceChannelsQuery } from '@/api/guilds';

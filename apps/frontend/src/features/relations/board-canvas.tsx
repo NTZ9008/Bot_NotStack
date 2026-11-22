@@ -22,7 +22,7 @@ import {
     type PointerEvent,
     type Ref,
 } from 'react';
-import { Mic } from 'lucide-react';
+import { Mic } from '@/components/icons';
 import { fallbackAvatar } from '@/lib/format';
 import {
     CARD_HEIGHT,

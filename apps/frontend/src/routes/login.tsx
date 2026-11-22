@@ -4,7 +4,7 @@ import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from '@/components/icons';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';

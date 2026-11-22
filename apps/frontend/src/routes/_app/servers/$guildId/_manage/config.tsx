@@ -1,7 +1,7 @@
 import { CONFIG_GROUPS, type ConfigRow } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons';
 import { toast } from 'sonner';
 import { configQuery, updateConfig } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';

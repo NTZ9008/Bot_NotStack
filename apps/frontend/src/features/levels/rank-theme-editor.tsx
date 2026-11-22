@@ -1,6 +1,6 @@
 import type { RankBackgroundType, RankCardMeta, RankCardStyle, RankCardTheme, RankPreviewKind, WelcomeAsset, WelcomeCard, WelcomeMeta } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, RotateCcw, Save } from 'lucide-react';
+import { Check, RotateCcw, Save } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { rankCardApi, rankCardKey, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';

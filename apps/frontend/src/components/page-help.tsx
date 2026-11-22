@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { Info } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { PageGuide } from '@/lib/page-guides';

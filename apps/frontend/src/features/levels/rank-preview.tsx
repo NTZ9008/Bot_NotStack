@@ -1,7 +1,7 @@
 import { useObjectUrl } from '@/hooks/use-object-url';
 import type { RankPreviewKind } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons';
 import { DiscordMessage } from '@/components/discord-message';
 import { Segmented } from '@/features/welcome/form-controls';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';

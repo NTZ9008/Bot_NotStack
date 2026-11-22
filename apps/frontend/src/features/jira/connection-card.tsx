@@ -1,5 +1,5 @@
 import type { JiraConnectionResult } from '@notstack/shared';
-import { ExternalLink, Loader2, PlugZap } from 'lucide-react';
+import { ExternalLink, Loader2, PlugZap } from '@/components/icons';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

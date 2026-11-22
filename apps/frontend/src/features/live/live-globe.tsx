@@ -1,5 +1,5 @@
 import { LIVE_KIND_META, LIVE_KINDS, liveEventLabel, type LiveEvent, type LiveKind, type LiveStats } from '@notstack/shared';
-import { Activity } from 'lucide-react';
+import { Activity } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { StreamStatus } from '@/lib/sse';
 import { formatNumber, formatTimeAgo } from '@/lib/format';

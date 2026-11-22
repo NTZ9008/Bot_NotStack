@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, ChevronDown, Compass } from 'lucide-react';
+import { ArrowRight, ChevronDown, Compass } from '@/components/icons';
 import { visibleNavGroups } from '@/components/layout/nav-items';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/hooks/use-auth';

@@ -4,7 +4,7 @@ import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { KeyRound, Loader2, LogOut, Unlink } from 'lucide-react';
+import { KeyRound, Loader2, LogOut, Unlink } from '@/components/icons';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';

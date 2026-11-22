@@ -41,7 +41,7 @@ function AppLayout() {
                         <CommandPalette />
                     </div>
                 </header>
-                <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pt-2 pb-8 md:px-8">
+                <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pt-2 pb-10 md:px-10 xl:px-20">
                     <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
                         <span className="max-w-56 truncate text-muted-foreground">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
                         <span aria-hidden className="text-muted-foreground">/</span>
@@ -49,7 +49,7 @@ function AppLayout() {
                     </nav>
                     <Outlet />
                 </main>
-                <footer className="border-t px-6 py-4 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot</footer>
+                <footer className="px-6 py-4 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot</footer>
             </SidebarInset>
         </SidebarProvider>
     );
