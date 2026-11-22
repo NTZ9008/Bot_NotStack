@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { CSSProperties, ReactNode } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,7 +38,7 @@ export function SwitchBone({ className }: { className?: string }) {
 }
 
 export function BadgeBone({ className }: { className?: string }) {
-    return <Skeleton className={cn('h-5 w-16 shrink-0 rounded-4xl', className)} />;
+    return <Skeleton className={cn('h-5 w-16 shrink-0 rounded-md', className)} />;
 }
 
 // ป้ายชื่อ (Label: text-sm leading-none)
@@ -213,7 +214,7 @@ export function ToggleGroupBone({ count, className }: { count: number; className
 // กรอบข้อความจำลองแบบ Discord (<DiscordMessage>) + รูป/embed ด้านใน
 export function DiscordPreviewSkeleton({ children, aspect = '10 / 3' }: { children?: ReactNode; aspect?: string }) {
     return (
-        <div className="rounded-lg bg-[#313338] p-4 shadow-inner" aria-hidden>
+        <div className="dark rounded-lg bg-[#313338] p-4 shadow-inner" aria-hidden>
             <div className="flex gap-4">
                 <Skeleton className="size-10 shrink-0 rounded-full bg-white/10" />
                 <div className="min-w-0 flex-1 space-y-2">
@@ -242,7 +243,7 @@ export function NoticeBone({ lines = 1, className }: { lines?: number; className
 
 // ครอบโครงร่างหลายส่วนที่เรียงต่อกัน — ระยะห่าง space-y-6 เท่ากับ <main> ของ layout
 // และบอก screen reader ว่ากำลังโหลด
-export function SkeletonStack({ children, label = 'กำลังโหลดข้อมูล', className }: { children: ReactNode; label?: string; className?: string }) {
+export function SkeletonStack({ children, label = tr('กำลังโหลดข้อมูล'), className }: { children: ReactNode; label?: string; className?: string }) {
     return (
         <div className={cn('space-y-6', className)} role="status" aria-busy="true" aria-label={label}>
             {children}

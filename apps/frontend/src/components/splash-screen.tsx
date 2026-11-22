@@ -1,9 +1,10 @@
+import { tr } from '../lib/i18n';
 // ==========================================
 // 🚀 SPLASH — หน้าจอระหว่างเปิดเว็บครั้งแรก / ตรวจ session กับ backend
 // หน้าตาเดียวกับ splash ใน index.html (ใช้ class .app-splash ที่ประกาศไว้ใน index.html)
 // จึงต่อกันได้เนียนตั้งแต่ก่อน JavaScript โหลดจนถึงตอนหน้าแรกพร้อม
 // ==========================================
-export function SplashScreen({ label = 'กำลังเชื่อมต่อ...' }: { label?: string }) {
+export function SplashScreen({ label = tr('กำลังเชื่อมต่อ...') }: { label?: string }) {
     return (
         <div className="app-splash" role="status" aria-live="polite" aria-label={label}>
             <svg className="app-splash__logo" viewBox="0 0 32 32" aria-hidden>

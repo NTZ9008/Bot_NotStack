@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Check, Menu, X } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
@@ -719,7 +719,7 @@ export function LandingPage() {
     usePageMeta('/');
 
     return (
-        <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
+        <div className="landing dark min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
             <TopNav active={active} botName={bot.name} inviteUrl={inviteUrl} />
 
             <main id="top">

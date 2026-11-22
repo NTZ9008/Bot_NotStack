@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import type {
     AddFundMembersInput,
     BatchFundPaymentInput,
@@ -43,7 +44,8 @@ export const fundApi = {
     updatePayment: (guildId: string, id: number, paymentId: number, input: UpdateFundPaymentInput) =>
         api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}`), { body: input }),
     batchPayment: (guildId: string, id: number, input: BatchFundPaymentInput) => api<SuccessResponse>(f(guildId, `/${id}/payments/batch`), { body: input }),
-    removePayment: (guildId: string, id: number, paymentId: number) => api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
+    removePayment: (guildId: string, id: number, paymentId: number) =>
+        api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),
     reportImageUrl: (guildId: string, id: number, version = '') =>
         apiUrl(`${f(guildId, `/${id}/report-image`)}${version ? `?v=${encodeURIComponent(version)}` : ''}`),
@@ -58,7 +60,7 @@ export const fundApi = {
         }
         if (!res.ok) {
             const errData = (await res.json().catch(() => ({}))) as { message?: string };
-            throw new Error(errData.message || 'ดาวน์โหลด CSV ไม่สำเร็จ');
+            throw new Error(errData.message || tr('ดาวน์โหลด CSV ไม่สำเร็จ'));
         }
         const blob = await res.blob();
         const blobUrl = URL.createObjectURL(blob);

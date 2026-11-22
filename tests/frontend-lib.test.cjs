@@ -416,6 +416,32 @@ test('command palette guide walks through a partial XP command step by step', ()
     for (const text of ['', 'ตั้งค่า', 'ให้', 'voice', 'log boat']) assert.equal(commandGuide(text), null, text);
 });
 
+const { parseDateTimeValue, buildDateTimeValue } = require('../apps/frontend/src/lib/date-time-value.ts');
+
+test('date/time picker keeps the same string format as native inputs', () => {
+    const { date, time } = parseDateTimeValue('2026-11-22T16:53', 'datetime');
+    assert.equal(time, '16:53');
+    assert.deepEqual([date.getFullYear(), date.getMonth(), date.getDate()], [2026, 10, 22]);
+    assert.equal(buildDateTimeValue('datetime', date, time), '2026-11-22T16:53');
+    assert.equal(buildDateTimeValue('date', parseDateTimeValue('2026-01-05', 'date').date, undefined), '2026-01-05');
+    assert.equal(buildDateTimeValue('time', undefined, parseDateTimeValue('07:05', 'time').time), '07:05');
+    // ค่าว่าง/ผิดรูปแบบ = ไม่มีวัน; datetime ที่ยังไม่มีเวลาใช้ 00:00
+    assert.equal(parseDateTimeValue('', 'date').date, undefined);
+    assert.equal(parseDateTimeValue('22/11/2026', 'date').date, undefined);
+    assert.equal(buildDateTimeValue('datetime', new Date(2026, 0, 1), undefined), '2026-01-01T00:00');
+    assert.equal(buildDateTimeValue('date', undefined, undefined), '');
+});
+
+const { translate } = require('../apps/frontend/src/lib/i18n.ts');
+
+test('i18n translates by Thai key, keeps Thai when missing, fills {params}', () => {
+    assert.equal(translate('th', 'ตั้งค่าบอท'), 'ตั้งค่าบอท');
+    assert.equal(translate('en', 'ตั้งค่าบอท'), 'Bot settings');
+    assert.equal(translate('en', 'ข้อความที่ยังไม่แปล'), 'ข้อความที่ยังไม่แปล');
+    assert.equal(translate('en', '{count} เซิร์ฟเวอร์', { count: 3 }), '3 servers');
+    assert.equal(translate('th', '{count} เซิร์ฟเวอร์', { count: 3 }), '3 เซิร์ฟเวอร์');
+});
+
 test('SEO prerender gives each public page its own head and crawlable body', () => {
     const { renderPageHtml } = require('../apps/frontend/src/lib/seo-prerender.ts');
     const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');

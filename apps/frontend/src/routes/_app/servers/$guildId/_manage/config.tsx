@@ -1,7 +1,8 @@
+import { tr, byLang } from '../../../../../lib/i18n';
 import { CONFIG_GROUPS, type ConfigRow } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from '@/components/icons';
 import { toast } from 'sonner';
 import { configQuery, updateConfig } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';
@@ -24,10 +25,10 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/config')({
     component: ConfigPage,
 });
 
-const GROUP_DESCRIPTIONS: Record<string, string> = {
-    ห้อง: 'ห้องที่บอทใช้ส่งข้อความของระบบต่างๆ — เลือก "ไม่ส่ง" เพื่อปิดระบบนั้น',
-    ความสามารถในแชท: 'เปิด/ปิดสิ่งที่บอททำอัตโนมัติในแชทของเซิร์ฟเวอร์นี้ (เซิร์ฟเวอร์ใหม่ปิดไว้ก่อน ยกเว้นเฝ้าระวังห้องเสียง)',
-};
+const GROUP_DESCRIPTIONS = byLang((): Record<string, string> => ({
+    ห้อง: tr('ห้องที่บอทใช้ส่งข้อความของระบบต่างๆ — เลือก "ไม่ส่ง" เพื่อปิดระบบนั้น'),
+    ความสามารถในแชท: tr('เปิด/ปิดสิ่งที่บอททำอัตโนมัติในแชทของเซิร์ฟเวอร์นี้ (เซิร์ฟเวอร์ใหม่ปิดไว้ก่อน ยกเว้นเฝ้าระวังห้องเสียง)'),
+}));
 
 // แก้ค่าแล้วบันทึกทันที (ไม่มีปุ่ม Save) — ห้องเลือกจาก dropdown, สวิตช์เปิด/ปิด
 function ConfigField({ row }: { row: ConfigRow }) {
@@ -37,10 +38,10 @@ function ConfigField({ row }: { row: ConfigRow }) {
     const mutation = useMutation({
         mutationFn: (value: string) => updateConfig(guildId, { key: row.key, value }),
         onSuccess: () => {
-            toast.success('บันทึกแล้ว', { description: row.label });
+            toast.success(tr('บันทึกแล้ว'), { description: row.label });
             void queryClient.invalidateQueries({ queryKey: configQuery(guildId).queryKey });
         },
-        onError: (err) => toast.error('บันทึกไม่สำเร็จ', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
     });
     const value = mutation.isPending ? (mutation.variables ?? row.value) : row.value;
 
@@ -55,7 +56,7 @@ function ConfigField({ row }: { row: ConfigRow }) {
                 </div>
                 <div className="flex items-center gap-2">
                     {mutation.isPending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-                    <span className="text-xs text-muted-foreground">{value === 'true' ? 'เปิดอยู่' : 'ปิดอยู่'}</span>
+                    <span className="text-xs text-muted-foreground">{value === 'true' ? tr('เปิดอยู่') : tr('ปิดอยู่')}</span>
                     <Switch
                         aria-describedby={`${row.key}-hint`}
                         id={row.key}
@@ -79,7 +80,7 @@ function ConfigField({ row }: { row: ConfigRow }) {
                     id={row.key}
                     channels={channels.filter((channel) => channel.sendable)}
                     value={value}
-                    noneLabel="— ไม่ส่ง —"
+                    noneLabel={tr('— ไม่ส่ง —')}
                     disabled={mutation.isPending}
                     onChange={(channelId) => mutation.mutate(channelId)}
                 />
@@ -94,7 +95,7 @@ function ConfigPage() {
     const { data, isLoading, error } = useQuery(configQuery(guildId));
     return (
         <>
-            <PageHeader help="config" title="ตั้งค่าบอท" description="ห้องที่บอทใช้ และความสามารถของบอทในเซิร์ฟเวอร์นี้ — บันทึกทันทีที่เปลี่ยน" />
+            <PageHeader help="config" title={tr('ตั้งค่าบอท')} description={tr('ห้องที่บอทใช้ และความสามารถของบอทในเซิร์ฟเวอร์นี้ — บันทึกทันทีที่เปลี่ยน')} />
             {isLoading ? (
                 <ConfigBodySkeleton />
             ) : error ? (
@@ -103,8 +104,8 @@ function ConfigPage() {
                 CONFIG_GROUPS.map((group) => (
                     <Card key={group}>
                         <CardHeader>
-                            <CardTitle>{group}</CardTitle>
-                            <CardDescription>{GROUP_DESCRIPTIONS[group]}</CardDescription>
+                            <CardTitle>{tr(group)}</CardTitle>
+                            <CardDescription>{GROUP_DESCRIPTIONS()[group]}</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             {data

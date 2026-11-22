@@ -1,5 +1,6 @@
+import { tr, byLang } from '../../lib/i18n';
 import type { CustomSummaryChannelGroup, CustomSummaryChannelOption } from '@notstack/shared';
-import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from 'lucide-react';
+import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,25 +10,25 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> = {
+const GROUP_META = byLang((): Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> => ({
     text: {
-        label: 'ห้องแชทข้อความ',
-        badgeClass: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30',
+        label: tr('ห้องแชทข้อความ'),
+        badgeClass: 'bg-highlight/15 text-highlight border-highlight/30',
     },
     voice: {
-        label: 'ห้องเสียง',
-        badgeClass: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+        label: tr('ห้องเสียง'),
+        badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
     },
     devops: {
-        label: 'ห้องแจ้งเตือน DevOps',
-        badgeClass: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+        label: tr('ห้องแจ้งเตือน DevOps'),
+        badgeClass: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
     },
-};
+}));
 
 function GroupIcon({ group }: { group: CustomSummaryChannelGroup }) {
-    if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-sky-400" />;
-    if (group === 'devops') return <GitPullRequest className="size-3.5 shrink-0 text-purple-400" />;
-    return <Hash className="size-3.5 shrink-0 text-indigo-400" />;
+    if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-400" />;
+    if (group === 'devops') return <GitPullRequest className="size-3.5 shrink-0 text-purple-700 dark:text-purple-400" />;
+    return <Hash className="size-3.5 shrink-0 text-highlight" />;
 }
 
 export interface ChannelMultiSelectProps {
@@ -51,10 +52,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
         if (!q) return channels;
         return channels.filter(
             (ch) =>
-                ch.name.toLowerCase().includes(q) ||
-                ch.category.toLowerCase().includes(q) ||
-                ch.id.includes(q) ||
-                ch.devopsTags.some((tag) => tag.includes(q)),
+                ch.name.toLowerCase().includes(q) || ch.category.toLowerCase().includes(q) || ch.id.includes(q) || ch.devopsTags.some((tag) => tag.includes(q)),
         );
     }, [channels, query]);
 
@@ -87,18 +85,15 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
         }
     };
 
-    const selectedChannels = useMemo(
-        () => channels.filter((ch) => selectedSet.has(ch.id)),
-        [channels, selectedSet],
-    );
+    const selectedChannels = useMemo(() => channels.filter((ch) => selectedSet.has(ch.id)), [channels, selectedSet]);
 
     const triggerSummary = loading
-        ? 'กำลังโหลดรายชื่อห้อง...'
+        ? tr('กำลังโหลดรายชื่อห้อง...')
         : isAllMode
-          ? `ทั้งหมดในเซิร์ฟเวอร์ (${channels.length} ห้อง)`
+          ? tr('ทั้งหมดในเซิร์ฟเวอร์ ({0} ห้อง)', { 0: channels.length })
           : selectedIds.length === channels.length
-            ? `เลือกครบทุกห้อง (${channels.length} ห้อง)`
-            : `เลือกแล้ว ${selectedIds.length} ห้อง`;
+            ? tr('เลือกครบทุกห้อง ({0} ห้อง)', { 0: channels.length })
+            : tr('เลือกแล้ว {0} ห้อง', { 0: selectedIds.length });
 
     return (
         <div className="space-y-2">
@@ -107,25 +102,25 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                     <Button
                         type="button"
                         variant="outline"
-                        className="h-9 w-full justify-between border-[#1e2638] bg-[#0b0e17] px-3 text-left font-normal text-slate-100 hover:border-indigo-500/50 hover:bg-[#141a2b]"
+                        className="h-9 w-full justify-between border-border bg-background px-3 text-left font-normal text-foreground hover:border-highlight/50 hover:bg-muted"
                     >
                         <span className="flex min-w-0 items-center gap-2 truncate">
-                            <Hash className="size-4 shrink-0 text-indigo-400" />
+                            <Hash className="size-4 shrink-0 text-highlight" />
                             <span className="truncate">{triggerSummary}</span>
                         </span>
-                        <ChevronDown className="size-4 shrink-0 text-slate-400" />
+                        <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
                     </Button>
                 </PopoverTrigger>
 
-                <PopoverContent align="start" className="w-[min(92vw,420px)] border-[#1e2638] bg-[#111625] p-0 text-slate-100 shadow-2xl">
-                    <div className="space-y-2.5 border-b border-[#1e2638] p-3">
+                <PopoverContent align="start" className="w-[min(92vw,420px)] border-border bg-card p-0 text-foreground shadow-2xl">
+                    <div className="space-y-2.5 border-b border-border p-3">
                         <div className="relative">
-                            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-400" />
+                            <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="ค้นหาชื่อห้อง, หมวดหมู่ หรือ tags (pr, grafana)..."
-                                className="h-8 border-[#1e2638] bg-[#0b0e17] pl-8 text-xs text-slate-100 placeholder:text-slate-500"
+                                placeholder={tr('ค้นหาชื่อห้อง, หมวดหมู่ หรือ tags (pr, grafana)...')}
+                                className="h-8 border-border bg-background pl-8 text-xs text-foreground placeholder:text-muted-foreground"
                             />
                         </div>
                         <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -134,48 +129,51 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     type="button"
                                     size="xs"
                                     variant="secondary"
-                                    className="bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/30"
+                                    className="bg-highlight/20 text-highlight hover:bg-highlight/30"
                                     onClick={() => onChange(allIds)}
                                 >
                                     <Check className="mr-1 size-3" />
-                                    เลือกทั้งหมด ({channels.length})
+                                    {tr('เลือกทั้งหมด (')}
+                                    {channels.length})
                                 </Button>
                                 <Button
                                     type="button"
                                     size="xs"
                                     variant="ghost"
-                                    className="text-slate-400 hover:bg-slate-800 hover:text-slate-200"
+                                    className="text-muted-foreground hover:bg-muted hover:text-foreground"
                                     onClick={() => onChange([])}
                                 >
-                                    ดูรวมทั้งเซิร์ฟเวอร์
+                                    {tr('ดูรวมทั้งเซิร์ฟเวอร์')}
                                 </Button>
                             </div>
                             {selectedIds.length > 0 && (
-                                <span className="text-[11px] text-indigo-300">เลือกเจาะจง {selectedIds.length} ห้อง</span>
+                                <span className="text-[11px] text-highlight">
+                                    {tr('เลือกเจาะจง')} {selectedIds.length} {tr('ห้อง')}
+                                </span>
                             )}
                         </div>
                     </div>
 
                     <ScrollArea className="h-72 p-2">
                         {grouped.length === 0 ? (
-                            <div className="py-10 text-center text-xs text-slate-400">ไม่พบห้องที่ตรงกับคำค้นหา</div>
+                            <div className="py-10 text-center text-xs text-muted-foreground">{tr('ไม่พบห้องที่ตรงกับคำค้นหา')}</div>
                         ) : (
                             <div className="space-y-3">
                                 {grouped.map(({ group, items }) => {
                                     const allGroupSelected = items.every((c) => selectedSet.has(c.id));
                                     return (
                                         <div key={group} className="space-y-1">
-                                            <div className="flex items-center justify-between rounded-md bg-[#0b0e17]/70 px-2 py-1">
-                                                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+                                            <div className="flex items-center justify-between rounded-md bg-background/70 px-2 py-1">
+                                                <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
                                                     <GroupIcon group={group} />
-                                                    {GROUP_META[group].label} ({items.length})
+                                                    {GROUP_META()[group].label} ({items.length})
                                                 </span>
                                                 <button
                                                     type="button"
                                                     onClick={() => toggleGroup(items)}
-                                                    className="text-[11px] font-medium text-indigo-400 hover:text-indigo-300"
+                                                    className="text-[11px] font-medium text-highlight hover:text-highlight"
                                                 >
-                                                    {allGroupSelected ? 'เอาออกทั้งกลุ่ม' : 'เลือกทั้งกลุ่ม'}
+                                                    {allGroupSelected ? tr('เอาออกทั้งกลุ่ม') : tr('เลือกทั้งกลุ่ม')}
                                                 </button>
                                             </div>
                                             <div className="space-y-0.5 pl-1">
@@ -186,16 +184,14 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                             key={ch.id}
                                                             className={cn(
                                                                 'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors',
-                                                                checked
-                                                                    ? 'bg-indigo-600/15 text-slate-100'
-                                                                    : 'text-slate-300 hover:bg-slate-800/60',
+                                                                checked ? 'bg-highlight/15 text-foreground' : 'text-muted-foreground hover:bg-muted/60',
                                                             )}
                                                         >
                                                             <span className="flex min-w-0 items-center gap-2">
                                                                 <Checkbox
                                                                     checked={checked}
                                                                     onCheckedChange={() => toggleOne(ch.id)}
-                                                                    className="border-slate-600 data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-600"
+                                                                    className="border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
                                                                 />
                                                                 <span className="truncate font-medium">#{ch.name}</span>
                                                             </span>
@@ -203,14 +199,14 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                                 {ch.devopsTags.map((tag) => (
                                                                     <span
                                                                         key={tag}
-                                                                        className="rounded border border-purple-500/30 bg-purple-500/15 px-1.5 py-0.2 text-[10px] uppercase text-purple-300"
+                                                                        className="rounded border border-purple-500/30 bg-purple-500/15 px-1.5 py-0.2 text-[10px] uppercase text-purple-700 dark:text-purple-300"
                                                                     >
                                                                         {tag}
                                                                     </span>
                                                                 ))}
                                                                 {ch.historicalOnly && (
-                                                                    <span className="rounded border border-slate-700 bg-slate-800/80 px-1.5 text-[10px] text-slate-400">
-                                                                        ประวัติเก่า
+                                                                    <span className="rounded border border-border bg-muted/80 px-1.5 text-[10px] text-muted-foreground">
+                                                                        {tr('ประวัติเก่า')}
                                                                     </span>
                                                                 )}
                                                             </span>
@@ -230,25 +226,21 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
             {selectedChannels.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {selectedChannels.slice(0, 8).map((ch) => (
-                        <Badge
-                            key={ch.id}
-                            variant="outline"
-                            className={cn('gap-1 pr-1 text-[11px]', GROUP_META[ch.group].badgeClass)}
-                        >
+                        <Badge key={ch.id} variant="outline" className={cn('gap-1 pr-1 text-[11px]', GROUP_META()[ch.group].badgeClass)}>
                             <span>#{ch.name}</span>
                             <button
                                 type="button"
-                                aria-label={`ลบ ${ch.name}`}
+                                aria-label={tr('ลบ {0}', { 0: ch.name })}
                                 onClick={() => toggleOne(ch.id)}
-                                className="rounded-full p-0.5 hover:bg-white/10"
+                                className="rounded-full p-0.5 hover:bg-foreground/10"
                             >
                                 <X className="size-3" />
                             </button>
                         </Badge>
                     ))}
                     {selectedChannels.length > 8 && (
-                        <Badge variant="outline" className="border-[#1e2638] bg-[#0b0e17] text-[11px] text-slate-300">
-                            +{selectedChannels.length - 8} ห้องเพิ่มเติม
+                        <Badge variant="outline" className="border-border bg-background text-[11px] text-muted-foreground">
+                            +{selectedChannels.length - 8} {tr('ห้องเพิ่มเติม')}
                         </Badge>
                     )}
                 </div>

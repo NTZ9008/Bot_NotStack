@@ -1,3 +1,4 @@
+import { tr, byLang } from '../../lib/i18n';
 import type { WeatherOptions, WeatherRadarSource, WeatherSettings } from '@notstack/shared';
 
 // ค่าที่ต้องกดบันทึก (สวิตช์เปิด/ปิดบันทึกทันที แยกจากนี้)
@@ -18,22 +19,22 @@ export const toDraft = (settings: WeatherSettings): WeatherDraft => ({
 export const isDirty = (draft: WeatherDraft | null, saved: WeatherDraft | null) => Boolean(draft && saved) && JSON.stringify(draft) !== JSON.stringify(saved);
 
 // จันทร์ขึ้นก่อนแบบปฏิทินไทย (ค่า 0 = อาทิตย์ ตรงกับ server)
-export const DAY_BUTTONS = [
-    { value: 1, label: 'จ' },
-    { value: 2, label: 'อ' },
-    { value: 3, label: 'พ' },
-    { value: 4, label: 'พฤ' },
-    { value: 5, label: 'ศ' },
-    { value: 6, label: 'ส' },
-    { value: 0, label: 'อา' },
-];
+export const DAY_BUTTONS = byLang(() => [
+    { value: 1, label: tr('จ') },
+    { value: 2, label: tr('อ') },
+    { value: 3, label: tr('พ') },
+    { value: 4, label: tr('พฤ') },
+    { value: 5, label: tr('ศ') },
+    { value: 6, label: tr('ส') },
+    { value: 0, label: tr('อา') },
+]);
 
-export const DAY_PRESETS = [
-    { label: 'ทุกวัน', days: [0, 1, 2, 3, 4, 5, 6] },
-    { label: 'จันทร์–ศุกร์', days: [1, 2, 3, 4, 5] },
-    { label: 'เสาร์–อาทิตย์', days: [0, 6] },
-];
+export const DAY_PRESETS = byLang(() => [
+    { label: tr('ทุกวัน'), days: [0, 1, 2, 3, 4, 5, 6] },
+    { label: tr('จันทร์–ศุกร์'), days: [1, 2, 3, 4, 5] },
+    { label: tr('เสาร์–อาทิตย์'), days: [0, 6] },
+]);
 
-export const THEME_LABELS = { light: 'สว่าง', dark: 'มืด' } as const;
-export const ZOOM_LABELS: Record<number, string> = { 8: 'ภูมิภาค', 9: 'กลาง', 10: 'ใกล้' };
-export const RADAR_SOURCE_LABELS: Record<WeatherRadarSource, string> = { rainviewer: 'RainViewer', tmd: 'กรมอุตุนิยมวิทยา' };
+export const THEME_LABELS = byLang(() => ({ light: tr('สว่าง'), dark: tr('มืด') } as const));
+export const ZOOM_LABELS = byLang((): Record<number, string> => ({ 8: tr('ภูมิภาค'), 9: tr('กลาง'), 10: tr('ใกล้') }));
+export const RADAR_SOURCE_LABELS = byLang((): Record<WeatherRadarSource, string> => ({ rainviewer: 'RainViewer', tmd: tr('กรมอุตุนิยมวิทยา') }));

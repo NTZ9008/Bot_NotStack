@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import {
     fillLevelUpMessage,
     type LevelUpDestination,
@@ -7,7 +8,7 @@ import {
     type RankCardTheme,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from 'lucide-react';
+import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -55,7 +56,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
     const patchReward = (index: number, data: Partial<LevelUpSettings['rewards'][number]>) =>
         setDraft((old) => ({ ...old, rewards: old.rewards.map((reward, i) => (i === index ? { ...reward, ...data } : reward)) }));
 
-    useUnsavedChangesGuard(dirty, { title: 'ทิ้งการตั้งค่าเลเวลอัปที่ยังไม่บันทึก?', destructive: true });
+    useUnsavedChangesGuard(dirty, { title: tr('ทิ้งการตั้งค่าเลเวลอัปที่ยังไม่บันทึก?'), destructive: true });
 
     const save = useMutation({
         mutationFn: () => rankCardApi.saveLevelUp(guildId, draft),
@@ -63,15 +64,15 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
             setSaved(data);
             setDraft(data.settings);
             client.setQueryData(levelUpQuery(guildId).queryKey, data);
-            if (data.warnings.length) toast.warning('บันทึกแล้ว แต่มีคำเตือน', { description: data.warnings[0] });
-            else toast.success('บันทึกการตั้งค่าเลเวลอัปแล้ว');
+            if (data.warnings.length) toast.warning(tr('บันทึกแล้ว แต่มีคำเตือน'), { description: data.warnings[0] });
+            else toast.success(tr('บันทึกการตั้งค่าเลเวลอัปแล้ว'));
         },
-        onError: (err) => toast.error('บันทึกไม่สำเร็จ', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
     });
     const sync = useMutation({
         mutationFn: () => rankCardApi.syncRewards(guildId),
-        onSuccess: (data) => toast.success('เริ่มปรับยศแล้ว', { description: data.message }),
-        onError: (err) => toast.error('ปรับยศไม่สำเร็จ', { description: errorMessage(err) }),
+        onSuccess: (data) => toast.success(tr('เริ่มปรับยศแล้ว'), { description: data.message }),
+        onError: (err) => toast.error(tr('ปรับยศไม่สำเร็จ'), { description: errorMessage(err) }),
     });
 
     // ตัวอย่างข้อความประกาศ — แทนค่าตัวแปรด้วยข้อมูลตัวอย่างฝั่งหน้าเว็บเลย
@@ -81,7 +82,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
         .map((reward) => roles.find((role) => role.id === reward.roleId)?.name)
         .filter(Boolean)
         .join(', ');
-    const sampleName = user.displayName || user.discordUsername || 'สมาชิก';
+    const sampleName = user.displayName || user.discordUsername || tr('สมาชิก');
     const message = fillLevelUpMessage(draft.message, {
         mention: '\u0000MENTION\u0000',
         user: sampleName,
@@ -96,15 +97,17 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">ประกาศเมื่อเลเวลขึ้นจากการแชท / ห้องเสียง / ใช้คำสั่ง · ยศรางวัลปรับตามเลเวลเสมอ (รวมตอนแอดมินแก้ XP)</p>
+                <p className="text-sm text-muted-foreground">
+                    {tr('ประกาศเมื่อเลเวลขึ้นจากการแชท / ห้องเสียง / ใช้คำสั่ง · ยศรางวัลปรับตามเลเวลเสมอ (รวมตอนแอดมินแก้ XP)')}
+                </p>
                 <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
                     <Save />
-                    {save.isPending ? 'กำลังบันทึก...' : 'บันทึก'}
+                    {save.isPending ? tr('กำลังบันทึก...') : tr('บันทึก')}
                 </Button>
             </div>
 
             {saved.warnings.length > 0 && (
-                <div role="alert" className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+                <div role="alert" className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
                     {saved.warnings.map((warning) => (
                         <p key={warning} className="flex gap-2">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" />
@@ -118,27 +121,39 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                 <fieldset disabled={save.isPending} className="min-w-0 space-y-5">
                     <Card>
                         <CardHeader>
-                            <CardTitle>ประกาศเลเวลอัป</CardTitle>
+                            <CardTitle>{tr('ประกาศเลเวลอัป')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <SwitchRow label="ประกาศเมื่อสมาชิกเลเวลขึ้น" checked={draft.announce} onChange={(announce) => patch({ announce })} />
+                            <SwitchRow label={tr('ประกาศเมื่อสมาชิกเลเวลขึ้น')} checked={draft.announce} onChange={(announce) => patch({ announce })} />
                             <fieldset disabled={!draft.announce} className="space-y-4 disabled:opacity-50">
-                                <Field label="ส่งที่">
-                                    <Segmented value={draft.destination} options={meta.destinations} onChange={(destination: LevelUpDestination) => patch({ destination })} />
+                                <Field label={tr('ส่งที่')}>
+                                    <Segmented
+                                        value={draft.destination}
+                                        options={meta.destinations}
+                                        onChange={(destination: LevelUpDestination) => patch({ destination })}
+                                    />
                                 </Field>
                                 {draft.destination !== 'dm' && (
                                     <Field
-                                        label={draft.destination === 'channel' ? 'ห้องประกาศ' : 'ห้องสำรอง'}
+                                        label={draft.destination === 'channel' ? tr('ห้องประกาศ') : tr('ห้องสำรอง')}
                                         hint={
                                             draft.destination === 'channel'
-                                                ? 'ทุกประกาศส่งเข้าห้องนี้'
-                                                : 'ใช้เมื่อบอทส่งในห้องที่คุยอยู่ไม่ได้ (ไม่มีสิทธิ์ / เลเวลขึ้นจากห้องเสียง) — ไม่เลือก = ข้ามประกาศนั้น'
+                                                ? tr('ทุกประกาศส่งเข้าห้องนี้')
+                                                : tr('ใช้เมื่อบอทส่งในห้องที่คุยอยู่ไม่ได้ (ไม่มีสิทธิ์ / เลเวลขึ้นจากห้องเสียง) — ไม่เลือก = ข้ามประกาศนั้น')
                                         }
                                     >
-                                        <ChannelSelect channels={channels} value={draft.channelId} onChange={(channelId) => patch({ channelId })} noneLabel="ไม่เลือก" />
+                                        <ChannelSelect
+                                            channels={channels}
+                                            value={draft.channelId}
+                                            onChange={(channelId) => patch({ channelId })}
+                                            noneLabel={tr('ไม่เลือก')}
+                                        />
                                     </Field>
                                 )}
-                                <Field label="ข้อความ" hint={`${draft.message.length}/${meta.limits.maxMessageLength} ตัวอักษร · เว้นว่าง = ส่งแค่การ์ด`}>
+                                <Field
+                                    label={tr('ข้อความ')}
+                                    hint={tr('{0}/{1} ตัวอักษร · เว้นว่าง = ส่งแค่การ์ด', { 0: draft.message.length, 1: meta.limits.maxMessageLength })}
+                                >
                                     <Textarea
                                         ref={messageRef}
                                         rows={3}
@@ -155,20 +170,24 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                         }}
                                     />
                                 </Field>
-                                <SwitchRow label="แนบการ์ดเลเวลอัปเป็นรูป (ใช้ธีมการ์ดของสมาชิกคนนั้น)" checked={draft.showCard} onChange={(showCard) => patch({ showCard })} />
+                                <SwitchRow
+                                    label={tr('แนบการ์ดเลเวลอัปเป็นรูป (ใช้ธีมการ์ดของสมาชิกคนนั้น)')}
+                                    checked={draft.showCard}
+                                    onChange={(showCard) => patch({ showCard })}
+                                />
                             </fieldset>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>ยศรางวัลตามเลเวล</CardTitle>
-                            <CardDescription>บอทจัดการเฉพาะยศในรายการนี้ — ยศต้องอยู่ต่ำกว่ายศของบอท และบอทต้องมีสิทธิ์ Manage Roles</CardDescription>
+                            <CardTitle>{tr('ยศรางวัลตามเลเวล')}</CardTitle>
+                            <CardDescription>{tr('บอทจัดการเฉพาะยศในรายการนี้ — ยศต้องอยู่ต่ำกว่ายศของบอท และบอทต้องมีสิทธิ์ Manage Roles')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {draft.rewards.map((reward, index) => (
                                 <div key={index} className="flex items-end gap-2">
-                                    <Field label={index === 0 ? 'เลเวล' : undefined} className="w-24 shrink-0">
+                                    <Field label={index === 0 ? tr('เลเวล') : undefined} className="w-24 shrink-0">
                                         <Input
                                             type="number"
                                             min={1}
@@ -177,9 +196,9 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                             onChange={(e) => patchReward(index, { level: e.target.valueAsNumber })}
                                         />
                                     </Field>
-                                    <Field label={index === 0 ? 'ยศที่ได้' : undefined} className="min-w-0 flex-1">
+                                    <Field label={index === 0 ? tr('ยศที่ได้') : undefined} className="min-w-0 flex-1">
                                         <select className={selectClass} value={reward.roleId} onChange={(e) => patchReward(index, { roleId: e.target.value })}>
-                                            <option value="">— เลือกยศ —</option>
+                                            <option value="">{tr('— เลือกยศ —')}</option>
                                             {roles.map((role) => (
                                                 <option key={role.id} value={role.id} disabled={role.id !== reward.roleId && usedRoles.has(role.id)}>
                                                     {role.name}
@@ -191,7 +210,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        aria-label="ลบยศรางวัลนี้"
+                                        aria-label={tr('ลบยศรางวัลนี้')}
                                         onClick={() => setDraft((old) => ({ ...old, rewards: old.rewards.filter((_, i) => i !== index) }))}
                                     >
                                         <Trash2 />
@@ -207,34 +226,42 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                 }
                             >
                                 <Plus />
-                                เพิ่มยศรางวัล
+
+                                {tr('เพิ่มยศรางวัล')}
                             </Button>
-                            {draft.rewards.some((reward) => !reward.roleId) && <p className="text-xs text-amber-500">แถวที่ยังไม่เลือกยศจะถูกตัดทิ้งตอนบันทึก</p>}
-                            <Field label="เมื่อได้ยศของเลเวลที่สูงขึ้น">
+                            {draft.rewards.some((reward) => !reward.roleId) && (
+                                <p className="text-xs text-amber-700 dark:text-amber-400">{tr('แถวที่ยังไม่เลือกยศจะถูกตัดทิ้งตอนบันทึก')}</p>
+                            )}
+                            <Field label={tr('เมื่อได้ยศของเลเวลที่สูงขึ้น')}>
                                 <Segmented
                                     value={draft.stackRewards ? 'stack' : 'replace'}
-                                    options={{ stack: 'เก็บยศเดิมไว้ด้วย', replace: 'เหลือแค่ยศสูงสุด' }}
+                                    options={{ stack: tr('เก็บยศเดิมไว้ด้วย'), replace: tr('เหลือแค่ยศสูงสุด') }}
                                     onChange={(value) => patch({ stackRewards: value === 'stack' })}
                                 />
                             </Field>
                             <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                                <p className="flex-1 text-sm text-muted-foreground">สมาชิกที่เลเวลถึงอยู่แล้วก่อนตั้งยศรางวัล จะได้ยศตอนเลเวลขึ้นครั้งถัดไป หรือกดปุ่มนี้เพื่อให้ทุกคนตอนนี้เลย</p>
+                                <p className="flex-1 text-sm text-muted-foreground">
+                                    {tr('สมาชิกที่เลเวลถึงอยู่แล้วก่อนตั้งยศรางวัล จะได้ยศตอนเลเวลขึ้นครั้งถัดไป หรือกดปุ่มนี้เพื่อให้ทุกคนตอนนี้เลย')}
+                                </p>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     disabled={dirty || sync.isPending || !saved.settings.rewards.length}
-                                    title={dirty ? 'บันทึกการตั้งค่าก่อน' : undefined}
+                                    title={dirty ? tr('บันทึกการตั้งค่าก่อน') : undefined}
                                     onClick={async () => {
                                         const ok = await confirm({
-                                            title: 'ปรับยศรางวัลให้สมาชิกที่มี XP ทุกคน?',
-                                            description: 'บอทจะเพิ่ม/ถอนยศในรายการรางวัลให้ตรงกับเลเวลปัจจุบันของทุกคน (ทำงานเบื้องหลัง อาจใช้เวลาหลายนาทีถ้าสมาชิกเยอะ)',
-                                            confirmText: 'เริ่มปรับยศ',
+                                            title: tr('ปรับยศรางวัลให้สมาชิกที่มี XP ทุกคน?'),
+                                            description: tr(
+                                                'บอทจะเพิ่ม/ถอนยศในรายการรางวัลให้ตรงกับเลเวลปัจจุบันของทุกคน (ทำงานเบื้องหลัง อาจใช้เวลาหลายนาทีถ้าสมาชิกเยอะ)',
+                                            ),
+                                            confirmText: tr('เริ่มปรับยศ'),
                                         });
                                         if (ok) sync.mutate();
                                     }}
                                 >
                                     <RefreshCw className={sync.isPending ? 'animate-spin' : undefined} />
-                                    ใช้กับสมาชิกเดิม
+
+                                    {tr('ใช้กับสมาชิกเดิม')}
                                 </Button>
                             </div>
                         </CardContent>
@@ -246,7 +273,9 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                         <RankPreview
                             queryKey={[...rankCardKey(guildId), 'level-up']}
                             input={{ rewards: draft.rewards, theme }}
-                            fetcher={(input, signal) => rankCardApi.preview(guildId, { kind: 'levelup', theme: input.theme, levelUp: { ...draft, rewards: input.rewards } }, signal)}
+                            fetcher={(input, signal) =>
+                                rankCardApi.preview(guildId, { kind: 'levelup', theme: input.theme, levelUp: { ...draft, rewards: input.rewards } }, signal)
+                            }
                             kind="levelup"
                             kinds={['levelup']}
                             onKind={() => {}}
@@ -255,11 +284,15 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                         </RankPreview>
                     ) : (
                         <DiscordMessage>
-                            {message ? <div className="discord-md" dangerouslySetInnerHTML={{ __html: messageHtml }} /> : <p className="text-sm text-[#949ba4]">(ไม่มีข้อความและไม่แนบการ์ด — จะไม่ส่งอะไร)</p>}
+                            {message ? (
+                                <div className="discord-md" dangerouslySetInnerHTML={{ __html: messageHtml }} />
+                            ) : (
+                                <p className="text-sm text-[#949ba4]">{tr('(ไม่มีข้อความและไม่แนบการ์ด — จะไม่ส่งอะไร)')}</p>
+                            )}
                         </DiscordMessage>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
-                        ตัวอย่างใช้ธีมของเซิร์ฟเวอร์ — ตอนส่งจริงการ์ดใช้แบบที่สมาชิกคนนั้นแต่งไว้ · ตัวอย่างแสดงยศรางวัลของเลเวลแรกในรายการ
+                        {tr('ตัวอย่างใช้ธีมของเซิร์ฟเวอร์ — ตอนส่งจริงการ์ดใช้แบบที่สมาชิกคนนั้นแต่งไว้ · ตัวอย่างแสดงยศรางวัลของเลเวลแรกในรายการ')}
                     </p>
                 </div>
             </div>

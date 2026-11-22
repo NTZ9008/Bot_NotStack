@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import {
     AlertDialog,
@@ -52,9 +53,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                         {options?.description && <AlertDialogDescription>{options.description}</AlertDialogDescription>}
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => close(false)}>{options?.cancelText ?? 'ยกเลิก'}</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => close(false)}>{options?.cancelText ?? tr('ยกเลิก')}</AlertDialogCancel>
                         <AlertDialogAction variant={options?.destructive ? 'destructive' : 'default'} onClick={() => close(true)}>
-                            {options?.confirmText ?? 'ยืนยัน'}
+                            {options?.confirmText ?? tr('ยืนยัน')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -65,6 +66,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
 export function useConfirm(): ConfirmFn {
     const confirm = useContext(ConfirmContext);
-    if (!confirm) throw new Error('useConfirm ต้องอยู่ภายใต้ <ConfirmProvider>');
+    if (!confirm) throw new Error(tr('useConfirm ต้องอยู่ภายใต้ <ConfirmProvider>'));
     return confirm;
 }

@@ -1,5 +1,6 @@
+import { tr } from '../../lib/i18n';
 import type { JiraConnectionResult } from '@notstack/shared';
-import { ExternalLink, Loader2, PlugZap } from 'lucide-react';
+import { ExternalLink, Loader2, PlugZap } from '@/components/icons';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,11 +19,11 @@ export function JiraConnectionCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>1. เชื่อมต่อ Jira</CardTitle>
+                <CardTitle>{tr('1. เชื่อมต่อ Jira')}</CardTitle>
                 <CardDescription>
-                    รองรับ Jira Cloud — card จะถูกสร้างในนามบัญชีนี้ สร้าง API token ได้ที่{' '}
+                    {tr('รองรับ Jira Cloud — card จะถูกสร้างในนามบัญชีนี้ สร้าง API token ได้ที่')}{' '}
                     <a
-                        className="text-sky-400 hover:underline"
+                        className="text-sky-700 dark:text-sky-400 hover:underline"
                         href="https://id.atlassian.com/manage-profile/security/api-tokens"
                         target="_blank"
                         rel="noreferrer"
@@ -32,7 +33,7 @@ export function JiraConnectionCard({
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-                <Field label="Jira site URL" htmlFor="jira-site" hint="เช่น https://your-team.atlassian.net">
+                <Field label="Jira site URL" htmlFor="jira-site" hint={tr('เช่น https://your-team.atlassian.net')}>
                     <Input
                         id="jira-site"
                         placeholder="https://your-team.atlassian.net"
@@ -40,24 +41,24 @@ export function JiraConnectionCard({
                         onChange={(e) => patch({ siteUrl: e.target.value })}
                     />
                 </Field>
-                <Field label="อีเมลบัญชี Atlassian" htmlFor="jira-email">
+                <Field label={tr('อีเมลบัญชี Atlassian')} htmlFor="jira-email">
                     <Input id="jira-email" type="email" autoComplete="off" value={draft.email} onChange={(e) => patch({ email: e.target.value })} />
                 </Field>
                 <Field
                     label="API token"
                     htmlFor="jira-token"
-                    hint={apiTokenSet ? 'ตั้งไว้แล้ว (เข้ารหัสเก็บไว้) — เว้นว่างถ้าไม่ต้องการเปลี่ยน' : 'ยังไม่ได้ตั้ง'}
+                    hint={apiTokenSet ? tr('ตั้งไว้แล้ว (เข้ารหัสเก็บไว้) — เว้นว่างถ้าไม่ต้องการเปลี่ยน') : tr('ยังไม่ได้ตั้ง')}
                 >
                     <Input
                         id="jira-token"
                         type="password"
                         autoComplete="new-password"
-                        placeholder={apiTokenSet ? '••••••••••••' : 'วาง API token'}
+                        placeholder={apiTokenSet ? '••••••••••••' : tr('วาง API token')}
                         value={draft.apiToken}
                         onChange={(e) => patch({ apiToken: e.target.value })}
                     />
                 </Field>
-                <Field label="Project key" htmlFor="jira-project" hint="ตัวอักษรหน้าเลข card เช่น PROJ ใน PROJ-123">
+                <Field label="Project key" htmlFor="jira-project" hint={tr('ตัวอักษรหน้าเลข card เช่น PROJ ใน PROJ-123')}>
                     <Input
                         id="jira-project"
                         className="uppercase"
@@ -68,10 +69,10 @@ export function JiraConnectionCard({
                 </Field>
                 <div className="flex flex-wrap items-center gap-2">
                     <Button variant="outline" onClick={onTest} disabled={testing}>
-                        {testing ? <Loader2 className="animate-spin" /> : <PlugZap />} ทดสอบการเชื่อมต่อ
+                        {testing ? <Loader2 className="animate-spin" /> : <PlugZap />} {tr('ทดสอบการเชื่อมต่อ')}
                     </Button>
                     {connection && (
-                        <span className="text-sm text-emerald-400">
+                        <span className="text-sm text-emerald-700 dark:text-emerald-400">
                             ✓ {connection.accountName} · {connection.projectName}
                         </span>
                     )}

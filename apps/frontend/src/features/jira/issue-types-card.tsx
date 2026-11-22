@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { JIRA_LIMITS, type JiraConnectionResult } from '@notstack/shared';
 import { Field } from '@/components/field';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,14 +34,14 @@ export function JiraIssueTypesCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>2. ประเภท card และรูปแนบ</CardTitle>
+                <CardTitle>{tr('2. ประเภท card และรูปแนบ')}</CardTitle>
                 <CardDescription>
-                    กด “ทดสอบการเชื่อมต่อ” เพื่อดึงประเภทจากโปรเจกต์ แล้วติ๊กประเภทที่ให้สมาชิกเลือกได้ (สูงสุด {JIRA_LIMITS.maxIssueTypes}) — ใส่ emoji
-                    หน้าชื่อได้
+                    {tr('กด “ทดสอบการเชื่อมต่อ” เพื่อดึงประเภทจากโปรเจกต์ แล้วติ๊กประเภทที่ให้สมาชิกเลือกได้ (สูงสุด')} {JIRA_LIMITS.maxIssueTypes}
+                    {tr(') — ใส่ emoji หน้าชื่อได้')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-2">
-                {!issueTypeRows.length && <p className="text-sm text-muted-foreground">ยังไม่มีประเภท — ทดสอบการเชื่อมต่อก่อน</p>}
+                {!issueTypeRows.length && <p className="text-sm text-muted-foreground">{tr('ยังไม่มีประเภท — ทดสอบการเชื่อมต่อก่อน')}</p>}
                 {issueTypeRows.map((row) => {
                     const chosen = selected.get(row.id);
                     return (
@@ -53,12 +54,12 @@ export function JiraIssueTypesCard({
                             />
                             <label htmlFor={`jira-type-${row.id}`} className="min-w-0 flex-1 text-sm">
                                 <span className="font-medium">{row.name}</span>
-                                {row.missing && <span className="ml-1 text-xs text-destructive">(ไม่พบในโปรเจกต์แล้ว)</span>}
+                                {row.missing && <span className="ml-1 text-xs text-destructive">{tr('(ไม่พบในโปรเจกต์แล้ว)')}</span>}
                                 {row.description && <span className="block truncate text-xs text-muted-foreground">{row.description}</span>}
                             </label>
                             {chosen && (
                                 <Input
-                                    aria-label={`emoji ของ ${row.name}`}
+                                    aria-label={tr('emoji ของ {0}', { 0: row.name })}
                                     className="w-20 text-center"
                                     placeholder="emoji"
                                     maxLength={8}
@@ -70,10 +71,13 @@ export function JiraIssueTypesCard({
                     );
                 })}
                 <Field
-                    label="แนบรูปได้สูงสุดต่อ card"
+                    label={tr('แนบรูปได้สูงสุดต่อ card')}
                     htmlFor="jira-max-images"
                     className="mt-2 border-t pt-4"
-                    hint={`0 = ไม่มีช่องแนบรูปใน pop-up · สูงสุด ${JIRA_LIMITS.maxImages} รูป รูปละไม่เกิน ${JIRA_LIMITS.maxImageBytes / 1024 / 1024}MB — รูปถูกแนบเข้า card ใน Jira (บัญชีที่เชื่อมต่อต้องมีสิทธิ์ Create attachments)`}
+                    hint={tr(
+                        '0 = ไม่มีช่องแนบรูปใน pop-up · สูงสุด {0} รูป รูปละไม่เกิน {1}MB — รูปถูกแนบเข้า card ใน Jira (บัญชีที่เชื่อมต่อต้องมีสิทธิ์ Create attachments)',
+                        { 0: JIRA_LIMITS.maxImages, 1: JIRA_LIMITS.maxImageBytes / 1024 / 1024 },
+                    )}
                 >
                     <Input
                         id="jira-max-images"

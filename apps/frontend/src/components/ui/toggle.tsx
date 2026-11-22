@@ -9,14 +9,14 @@ const toggleVariants = cva(
     variants: {
       variant: {
         default: "bg-transparent",
-        // ปุ่มที่เลือกอยู่เป็นสี indigo ให้เห็นชัดบนพื้นเข้ม (เหมือน .segmented ของหน้าเดิม)
-        outline: "border border-input bg-transparent hover:bg-muted data-[state=on]:border-primary/60 data-[state=on]:bg-primary/20 data-[state=on]:text-indigo-200",
+        // ปุ่มที่เลือกอยู่ = ปุ่มหลักทึบ (ดำ/ขาวตามธีม) เหมือนกลุ่มปุ่มเลือกหน้าอื่น
+        outline: "border border-input bg-transparent hover:bg-muted data-[state=on]:border-primary data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90",
       },
       size: {
         default:
-          "h-8 min-w-8 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-        sm: "h-7 min-w-7 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-        lg: "h-9 min-w-9 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+          "h-9 min-w-9 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        sm: "h-8 min-w-8 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
+        lg: "h-10 min-w-10 px-3 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
       },
     },
     defaultVariants: {

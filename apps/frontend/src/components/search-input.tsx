@@ -1,4 +1,5 @@
-import { Search, X } from 'lucide-react';
+import { tr } from '../lib/i18n';
+import { Search, X } from '@/components/icons';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -22,7 +23,7 @@ export function SearchInput({
                 <button
                     type="button"
                     onClick={() => onChange('')}
-                    aria-label="ล้างคำค้นหา"
+                    aria-label={tr('ล้างคำค้นหา')}
                     className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                     <X className="size-3.5" />

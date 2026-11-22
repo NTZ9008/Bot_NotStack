@@ -1,3 +1,4 @@
+import { tr, dateLocale } from '../../lib/i18n';
 const BANGKOK_TZ = 'Asia/Bangkok';
 const INPUT_DATETIME_RE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
 
@@ -42,35 +43,39 @@ export function bangkokPresetInputs(hours: number, now = new Date()): { fromInpu
 export function formatBangkokDateTime(value: string | Date): string {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return `${new Intl.DateTimeFormat('th-TH', {
-        timeZone: BANGKOK_TZ,
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).format(date)} น.`;
+    return tr('{0} น.', {
+        0: new Intl.DateTimeFormat(dateLocale(), {
+            timeZone: BANGKOK_TZ,
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).format(date),
+    });
 }
 
 export function formatBangkokShortTime(value: string | Date): string {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return `${new Intl.DateTimeFormat('th-TH', {
-        timeZone: BANGKOK_TZ,
-        day: '2-digit',
-        month: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    }).format(date)} น.`;
+    return tr('{0} น.', {
+        0: new Intl.DateTimeFormat(dateLocale(), {
+            timeZone: BANGKOK_TZ,
+            day: '2-digit',
+            month: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+        }).format(date),
+    });
 }
 
 export function formatThaiDuration(totalSeconds: number): string {
     const safe = Math.max(0, Math.round(totalSeconds));
-    if (safe === 0) return '0 นาที';
+    if (safe === 0) return tr('0 นาที');
     const hours = Math.floor(safe / 3600);
     const minutes = Math.floor((safe % 3600) / 60);
-    if (hours === 0) return `${minutes} นาที`;
-    return `${hours.toLocaleString('en-US')} ชม. ${minutes} นาที`;
+    if (hours === 0) return tr('{0} นาที', { 0: minutes });
+    return tr('{0} ชม. {1} นาที', { 0: hours.toLocaleString('en-US'), 1: minutes });
 }

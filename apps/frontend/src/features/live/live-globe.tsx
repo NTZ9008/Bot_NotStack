@@ -1,5 +1,6 @@
+import { tr, byLang } from '../../lib/i18n';
 import { LIVE_KIND_META, LIVE_KINDS, liveEventLabel, type LiveEvent, type LiveKind, type LiveStats } from '@notstack/shared';
-import { Activity } from 'lucide-react';
+import { Activity } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import type { StreamStatus } from '@/lib/sse';
 import { formatNumber, formatTimeAgo } from '@/lib/format';
@@ -9,13 +10,13 @@ import { useMockLive } from './use-mock-live';
 
 const GlobeCanvas = lazy(() => import('./globe-canvas'));
 
-const STATUS_TEXT: Record<StreamStatus, string> = {
-    connecting: 'กำลังเชื่อมต่อ',
+const STATUS_TEXT = byLang((): Record<StreamStatus, string> => ({
+    connecting: tr('กำลังเชื่อมต่อ'),
     live: 'Live',
-    reconnecting: 'กำลังต่อใหม่',
-    disabled: 'ปิดอยู่',
-    unauthorized: 'ต้อง login ใหม่',
-};
+    reconnecting: tr('กำลังต่อใหม่'),
+    disabled: tr('ปิดอยู่'),
+    unauthorized: tr('ต้อง login ใหม่'),
+}));
 
 function useReducedMotion(): boolean {
     const [reduced, setReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -81,7 +82,7 @@ export function LiveStatus({ status, className }: { status: StreamStatus; classN
         <span
             className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-mono text-[11px] tracking-wider uppercase',
-                live ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' : 'border-white/15 bg-white/5 text-slate-400',
+                live ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-700 dark:text-emerald-300' : 'border-white/15 bg-white/5 text-muted-foreground',
                 className,
             )}
         >
@@ -89,7 +90,7 @@ export function LiveStatus({ status, className }: { status: StreamStatus; classN
                 {live && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />}
                 <span className={cn('relative inline-flex size-1.5 rounded-full', live ? 'bg-emerald-400' : 'bg-slate-500')} />
             </span>
-            {STATUS_TEXT[status]}
+            {STATUS_TEXT()[status]}
         </span>
     );
 }
@@ -98,15 +99,15 @@ function Legend({ stats }: { stats: LiveStats }) {
     const active = LIVE_KINDS.filter((kind) => stats.perMinute[kind] > 0);
     const kinds: LiveKind[] = active.length ? active : ['message', 'voice', 'member', 'pr'];
     return (
-        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+        <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             {kinds.map((kind) => (
                 <li key={kind} className="inline-flex items-center gap-1.5">
                     <span
                         className="size-2 rounded-full"
                         style={{ backgroundColor: LIVE_KIND_META[kind].color, boxShadow: `0 0 8px ${LIVE_KIND_META[kind].color}` }}
                     />
-                    {LIVE_KIND_META[kind].label}
-                    {stats.perMinute[kind] > 0 && <span className="font-mono text-slate-200 tabular-nums">{formatNumber(stats.perMinute[kind])}</span>}
+                    {tr(LIVE_KIND_META[kind].label)}
+                    {stats.perMinute[kind] > 0 && <span className="font-mono text-foreground tabular-nums">{formatNumber(stats.perMinute[kind])}</span>}
                 </li>
             ))}
         </ul>
@@ -126,10 +127,10 @@ function FeedItem({ event, now }: { event: LiveEvent; now: number }) {
         <li className="animate-in fade-in slide-in-from-top-1 flex items-start gap-2.5 py-2 duration-500 motion-reduce:animate-none">
             <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ backgroundColor: color, boxShadow: `0 0 10px ${color}` }} />
             <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm text-slate-100">{title}</span>
-                <span className="block truncate text-xs text-slate-500">{detail}</span>
+                <span className="block truncate text-sm text-foreground">{title}</span>
+                <span className="block truncate text-xs text-muted-foreground">{detail}</span>
             </span>
-            <time dateTime={event.at} className="shrink-0 pt-0.5 font-mono text-[10px] text-slate-500">
+            <time dateTime={event.at} className="shrink-0 pt-0.5 font-mono text-[10px] text-muted-foreground">
                 {formatTimeAgo(event.at, now)}
             </time>
         </li>
@@ -192,7 +193,7 @@ export function LiveGlobe({ guildId, className }: { guildId?: string; className?
     return (
         <section
             className={cn(
-                'relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-slate-100 shadow-sm dark:border-white/10',
+                'dark relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-foreground shadow-sm dark:border-white/10',
                 className,
             )}
         >
@@ -216,19 +217,19 @@ export function LiveGlobe({ guildId, className }: { guildId?: string; className?
                     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
                         <div>
                             <p className="flex items-center gap-2 text-sm font-semibold">
-                                <Activity className="size-4 text-indigo-300" /> กิจกรรมสด
+                                <Activity className="size-4 text-indigo-700 dark:text-indigo-300" /> {tr('กิจกรรมสด')}
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-400">
-                                {guildId ? 'เซิร์ฟเวอร์นี้' : `${formatNumber(live.hubs.length)} เซิร์ฟเวอร์ที่คุณจัดการ`} · ตำแหน่งตามเซิร์ฟเวอร์
-                                ไม่ใช่ตำแหน่งจริงของสมาชิก
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                {guildId ? tr('เซิร์ฟเวอร์นี้') : tr('{0} เซิร์ฟเวอร์ที่คุณจัดการ', { 0: formatNumber(live.hubs.length) })}{' '}
+                                {tr('· ตำแหน่งตามเซิร์ฟเวอร์ ไม่ใช่ตำแหน่งจริงของสมาชิก')}
                             </p>
                         </div>
                         <LiveStatus status={live.status} />
                     </div>
                     <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4">
-                        <p className="font-mono text-xs text-slate-400">
-                            <span className="text-3xl font-semibold tracking-tight text-white tabular-nums">{formatNumber(live.stats.total)}</span> เหตุการณ์ /
-                            นาที
+                        <p className="font-mono text-xs text-muted-foreground">
+                            <span className="text-3xl font-semibold tracking-tight text-white tabular-nums">{formatNumber(live.stats.total)}</span>{' '}
+                            {tr('เหตุการณ์ / นาที')}
                         </p>
                         <div className="mt-2">
                             <Legend stats={live.stats} />
@@ -248,13 +249,15 @@ export function LiveFeedPanel({ live, now, header }: { live: ReturnType<typeof u
     return (
         <div className="flex min-h-0 flex-col border-t border-white/10 lg:border-t-0 lg:border-l">
             <div className="flex items-center justify-between gap-2 px-4 pt-4">
-                <p className="text-xs font-medium tracking-wider text-slate-400 uppercase">ล่าสุด</p>
+                <p className="text-xs font-medium tracking-wider text-muted-foreground uppercase">{tr('ล่าสุด')}</p>
                 {header}
             </div>
             {live.status === 'unauthorized' ? (
-                <p className="px-4 py-6 text-sm text-slate-400">session หมดอายุ — รีเฟรชหน้าเพื่อ login ใหม่</p>
+                <p className="px-4 py-6 text-sm text-muted-foreground">{tr('session หมดอายุ — รีเฟรชหน้าเพื่อ login ใหม่')}</p>
             ) : live.feed.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-slate-400">ยังเงียบอยู่ — มีคนส่งข้อความหรือเข้าห้องเสียงเมื่อไหร่ จะเห็นเส้นวิ่งเข้ามาที่นี่</p>
+                <p className="px-4 py-6 text-sm text-muted-foreground">
+                    {tr('ยังเงียบอยู่ — มีคนส่งข้อความหรือเข้าห้องเสียงเมื่อไหร่ จะเห็นเส้นวิ่งเข้ามาที่นี่')}
+                </p>
             ) : (
                 <ul aria-live="polite" className="max-h-[22rem] divide-y divide-white/5 overflow-y-auto px-4 pb-2 lg:max-h-[24rem]">
                     {live.feed.slice(0, 12).map((event) => (

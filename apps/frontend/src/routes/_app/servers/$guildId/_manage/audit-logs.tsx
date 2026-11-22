@@ -1,4 +1,6 @@
+import { tr } from '../../../../../lib/i18n';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
+import { BrandDiscord, LayoutDashboard } from '@/components/icons';
 import { useMemo } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
 import { PageHeader } from '@/components/page-header';
@@ -48,8 +50,8 @@ function AuditLogsPage() {
         <>
             <PageHeader
                 help="audit"
-                title="ประวัติเซิร์ฟเวอร์"
-                description="ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord"
+                title={tr('ประวัติเซิร์ฟเวอร์')}
+                description={tr('ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord')}
             />
             <Card>
                 <CardContent>
@@ -59,14 +61,14 @@ function AuditLogsPage() {
                             void navigate({ to: '/servers/$guildId/audit-logs', params: { guildId }, search: { source: value as 'dashboard' | 'discord' } })
                         }
                     >
-                        <TabsList className="mb-4">
+                        <TabsList variant="line" className="mb-4">
                             <TabsTrigger
                                 value="dashboard"
                                 onMouseEnter={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
                             >
-                                การตั้งค่าบน Dashboard
+                                <LayoutDashboard /> {tr('การตั้งค่าบน Dashboard')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="discord"
@@ -74,7 +76,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:discord`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
                             >
-                                เหตุการณ์ในเซิร์ฟเวอร์ Discord
+                                <BrandDiscord /> {tr('เหตุการณ์ในเซิร์ฟเวอร์ Discord')}
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">

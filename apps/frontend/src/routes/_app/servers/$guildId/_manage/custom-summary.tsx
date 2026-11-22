@@ -1,7 +1,8 @@
 import { CUSTOM_SUMMARY_MODULES, type CustomSummaryRequestInput } from '@notstack/shared';
+import { useT, tr } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Clock, Layers3, Sparkles } from 'lucide-react';
+import { Clock, Layers3, Sparkles } from '@/components/icons';
 import { useCallback, useMemo, useState } from 'react';
 import { customSummaryChannelsQuery, fetchCustomSummary } from '@/api/custom-summary';
 import { PageHeader } from '@/components/page-header';
@@ -18,8 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/custom-summary')({
-    loader: ({ context, params }) =>
-        context.queryClient.ensureQueryData(customSummaryChannelsQuery(params.guildId)).catch(() => undefined),
+    loader: ({ context, params }) => context.queryClient.ensureQueryData(customSummaryChannelsQuery(params.guildId)).catch(() => undefined),
     component: CustomLogSummaryPage,
 });
 
@@ -55,26 +55,27 @@ function CustomSummaryLoadingSkeleton() {
         <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[0, 1, 2, 3].map((idx) => (
-                    <div key={idx} className="rounded-xl border border-[#1e2638] bg-[#111625] p-5">
-                        <Skeleton className="h-4 w-32 bg-slate-800" />
-                        <Skeleton className="mt-3 h-9 w-28 bg-slate-800" />
-                        <Skeleton className="mt-3 h-3 w-44 bg-slate-800" />
+                    <div key={idx} className="rounded-xl border border-border bg-card p-5">
+                        <Skeleton className="h-4 w-32 bg-muted" />
+                        <Skeleton className="mt-3 h-9 w-28 bg-muted" />
+                        <Skeleton className="mt-3 h-3 w-44 bg-muted" />
                     </div>
                 ))}
             </div>
-            <div className="rounded-xl border border-[#1e2638] bg-[#111625] p-5">
-                <Skeleton className="h-5 w-52 bg-slate-800" />
-                <Skeleton className="mt-4 h-[260px] w-full bg-slate-800/70" />
+            <div className="rounded-xl border border-border bg-card p-5">
+                <Skeleton className="h-5 w-52 bg-muted" />
+                <Skeleton className="mt-4 h-[260px] w-full bg-muted/70" />
             </div>
         </div>
     );
 }
 
 function CustomLogSummaryPage() {
+    const t = useT();
     const guildId = useGuildId();
     const guild = useGuild();
     const { user } = useAuth();
-    const adminName = user.displayName || user.username || 'ผู้ดูแลระบบ';
+    const adminName = user.displayName || user.username || tr('ผู้ดูแลระบบ');
 
     const initial = useMemo(() => createDefaultDraft(), []);
     const [draft, setDraft] = useState<CustomSummaryDraftFilter>(initial.draft);
@@ -89,9 +90,9 @@ function CustomLogSummaryPage() {
     const validationError = useMemo(() => {
         const fromDate = fromBangkokInput(draft.fromInput);
         const toDate = fromBangkokInput(draft.toInput);
-        if (!fromDate || !toDate) return 'กรุณาระบุวัน-เวลาเริ่มต้นและสิ้นสุดให้ครบถ้วน';
-        if (fromDate.getTime() > toDate.getTime()) return 'วันเวลาเริ่มต้นต้องไม่มากกว่าวันเวลาสิ้นสุด';
-        if (draft.modules.length === 0) return 'กรุณาเลือกประเภทกิจกรรมอย่างน้อย 1 รายการ';
+        if (!fromDate || !toDate) return tr('กรุณาระบุวัน-เวลาเริ่มต้นและสิ้นสุดให้ครบถ้วน');
+        if (fromDate.getTime() > toDate.getTime()) return tr('วันเวลาเริ่มต้นต้องไม่มากกว่าวันเวลาสิ้นสุด');
+        if (draft.modules.length === 0) return tr('กรุณาเลือกประเภทกิจกรรมอย่างน้อย 1 รายการ');
         return null;
     }, [draft.fromInput, draft.toInput, draft.modules.length]);
 
@@ -166,11 +167,11 @@ function CustomLogSummaryPage() {
         <>
             <PageHeader
                 help="customSummary"
-                title="สร้างรายงานสรุป"
-                description={`สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ ${guild.name}`}
+                title={tr('สร้างรายงานสรุป')}
+                description={t('สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ {name}', { name: guild.name })}
             />
 
-            <div className="space-y-5 rounded-2xl border border-[#1e2638] bg-[#0b0e17] p-4 sm:p-5">
+            <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
                 <FilterBuilder
                     guildId={guildId}
                     draft={draft}
@@ -187,30 +188,32 @@ function CustomLogSummaryPage() {
                 />
 
                 {error ? (
-                    <ErrorState error={error} title="ประมวลผลสรุปล็อกไม่สำเร็จ" />
+                    <ErrorState error={error} title={tr('ประมวลผลสรุปล็อกไม่สำเร็จ')} />
                 ) : isLoading || !summary ? (
                     <CustomSummaryLoadingSkeleton />
                 ) : (
                     <div className="space-y-5">
                         {/* แถบสถานะผลลัพธ์ที่ประมวลผลล่าสุด */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#1e2638] bg-[#111625]/90 px-4 py-2.5 text-xs">
-                            <div className="flex flex-wrap items-center gap-2 text-slate-300">
-                                <Sparkles className="size-4 text-indigo-400" />
-                                <span className="font-medium text-slate-100">{summary.guild.name}</span>
-                                <span className="text-slate-500">•</span>
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs">
+                            <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                                <Sparkles className="size-4 text-highlight" />
+                                <span className="font-medium text-foreground">{summary.guild.name}</span>
+                                <span className="text-muted-foreground">•</span>
                                 <span>
                                     {formatBangkokDateTime(summary.range.from)} — {formatBangkokDateTime(summary.range.to)}
                                 </span>
-                                <Badge variant="outline" className="border-[#1e2638] bg-[#0b0e17] text-[11px] text-indigo-300">
+                                <Badge variant="outline" className="border-border bg-background text-[11px] text-highlight">
                                     <Layers3 className="mr-1 size-3" />
                                     {summary.filters.selectedChannels.length === 0
-                                        ? `ทุกห้อง (${summary.availableChannels.length} ห้อง)`
-                                        : `${summary.filters.selectedChannels.length} ห้องที่เลือก`}
+                                        ? tr('ทุกห้อง ({0} ห้อง)', { 0: summary.availableChannels.length })
+                                        : tr('{0} ห้องที่เลือก', { 0: summary.filters.selectedChannels.length })}
                                 </Badge>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 <Clock className="size-3.5" />
-                                <span>ประมวลผลล่าสุด: {formatBangkokDateTime(summary.generatedAt)}</span>
+                                <span>
+                                    {tr('ประมวลผลล่าสุด:')} {formatBangkokDateTime(summary.generatedAt)}
+                                </span>
                             </div>
                         </div>
 
@@ -226,7 +229,7 @@ function CustomLogSummaryPage() {
                             summary={summary}
                             queryPayload={{
                                 ...appliedQuery.payload,
-                                title: `รายงานสรุปกิจกรรมเซิร์ฟเวอร์ ${summary.guild.name}`,
+                                title: tr('รายงานสรุปกิจกรรมเซิร์ฟเวอร์ {0}', { 0: summary.guild.name }),
                                 theme: 'dark',
                                 detailMode: 'executive',
                             }}

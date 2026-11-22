@@ -1,3 +1,4 @@
+import { tr } from '../../../lib/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { auditActionsQuery, auditLogsQuery } from '@/api/admin';
 import { PageHeader } from '@/components/page-header';
@@ -19,8 +20,8 @@ function SystemAuditPage() {
         <>
             <PageHeader
                 help="systemAudit"
-                title="ประวัติทั้งระบบ"
-                description="ทุกการกระทำบน Dashboard ทั้งระบบ — การเข้าสู่ระบบ จัดการผู้ใช้ และการตั้งค่าของทุกเซิร์ฟเวอร์"
+                title={tr('ประวัติทั้งระบบ')}
+                description={tr('ทุกการกระทำบน Dashboard ทั้งระบบ — การเข้าสู่ระบบ จัดการผู้ใช้ และการตั้งค่าของทุกเซิร์ฟเวอร์')}
             />
             <Card>
                 <CardContent>

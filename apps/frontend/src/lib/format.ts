@@ -1,16 +1,17 @@
+import { tr, dateLocale } from './i18n';
 // รูปแบบวันที่/ตัวเลขแบบไทยที่ใช้ทั้งหน้าเว็บ
 export function formatDateTime(value: string | number | Date | null | undefined): string {
-    return value ? new Date(value).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+    return value ? new Date(value).toLocaleString(dateLocale(), { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 }
 
-export const formatNumber = (value: number | null | undefined): string => Number(value || 0).toLocaleString('th-TH');
+export const formatNumber = (value: number | null | undefined): string => Number(value || 0).toLocaleString(dateLocale());
 
 export function formatMinutes(minutes: number): string {
-    if (!minutes) return '0 นาที';
+    if (!minutes) return tr('0 นาที');
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours === 0) return `${mins} นาที`;
-    return mins === 0 ? `${hours} ชม.` : `${hours} ชม. ${mins} นาที`;
+    if (hours === 0) return tr('{0} นาที', { 0: mins });
+    return mins === 0 ? tr('{0} ชม.', { 0: hours }) : tr('{0} ชม. {1} นาที', { 0: hours, 1: mins });
 }
 
 export function formatBytes(bytes: number): string {
@@ -28,13 +29,13 @@ export function formatCountdown(ms: number): string {
 // เวลาที่ผ่านมาแบบสั้น (รายการกิจกรรมสด)
 export function formatTimeAgo(value: string | number | Date, now = Date.now()): string {
     const seconds = Math.max(0, Math.round((now - new Date(value).getTime()) / 1000));
-    if (seconds < 10) return 'เมื่อสักครู่';
-    if (seconds < 60) return `${seconds} วินาทีที่แล้ว`;
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} นาทีที่แล้ว`;
-    return `${Math.floor(seconds / 3600)} ชม.ที่แล้ว`;
+    if (seconds < 10) return tr('เมื่อสักครู่');
+    if (seconds < 60) return tr('{0} วินาทีที่แล้ว', { 0: seconds });
+    if (seconds < 3600) return tr('{0} นาทีที่แล้ว', { 0: Math.floor(seconds / 60) });
+    return tr('{0} ชม.ที่แล้ว', { 0: Math.floor(seconds / 3600) });
 }
 
-export const nowTimeLabel = () => `วันนี้ ${new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+export const nowTimeLabel = () => tr('วันนี้ {0}', { 0: new Date().toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) });
 
 // ค่าสำหรับ <input type="datetime-local"> (เวลาท้องถิ่น)
 export const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);

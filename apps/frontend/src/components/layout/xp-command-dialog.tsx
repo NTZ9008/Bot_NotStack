@@ -1,5 +1,6 @@
+import { tr, byLang } from '../../lib/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2 } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { levelsQuery } from '@/api/bot';
@@ -27,7 +28,7 @@ export interface XpCommandRequest {
     reason?: string;
 }
 
-const DEFAULT_REASON = 'ปรับผ่าน Command Palette';
+const DEFAULT_REASON = byLang(() => tr('ปรับผ่าน Command Palette'));
 
 // ==========================================
 // ✅ ยืนยันก่อนแก้ XP จากช่อง ⌘K — เห็น XP ตอนนี้ → หลังแก้ แก้จำนวน / เหตุผลได้ก่อนกด
@@ -36,7 +37,7 @@ const DEFAULT_REASON = 'ปรับผ่าน Command Palette';
 export function XpCommandDialog({ guildId, request, onClose }: { guildId: string; request: XpCommandRequest; onClose: () => void }) {
     const [action, setAction] = useState<XpCommandAction>(request.action);
     const [amount, setAmount] = useState(String(request.amount || ''));
-    const [reason, setReason] = useState(request.reason ?? DEFAULT_REASON);
+    const [reason, setReason] = useState(request.reason ?? DEFAULT_REASON());
     const client = useQueryClient();
     const { member } = request;
 
@@ -64,7 +65,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{describeXpCommand(action, value || 0)}</DialogTitle>
-                    <DialogDescription>ตรวจสอบก่อนบันทึก — การแก้ XP ถูกเก็บในประวัติ XP และประวัติการตั้งค่าพร้อมเหตุผล</DialogDescription>
+                    <DialogDescription>{tr('ตรวจสอบก่อนบันทึก — การแก้ XP ถูกเก็บในประวัติ XP และประวัติการตั้งค่าพร้อมเหตุผล')}</DialogDescription>
                 </DialogHeader>
                 <form
                     className="space-y-4"
@@ -86,7 +87,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                             {current.isLoading ? (
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
                             ) : current.isError ? (
-                                <span className="font-sans text-xs text-muted-foreground">ดู XP ตอนนี้ไม่ได้</span>
+                                <span className="font-sans text-xs text-muted-foreground">{tr('ดู XP ตอนนี้ไม่ได้')}</span>
                             ) : (
                                 <>
                                     <span className="text-muted-foreground">{formatNumber(currentXp)}</span>
@@ -104,16 +105,16 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         value={action}
                         onValueChange={(next) => next && setAction(next as XpCommandAction)}
                     >
-                        {(Object.keys(XP_ACTION_LABEL) as XpCommandAction[]).map((key) => (
+                        {(Object.keys(XP_ACTION_LABEL()) as XpCommandAction[]).map((key) => (
                             <ToggleGroupItem key={key} value={key} className="flex-1">
-                                {XP_ACTION_LABEL[key]}
+                                {XP_ACTION_LABEL()[key]}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>
 
                     {action !== 'reset' && (
                         <div className="space-y-1.5">
-                            <Label htmlFor="xp-command-amount">จำนวน XP</Label>
+                            <Label htmlFor="xp-command-amount">{tr('จำนวน XP')}</Label>
                             <Input
                                 id="xp-command-amount"
                                 inputMode="numeric"
@@ -125,7 +126,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         </div>
                     )}
                     <div className="space-y-1.5">
-                        <Label htmlFor="xp-command-reason">เหตุผล</Label>
+                        <Label htmlFor="xp-command-reason">{tr('เหตุผล')}</Label>
                         <Input
                             id="xp-command-reason"
                             value={reason}
@@ -137,7 +138,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
 
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending}>
-                            ยกเลิก
+                            {tr('ยกเลิก')}
                         </Button>
                         <Button
                             type="submit"
@@ -145,7 +146,8 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                             variant={action === 'reset' ? 'destructive' : 'default'}
                         >
                             {mutation.isPending && <Loader2 className="animate-spin" />}
-                            ยืนยัน
+
+                            {tr('ยืนยัน')}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -1,4 +1,5 @@
 import type { GuildSummary, MemberSearchResult } from '@notstack/shared';
+import { useT, tr, byLang } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
@@ -24,7 +25,7 @@ import {
     UserRound,
     Wand2,
     type LucideIcon,
-} from 'lucide-react';
+} from '@/components/icons';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { guildQuery, guildsQuery, searchMembersQuery } from '@/api/guilds';
@@ -76,12 +77,12 @@ function rememberRecent(entry: RecentEntry): void {
     }
 }
 
-const EXAMPLES = [
-    { text: 'ให้ xp @', hint: 'ให้ XP สมาชิก เช่น “ให้ xp @boat 500 เพราะช่วยงาน”' },
-    { text: 'หัก xp @', hint: 'หัก XP เช่น “หัก xp @boat 200”' },
-    { text: 'log ', hint: 'ค้นหาในประวัติเหตุการณ์ของเซิร์ฟเวอร์' },
-    { text: '@', hint: 'ค้นหาสมาชิก แล้วเลือกสิ่งที่จะทำ' },
-];
+const EXAMPLES = byLang(() => [
+    { text: tr('ให้ xp @'), hint: tr('ให้ XP สมาชิก เช่น “ให้ xp @boat 500 เพราะช่วยงาน”') },
+    { text: tr('หัก xp @'), hint: tr('หัก XP เช่น “หัก xp @boat 200”') },
+    { text: 'log ', hint: tr('ค้นหาในประวัติเหตุการณ์ของเซิร์ฟเวอร์') },
+    { text: '@', hint: tr('ค้นหาสมาชิก แล้วเลือกสิ่งที่จะทำ') },
+]);
 
 function Row({ icon: Icon, media, title, hint, shortcut }: { icon?: LucideIcon; media?: ReactNode; title: ReactNode; hint?: ReactNode; shortcut?: ReactNode }) {
     return (
@@ -118,19 +119,21 @@ function GuideCard({ guide }: { guide: CommandGuide }) {
                         key={step.label}
                         className={cn(
                             'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs',
-                            step.value ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-border text-muted-foreground',
+                            step.value
+                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                : 'border-border text-muted-foreground',
                         )}
                     >
                         {step.value ? <Check className="size-3" /> : <Circle className="size-3" />}
                         {step.label}
                         {step.value && <span className="max-w-32 truncate font-medium text-foreground">{step.value}</span>}
-                        {step.optional && !step.value && <span className="opacity-70">(ไม่บังคับ)</span>}
+                        {step.optional && !step.value && <span className="opacity-70">{tr('(ไม่บังคับ)')}</span>}
                     </li>
                 ))}
             </ol>
             {guide.next && <p className="mt-2 text-xs text-foreground/90">👉 {guide.next}</p>}
             <p className="mt-1 text-xs text-muted-foreground">
-                ตัวอย่าง: <code className="rounded bg-muted px-1 py-0.5 font-mono">{guide.example}</code>
+                {tr('ตัวอย่าง:')} <code className="rounded bg-muted px-1 py-0.5 font-mono">{guide.example}</code>
             </p>
         </div>
     );
@@ -142,12 +145,12 @@ const toTarget = (member: MemberSearchResult): XpCommandTarget => ({
     avatar: member.avatar,
 });
 
-const MEMBER_XP_ACTIONS: { action: XpCommandAction; label: string; icon: LucideIcon }[] = [
-    { action: 'add', label: 'ให้ XP…', icon: Plus },
-    { action: 'subtract', label: 'หัก XP…', icon: Minus },
-    { action: 'set', label: 'ตั้งค่า XP…', icon: Wand2 },
-    { action: 'reset', label: 'รีเซ็ต XP…', icon: RotateCcw },
-];
+const MEMBER_XP_ACTIONS = byLang((): { action: XpCommandAction; label: string; icon: LucideIcon }[] => [
+    { action: 'add', label: tr('ให้ XP…'), icon: Plus },
+    { action: 'subtract', label: tr('หัก XP…'), icon: Minus },
+    { action: 'set', label: tr('ตั้งค่า XP…'), icon: Wand2 },
+    { action: 'reset', label: tr('รีเซ็ต XP…'), icon: RotateCcw },
+]);
 
 // ==========================================
 // ⌘K COMMAND PALETTE — ค้นหาทุกอย่าง + สั่งงานด้วยข้อความ (Ctrl/⌘ + K)
@@ -155,6 +158,7 @@ const MEMBER_XP_ACTIONS: { action: XpCommandAction; label: string; icon: LucideI
 // ผลที่แสดงขึ้นกับสิทธิ์: หน้าที่เข้าไม่ได้และคำสั่งที่ต้องใช้สิทธิ์ manage จะไม่โผล่
 // ==========================================
 export function CommandPalette() {
+    const t = useT();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [member, setMember] = useState<XpCommandTarget | null>(null);
@@ -206,8 +210,8 @@ export function CommandPalette() {
     };
     const copy = (text: string, label: string) => {
         void navigator.clipboard.writeText(text).then(
-            () => toast.success(`คัดลอก${label}แล้ว`),
-            () => toast.error('คัดลอกไม่สำเร็จ'),
+            () => toast.success(tr('คัดลอก{0}แล้ว', { 0: label })),
+            () => toast.error(tr('คัดลอกไม่สำเร็จ')),
         );
         close();
     };
@@ -219,8 +223,8 @@ export function CommandPalette() {
         guildId &&
         go({
             id: `activity:${q}`,
-            label: `ค้นหา “${q}”`,
-            hint: 'ประวัติเซิร์ฟเวอร์',
+            label: tr('ค้นหา “{0}”', { 0: q }),
+            hint: tr('ประวัติเซิร์ฟเวอร์'),
             to: '/servers/$guildId/audit-logs',
             params: { guildId },
             search: { source: 'discord', q },
@@ -233,14 +237,14 @@ export function CommandPalette() {
     const pageEntry = (item: NavItem): RecentEntry => ({
         id: `page:${item.to}`,
         label: item.label,
-        hint: PAGE_GUIDES[item.guide].summary,
+        hint: PAGE_GUIDES()[item.guide].summary,
         to: item.to,
         params: item.guild && guildId ? { guildId } : undefined,
     });
     const rankedPages = trimmed
         ? navGroups
               .flatMap((group) => group.items)
-              .map((item) => ({ item, score: matchScore(`${item.label} ${item.keywords} ${PAGE_GUIDES[item.guide].summary}`, trimmed) }))
+              .map((item) => ({ item, score: matchScore(`${item.label} ${item.keywords} ${PAGE_GUIDES()[item.guide].summary}`, trimmed) }))
               .filter((entry) => entry.score > 0)
               .sort((a, b) => b.score - a.score)
               .slice(0, 8)
@@ -249,7 +253,7 @@ export function CommandPalette() {
     const otherGuilds = (guildList?.guilds ?? []).filter((item) => item.id !== guildId);
     const rankedGuilds: GuildSummary[] = trimmed
         ? otherGuilds
-              .map((item) => ({ item, score: matchScore(`${item.name} server เซิร์ฟเวอร์ สลับ switch`, trimmed) }))
+              .map((item) => ({ item, score: matchScore(tr('{0} server เซิร์ฟเวอร์ สลับ switch', { 0: item.name }), trimmed) }))
               .filter((entry) => entry.score > 0)
               .sort((a, b) => b.score - a.score)
               .map((entry) => entry.item)
@@ -260,8 +264,8 @@ export function CommandPalette() {
         guildList?.inviteUrl && {
             id: 'invite',
             icon: Sparkles,
-            title: 'เชิญบอทเข้าเซิร์ฟเวอร์ใหม่',
-            hint: 'เปิดหน้าเชิญบอทของ Discord',
+            title: tr('เชิญบอทเข้าเซิร์ฟเวอร์ใหม่'),
+            hint: tr('เปิดหน้าเชิญบอทของ Discord'),
             keywords: 'invite เชิญ เพิ่มบอท add bot',
             run: () => {
                 window.open(guildList.inviteUrl!, '_blank', 'noopener,noreferrer');
@@ -271,7 +275,7 @@ export function CommandPalette() {
         guildId && {
             id: 'copy-guild',
             icon: Copy,
-            title: 'คัดลอก Server ID',
+            title: tr('คัดลอก Server ID'),
             hint: guild?.name ?? guildId,
             keywords: 'copy id คัดลอก server guild ไอดี',
             run: () => copy(guildId, ' Server ID '),
@@ -279,15 +283,15 @@ export function CommandPalette() {
         {
             id: 'landing',
             icon: Globe,
-            title: 'เปิดหน้าแรก (ลูกโลกกิจกรรมสด)',
-            hint: 'หน้า landing ของบอท',
+            title: tr('เปิดหน้าแรก (ลูกโลกกิจกรรมสด)'),
+            hint: tr('หน้า landing ของบอท'),
             keywords: 'landing home หน้าแรก globe live ลูกโลก',
-            run: () => go({ id: 'landing', label: 'หน้าแรก', hint: 'landing', to: '/' }),
+            run: () => go({ id: 'landing', label: tr('หน้าแรก'), hint: 'landing', to: '/' }),
         },
         {
             id: 'logout',
             icon: LogOut,
-            title: 'ออกจากระบบ',
+            title: tr('ออกจากระบบ'),
             hint: 'Logout',
             keywords: 'logout sign out ออก ออกจากระบบ',
             run: () => {
@@ -304,36 +308,36 @@ export function CommandPalette() {
     const memberPage = member && guildId && (
         <>
             <CommandGroup heading={member.username}>
-                {MEMBER_XP_ACTIONS.filter(({ label }) => matchScore(`${label} xp`, trimmed) > 0).map(({ action, label, icon }) => (
+                {MEMBER_XP_ACTIONS().filter(({ label }) => matchScore(`${label} xp`, trimmed) > 0).map(({ action, label, icon }) => (
                     <CommandItem key={action} value={`xp-${action}`} onSelect={() => startXp({ member, action, amount: action === 'add' ? 100 : 0 })}>
-                        <Row icon={icon} title={label} hint="ยืนยันจำนวนและเหตุผลก่อนบันทึก" />
+                        <Row icon={icon} title={label} hint={tr('ยืนยันจำนวนและเหตุผลก่อนบันทึก')} />
                     </CommandItem>
                 ))}
-                {matchScore('ดูอันดับและ XP rank levels', trimmed) > 0 && (
+                {matchScore(tr('ดูอันดับและ XP rank levels'), trimmed) > 0 && (
                     <CommandItem
                         value="rank"
                         onSelect={() =>
                             go({
                                 id: `rank:${member.userId}`,
-                                label: `อันดับของ ${member.username}`,
-                                hint: 'อันดับและเลเวล',
+                                label: tr('อันดับของ {0}', { 0: member.username }),
+                                hint: tr('อันดับและเลเวล'),
                                 to: '/servers/$guildId/levels',
                                 params: { guildId },
                                 search: { q: member.userId },
                             })
                         }
                     >
-                        <Row icon={Trophy} title="ดูอันดับและ XP" hint="เปิดตารางอันดับที่ค้นหาสมาชิกคนนี้ไว้" />
+                        <Row icon={Trophy} title={tr('ดูอันดับและ XP')} hint={tr('เปิดตารางอันดับที่ค้นหาสมาชิกคนนี้ไว้')} />
                     </CommandItem>
                 )}
-                {matchScore('ดูกิจกรรมในเซิร์ฟเวอร์ activity log', trimmed) > 0 && (
+                {matchScore(tr('ดูกิจกรรมในเซิร์ฟเวอร์ activity log'), trimmed) > 0 && (
                     <CommandItem value="activity" onSelect={() => openActivity(member.username)}>
-                        <Row icon={Activity} title="ดูกิจกรรมในเซิร์ฟเวอร์" hint="ประวัติเหตุการณ์ใน Discord ที่เกี่ยวกับสมาชิกคนนี้" />
+                        <Row icon={Activity} title={tr('ดูกิจกรรมในเซิร์ฟเวอร์')} hint={tr('ประวัติเหตุการณ์ใน Discord ที่เกี่ยวกับสมาชิกคนนี้')} />
                     </CommandItem>
                 )}
-                {matchScore('คัดลอก User ID copy', trimmed) > 0 && (
+                {matchScore(tr('คัดลอก User ID copy'), trimmed) > 0 && (
                     <CommandItem value="copy" onSelect={() => copy(member.userId, ' User ID ')}>
-                        <Row icon={Copy} title="คัดลอก User ID" hint={member.userId} />
+                        <Row icon={Copy} title={tr('คัดลอก User ID')} hint={member.userId} />
                     </CommandItem>
                 )}
             </CommandGroup>
@@ -345,14 +349,18 @@ export function CommandPalette() {
     // ==========================================
     const xpCommand = parsed?.type === 'xp' ? parsed : null;
     const commandGroup = xpCommand && (
-        <CommandGroup heading="คำสั่ง">
+        <CommandGroup heading={tr('คำสั่ง')}>
             {!guildId ? (
                 <CommandItem disabled value="xp-no-guild">
-                    <Row icon={Server} title={describeXpCommand(xpCommand.action, xpCommand.amount)} hint="เลือกเซิร์ฟเวอร์ก่อน แล้วค่อยพิมพ์คำสั่ง XP" />
+                    <Row icon={Server} title={describeXpCommand(xpCommand.action, xpCommand.amount)} hint={tr('เลือกเซิร์ฟเวอร์ก่อน แล้วค่อยพิมพ์คำสั่ง XP')} />
                 </CommandItem>
             ) : !canManage ? (
                 <CommandItem disabled value="xp-no-access">
-                    <Row icon={Server} title={describeXpCommand(xpCommand.action, xpCommand.amount)} hint="ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์นี้จึงแก้ XP ได้" />
+                    <Row
+                        icon={Server}
+                        title={describeXpCommand(xpCommand.action, xpCommand.amount)}
+                        hint={tr('ต้องมีสิทธิ์จัดการเซิร์ฟเวอร์นี้จึงแก้ XP ได้')}
+                    />
                 </CommandItem>
             ) : SNOWFLAKE.test(xpCommand.target) ? (
                 <CommandItem
@@ -388,18 +396,22 @@ export function CommandPalette() {
                                     <span className="font-semibold">{result.nickname || result.username}</span>
                                 </>
                             }
-                            hint={`@${result.tag}${xpCommand.reason ? ` · เหตุผล: ${xpCommand.reason}` : ''}`}
+                            hint={`@${result.tag}${xpCommand.reason ? tr(' · เหตุผล: {0}', { 0: xpCommand.reason }) : ''}`}
                             shortcut={<CornerDownLeft />}
                         />
                     </CommandItem>
                 ))
             ) : membersLoading ? (
                 <CommandItem disabled value="xp-loading">
-                    <Row media={<Loader2 className="animate-spin" />} title={`กำลังค้นหา “${xpCommand.target}”…`} />
+                    <Row media={<Loader2 className="animate-spin" />} title={tr('กำลังค้นหา “{0}”…', { 0: xpCommand.target })} />
                 </CommandItem>
             ) : (
                 <CommandItem disabled value="xp-none">
-                    <Row icon={UserRound} title={`ไม่พบสมาชิก “${xpCommand.target}”`} hint="ลองพิมพ์ชื่อขึ้นต้น / username หรือวาง User ID" />
+                    <Row
+                        icon={UserRound}
+                        title={tr('ไม่พบสมาชิก “{0}”', { 0: xpCommand.target })}
+                        hint={tr('ลองพิมพ์ชื่อขึ้นต้น / username หรือวาง User ID')}
+                    />
                 </CommandItem>
             )}
         </CommandGroup>
@@ -412,12 +424,12 @@ export function CommandPalette() {
             {commandGroup}
 
             {activityQuery && canManage && (
-                <CommandGroup heading="ค้นหา">
+                <CommandGroup heading={tr('ค้นหา')}>
                     <CommandItem value="activity-search" onSelect={() => openActivity(activityQuery)}>
                         <Row
                             icon={Search}
-                            title={`ค้นหา “${activityQuery}” ในประวัติเซิร์ฟเวอร์`}
-                            hint="เหตุการณ์ใน Discord — ข้อความ ห้องเสียง สมาชิก ฯลฯ"
+                            title={tr('ค้นหา “{0}” ในประวัติเซิร์ฟเวอร์', { 0: activityQuery })}
+                            hint={tr('เหตุการณ์ใน Discord — ข้อความ ห้องเสียง สมาชิก ฯลฯ')}
                             shortcut={<CornerDownLeft />}
                         />
                     </CommandItem>
@@ -425,7 +437,7 @@ export function CommandPalette() {
             )}
 
             {!parsed && canManage && memberQuery.length >= 2 && (memberResults.length > 0 || membersLoading) && (
-                <CommandGroup heading="สมาชิก">
+                <CommandGroup heading={tr('สมาชิก')}>
                     {memberResults.slice(0, 5).map((result) => (
                         <CommandItem
                             key={result.userId}
@@ -438,21 +450,21 @@ export function CommandPalette() {
                             <Row
                                 media={<MemberAvatar member={result} />}
                                 title={result.nickname || result.username}
-                                hint={`@${result.tag} · กด Enter เพื่อเลือกสิ่งที่จะทำ`}
+                                hint={tr('@{0} · กด Enter เพื่อเลือกสิ่งที่จะทำ', { 0: result.tag })}
                                 shortcut="›"
                             />
                         </CommandItem>
                     ))}
                     {membersLoading && memberResults.length === 0 && (
                         <CommandItem disabled value="member-loading">
-                            <Row media={<Loader2 className="animate-spin" />} title="กำลังค้นหาสมาชิก…" />
+                            <Row media={<Loader2 className="animate-spin" />} title={tr('กำลังค้นหาสมาชิก…')} />
                         </CommandItem>
                     )}
                 </CommandGroup>
             )}
 
             {!trimmed && recent.length > 0 && (
-                <CommandGroup heading="ล่าสุด">
+                <CommandGroup heading={tr('ล่าสุด')}>
                     {recent.map((entry) => (
                         <CommandItem key={entry.id} value={`recent-${entry.id}`} onSelect={() => go(entry)}>
                             <Row icon={Clock} title={entry.label} hint={entry.hint} />
@@ -463,10 +475,10 @@ export function CommandPalette() {
 
             {trimmed
                 ? rankedPages.length > 0 && (
-                      <CommandGroup heading="หน้า">
+                      <CommandGroup heading={tr('หน้า')}>
                           {rankedPages.map(({ item }) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={item.label} hint={PAGE_GUIDES[item.guide].summary} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES()[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
@@ -475,26 +487,26 @@ export function CommandPalette() {
                       <CommandGroup key={group.label} heading={group.label}>
                           {group.items.map((item) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={item.label} hint={PAGE_GUIDES[item.guide].summary} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES()[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
                   ))}
 
             {rankedGuilds.length > 0 && (
-                <CommandGroup heading="สลับเซิร์ฟเวอร์">
+                <CommandGroup heading={tr('สลับเซิร์ฟเวอร์')}>
                     {rankedGuilds.map((item) => (
                         <CommandItem
                             key={item.id}
                             value={`guild-${item.id}`}
                             onSelect={() =>
-                                go({ id: `guild:${item.id}`, label: item.name, hint: 'เซิร์ฟเวอร์', to: '/servers/$guildId', params: { guildId: item.id } })
+                                go({ id: `guild:${item.id}`, label: item.name, hint: tr('เซิร์ฟเวอร์'), to: '/servers/$guildId', params: { guildId: item.id } })
                             }
                         >
                             <Row
                                 media={<GuildIcon guild={item} className="size-6 text-[10px]" />}
                                 title={item.name}
-                                hint={item.access === 'manage' ? 'จัดการได้' : 'ดูอันดับได้อย่างเดียว'}
+                                hint={item.access === 'manage' ? tr('จัดการได้') : tr('ดูอันดับได้อย่างเดียว')}
                             />
                         </CommandItem>
                     ))}
@@ -502,7 +514,7 @@ export function CommandPalette() {
             )}
 
             {rankedActions.length > 0 && (
-                <CommandGroup heading="คำสั่งด่วน">
+                <CommandGroup heading={tr('คำสั่งด่วน')}>
                     {rankedActions.map((action) => (
                         <CommandItem key={action.id} value={`action-${action.id}`} onSelect={action.run}>
                             <Row icon={action.icon} title={action.title} hint={action.hint} />
@@ -512,8 +524,8 @@ export function CommandPalette() {
             )}
 
             {!trimmed && canManage && (
-                <CommandGroup heading="ลองพิมพ์">
-                    {EXAMPLES.map((example) => (
+                <CommandGroup heading={tr('ลองพิมพ์')}>
+                    {EXAMPLES().map((example) => (
                         <CommandItem key={example.text} value={`example-${example.text}`} onSelect={() => setQuery(example.text)}>
                             <Row icon={History} title={<span className="font-mono">{example.text.trim()}…</span>} hint={example.hint} />
                         </CommandItem>
@@ -525,14 +537,9 @@ export function CommandPalette() {
 
     return (
         <>
-            <Button
-                aria-label="ค้นหาหรือสั่งงาน"
-                variant="outline"
-                className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-60"
-                onClick={() => setOpen(true)}
-            >
+            <Button variant="outline" className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-60" onClick={() => setOpen(true)}>
                 <Search className="size-4" />
-                <span className="hidden flex-1 text-left md:inline">ค้นหา หรือพิมพ์คำสั่ง...</span>
+                <span className="sr-only min-w-0 flex-1 truncate text-left md:not-sr-only md:whitespace-nowrap">{t('ค้นหา หรือพิมพ์คำสั่ง...')}</span>
                 <kbd className="pointer-events-none hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] md:inline">
                     {isMac ? '⌘ K' : 'Ctrl K'}
                 </kbd>
@@ -543,8 +550,8 @@ export function CommandPalette() {
                     className="top-[18%] translate-y-0 overflow-hidden rounded-xl! p-0 sm:max-w-xl [&_[data-slot=command-input-wrapper]]:pr-10 [&_[data-slot=command-list]]:max-h-[min(60svh,26rem)]"
                 >
                     <DialogHeader className="sr-only">
-                        <DialogTitle>ค้นหาหรือสั่งงาน</DialogTitle>
-                        <DialogDescription>ค้นหาหน้า เซิร์ฟเวอร์ สมาชิก หรือพิมพ์คำสั่ง เช่น ให้ xp @ชื่อ 500</DialogDescription>
+                        <DialogTitle>{tr('ค้นหาหรือสั่งงาน')}</DialogTitle>
+                        <DialogDescription>{tr('ค้นหาหน้า เซิร์ฟเวอร์ สมาชิก หรือพิมพ์คำสั่ง เช่น ให้ xp @ชื่อ 500')}</DialogDescription>
                     </DialogHeader>
                     {/* กรองเอง (shouldFilter=false) — ผลสมาชิกมาจาก API และต้องเรียงตามคะแนนของเราเอง */}
                     <Command shouldFilter={false} loop>
@@ -554,7 +561,7 @@ export function CommandPalette() {
                                 onClick={() => setMember(null)}
                                 className="mx-2 mt-2 inline-flex w-fit items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
                             >
-                                <ArrowLeft className="size-3" /> สมาชิก: <span className="font-medium text-foreground">{member.username}</span>
+                                <ArrowLeft className="size-3" /> {tr('สมาชิก:')} <span className="font-medium text-foreground">{member.username}</span>
                             </button>
                         )}
                         <CommandInput
@@ -563,10 +570,10 @@ export function CommandPalette() {
                             onValueChange={setQuery}
                             placeholder={
                                 member
-                                    ? `จะทำอะไรกับ ${member.username}?`
+                                    ? tr('จะทำอะไรกับ {0}?', { 0: member.username })
                                     : guildId
-                                      ? 'ค้นหา หรือพิมพ์ “ให้ xp @ชื่อ 500”, “log voice”…'
-                                      : 'ค้นหาหน้า เซิร์ฟเวอร์ หรือคำสั่ง…'
+                                      ? tr('ค้นหา หรือพิมพ์ “ให้ xp @ชื่อ 500”, “log voice”…')
+                                      : tr('ค้นหาหน้า เซิร์ฟเวอร์ หรือคำสั่ง…')
                             }
                             onKeyDown={(e) => {
                                 if (e.key === 'Backspace' && !query && member) {
@@ -577,23 +584,28 @@ export function CommandPalette() {
                         />
                         <CommandList>
                             {guide && <GuideCard guide={guide} />}
-                            {!guide && <CommandEmpty>ไม่พบสิ่งที่ตรงกับ “{trimmed}”</CommandEmpty>}
+                            {!guide && (
+                                <CommandEmpty>
+                                    {tr('ไม่พบสิ่งที่ตรงกับ “')}
+                                    {trimmed}”
+                                </CommandEmpty>
+                            )}
                             {memberPage || rootPage}
                         </CommandList>
                         <div className="flex items-center gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground">
                             <span>
-                                <kbd className="font-mono">↑↓</kbd> เลือก
+                                <kbd className="font-mono">↑↓</kbd> {tr('เลือก')}
                             </span>
                             <span>
-                                <kbd className="font-mono">↵</kbd> ทำ
+                                <kbd className="font-mono">↵</kbd> {tr('ทำ')}
                             </span>
                             {member && (
                                 <span>
-                                    <kbd className="font-mono">⌫</kbd> ย้อนกลับ
+                                    <kbd className="font-mono">⌫</kbd> {tr('ย้อนกลับ')}
                                 </span>
                             )}
                             <span className="ml-auto">
-                                <kbd className="font-mono">Esc</kbd> ปิด
+                                <kbd className="font-mono">Esc</kbd> {tr('ปิด')}
                             </span>
                         </div>
                     </Command>

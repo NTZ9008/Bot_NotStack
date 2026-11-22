@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -93,8 +94,8 @@ export function SwitchRow({ label, checked, onChange }: { label: string; checked
 
 export function CenterButton({ onClick }: { onClick: () => void }) {
     return (
-        <Button type="button" size="xs" variant="ghost" className="h-5 px-1.5 text-xs text-indigo-300" onClick={onClick}>
-            กึ่งกลาง
+        <Button type="button" size="xs" variant="ghost" className="h-5 px-1.5 text-xs text-highlight" onClick={onClick}>
+            {tr('กึ่งกลาง')}
         </Button>
     );
 }

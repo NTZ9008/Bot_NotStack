@@ -1,6 +1,7 @@
+import { tr, byLang } from '../../lib/i18n';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';
@@ -18,17 +19,17 @@ import { formatDateTime, formatNumber } from '@/lib/format';
 
 const PAGE_SIZE = 20;
 
-const FILTERS: { value: 'all' | JiraTicketStatus; label: string }[] = [
-    { value: 'all', label: 'ทั้งหมด' },
-    { value: 'open', label: 'รอสร้าง card' },
-    { value: 'created', label: 'สร้าง card แล้ว' },
-    { value: 'closed', label: 'ปิดห้องแล้ว' },
-];
+const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] => [
+    { value: 'all', label: tr('ทั้งหมด') },
+    { value: 'open', label: tr('รอสร้าง card') },
+    { value: 'created', label: tr('สร้าง card แล้ว') },
+    { value: 'closed', label: tr('ปิดห้องแล้ว') },
+]);
 
 function StatusBadge({ status }: { status: JiraTicketStatus }) {
-    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-300">สร้าง card แล้ว</Badge>;
-    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-300">รอสร้าง card</Badge>;
-    return <Badge variant="secondary">ปิดห้องแล้ว</Badge>;
+    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('สร้าง card แล้ว')}</Badge>;
+    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('รอสร้าง card')}</Badge>;
+    return <Badge variant="secondary">{tr('ปิดห้องแล้ว')}</Badge>;
 }
 
 // รายการห้องส่วนตัวที่สมาชิกเปิด + card ที่สร้าง — ปิดห้องที่ค้างอยู่จากหน้านี้ได้
@@ -43,11 +44,11 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
 
     const close = async (ticket: JiraTicket) => {
         const ok = await confirm({
-            title: `ปิดห้องของ ${ticket.userName}?`,
+            title: tr('ปิดห้องของ {0}?', { 0: ticket.userName }),
             description: ticket.issueKey
-                ? `ห้องใน Discord จะถูกลบ — card ${ticket.issueKey} ใน Jira ยังอยู่ตามเดิม`
-                : 'ห้องใน Discord จะถูกลบ — ยังไม่ได้สร้าง card จากห้องนี้',
-            confirmText: 'ปิดห้อง',
+                ? tr('ห้องใน Discord จะถูกลบ — card {0} ใน Jira ยังอยู่ตามเดิม', { 0: ticket.issueKey })
+                : tr('ห้องใน Discord จะถูกลบ — ยังไม่ได้สร้าง card จากห้องนี้'),
+            confirmText: tr('ปิดห้อง'),
             destructive: true,
         });
         if (!ok) return;
@@ -55,9 +56,9 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
         try {
             await jiraApi.closeTicket(guildId, ticket.id);
             await queryClient.invalidateQueries({ queryKey: [...guildKey(guildId), 'jira', 'tickets'] });
-            toast.success('ปิดห้องแล้ว');
+            toast.success(tr('ปิดห้องแล้ว'));
         } catch (err) {
-            toast.error('ปิดห้องไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('ปิดห้องไม่สำเร็จ'), { description: errorMessage(err) });
         } finally {
             setClosing(null);
         }
@@ -66,9 +67,10 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>ห้องและ card ล่าสุด</CardTitle>
+                <CardTitle>{tr('ห้องและ card ล่าสุด')}</CardTitle>
                 <CardDescription>
-                    ห้องที่เปิดอยู่ {formatNumber(data?.openCount)} ห้อง · สร้าง card ไปแล้วทั้งหมด {formatNumber(data?.createdCount)} ใบ
+                    {tr('ห้องที่เปิดอยู่')} {formatNumber(data?.openCount)} {tr('ห้อง · สร้าง card ไปแล้วทั้งหมด')} {formatNumber(data?.createdCount)}{' '}
+                    {tr('ใบ')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -80,7 +82,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                     }}
                 >
                     <TabsList className="h-auto flex-wrap">
-                        {FILTERS.map((filter) => (
+                        {FILTERS().map((filter) => (
                             <TabsTrigger key={filter.value} value={filter.value}>
                                 {filter.label}
                             </TabsTrigger>
@@ -93,17 +95,17 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                 ) : error ? (
                     <ErrorState error={error} />
                 ) : !data?.items.length ? (
-                    <EmptyState>ยังไม่มีรายการ</EmptyState>
+                    <EmptyState>{tr('ยังไม่มีรายการ')}</EmptyState>
                 ) : (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>ผู้เปิด</TableHead>
+                                    <TableHead>{tr('ผู้เปิด')}</TableHead>
                                     <TableHead>Card</TableHead>
-                                    <TableHead>สถานะ</TableHead>
-                                    <TableHead>เปิดเมื่อ</TableHead>
-                                    <TableHead className="text-right">จัดการ</TableHead>
+                                    <TableHead>{tr('สถานะ')}</TableHead>
+                                    <TableHead>{tr('เปิดเมื่อ')}</TableHead>
+                                    <TableHead className="text-right">{tr('จัดการ')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -119,7 +121,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                     href={ticket.issueUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex items-center gap-1 font-medium text-sky-400 hover:underline"
+                                                    className="inline-flex items-center gap-1 font-medium text-sky-700 dark:text-sky-400 hover:underline"
                                                 >
                                                     {ticket.issueKey} <ExternalLink className="size-3" />
                                                 </a>
@@ -142,11 +144,11 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                             target="_blank"
                                                             rel="noreferrer"
                                                         >
-                                                            <ExternalLink /> ไปที่ห้อง
+                                                            <ExternalLink /> {tr('ไปที่ห้อง')}
                                                         </a>
                                                     </Button>
                                                     <Button variant="outline" size="sm" disabled={closing === ticket.id} onClick={() => void close(ticket)}>
-                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} ปิดห้อง
+                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} {tr('ปิดห้อง')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -160,13 +162,13 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
 
                 {pages > 1 && (
                     <div className="flex items-center justify-end gap-2 text-sm">
-                        <Button variant="outline" size="icon" aria-label="หน้าก่อน" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                        <Button variant="outline" size="icon" aria-label={tr('หน้าก่อน')} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                             <ChevronLeft />
                         </Button>
                         <span>
-                            หน้า {page} / {pages}
+                            {tr('หน้า')} {page} / {pages}
                         </span>
-                        <Button variant="outline" size="icon" aria-label="หน้าถัดไป" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+                        <Button variant="outline" size="icon" aria-label={tr('หน้าถัดไป')} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
                             <ChevronRight />
                         </Button>
                     </div>

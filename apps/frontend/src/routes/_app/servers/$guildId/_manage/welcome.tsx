@@ -1,7 +1,8 @@
+import { tr, byLang } from '../../../../../lib/i18n';
 import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from 'lucide-react';
+import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -39,12 +40,12 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     component: WelcomePage,
 });
 
-const SECTIONS: { value: Section; label: string }[] = [
-    { value: 'general', label: 'ทั่วไป' },
-    { value: 'background', label: 'พื้นหลัง' },
-    { value: 'avatar', label: 'รูปโปรไฟล์' },
-    { value: 'texts', label: 'ข้อความบนรูป' },
-];
+const SECTIONS = byLang((): { value: Section; label: string }[] => [
+    { value: 'general', label: tr('ทั่วไป') },
+    { value: 'background', label: tr('พื้นหลัง') },
+    { value: 'avatar', label: tr('รูปโปรไฟล์') },
+    { value: 'texts', label: tr('ข้อความบนรูป') },
+]);
 
 const toDraft = (card: WelcomeCard): CardDraft => structuredClone({ ...pickDraft(card), id: card.id, enabled: card.enabled });
 
@@ -82,7 +83,8 @@ function WelcomePage() {
         });
     }, []);
 
-    const setCards = (update: (list: WelcomeCard[]) => WelcomeCard[]) => queryClient.setQueryData<WelcomeCard[]>(welcomeCardsQuery(guildId).queryKey, (list = []) => update(list));
+    const setCards = (update: (list: WelcomeCard[]) => WelcomeCard[]) =>
+        queryClient.setQueryData<WelcomeCard[]>(welcomeCardsQuery(guildId).queryKey, (list = []) => update(list));
 
     const load = (card: WelcomeCard | undefined) => {
         setSaved(card ? toDraft(card) : null);
@@ -97,9 +99,9 @@ function WelcomePage() {
     }, [cards.data]);
 
     const discardDialog = {
-        title: 'ทิ้งการแก้ไขที่ยังไม่บันทึก?',
-        description: `การ์ด "${draft?.name}" มีการแก้ไขที่ยังไม่ได้กดบันทึก`,
-        confirmText: 'ทิ้งการแก้ไข',
+        title: tr('ทิ้งการแก้ไขที่ยังไม่บันทึก?'),
+        description: tr('การ์ด "{0}" มีการแก้ไขที่ยังไม่ได้กดบันทึก', { 0: draft?.name }),
+        confirmText: tr('ทิ้งการแก้ไข'),
         destructive: true,
     };
     const confirmDiscard = async () => !dirty || confirm(discardDialog);
@@ -114,17 +116,17 @@ function WelcomePage() {
 
     const save = async () => {
         if (!draft || !dirty) return;
-        if (!draft.name.trim()) return toast.error('บันทึกไม่ได้', { description: 'กรุณาตั้งชื่อการ์ด' });
+        if (!draft.name.trim()) return toast.error(tr('บันทึกไม่ได้'), { description: tr('กรุณาตั้งชื่อการ์ด') });
         setBusy('save');
         try {
             const { card, warning } = await welcomeApi.updateCard(guildId, draft.id, pickDraft(draft));
             setCards((list) => list.map((c) => (c.id === card.id ? card : c)));
             // ใช้ค่าที่ server ตรวจแล้ว (อาจถูกบีบให้อยู่ในช่วงที่อนุญาต)
             load(card);
-            if (warning) toast.warning('บันทึกแล้ว แต่ยังส่งการ์ดไม่ได้', { description: warning });
-            else toast.success('บันทึกการ์ดแล้ว');
+            if (warning) toast.warning(tr('บันทึกแล้ว แต่ยังส่งการ์ดไม่ได้'), { description: warning });
+            else toast.success(tr('บันทึกการ์ดแล้ว'));
         } catch (err) {
-            toast.error('บันทึกไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -134,7 +136,7 @@ function WelcomePage() {
 
     // เปิด/ปิดบันทึกทันที (ทั้งสวิตช์ในรายการและบนหัวตัวแก้ไข) — ไม่กระทบการแก้ไขอื่นที่ค้างอยู่
     const toggle = async (card: WelcomeCard, enabled: boolean) => {
-        if (enabled && !card.channelId) return toast.error('ยังเปิดใช้งานไม่ได้', { description: 'เลือกห้องที่จะส่งแล้วกด "บันทึก" ก่อนเปิดใช้งาน' });
+        if (enabled && !card.channelId) return toast.error(tr('ยังเปิดใช้งานไม่ได้'), { description: tr('เลือกห้องที่จะส่งแล้วกด "บันทึก" ก่อนเปิดใช้งาน') });
         try {
             const { card: updated, warning } = await welcomeApi.updateCard(guildId, card.id, { enabled });
             setCards((list) => list.map((c) => (c.id === updated.id ? { ...c, enabled: updated.enabled } : c)));
@@ -142,10 +144,10 @@ function WelcomePage() {
                 setSaved((s) => s && { ...s, enabled: updated.enabled });
                 setDraft((d) => d && { ...d, enabled: updated.enabled });
             }
-            if (warning) toast.warning('เปิดใช้งานแล้ว แต่ยังส่งการ์ดไม่ได้', { description: warning });
-            else toast.success(enabled ? 'เปิดใช้งานการ์ดแล้ว' : 'ปิดการ์ดแล้ว');
+            if (warning) toast.warning(tr('เปิดใช้งานแล้ว แต่ยังส่งการ์ดไม่ได้'), { description: warning });
+            else toast.success(enabled ? tr('เปิดใช้งานการ์ดแล้ว') : tr('ปิดการ์ดแล้ว'));
         } catch (err) {
-            toast.error('เปลี่ยนสถานะไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('เปลี่ยนสถานะไม่สำเร็จ'), { description: errorMessage(err) });
         }
     };
 
@@ -155,34 +157,43 @@ function WelcomePage() {
             const { card } = await welcomeApi.createCard(guildId, duplicateOf ? { duplicateOf } : {});
             setCards((list) => [...list, card]);
             load(card);
-            toast.success(duplicateOf ? 'คัดลอกการ์ดแล้ว' : 'สร้างการ์ดใหม่แล้ว', { description: 'การ์ดใหม่ปิดอยู่ — ตั้งค่าเสร็จแล้วค่อยเปิดใช้งาน' });
+            toast.success(duplicateOf ? tr('คัดลอกการ์ดแล้ว') : tr('สร้างการ์ดใหม่แล้ว'), {
+                description: tr('การ์ดใหม่ปิดอยู่ — ตั้งค่าเสร็จแล้วค่อยเปิดใช้งาน'),
+            });
         } catch (err) {
-            toast.error('สร้างการ์ดไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('สร้างการ์ดไม่สำเร็จ'), { description: errorMessage(err) });
         }
     };
 
     const remove = async () => {
         if (!draft) return;
-        const ok = await confirm({ title: `ลบการ์ด "${saved?.name}"?`, description: 'ลบแล้วกู้คืนไม่ได้ (รูปในคลังรูปยังอยู่)', confirmText: 'ลบการ์ด', destructive: true });
+        const ok = await confirm({
+            title: tr('ลบการ์ด "{0}"?', { 0: saved?.name }),
+            description: tr('ลบแล้วกู้คืนไม่ได้ (รูปในคลังรูปยังอยู่)'),
+            confirmText: tr('ลบการ์ด'),
+            destructive: true,
+        });
         if (!ok) return;
         try {
             await welcomeApi.deleteCard(guildId, draft.id);
             const rest = (cards.data ?? []).filter((c) => c.id !== draft.id);
             setCards(() => rest);
             load(rest[0]);
-            toast.success('ลบการ์ดแล้ว');
+            toast.success(tr('ลบการ์ดแล้ว'));
         } catch (err) {
-            toast.error('ลบการ์ดไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('ลบการ์ดไม่สำเร็จ'), { description: errorMessage(err) });
         }
     };
 
     const testSend = async () => {
         if (!draft) return;
-        if (!draft.channelId) return toast.error('ยังส่งทดสอบไม่ได้', { description: 'กรุณาเลือกห้องที่จะส่งในหมวด "ทั่วไป" ก่อน' });
+        if (!draft.channelId) return toast.error(tr('ยังส่งทดสอบไม่ได้'), { description: tr('กรุณาเลือกห้องที่จะส่งในหมวด "ทั่วไป" ก่อน') });
         const ok = await confirm({
-            title: `ส่งการ์ดทดสอบเข้า ${channelLabel(channels, draft.channelId)}?`,
-            description: `ใช้ค่าที่กำลังแก้อยู่ตอนนี้ (แม้ยังไม่บันทึก) โดยใช้ ${vars?.user ?? 'บัญชีของคุณ'} เป็นสมาชิกตัวอย่าง — สมาชิกในห้องนั้นจะเห็นข้อความนี้`,
-            confirmText: 'ส่งทดสอบ',
+            title: tr('ส่งการ์ดทดสอบเข้า {0}?', { 0: channelLabel(channels, draft.channelId) }),
+            description: tr('ใช้ค่าที่กำลังแก้อยู่ตอนนี้ (แม้ยังไม่บันทึก) โดยใช้ {0} เป็นสมาชิกตัวอย่าง — สมาชิกในห้องนั้นจะเห็นข้อความนี้', {
+                0: vars?.user ?? 'บัญชีของคุณ',
+            }),
+            confirmText: tr('ส่งทดสอบ'),
         });
         if (!ok) return;
         setBusy('test');
@@ -194,9 +205,9 @@ function WelcomePage() {
                 backgroundId: draft.backgroundId,
                 userId: sample?.userId ?? null,
             });
-            toast.success('ส่งทดสอบแล้ว', { description: result.message });
+            toast.success(tr('ส่งทดสอบแล้ว'), { description: result.message });
         } catch (err) {
-            toast.error('ส่งทดสอบไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('ส่งทดสอบไม่สำเร็จ'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -218,7 +229,8 @@ function WelcomePage() {
     };
 
     if (meta.isLoading || cards.isLoading || assets.isLoading) return <WelcomePageSkeleton />;
-    if (meta.error || cards.error || assets.error) return <ErrorState error={meta.error ?? cards.error ?? assets.error} title="โหลดข้อมูล Welcome ไม่สำเร็จ" />;
+    if (meta.error || cards.error || assets.error)
+        return <ErrorState error={meta.error ?? cards.error ?? assets.error} title={tr('โหลดข้อมูล Welcome ไม่สำเร็จ')} />;
     const cardList = cards.data ?? [];
     const current = cardList.find((c) => c.id === draft?.id);
 
@@ -226,23 +238,25 @@ function WelcomePage() {
         <>
             <PageHeader
                 help="welcome"
-                title="ต้อนรับสมาชิกใหม่"
-                description="การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง"
+                title={tr('ต้อนรับสมาชิกใหม่')}
+                description={tr('การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง')}
                 actions={
                     <Button onClick={() => void create()}>
-                        <Plus /> สร้างการ์ดใหม่
+                        <Plus /> {tr('สร้างการ์ดใหม่')}
                     </Button>
                 }
             />
 
             <Card>
                 <CardHeader>
-                    <CardTitle>การ์ดต้อนรับ</CardTitle>
-                    <CardDescription>เปิดได้หลายใบพร้อมกัน — สมาชิกใหม่ 1 คนจะได้ทุกใบที่เปิดอยู่ ส่งเข้าห้องของแต่ละใบ (ทำงานแยกจากข้อความ Welcome เดิม)</CardDescription>
+                    <CardTitle>{tr('การ์ดต้อนรับ')}</CardTitle>
+                    <CardDescription>
+                        {tr('เปิดได้หลายใบพร้อมกัน — สมาชิกใหม่ 1 คนจะได้ทุกใบที่เปิดอยู่ ส่งเข้าห้องของแต่ละใบ (ทำงานแยกจากข้อความ Welcome เดิม)')}
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {cardList.length === 0 ? (
-                        <EmptyState>ยังไม่มีการ์ดต้อนรับ — กด "สร้างการ์ดใหม่" เพื่อเริ่มออกแบบ</EmptyState>
+                        <EmptyState>{tr('ยังไม่มีการ์ดต้อนรับ — กด "สร้างการ์ดใหม่" เพื่อเริ่มออกแบบ')}</EmptyState>
                     ) : (
                         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {cardList.map((card) => (
@@ -263,13 +277,17 @@ function WelcomePage() {
                                             {card.channelId ? (
                                                 <span className="text-muted-foreground">{channelLabel(allChannels, card.channelId)}</span>
                                             ) : (
-                                                <span className="text-amber-400">ยังไม่ได้เลือกห้อง</span>
+                                                <span className="text-amber-700 dark:text-amber-400">{tr('ยังไม่ได้เลือกห้อง')}</span>
                                             )}
                                         </p>
                                     </div>
-                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? 'เปิดอยู่' : 'ปิดอยู่'}</Badge>
+                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? tr('เปิดอยู่') : tr('ปิดอยู่')}</Badge>
                                     <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                                        <Switch checked={card.enabled} onCheckedChange={(checked) => void toggle(card, checked)} title="เปิด/ปิดการ์ดนี้ (บันทึกทันที)" />
+                                        <Switch
+                                            checked={card.enabled}
+                                            onCheckedChange={(checked) => void toggle(card, checked)}
+                                            title={tr('เปิด/ปิดการ์ดนี้ (บันทึกทันที)')}
+                                        />
                                     </span>
                                 </div>
                             ))}
@@ -282,11 +300,11 @@ function WelcomePage() {
                 <Card>
                     <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
-                            <CardTitle className="truncate text-lg">{draft.name || '(ไม่มีชื่อ)'}</CardTitle>
-                            {dirty && <Badge className="bg-amber-500/15 text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
+                            <CardTitle className="truncate text-lg">{draft.name || tr('(ไม่มีชื่อ)')}</CardTitle>
+                            {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('มีการแก้ไขที่ยังไม่บันทึก')}</Badge>}
                         </div>
-                        <Label className="flex items-center gap-2" title="เปิด/ปิดการ์ดนี้ (บันทึกทันที)">
-                            เปิดใช้งาน
+                        <Label className="flex items-center gap-2" title={tr('เปิด/ปิดการ์ดนี้ (บันทึกทันที)')}>
+                            {tr('เปิดใช้งาน')}
                             <Switch checked={draft.enabled} onCheckedChange={(checked) => void toggle(current, checked)} />
                         </Label>
                     </CardHeader>
@@ -294,7 +312,7 @@ function WelcomePage() {
                         <div className="space-y-4">
                             <Tabs value={section} onValueChange={(value) => setSection(value as Section)}>
                                 <TabsList className="w-full">
-                                    {SECTIONS.map((s) => (
+                                    {SECTIONS().map((s) => (
                                         <TabsTrigger key={s.value} value={s.value} className="flex-1">
                                             {s.label}
                                         </TabsTrigger>
@@ -316,7 +334,7 @@ function WelcomePage() {
                         </div>
 
                         <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
-                            <p className="text-sm text-muted-foreground">ตัวอย่างใน Discord — ลากรูปโปรไฟล์หรือจุดตัวเลขบนรูปเพื่อย้ายตำแหน่ง</p>
+                            <p className="text-sm text-muted-foreground">{tr('ตัวอย่างใน Discord — ลากรูปโปรไฟล์หรือจุดตัวเลขบนรูปเพื่อย้ายตำแหน่ง')}</p>
                             <WelcomePreview
                                 draft={draft}
                                 patch={patch}
@@ -327,31 +345,36 @@ function WelcomePage() {
                                 onVars={setVars}
                                 onFocusElement={focusElement}
                             />
-                            <Field label="ดูตัวอย่างในนาม" hint="ค่าเริ่มต้นคือบัญชี Discord ของคุณ (หรือตัวบอท ถ้ายังไม่ได้เชื่อม Discord)">
+                            <Field label={tr('ดูตัวอย่างในนาม')} hint={tr('ค่าเริ่มต้นคือบัญชี Discord ของคุณ (หรือตัวบอท ถ้ายังไม่ได้เชื่อม Discord)')}>
                                 <UserPicker
                                     value={sample}
                                     onSelect={setSample}
                                     onClear={() => setSample(null)}
-                                    placeholder="พิมพ์ชื่อสมาชิกเพื่อดูตัวอย่างในนามคนนั้น..."
+                                    placeholder={tr('พิมพ์ชื่อสมาชิกเพื่อดูตัวอย่างในนามคนนั้น...')}
                                 />
                             </Field>
                             <div className="flex flex-wrap gap-2">
                                 <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} บันทึก
+                                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('บันทึก')}
                                 </Button>
                                 <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                                    <RotateCcw /> ยกเลิกการแก้ไข
+                                    <RotateCcw /> {tr('ยกเลิกการแก้ไข')}
                                 </Button>
-                                <Button variant="secondary" className="text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
-                                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} ส่งทดสอบ
+                                <Button
+                                    variant="secondary"
+                                    className="text-amber-700 dark:text-amber-300"
+                                    onClick={() => void testSend()}
+                                    disabled={busy === 'test'}
+                                >
+                                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('ส่งทดสอบ')}
                                 </Button>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Button variant="outline" onClick={() => void create(draft.id)}>
-                                    <Copy /> คัดลอกการ์ดนี้
+                                    <Copy /> {tr('คัดลอกการ์ดนี้')}
                                 </Button>
                                 <Button variant="destructive" onClick={() => void remove()}>
-                                    <Trash2 /> ลบการ์ด
+                                    <Trash2 /> {tr('ลบการ์ด')}
                                 </Button>
                             </div>
                         </div>

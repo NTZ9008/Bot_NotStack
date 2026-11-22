@@ -1,7 +1,8 @@
+import { tr, dateLocale } from '../../lib/i18n';
 import type { RelationLink, RelationPerson, RelationPresence } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowUpRight, Waypoints } from 'lucide-react';
+import { ArrowUpRight, Waypoints } from '@/components/icons';
 import { useMemo, useRef } from 'react';
 import { relationBoardQuery, relationPresenceQuery } from '@/api/relations';
 import { LiveFeedPanel, LiveStatus, useNow } from '@/features/live/live-globe';
@@ -38,7 +39,7 @@ function BoardMessage({ children, pulse }: { children?: React.ReactNode; pulse?:
     return (
         <div
             className={cn(
-                'flex size-full items-center justify-center px-6 text-center text-sm text-slate-400',
+                'flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground',
                 pulse && 'animate-pulse motion-reduce:animate-none',
             )}
         >
@@ -67,18 +68,18 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
     return (
         <section
             className={cn(
-                'relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-slate-100 shadow-sm dark:border-white/10',
+                'dark relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-foreground shadow-sm dark:border-white/10',
                 className,
             )}
         >
             <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
                 <div className="relative h-[22rem] sm:h-[26rem]">
                     {board.isPending ? (
-                        <BoardMessage pulse>กำลังโหลดกระดาน…</BoardMessage>
+                        <BoardMessage pulse>{tr('กำลังโหลดกระดาน…')}</BoardMessage>
                     ) : board.isError ? (
-                        <BoardMessage>โหลดกระดานความสัมพันธ์ไม่สำเร็จ</BoardMessage>
+                        <BoardMessage>{tr('โหลดกระดานความสัมพันธ์ไม่สำเร็จ')}</BoardMessage>
                     ) : top.people.length === 0 ? (
-                        <BoardMessage>ยังไม่มีความสัมพันธ์ใน 30 วันที่ผ่านมา — เปิด “บันทึกกิจกรรม” ในหน้าตั้งค่าบันทึกเหตุการณ์ก่อน</BoardMessage>
+                        <BoardMessage>{tr('ยังไม่มีความสัมพันธ์ใน 30 วันที่ผ่านมา — เปิด “บันทึกกิจกรรม” ในหน้าตั้งค่าบันทึกเหตุการณ์ก่อน')}</BoardMessage>
                     ) : (
                         <BoardCanvas
                             ref={canvas}
@@ -98,20 +99,20 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
                     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-[#05060a]/90 to-transparent p-4 pb-8">
                         <div>
                             <p className="flex items-center gap-2 text-sm font-semibold">
-                                <Waypoints className="size-4 text-indigo-300" /> กระดานความสัมพันธ์
+                                <Waypoints className="size-4 text-indigo-700 dark:text-indigo-300" /> {tr('กระดานความสัมพันธ์')}
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-400">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                                 {top.people.length > 0
-                                    ? `${top.people.length.toLocaleString('th-TH')} คนที่ผูกกันมากที่สุด · 30 วันล่าสุด · ลากการ์ดได้`
-                                    : '30 วันล่าสุด'}
+                                    ? tr('{0} คนที่ผูกกันมากที่สุด · 30 วันล่าสุด · ลากการ์ดได้', { 0: top.people.length.toLocaleString(dateLocale()) })
+                                    : tr('30 วันล่าสุด')}
                             </p>
                         </div>
                         <Link
                             to="/servers/$guildId/relations"
                             params={{ guildId }}
-                            className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-slate-200 transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/10"
+                            className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-foreground transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/10"
                         >
-                            ดูกระดานเต็ม <ArrowUpRight className="size-3.5" />
+                            {tr('ดูกระดานเต็ม')} <ArrowUpRight className="size-3.5" />
                         </Link>
                     </div>
                 </div>

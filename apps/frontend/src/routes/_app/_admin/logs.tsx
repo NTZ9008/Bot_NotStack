@@ -1,6 +1,7 @@
+import { tr } from '../../../lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw } from '@/components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { logFileQuery, logFilesQuery } from '@/api/bot';
 import { Field } from '@/components/field';
@@ -29,15 +30,21 @@ function LogsPage() {
 
     return (
         <>
-            <PageHeader help="logs" title="ไฟล์บันทึกของบอท" description="ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท (ข้อความแชท / เข้า-ออกห้องเสียง)" />
+            <PageHeader
+                help="logs"
+                title={tr('ไฟล์บันทึกของบอท')}
+                description={tr('ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท (ข้อความแชท / เข้า-ออกห้องเสียง)')}
+            />
             <Card>
                 <CardContent className="space-y-4">
                     <div className="flex items-end gap-2">
-                        <Field label="เลือกไฟล์บันทึก" className="w-full max-w-sm">
+                        <Field label={tr('เลือกไฟล์บันทึก')} className="w-full max-w-sm">
                             <Select value={file} onValueChange={setFile} disabled={!files.data?.length}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue
-                                        placeholder={files.isLoading ? 'กำลังโหลดไฟล์...' : files.data?.length ? 'เลือกไฟล์บันทึก' : 'ยังไม่มีไฟล์บันทึก'}
+                                        placeholder={
+                                            files.isLoading ? tr('กำลังโหลดไฟล์...') : files.data?.length ? tr('เลือกไฟล์บันทึก') : tr('ยังไม่มีไฟล์บันทึก')
+                                        }
                                     />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
@@ -49,23 +56,23 @@ function LogsPage() {
                                 </SelectContent>
                             </Select>
                         </Field>
-                        <Button variant="outline" size="icon" aria-label="รีเฟรช" onClick={() => void (file ? content.refetch() : files.refetch())}>
+                        <Button variant="outline" size="icon" aria-label={tr('รีเฟรช')} onClick={() => void (file ? content.refetch() : files.refetch())}>
                             <RefreshCw className={content.isFetching || files.isFetching ? 'animate-spin' : undefined} />
                         </Button>
                     </div>
                     {files.error && <ErrorState error={files.error} />}
                     <pre
                         ref={viewer}
-                        className="h-[60vh] overflow-auto rounded-lg border bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-300"
+                        className="h-[60vh] overflow-auto rounded-lg border bg-muted p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
                     >
                         {!file ? (
-                            <span className="text-muted-foreground">เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา</span>
+                            <span className="text-muted-foreground">{tr('เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา')}</span>
                         ) : content.isLoading ? (
                             <LogContentSkeleton />
                         ) : content.error ? (
-                            <span className="text-destructive">โหลดเนื้อหาไฟล์บันทึกไม่สำเร็จ</span>
+                            <span className="text-destructive">{tr('โหลดเนื้อหาไฟล์บันทึกไม่สำเร็จ')}</span>
                         ) : (
-                            content.data || '(ไฟล์ว่าง)'
+                            content.data || tr('(ไฟล์ว่าง)')
                         )}
                     </pre>
                 </CardContent>

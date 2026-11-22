@@ -1,5 +1,7 @@
-import { formatBaht, roundMoney, type FundMemberStatus, type FundTopicDetail } from '@notstack/shared';
-import { Banknote, BarChart3, CheckCircle2, PieChart as PieChartIcon, Receipt, TrendingUp } from 'lucide-react';
+import { tr, byLang } from '../../lib/i18n';
+import { roundMoney, type FundMemberStatus, type FundTopicDetail } from '@notstack/shared';
+import { formatBaht } from './money';
+import { Banknote, BarChart3, CheckCircle2, PieChart as PieChartIcon, Receipt, TrendingUp } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/states';
@@ -13,21 +15,21 @@ import { STATUS_LABEL } from './utils';
 // ==========================================
 // แดชบอร์ดกราฟ & สถิติวิเคราะห์ของหัวข้อ
 // ==========================================
-const statusChartConfig = {
-    paid: { label: 'จ่ายครบแล้ว', color: STATUS_LABEL.paid.color },
-    partial: { label: 'จ่ายบางส่วน', color: STATUS_LABEL.partial.color },
-    unpaid: { label: 'ยังไม่จ่าย', color: STATUS_LABEL.unpaid.color },
-} satisfies ChartConfig;
+const statusChartConfig = byLang(() => ({
+    paid: { label: tr('จ่ายครบแล้ว'), color: STATUS_LABEL().paid.color },
+    partial: { label: tr('จ่ายบางส่วน'), color: STATUS_LABEL().partial.color },
+    unpaid: { label: tr('ยังไม่จ่าย'), color: STATUS_LABEL().unpaid.color },
+} satisfies ChartConfig));
 
-const timelineChartConfig = {
-    daily: { label: 'รับเข้ารายวัน (บาท)', color: '#38bdf8' },
-    cumulative: { label: 'ยอดสะสมรวม (บาท)', color: '#10b981' },
-} satisfies ChartConfig;
+const timelineChartConfig = byLang(() => ({
+    daily: { label: tr('รับเข้ารายวัน (บาท)'), color: '#38bdf8' },
+    cumulative: { label: tr('ยอดสะสมรวม (บาท)'), color: '#10b981' },
+} satisfies ChartConfig));
 
-const memberBarConfig = {
-    paid: { label: 'จ่ายแล้ว (บาท)', color: '#10b981' },
-    remaining: { label: 'คงค้าง (บาท)', color: '#f59e0b' },
-} satisfies ChartConfig;
+const memberBarConfig = byLang(() => ({
+    paid: { label: tr('จ่ายแล้ว (บาท)'), color: '#10b981' },
+    remaining: { label: tr('คงค้าง (บาท)'), color: '#f59e0b' },
+} satisfies ChartConfig));
 
 export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const [visibleMemberCount, setVisibleMemberCount] = useState(12);
@@ -36,8 +38,8 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const statusData = useMemo(() => {
         const counts: Record<FundMemberStatus, number> = { paid: 0, partial: 0, unpaid: 0 };
         for (const m of topic.members) counts[m.status] += 1;
-        return (Object.keys(statusChartConfig) as FundMemberStatus[])
-            .map((status) => ({ status, label: statusChartConfig[status].label, count: counts[status], fill: statusChartConfig[status].color }))
+        return (Object.keys(statusChartConfig()) as FundMemberStatus[])
+            .map((status) => ({ status, label: statusChartConfig()[status].label, count: counts[status], fill: statusChartConfig()[status].color }))
             .filter((item) => item.count > 0);
     }, [topic.members]);
 
@@ -88,34 +90,34 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
         <div className="min-w-0 space-y-4">
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
                 <StatTile
-                    label="เฉลี่ยเก็บได้ต่อคน"
+                    label={tr('เฉลี่ยเก็บได้ต่อคน')}
                     value={formatBaht(avgPaidPerMember)}
-                    subtext={`จากเป้าหมายเฉลี่ย ${formatBaht(topic.amountPerMember)}`}
-                    icon={<BarChart3 className="size-3.5 text-emerald-400" />}
-                    valueClassName="text-emerald-400"
+                    subtext={tr('จากเป้าหมายเฉลี่ย {0}', { 0: formatBaht(topic.amountPerMember) })}
+                    icon={<BarChart3 className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
+                    valueClassName="text-emerald-700 dark:text-emerald-400"
                     tone="emerald"
                     variant="kpi"
                 />
                 <StatTile
-                    label="เฉลี่ยต่อรายการโอน"
+                    label={tr('เฉลี่ยต่อรายการโอน')}
                     value={formatBaht(avgPerPayment)}
-                    subtext={`จากทั้งหมด ${topic.payments.length} รายการ`}
+                    subtext={tr('จากทั้งหมด {0} รายการ', { 0: topic.payments.length })}
                     icon={<Banknote className="size-3.5 text-primary" />}
                     variant="kpi"
                 />
                 <StatTile
-                    label="อัตราคนจ่ายครบ"
+                    label={tr('อัตราคนจ่ายครบ')}
                     value={`${completionRate}%`}
-                    subtext={`จ่ายครบ ${topic.paidCount} จาก ${topic.memberCount} คน`}
-                    icon={<CheckCircle2 className="size-3.5 text-sky-400" />}
+                    subtext={tr('จ่ายครบ {0} จาก {1} คน', { 0: topic.paidCount, 1: topic.memberCount })}
+                    icon={<CheckCircle2 className="size-3.5 text-sky-700 dark:text-sky-400" />}
                     tone="sky"
                     variant="kpi"
                 />
                 <StatTile
-                    label="จำนวนครั้งที่รับเงิน"
+                    label={tr('จำนวนครั้งที่รับเงิน')}
                     value={`${topic.payments.length} รายการ`}
-                    subtext={topic.payments.length > 0 ? 'บันทึกในระบบแล้ว' : 'ยังไม่มีรายการโอน'}
-                    icon={<Receipt className="size-3.5 text-amber-400" />}
+                    subtext={topic.payments.length > 0 ? tr('บันทึกในระบบแล้ว') : tr('ยังไม่มีรายการโอน')}
+                    icon={<Receipt className="size-3.5 text-amber-700 dark:text-amber-400" />}
                     variant="kpi"
                 />
             </div>
@@ -126,14 +128,15 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                             <PieChartIcon className="size-4 text-primary" />
-                            สัดส่วนสถานะการจ่ายของสมาชิก
+
+                            {tr('สัดส่วนสถานะการจ่ายของสมาชิก')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {statusData.length === 0 ? (
-                            <EmptyState>ยังไม่มีสมาชิกในหัวข้อนี้</EmptyState>
+                            <EmptyState>{tr('ยังไม่มีสมาชิกในหัวข้อนี้')}</EmptyState>
                         ) : (
-                            <ChartContainer config={statusChartConfig} className="aspect-auto h-56 w-full sm:h-64">
+                            <ChartContainer config={statusChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <PieChart>
                                     <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
                                     <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={48} outerRadius={80} paddingAngle={3} strokeWidth={2}>
@@ -152,15 +155,16 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                            <TrendingUp className="size-4 text-emerald-400" />
-                            แนวโน้มยอดเงินสะสม & รับเข้ารายวัน
+                            <TrendingUp className="size-4 text-emerald-700 dark:text-emerald-400" />
+
+                            {tr('แนวโน้มยอดเงินสะสม & รับเข้ารายวัน')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {timelineData.length === 0 ? (
-                            <EmptyState>ยังไม่มีประวัติการรับเงินเพื่อแสดงกราฟแนวโน้ม</EmptyState>
+                            <EmptyState>{tr('ยังไม่มีประวัติการรับเงินเพื่อแสดงกราฟแนวโน้ม')}</EmptyState>
                         ) : (
-                            <ChartContainer config={timelineChartConfig} className="aspect-auto h-56 w-full sm:h-64">
+                            <ChartContainer config={timelineChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <AreaChart data={timelineData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={20} className="text-[11px]" />
@@ -194,13 +198,14 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     <Card className="min-w-0 lg:col-span-2">
                         <CardHeader className="pb-2">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                                <BarChart3 className="size-4 text-sky-400" />
-                                ยอดชำระแยกตามสมาชิก
+                                <BarChart3 className="size-4 text-sky-700 dark:text-sky-400" />
+
+                                {tr('ยอดชำระแยกตามสมาชิก')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <ChartContainer
-                                config={memberBarConfig}
+                                config={memberBarConfig()}
                                 className="aspect-auto w-full"
                                 style={{ height: `${Math.max(384, visibleMemberChartData.length * 32 + 64)}px` }}
                             >
@@ -226,7 +231,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                             {remainingMemberCount > 0 && (
                                 <div className="mt-3 flex justify-center">
                                     <Button variant="outline" onClick={() => setVisibleMemberCount((count) => count + 12)}>
-                                        โหลดเพิ่มอีก {Math.min(12, remainingMemberCount)} คน
+                                        {tr('โหลดเพิ่มอีก')} {Math.min(12, remainingMemberCount)} {tr('คน')}
                                     </Button>
                                 </div>
                             )}

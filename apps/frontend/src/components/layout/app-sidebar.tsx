@@ -20,6 +20,9 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { GuildSwitcher } from './guild-switcher';
+import { ProfileMenu } from './profile-menu';
+import { LanguageSwitcher, ThemeSwitcher } from './theme-toggle';
+import { useT } from '@/lib/i18n';
 import { visibleNavGroups } from './nav-items';
 
 // ==========================================
@@ -34,6 +37,7 @@ export function AppSidebar() {
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath?.replace(/\/$/, '') });
     const { isMobile, setOpenMobile } = useSidebar();
     const bot = info?.bot ?? DEFAULT_BOT;
+    const t = useT();
     const access = guild?.access;
 
     const tasks = useMemo(
@@ -53,36 +57,32 @@ export function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/servers">
-                                <img
-                                    src={bot.avatar}
-                                    alt=""
-                                    className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]"
-                                />
-                                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                    <span className="truncate font-semibold text-indigo-300">{bot.name}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
-                                </div>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className="gap-3 pt-4">
+                <div className="flex items-center gap-2 px-1">
+                    <Link
+                        to="/servers"
+                        className="flex min-w-0 flex-1 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                    >
+                        <img src={bot.avatar} alt="" className="size-8 shrink-0 rounded-md border border-border" />
+                        <span className="grid min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
+                            <span className="truncate text-lg font-bold tracking-tight">{bot.name}</span>
+                            <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
+                        </span>
+                    </Link>
+                </div>
+                <ProfileMenu />
                 <GuildSwitcher guildId={guildId} />
             </SidebarHeader>
 
             <SidebarContent>
                 {visibleNavGroups(isAdmin, guildId ? (guild ?? null) : null).map((group) => (
                     <SidebarGroup key={group.label}>
-                        <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                        <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {group.items.map((item) => (
                                     <SidebarMenuItem key={item.to}>
-                                        <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={item.label}>
+                                        <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={t(item.label)}>
                                             <Link
                                                 to={item.to}
                                                 params={item.guild ? { guildId } : {}}
@@ -93,7 +93,7 @@ export function AppSidebar() {
                                                 onClick={() => isMobile && setOpenMobile(false)}
                                             >
                                                 <item.icon />
-                                                <span>{item.label}</span>
+                                                <span>{t(item.label)}</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
@@ -105,7 +105,11 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <p className="px-2 pb-1 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">Developed by arlifzs © 2026</p>
+                <div className="space-y-2 group-data-[collapsible=icon]:hidden">
+                    <ThemeSwitcher />
+                    <LanguageSwitcher />
+                    <p className="px-1 text-xs text-muted-foreground">Developed by arlifzs © 2026</p>
+                </div>
             </SidebarFooter>
             <SidebarRail />
         </Sidebar>

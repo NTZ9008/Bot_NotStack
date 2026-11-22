@@ -1,6 +1,9 @@
-import { formatBaht, roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
+import { tr } from '../../lib/i18n';
+import { roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
+import { formatBaht } from './money';
+import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowRight, Calendar, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowRight, Calendar, CheckCircle2, Loader2 } from '@/components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -128,11 +131,11 @@ export function PaymentDialog({
     const quickAmounts = useMemo(() => {
         const list: { label: string; value: number }[] = [];
         if (selected && selected.remaining > 0) {
-            list.push({ label: `ยอดค้าง (${formatBaht(selected.remaining)})`, value: selected.remaining });
+            list.push({ label: tr('ยอดค้าง ({0})', { 0: formatBaht(selected.remaining) }), value: selected.remaining });
             if (selected.remaining >= 20) {
                 const half = roundMoney(selected.remaining / 2);
                 if (half > 0 && half !== selected.remaining) {
-                    list.push({ label: `ครึ่งหนึ่ง (${formatBaht(half)})`, value: half });
+                    list.push({ label: tr('ครึ่งหนึ่ง ({0})', { 0: formatBaht(half) }), value: half });
                 }
             }
         }
@@ -140,7 +143,7 @@ export function PaymentDialog({
             for (const d of [1, 7, 15, 30]) {
                 const val = roundMoney(dailyRate * d);
                 if (!list.some((item) => item.value === val)) {
-                    list.push({ label: `${d} วัน (${formatBaht(val)})`, value: val });
+                    list.push({ label: tr('{0} วัน ({1})', { 0: d, 1: formatBaht(val) }), value: val });
                 }
             }
         }
@@ -160,7 +163,7 @@ export function PaymentDialog({
             return payment ? fundApi.updatePayment(guildId, topic.id, payment.id, payload) : fundApi.addPayment(guildId, topic.id, payload);
         },
         onSuccess: () => {
-            toast.success(payment ? 'แก้ไขรายการรับเงินแล้ว' : 'บันทึกการรับเงินแล้ว');
+            toast.success(payment ? tr('แก้ไขรายการรับเงินแล้ว') : tr('บันทึกการรับเงินแล้ว'));
             void refresh();
             onOpenChange(false);
         },
@@ -171,7 +174,7 @@ export function PaymentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{payment ? 'แก้ไขรายการรับเงิน' : 'บันทึกการรับเงิน'}</DialogTitle>
+                    <DialogTitle>{payment ? tr('แก้ไขรายการรับเงิน') : tr('บันทึกการรับเงิน')}</DialogTitle>
                     <DialogDescription>{topic.name}</DialogDescription>
                 </DialogHeader>
                 <form
@@ -183,15 +186,15 @@ export function PaymentDialog({
                         save.mutate();
                     }}
                 >
-                    <Field label="คนที่จ่าย">
+                    <Field label={tr('คนที่จ่าย')}>
                         <Select value={memberId} onValueChange={handleMemberSelect}>
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="-- เลือกคน --" />
+                                <SelectValue placeholder={tr('-- เลือกคน --')} />
                             </SelectTrigger>
                             <SelectContent className="max-h-80">
                                 {topic.members.map((m) => (
                                     <SelectItem key={m.id} value={String(m.id)}>
-                                        {m.displayName} {m.remaining > 0 ? `(ค้าง ${formatBaht(m.remaining)})` : '(จ่ายครบแล้ว)'}
+                                        {m.displayName} {m.remaining > 0 ? tr('(ค้าง {0})', { 0: formatBaht(m.remaining) }) : tr('(จ่ายครบแล้ว)')}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
@@ -202,7 +205,8 @@ export function PaymentDialog({
                         <div className="flex items-center justify-between">
                             <Label htmlFor="toggle-period" className="flex cursor-pointer items-center gap-1.5 text-xs font-medium">
                                 <Calendar className="size-3.5 text-primary" />
-                                บันทึกตามห้วงวันที่ (ย้อนหลัง / รายวัน)
+
+                                {tr('บันทึกตามห้วงวันที่ (ย้อนหลัง / รายวัน)')}
                             </Label>
                             <Checkbox
                                 id="toggle-period"
@@ -232,11 +236,15 @@ export function PaymentDialog({
                     </div>
 
                     <Field
-                        label="จำนวนเงิน (บาท)"
+                        label={tr('จำนวนเงิน (บาท)')}
                         htmlFor="fund-pay-amount"
                         hint={
                             selected
-                                ? `เป้าหมาย ${formatBaht(selected.target)} · จ่ายแล้ว ${formatBaht(selected.paid)} · ค้าง ${formatBaht(selected.remaining)}`
+                                ? tr('เป้าหมาย {0} · จ่ายแล้ว {1} · ค้าง {2}', {
+                                      0: formatBaht(selected.target),
+                                      1: formatBaht(selected.paid),
+                                      2: formatBaht(selected.remaining),
+                                  })
                                 : undefined
                         }
                     >
@@ -272,34 +280,44 @@ export function PaymentDialog({
                     {balancePreview && (
                         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-xs">
                             <div className="flex items-center gap-1.5 tabular-nums">
-                                <span className="text-muted-foreground">จ่ายสะสม: {formatBaht(balancePreview.basePaid)}</span>
+                                <span className="text-muted-foreground">
+                                    {tr('จ่ายสะสม:')} {formatBaht(balancePreview.basePaid)}
+                                </span>
                                 <ArrowRight className="size-3 text-muted-foreground" />
-                                <span className="font-semibold text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
+                                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
                             </div>
                             {balancePreview.willComplete ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-400">
-                                    <CheckCircle2 className="size-3" /> จ่ายครบตามเป้า!
+                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-400">
+                                    <CheckCircle2 className="size-3" /> {tr('จ่ายครบตามเป้า!')}
                                 </Badge>
                             ) : (
-                                <span className="font-medium text-amber-400 tabular-nums">คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}</span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                                    {tr('คงค้างเหลือ')} {formatBaht(balancePreview.nextRemaining)}
+                                </span>
                             )}
                         </div>
                     )}
 
-                    <Field label="วันเวลาที่รับเงิน" htmlFor="fund-pay-at">
-                        <Input id="fund-pay-at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+                    <Field label={tr('วันเวลาที่รับเงิน')} htmlFor="fund-pay-at">
+                        <DateTimeInput mode="datetime" id="fund-pay-at" value={paidAt} onValueChange={(v) => setPaidAt(v)} />
                     </Field>
-                    <Field label="หมายเหตุ (ไม่บังคับ)" htmlFor="fund-pay-note">
-                        <Input id="fund-pay-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="เช่น โอนผ่าน PromptPay" />
+                    <Field label={tr('หมายเหตุ (ไม่บังคับ)')} htmlFor="fund-pay-note">
+                        <Input
+                            id="fund-pay-note"
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            maxLength={200}
+                            placeholder={tr('เช่น โอนผ่าน PromptPay')}
+                        />
                     </Field>
                 </form>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        ยกเลิก
+                        {tr('ยกเลิก')}
                     </Button>
                     <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(numAmount > 0) || invalidPeriod}>
                         {save.isPending && <Loader2 className="animate-spin" />}
-                        {payment ? 'บันทึกการแก้ไข' : 'บันทึกการรับเงิน'}
+                        {payment ? tr('บันทึกการแก้ไข') : tr('บันทึกการรับเงิน')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

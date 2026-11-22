@@ -1,3 +1,4 @@
+import { tr } from '../../../../../lib/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { relationBoardQuery } from '@/api/relations';
 import { PageHeader } from '@/components/page-header';
@@ -15,8 +16,8 @@ function RelationsPage() {
         <>
             <PageHeader
                 help="relations"
-                title="กระดานความสัมพันธ์"
-                description="ดูว่าใครเกี่ยวข้องกับใคร จากประวัติห้องเสียง แชท และการลงมือของแอดมินในเซิร์ฟเวอร์"
+                title={tr('กระดานความสัมพันธ์')}
+                description={tr('ดูว่าใครเกี่ยวข้องกับใคร จากประวัติห้องเสียง แชท และการลงมือของแอดมินในเซิร์ฟเวอร์')}
             />
             <RelationBoardView guildId={guildId} />
         </>

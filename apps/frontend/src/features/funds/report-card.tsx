@@ -1,6 +1,6 @@
 import type { FundTopicDetail } from '@notstack/shared';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bell, Eye, EyeOff, Image as ImageIcon, Loader2, MessageSquareShare, Send } from 'lucide-react';
+import { Bell, Eye, EyeOff, Image as ImageIcon, Loader2, MessageSquareShare, Send } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -26,10 +26,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
     const [showPreview, setShowPreview] = useState(false);
 
     const unpaidMembers = useMemo(() => topic.members.filter((m) => m.status !== 'paid'), [topic.members]);
-    const previewUrl = useMemo(
-        () => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt),
-        [guildId, topic.id, topic.updatedAt],
-    );
+    const previewUrl = useMemo(() => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt), [guildId, topic.id, topic.updatedAt]);
 
     const saveChannel = useMutation({
         mutationFn: (reportChannelId: string) => fundApi.update(guildId, topic.id, { reportChannelId }),
@@ -64,9 +61,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             />
                         </div>
                         {topic.reportChannelId && (
-                            <span className="hidden text-xs text-muted-foreground xl:inline">
-                                ส่งเข้า {channelLabel(textChannels, topic.reportChannelId)}
-                            </span>
+                            <span className="hidden text-xs text-muted-foreground xl:inline">ส่งเข้า {channelLabel(textChannels, topic.reportChannelId)}</span>
                         )}
                     </div>
 
@@ -94,7 +89,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                 </div>
 
                 {showPreview && (
-                    <div className="rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
+                    <div className="dark rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
                             <span className="flex items-center gap-1.5">
                                 <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างการ์ดรายงาน · PNG
@@ -115,13 +110,8 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             </p>
                         )}
 
-                        <div className="overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
-                            <img
-                                src={previewUrl}
-                                alt={`รายงานการเก็บเงิน: ${topic.name}`}
-                                className="h-auto w-full max-w-3xl object-contain"
-                                loading="lazy"
-                            />
+                        <div className="dark overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
+                            <img src={previewUrl} alt={`รายงานการเก็บเงิน: ${topic.name}`} className="h-auto w-full max-w-3xl object-contain" loading="lazy" />
                         </div>
                     </div>
                 )}

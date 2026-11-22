@@ -1,3 +1,4 @@
+import { tr, translateFields, byLang } from './i18n';
 import { trimChar } from '@notstack/shared/text';
 import { decodePreviewResponse } from './preview-response';
 import { sessionRequests } from './session-state';
@@ -35,7 +36,7 @@ export const apiUrl = (path: string): string => (path.startsWith('/api') ? `${AP
 // เรียกไม่ถึง backend เลย — backend ยังไม่เปิด / กำลังเริ่มทำงาน (pnpm dev) / proxy ต่อไม่ได้
 // (Vite dev proxy และ Cloudflare ตอบ 502/503/504 ที่ไม่ใช่ JSON ของ API เรา)
 export const API_UNREACHABLE = 'API_UNREACHABLE';
-const UNREACHABLE_MESSAGE = 'เชื่อมต่อ API ไม่ได้ — backend ยังไม่เปิด หรือกำลังเริ่มทำงาน';
+const UNREACHABLE_MESSAGE = byLang(() => tr('เชื่อมต่อ API ไม่ได้ — backend ยังไม่เปิด หรือกำลังเริ่มทำงาน'));
 const GATEWAY_STATUSES = new Set([502, 503, 504]);
 
 export const isApiUnreachable = (err: unknown): boolean => err instanceof ApiError && err.code === API_UNREACHABLE;
@@ -145,7 +146,7 @@ async function send(path: string, options: ApiOptions): Promise<Response> {
     } catch (err) {
         // ยกเลิกเอง (เช่น TanStack Query ยกเลิก request เก่า) — ส่งต่อตามเดิม
         if (options.signal?.aborted) throw err;
-        throw new ApiError(0, UNREACHABLE_MESSAGE, { code: API_UNREACHABLE });
+        throw new ApiError(0, UNREACHABLE_MESSAGE(), { code: API_UNREACHABLE });
     }
 }
 
@@ -163,8 +164,8 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
 
     if (!res.ok) {
         const data = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
-        if (!data && GATEWAY_STATUSES.has(res.status)) throw new ApiError(res.status, UNREACHABLE_MESSAGE, { code: API_UNREACHABLE });
-        const message = res.status === 413 ? 'ไฟล์ใหญ่เกินกำหนด' : data?.error || `HTTP ${res.status}`;
+        if (!data && GATEWAY_STATUSES.has(res.status)) throw new ApiError(res.status, UNREACHABLE_MESSAGE(), { code: API_UNREACHABLE });
+        const message = res.status === 413 ? tr('ไฟล์ใหญ่เกินกำหนด') : data?.error ? tr(data.error) : `HTTP ${res.status}`;
         throw new ApiError(res.status, message, data ?? {});
     }
 
@@ -180,10 +181,10 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
                 ? await res.text()
                 : await res.json();
     sessionSignal.throwIfAborted();
-    return result as T;
+    return (options.responseType ? result : translateFields(result)) as T;
 }
 
-export const errorMessage = (err: unknown): string => (err instanceof Error ? err.message : String(err));
+export const errorMessage = (err: unknown): string => tr(err instanceof Error ? err.message : String(err));
 
 export interface ImagePreview {
     image: Blob;

@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -22,7 +23,11 @@ export function Field({
         <div className={cn('grid min-w-0 gap-1.5', className)}>
             {label && <Label htmlFor={htmlFor}>{label}</Label>}
             {children}
-            {error ? <p className="text-xs text-destructive">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+            {error ? (
+                <p className="text-xs text-destructive">{typeof error === 'string' ? tr(error) : error}</p>
+            ) : hint ? (
+                <p className="text-xs text-muted-foreground">{hint}</p>
+            ) : null}
         </div>
     );
 }

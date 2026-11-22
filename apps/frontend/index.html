@@ -1,10 +1,12 @@
 <!doctype html>
-<html lang="th" class="dark">
+<html lang="th">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="dark" />
-    <meta name="theme-color" content="#0f172a" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#1c1c1c" media="(prefers-color-scheme: dark)" />
+    <link rel="preload" href="/fonts/LINESeedSansTH_W_Rg.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
@@ -84,20 +86,33 @@
         ]
       }
     </script>
+    <script>
+      // ธีมสว่าง/มืด: ใส่ class ก่อนวาดหน้า จะได้ไม่กะพริบ (ค่าเริ่มต้นตามระบบ) — ต้องตรงกับ src/hooks/use-theme.ts
+      try {
+        if (localStorage.getItem('lang') === 'en') document.documentElement.lang = 'en';
+        var t = localStorage.getItem('theme');
+        if (t === 'classic') document.documentElement.classList.add('dark', 'classic');
+        else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    </script>
     <!-- ไม่มี JavaScript: ซ่อน splash ให้เห็นเนื้อหาที่ build ใส่ไว้ใน #root -->
     <noscript><style>.app-splash{display:none}</style></noscript>
     <style>
       /* Splash ตอนเปิดเว็บ — แสดงทันทีจาก HTML ก่อน JavaScript/CSS หลักโหลดเสร็จ (React ใช้ class เดียวกันใน SplashScreen) */
+      html,
+      body {
+        background: #fafafa;
+      }
       html.dark,
       html.dark body {
-        background: #0f172a;
+        background: #1c1c1c;
       }
       /* เนื้อหาที่ build ใส่ไว้ล่วงหน้าใน #root (src/lib/seo.ts) — อยู่ใต้ splash, React แทนที่ตอนโหลดเสร็จ */
       .seo-prerender {
         max-width: 48rem;
         margin: 0 auto;
         padding: 2rem 1rem;
-        color: #e2e8f0;
+        color: #27272a;
         line-height: 1.7;
         font-family: 'Noto Sans Thai Variable', ui-sans-serif, system-ui, sans-serif;
       }
@@ -116,6 +131,12 @@
         list-style: revert;
       }
       .seo-prerender a {
+        color: #1d4ed8;
+      }
+      html.dark .seo-prerender {
+        color: #e2e8f0;
+      }
+      html.dark .seo-prerender a {
         color: #a5b4fc;
       }
       .app-splash {
@@ -126,10 +147,22 @@
         align-items: center;
         justify-content: center;
         gap: 14px;
-        background: radial-gradient(60rem 30rem at 50% 35%, rgba(99, 102, 241, 0.16), transparent 70%), #0f172a;
-        color: #e2e8f0;
-        font-family: 'Inter Variable', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        background: #fafafa;
+        color: #1f1f1f;
+        font-family: 'LINESeedSansTH', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
         z-index: 50;
+      }
+      html.classic,
+      html.classic body,
+      html.classic .app-splash {
+        background: #060818;
+      }
+      html.dark .app-splash {
+        background: #1c1c1c;
+        color: #ededed;
+      }
+      html.dark .app-splash__label {
+        color: #a3a3a3;
       }
       .app-splash__logo {
         width: 64px;
@@ -163,7 +196,7 @@
       .app-splash__label {
         margin: 0;
         font-size: 13px;
-        color: #94a3b8;
+        color: #6b6b6b;
       }
       @keyframes app-splash-progress {
         0% {

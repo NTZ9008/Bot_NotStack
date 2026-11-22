@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { RelationPerson, RelationRole } from '@notstack/shared';
 
 // จัดวางการ์ดบนกระดานครั้งแรก + เก็บตำแหน่งที่ลากเองไว้ในเบราว์เซอร์ (ไฟล์นี้ไม่พึ่ง React เพื่อให้ทดสอบได้)
@@ -133,8 +134,8 @@ export function assignGroups(
 ): BoardGroup[] {
     const groups: BoardGroup[] = [
         ...roles.filter((role) => !excludedRoles.has(role.id)).map((role) => ({ id: role.id, name: role.name, color: role.color, members: [] as string[] })),
-        { id: NO_ROLE_GROUP, name: 'ไม่มี role ที่เลือก', color: null, members: [] },
-        { id: GONE_GROUP, name: 'ออกจากเซิร์ฟเวอร์แล้ว', color: 'var(--destructive)', members: [] },
+        { id: NO_ROLE_GROUP, name: tr('ไม่มี role ที่เลือก'), color: null, members: [] },
+        { id: GONE_GROUP, name: tr('ออกจากเซิร์ฟเวอร์แล้ว'), color: 'var(--destructive)', members: [] },
     ];
     const byId = new Map(groups.map((group) => [group.id, group]));
     for (const person of people) {
@@ -196,9 +197,9 @@ export function stringMidpoint(a: Point, b: Point): Point {
 
 // ข้อความสั้นสำหรับบนกระดาน เช่น 45 นาที, 2.5 ชม., 120 ชม.
 export function compactVoiceTime(minutes: number): string {
-    if (minutes < 60) return `${minutes} นาที`;
+    if (minutes < 60) return tr('{0} นาที', { 0: minutes });
     const hours = minutes / 60;
-    return `${(hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours)).toLocaleString('en-US')} ชม.`;
+    return tr('{0} ชม.', { 0: (hours < 10 ? Math.round(hours * 10) / 10 : Math.round(hours)).toLocaleString('en-US') });
 }
 
 // ความเด่นเทียบกับคนที่อยู่นานสุดบนกระดาน — ต้องถึง 1 ชั่วโมงก่อนถึงจะเด่น ไม่อย่างนั้นกระดานที่เพิ่งมีข้อมูลจะดูเกินจริง

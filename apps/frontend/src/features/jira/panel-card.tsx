@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 import { JIRA_LIMITS, type JiraOptions } from '@notstack/shared';
 import { ColorField } from '@/components/color-field';
 import { DiscordMessage } from '@/components/discord-message';
@@ -14,14 +15,14 @@ export function JiraPanelCard({ draft, patchOptions }: Pick<JiraDraftProps, 'dra
     return (
         <Card>
             <CardHeader>
-                <CardTitle>4. ข้อความแผง</CardTitle>
-                <CardDescription>ข้อความพร้อมปุ่มที่บอทส่งเข้าห้องแผง — แก้แล้วบันทึก จากนั้นกด “ส่ง/อัปเดตแผง”</CardDescription>
+                <CardTitle>{tr('4. ข้อความแผง')}</CardTitle>
+                <CardDescription>{tr('ข้อความพร้อมปุ่มที่บอทส่งเข้าห้องแผง — แก้แล้วบันทึก จากนั้นกด “ส่ง/อัปเดตแผง”')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-                <Field label="หัวข้อ">
+                <Field label={tr('หัวข้อ')}>
                     <Input maxLength={JIRA_LIMITS.maxPanelTitleLength} value={panel.title} onChange={(e) => patchPanel({ title: e.target.value })} />
                 </Field>
-                <Field label="รายละเอียด">
+                <Field label={tr('รายละเอียด')}>
                     <Textarea
                         rows={3}
                         maxLength={JIRA_LIMITS.maxPanelDescriptionLength}
@@ -30,19 +31,19 @@ export function JiraPanelCard({ draft, patchOptions }: Pick<JiraDraftProps, 'dra
                     />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="ข้อความบนปุ่ม">
+                    <Field label={tr('ข้อความบนปุ่ม')}>
                         <Input
                             maxLength={JIRA_LIMITS.maxButtonLabelLength}
                             value={panel.buttonLabel}
                             onChange={(e) => patchPanel({ buttonLabel: e.target.value })}
                         />
                     </Field>
-                    <Field label="สีแถบ embed">
+                    <Field label={tr('สีแถบ embed')}>
                         <ColorField value={panel.color} onChange={(color) => patchPanel({ color })} />
                     </Field>
                 </div>
                 <DiscordMessage>
-                    <div className="max-w-md rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderColor: panel.color }}>
+                    <div className="dark max-w-md rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderColor: panel.color }}>
                         {panel.title && <div className="font-semibold text-white">{panel.title}</div>}
                         {panel.description && <div className="mt-1 text-sm whitespace-pre-wrap">{panel.description}</div>}
                     </div>

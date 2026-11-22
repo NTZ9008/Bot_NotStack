@@ -1,7 +1,8 @@
+import { tr } from '../../../../../lib/i18n';
 import { positiveSearchId } from '@/lib/search-params';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { Plus } from 'lucide-react';
+import { Plus } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
@@ -76,11 +77,11 @@ function FundsPage() {
         <>
             <PageHeader
                 help="funds"
-                title="เก็บเงินตามเป้า"
-                description="สร้างหัวข้อ ตั้งยอดคงที่หรือรายวัน จัดการสมาชิก บันทึกรับเงิน ดูสรุป และส่งรายงานเข้า Discord"
+                title={tr('เก็บเงินตามเป้า')}
+                description={tr('สร้างหัวข้อ ตั้งยอดคงที่หรือรายวัน จัดการสมาชิก บันทึกรับเงิน ดูสรุป และส่งรายงานเข้า Discord')}
                 actions={
                     <Button onClick={openCreateBlank}>
-                        <Plus /> สร้างหัวข้อ
+                        <Plus /> {tr('สร้างหัวข้อ')}
                     </Button>
                 }
             />
@@ -97,18 +98,20 @@ function FundsPage() {
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
                         <aside className="min-w-0 space-y-3 rounded-xl border bg-card/50 p-3">
                             <div className="flex items-center justify-between gap-2 px-1">
-                                <h2 className="text-sm font-semibold">หัวข้อเก็บเงิน</h2>
-                                <span className="text-xs text-muted-foreground">ทั้งหมด {topics.length}</span>
+                                <h2 className="text-sm font-semibold">{tr('หัวข้อเก็บเงิน')}</h2>
+                                <span className="text-xs text-muted-foreground">
+                                    {tr('ทั้งหมด')} {topics.length}
+                                </span>
                             </div>
-                            {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder="ค้นหาหัวข้อเก็บเงิน..." />}
+                            {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder={tr('ค้นหาหัวข้อเก็บเงิน...')} />}
 
                             {closedCount > 0 && (
                                 <div className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/30 p-1">
                                     {(
                                         [
-                                            ['all', `ทั้งหมด ${topics.length}`],
-                                            ['open', `เปิดอยู่ ${openCount}`],
-                                            ['closed', `ปิดแล้ว ${closedCount}`],
+                                            ['all', tr('ทั้งหมด {0}', { 0: topics.length })],
+                                            ['open', tr('เปิดอยู่ {0}', { 0: openCount })],
+                                            ['closed', tr('ปิดแล้ว {0}', { 0: closedCount })],
                                         ] as const
                                     ).map(([val, label]) => (
                                         <Button
@@ -128,7 +131,7 @@ function FundsPage() {
                             <div className="space-y-2">
                                 {filteredTopics.length === 0 ? (
                                     <div className="rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
-                                        ไม่พบหัวข้อตามเงื่อนไขที่เลือก
+                                        {tr('ไม่พบหัวข้อตามเงื่อนไขที่เลือก')}
                                     </div>
                                 ) : (
                                     filteredTopics.map((topic) => (

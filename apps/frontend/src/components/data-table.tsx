@@ -1,13 +1,6 @@
-import {
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getSortedRowModel,
-    useReactTable,
-    type ColumnDef,
-    type SortingState,
-} from '@tanstack/react-table';
-import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
+import { tr } from '../lib/i18n';
+import { flexRender, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useReactTable, type ColumnDef, type SortingState } from '@tanstack/react-table';
+import { ArrowDown, ArrowUp, ArrowUpDown } from '@/components/icons';
 import { useId, useState, type ReactNode } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
@@ -21,7 +14,7 @@ import { cn } from '@/lib/utils';
 export function DataTable<TData>({
     columns,
     data,
-    empty = 'ไม่มีข้อมูล',
+    empty = tr('ไม่มีข้อมูล'),
     globalFilter,
     rowClassName,
     className,
@@ -81,9 +74,19 @@ export function DataTable<TData>({
                                         className="text-xs tracking-wide text-muted-foreground uppercase"
                                     >
                                         {header.isPlaceholder ? null : header.column.getCanSort() ? (
-                                            <button type="button" className="inline-flex items-center gap-1 hover:text-foreground" onClick={header.column.getToggleSortingHandler()}>
+                                            <button
+                                                type="button"
+                                                className="inline-flex items-center gap-1 hover:text-foreground"
+                                                onClick={header.column.getToggleSortingHandler()}
+                                            >
                                                 {flexRender(header.column.columnDef.header, header.getContext())}
-                                                {sorted === 'asc' ? <ArrowUp className="size-3" /> : sorted === 'desc' ? <ArrowDown className="size-3" /> : <ArrowUpDown className="size-3 opacity-40" />}
+                                                {sorted === 'asc' ? (
+                                                    <ArrowUp className="size-3" />
+                                                ) : sorted === 'desc' ? (
+                                                    <ArrowDown className="size-3" />
+                                                ) : (
+                                                    <ArrowUpDown className="size-3 opacity-40" />
+                                                )}
                                             </button>
                                         ) : (
                                             flexRender(header.column.columnDef.header, header.getContext())
