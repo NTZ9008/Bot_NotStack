@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
@@ -23,13 +23,13 @@ import { DAY_BUTTONS, DAY_PRESETS, RADAR_SOURCE_LABELS, THEME_LABELS, ZOOM_LABEL
 
 export type WeatherSection = 'schedule' | 'location' | 'embed' | 'chart' | 'radar';
 
-export const WEATHER_SECTIONS: { value: WeatherSection; label: string }[] = [
+export const WEATHER_SECTIONS = byLang((): { value: WeatherSection; label: string }[] => [
     { value: 'schedule', label: tr('เวลา & ห้อง') },
     { value: 'location', label: tr('สถานที่') },
     { value: 'embed', label: tr('ข้อความ & ข้อมูล') },
     { value: 'chart', label: tr('กราฟ') },
     { value: 'radar', label: tr('เรดาร์') },
-];
+]);
 
 interface FormProps {
     meta: WeatherMeta;
@@ -131,7 +131,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
 
             <Field label={tr('วันที่ส่ง')}>
                 <div className="grid max-w-md grid-cols-7 gap-1.5">
-                    {DAY_BUTTONS.map((day) => {
+                    {DAY_BUTTONS().map((day) => {
                         const on = schedule.days.includes(day.value);
                         return (
                             <Button
@@ -148,7 +148,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                     })}
                 </div>
                 <div className="flex flex-wrap gap-x-3 text-xs">
-                    {DAY_PRESETS.map((preset) => (
+                    {DAY_PRESETS().map((preset) => (
                         <button key={preset.label} type="button" className="text-highlight hover:underline" onClick={() => setDays(preset.days)}>
                             {preset.label}
                         </button>
@@ -448,7 +448,7 @@ function ChartSection({ meta, draft, patch }: FormProps) {
                     onChange={(showRain) => patch((d) => void (d.options.chart.showRain = showRain))}
                 />
                 <Field label={tr('ธีมของกราฟ')}>
-                    <Segmented value={chart.theme} options={THEME_LABELS} onChange={(theme) => patch((d) => void (d.options.chart.theme = theme))} />
+                    <Segmented value={chart.theme} options={THEME_LABELS()} onChange={(theme) => patch((d) => void (d.options.chart.theme = theme))} />
                 </Field>
                 <Field label={tr('สีเส้นอุณหภูมิ')}>
                     <ColorField value={chart.color} onChange={(color) => patch((d) => void (d.options.chart.color = upper(color)))} className="max-w-60" />
@@ -460,7 +460,7 @@ function ChartSection({ meta, draft, patch }: FormProps) {
 
 function RadarSection({ meta, draft, patch }: FormProps) {
     const { radar } = draft.options;
-    const zooms = Object.fromEntries(meta.radarZooms.map((z) => [String(z), ZOOM_LABELS[z] ?? tr('ซูม {0}', { 0: z })])) as Record<string, string>;
+    const zooms = Object.fromEntries(meta.radarZooms.map((z) => [String(z), ZOOM_LABELS()[z] ?? tr('ซูม {0}', { 0: z })])) as Record<string, string>;
     const tmd = radar.source === 'tmd';
     return (
         <div className="space-y-4">
@@ -479,7 +479,7 @@ function RadarSection({ meta, draft, patch }: FormProps) {
                             : tr('ภาพเรดาร์รวมจากหลายประเทศ ภาพใหม่ทุก 10 นาที · ใช้ได้ทั่วโลก')
                     }
                 >
-                    <Segmented value={radar.source} options={RADAR_SOURCE_LABELS} onChange={(source) => patch((d) => void (d.options.radar.source = source))} />
+                    <Segmented value={radar.source} options={RADAR_SOURCE_LABELS()} onChange={(source) => patch((d) => void (d.options.radar.source = source))} />
                 </Field>
                 <SwitchRow
                     label={tr('ภาพเคลื่อนไหวย้อนหลัง 1 ชั่วโมง (GIF)')}
@@ -497,7 +497,7 @@ function RadarSection({ meta, draft, patch }: FormProps) {
                     <Segmented value={String(radar.zoom)} options={zooms} onChange={(value) => patch((d) => void (d.options.radar.zoom = Number(value)))} />
                 </Field>
                 <Field label={tr('ธีมของแผนที่')}>
-                    <Segmented value={radar.theme} options={THEME_LABELS} onChange={(theme) => patch((d) => void (d.options.radar.theme = theme))} />
+                    <Segmented value={radar.theme} options={THEME_LABELS()} onChange={(theme) => patch((d) => void (d.options.radar.theme = theme))} />
                 </Field>
             </fieldset>
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">

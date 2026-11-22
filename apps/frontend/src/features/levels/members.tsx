@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { xpMemberMutationSchema, type XpMemberMutation, type XpMemberMutationResult, type XpResetGuildResult } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -16,13 +16,13 @@ import { errorMessage } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { NumberField } from './settings';
 
-const ACTIONS: Record<XpMemberMutation['action'], string> = {
+const ACTIONS = byLang((): Record<XpMemberMutation['action'], string> => ({
     add: tr('เพิ่ม XP / สร้างสมาชิก'),
     subtract: tr('ลด XP'),
     set: tr('กำหนด XP ใหม่'),
     reset: tr('รีเซ็ตเป็น 0'),
     delete: tr('ลบสมาชิกจากอันดับ'),
-};
+}));
 type CompletedChange = { kind: 'member'; data: XpMemberMutationResult; username: string } | { kind: 'guild'; data: XpResetGuildResult };
 
 export function XpMembersPanel({ guildId }: { guildId: string }) {
@@ -72,7 +72,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                             const request = { input: parsed.data, username: user.username };
                             if (
                                 await confirm({
-                                    title: `${ACTIONS[request.input.action]}: ${request.username}?`,
+                                    title: `${ACTIONS()[request.input.action]}: ${request.username}?`,
                                     description: tr('เหตุผล: {0}', { 0: request.input.reason }),
                                     destructive: request.input.action !== 'add',
                                 })
@@ -89,7 +89,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                     value={action}
                                     onChange={(e) => setAction(e.target.value as XpMemberMutation['action'])}
                                 >
-                                    {Object.entries(ACTIONS).map(([key, label]) => (
+                                    {Object.entries(ACTIONS()).map(([key, label]) => (
                                         <option value={key} key={key}>
                                             {label}
                                         </option>
@@ -169,7 +169,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                         <DialogTitle>{tr('ดำเนินการสำเร็จ')}</DialogTitle>
                         <DialogDescription>
                             {completed?.kind === 'member'
-                                ? `${ACTIONS[completed.data.action]} · ${completed.username}`
+                                ? `${ACTIONS()[completed.data.action]} · ${completed.username}`
                                 : tr('รีเซ็ต XP ทั้งเซิร์ฟเวอร์ · {0} คน', { 0: completed?.data.affectedMembers.toLocaleString() ?? 0 })}
                         </DialogDescription>
                     </DialogHeader>

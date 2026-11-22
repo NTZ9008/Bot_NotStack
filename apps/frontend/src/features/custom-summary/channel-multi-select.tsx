@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { CustomSummaryChannelGroup, CustomSummaryChannelOption } from '@notstack/shared';
 import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
-const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> = {
+const GROUP_META = byLang((): Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> => ({
     text: {
         label: tr('ห้องแชทข้อความ'),
         badgeClass: 'bg-highlight/15 text-highlight border-highlight/30',
@@ -23,7 +23,7 @@ const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass:
         label: tr('ห้องแจ้งเตือน DevOps'),
         badgeClass: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
     },
-};
+}));
 
 function GroupIcon({ group }: { group: CustomSummaryChannelGroup }) {
     if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-400" />;
@@ -166,7 +166,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                             <div className="flex items-center justify-between rounded-md bg-background/70 px-2 py-1">
                                                 <span className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
                                                     <GroupIcon group={group} />
-                                                    {GROUP_META[group].label} ({items.length})
+                                                    {GROUP_META()[group].label} ({items.length})
                                                 </span>
                                                 <button
                                                     type="button"
@@ -226,7 +226,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
             {selectedChannels.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {selectedChannels.slice(0, 8).map((ch) => (
-                        <Badge key={ch.id} variant="outline" className={cn('gap-1 pr-1 text-[11px]', GROUP_META[ch.group].badgeClass)}>
+                        <Badge key={ch.id} variant="outline" className={cn('gap-1 pr-1 text-[11px]', GROUP_META()[ch.group].badgeClass)}>
                             <span>#{ch.name}</span>
                             <button
                                 type="button"

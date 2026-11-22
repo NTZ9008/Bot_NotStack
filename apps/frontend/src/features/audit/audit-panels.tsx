@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { AUDIT_GROUP_LABELS, auditLabel, type ActivityItem, type AuditLogItem } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -239,13 +239,13 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
 // ==========================================
 // เหตุการณ์ในเซิร์ฟเวอร์ Discord (ตาราง activity_events)
 // ==========================================
-const RANGES = [
+const RANGES = byLang(() => [
     { hours: 24, label: tr('24 ชั่วโมงล่าสุด') },
     { hours: 168, label: tr('7 วันล่าสุด') },
     { hours: 720, label: tr('30 วันล่าสุด') },
     { hours: 2160, label: tr('90 วันล่าสุด') },
     { hours: 8760, label: tr('1 ปีล่าสุด') },
-];
+]);
 
 // เหตุการณ์ในเซิร์ฟเวอร์ Discord (Activity Log ของเซิร์ฟเวอร์นั้น)
 export function DiscordActivity({ guildId, initialQuery }: { guildId: string; initialQuery?: string }) {
@@ -345,7 +345,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {RANGES.map((range) => (
+                        {RANGES().map((range) => (
                             <SelectItem key={range.hours} value={String(range.hours)}>
                                 {range.label}
                             </SelectItem>

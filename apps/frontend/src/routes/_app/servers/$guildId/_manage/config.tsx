@@ -1,4 +1,4 @@
-import { tr } from '../../../../../lib/i18n';
+import { tr, byLang } from '../../../../../lib/i18n';
 import { CONFIG_GROUPS, type ConfigRow } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -25,10 +25,10 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/config')({
     component: ConfigPage,
 });
 
-const GROUP_DESCRIPTIONS: Record<string, string> = {
+const GROUP_DESCRIPTIONS = byLang((): Record<string, string> => ({
     ห้อง: tr('ห้องที่บอทใช้ส่งข้อความของระบบต่างๆ — เลือก "ไม่ส่ง" เพื่อปิดระบบนั้น'),
     ความสามารถในแชท: tr('เปิด/ปิดสิ่งที่บอททำอัตโนมัติในแชทของเซิร์ฟเวอร์นี้ (เซิร์ฟเวอร์ใหม่ปิดไว้ก่อน ยกเว้นเฝ้าระวังห้องเสียง)'),
-};
+}));
 
 // แก้ค่าแล้วบันทึกทันที (ไม่มีปุ่ม Save) — ห้องเลือกจาก dropdown, สวิตช์เปิด/ปิด
 function ConfigField({ row }: { row: ConfigRow }) {
@@ -105,7 +105,7 @@ function ConfigPage() {
                     <Card key={group}>
                         <CardHeader>
                             <CardTitle>{tr(group)}</CardTitle>
-                            <CardDescription>{GROUP_DESCRIPTIONS[group]}</CardDescription>
+                            <CardDescription>{GROUP_DESCRIPTIONS()[group]}</CardDescription>
                         </CardHeader>
                         <CardContent className="grid gap-4">
                             {data

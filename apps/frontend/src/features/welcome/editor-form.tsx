@@ -115,7 +115,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
     const { design } = draft;
     const [size, setSize] = useState({ w: String(design.width), h: String(design.height) });
     useEffect(() => setSize({ w: String(design.width), h: String(design.height) }), [design.width, design.height]);
-    const preset = SIZE_PRESETS.find((p) => p.w === design.width && p.h === design.height);
+    const preset = SIZE_PRESETS().find((p) => p.w === design.width && p.h === design.height);
     const commit = () => patch((d) => resizeCanvas(d.design, Number(size.w), Number(size.h), meta));
     const updateSize = (axis: 'w' | 'h', value: string) => {
         const next = { ...size, [axis]: value };
@@ -149,7 +149,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                    {SIZE_PRESETS.map((p) => (
+                    {SIZE_PRESETS().map((p) => (
                         <SelectItem key={p.label} value={`${p.w}x${p.h}`}>
                             {p.label}
                         </SelectItem>
@@ -208,7 +208,7 @@ function BackgroundSection({
                 />
             </Field>
             <Field label={tr('การวางรูป')}>
-                <Segmented value={bg.fit} options={FIT_LABELS} onChange={(fit) => patch((d) => void (d.design.background.fit = fit))} />
+                <Segmented value={bg.fit} options={FIT_LABELS()} onChange={(fit) => patch((d) => void (d.design.background.fit = fit))} />
             </Field>
             <RangeField
                 label={tr('ความเบลอของรูป')}
@@ -248,7 +248,7 @@ function AvatarSection({ draft, patch }: FormProps) {
         <div className="space-y-5">
             <SwitchRow label={tr('แสดงรูปโปรไฟล์ของสมาชิก')} checked={av.visible} onChange={(visible) => set((a) => void (a.visible = visible))} />
             <Field label={tr('รูปทรง')}>
-                <Segmented value={av.shape} options={SHAPE_LABELS} onChange={(shape) => set((a) => void (a.shape = shape))} />
+                <Segmented value={av.shape} options={SHAPE_LABELS()} onChange={(shape) => set((a) => void (a.shape = shape))} />
             </Field>
             <RangeField
                 label={tr('ขนาด')}
@@ -393,7 +393,7 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                     <ColorField value={layer.color} onChange={(color) => set((l) => void (l.color = color))} />
                 </Field>
                 <Field label={tr('จัดแนว (นับจากจุดตำแหน่ง X)')}>
-                    <Segmented value={layer.align} options={ALIGN_LABELS} onChange={(align) => set((l) => void (l.align = align))} />
+                    <Segmented value={layer.align} options={ALIGN_LABELS()} onChange={(align) => set((l) => void (l.align = align))} />
                 </Field>
                 <RangeField
                     label={tr('ตำแหน่งแนวนอน (X)')}

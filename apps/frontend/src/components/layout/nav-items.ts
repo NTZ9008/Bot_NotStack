@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { PAGE_GUIDES, type PageGuideKey } from '../../lib/page-guides';
 import type { GuildSummary } from '@notstack/shared';
 // import ตรงจาก tabler (ไม่ผ่าน alias @/) เพราะ tests/frontend-lib.test.cjs โหลดไฟล์นี้ด้วย Node
@@ -48,13 +48,13 @@ export interface NavGroup {
 }
 
 // หน้าของเซิร์ฟเวอร์ที่กำลังเลือก
-const GUILD_GROUPS: NavGroup[] = [
+const GUILD_GROUPS = byLang((): NavGroup[] => [
     {
         label: tr('ภาพรวม'),
         items: [
             {
                 to: '/servers/$guildId/overview',
-                label: PAGE_GUIDES.overview.title,
+                label: PAGE_GUIDES().overview.title,
                 guide: 'overview',
                 icon: LineChart,
                 guild: 'manage',
@@ -67,7 +67,7 @@ const GUILD_GROUPS: NavGroup[] = [
         items: [
             {
                 to: '/servers/$guildId/config',
-                label: PAGE_GUIDES.config.title,
+                label: PAGE_GUIDES().config.title,
                 guide: 'config',
                 icon: Settings,
                 guild: 'manage',
@@ -88,7 +88,7 @@ const GUILD_GROUPS: NavGroup[] = [
         items: [
             {
                 to: '/servers/$guildId/news',
-                label: PAGE_GUIDES.news.title,
+                label: PAGE_GUIDES().news.title,
                 guide: 'news',
                 icon: Newspaper,
                 guild: 'manage',
@@ -96,7 +96,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/welcome',
-                label: PAGE_GUIDES.welcome.title,
+                label: PAGE_GUIDES().welcome.title,
                 guide: 'welcome',
                 icon: UserPlus,
                 guild: 'manage',
@@ -104,7 +104,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/weather',
-                label: PAGE_GUIDES.weather.title,
+                label: PAGE_GUIDES().weather.title,
                 guide: 'weather',
                 icon: CloudSun,
                 guild: 'manage',
@@ -117,7 +117,7 @@ const GUILD_GROUPS: NavGroup[] = [
         items: [
             {
                 to: '/servers/$guildId/room-access',
-                label: PAGE_GUIDES.roomAccess.title,
+                label: PAGE_GUIDES().roomAccess.title,
                 guide: 'roomAccess',
                 icon: Lock,
                 guild: 'manage',
@@ -125,7 +125,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/voice-guard',
-                label: PAGE_GUIDES.voiceGuard.title,
+                label: PAGE_GUIDES().voiceGuard.title,
                 guide: 'voiceGuard',
                 icon: Mic,
                 guild: 'manage',
@@ -133,7 +133,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/voice-listen',
-                label: PAGE_GUIDES.voiceListen.title,
+                label: PAGE_GUIDES().voiceListen.title,
                 guide: 'voiceListen',
                 icon: Headphones,
                 guild: 'manage',
@@ -141,7 +141,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/log-manager',
-                label: PAGE_GUIDES.logManager.title,
+                label: PAGE_GUIDES().logManager.title,
                 guide: 'logManager',
                 icon: FileText,
                 guild: 'manage',
@@ -149,7 +149,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/pr-bot',
-                label: PAGE_GUIDES.prBot.title,
+                label: PAGE_GUIDES().prBot.title,
                 guide: 'prBot',
                 icon: GitPullRequest,
                 guild: 'manage',
@@ -157,7 +157,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/grafana-alerts',
-                label: PAGE_GUIDES.grafanaAlerts.title,
+                label: PAGE_GUIDES().grafanaAlerts.title,
                 guide: 'grafanaAlerts',
                 icon: Activity,
                 guild: 'manage',
@@ -165,7 +165,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/jira',
-                label: PAGE_GUIDES.jira.title,
+                label: PAGE_GUIDES().jira.title,
                 guide: 'jira',
                 icon: Ticket,
                 guild: 'manage',
@@ -173,7 +173,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/funds',
-                label: PAGE_GUIDES.funds.title,
+                label: PAGE_GUIDES().funds.title,
                 guide: 'funds',
                 icon: Coins,
                 guild: 'manage',
@@ -186,7 +186,7 @@ const GUILD_GROUPS: NavGroup[] = [
         items: [
             {
                 to: '/servers/$guildId/levels',
-                label: PAGE_GUIDES.levels.title,
+                label: PAGE_GUIDES().levels.title,
                 guide: 'levels',
                 icon: Trophy,
                 guild: 'view',
@@ -194,7 +194,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/relations',
-                label: PAGE_GUIDES.relations.title,
+                label: PAGE_GUIDES().relations.title,
                 guide: 'relations',
                 icon: Waypoints,
                 guild: 'manage',
@@ -202,7 +202,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/audit-logs',
-                label: PAGE_GUIDES.audit.title,
+                label: PAGE_GUIDES().audit.title,
                 guide: 'audit',
                 icon: History,
                 guild: 'manage',
@@ -210,7 +210,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/custom-summary',
-                label: PAGE_GUIDES.customSummary.title,
+                label: PAGE_GUIDES().customSummary.title,
                 guide: 'customSummary',
                 icon: FileSpreadsheet,
                 guild: 'manage',
@@ -218,23 +218,23 @@ const GUILD_GROUPS: NavGroup[] = [
             },
         ],
     },
-];
+]);
 
 // หน้าส่วนกลาง (ไม่ผูกกับเซิร์ฟเวอร์)
-const GLOBAL_GROUPS: NavGroup[] = [
+const GLOBAL_GROUPS = byLang((): NavGroup[] => [
     {
         label: tr('ระบบ'),
         items: [
             {
                 to: '/servers',
-                label: PAGE_GUIDES.servers.title,
+                label: PAGE_GUIDES().servers.title,
                 guide: 'servers',
                 icon: Server,
                 keywords: 'servers guilds เซิร์ฟเวอร์ เลือกเซิร์ฟเวอร์ เชิญบอท invite',
             },
             {
                 to: '/users',
-                label: PAGE_GUIDES.users.title,
+                label: PAGE_GUIDES().users.title,
                 guide: 'users',
                 icon: Users,
                 adminOnly: true,
@@ -242,27 +242,27 @@ const GLOBAL_GROUPS: NavGroup[] = [
             },
             {
                 to: '/audit-logs',
-                label: PAGE_GUIDES.systemAudit.title,
+                label: PAGE_GUIDES().systemAudit.title,
                 guide: 'systemAudit',
                 icon: ShieldCheck,
                 adminOnly: true,
                 keywords: 'system audit ประวัติทั้งระบบ login เข้าสู่ระบบ',
             },
-            { to: '/logs', label: PAGE_GUIDES.logs.title, guide: 'logs', icon: ScrollText, adminOnly: true, keywords: 'logs ไฟล์ log ประวัติ system log แชท' },
+            { to: '/logs', label: PAGE_GUIDES().logs.title, guide: 'logs', icon: ScrollText, adminOnly: true, keywords: 'logs ไฟล์ log ประวัติ system log แชท' },
             {
                 to: '/account',
-                label: PAGE_GUIDES.account.title,
+                label: PAGE_GUIDES().account.title,
                 guide: 'account',
                 icon: CircleUser,
                 keywords: 'my account บัญชีของฉัน โปรไฟล์ รหัสผ่าน discord',
             },
         ],
     },
-];
+]);
 
 // เมนูที่ผู้ใช้เห็น — หน้าที่ไม่มีสิทธิ์เข้าจะไม่ขึ้นทั้งในเมนูและในผลการค้นหา
 export function visibleNavGroups(isAdmin: boolean, guild: Pick<GuildSummary, 'access'> | null): NavGroup[] {
-    const groups = [...(guild ? GUILD_GROUPS : []), ...GLOBAL_GROUPS];
+    const groups = [...(guild ? GUILD_GROUPS() : []), ...GLOBAL_GROUPS()];
     return groups
         .map((group) => ({
             ...group,
@@ -275,11 +275,11 @@ export function visibleNavGroups(isAdmin: boolean, guild: Pick<GuildSummary, 'ac
         .filter((group) => group.items.length > 0);
 }
 
-const ALL_ITEMS = [...GUILD_GROUPS, ...GLOBAL_GROUPS].flatMap((group) => group.items);
+const ALL_ITEMS = byLang(() => [...GUILD_GROUPS(), ...GLOBAL_GROUPS()].flatMap((group) => group.items));
 
 // หน้าปัจจุบันจาก path ของ route (เช่น /servers/$guildId/config)
 export function findNavItem(routePath: string | undefined): NavItem | undefined {
     if (!routePath) return undefined;
     const path = routePath.replace(/\/$/, '') || '/';
-    return ALL_ITEMS.find((item) => item.to === path);
+    return ALL_ITEMS().find((item) => item.to === path);
 }

@@ -1,4 +1,4 @@
-import { tr, dateLocale } from './i18n';
+import { tr, dateLocale, byLang } from './i18n';
 // ==========================================
 // ⌨️ แปลงข้อความที่พิมพ์ในช่อง ⌘K เป็นคำสั่ง (ไทย / อังกฤษ)
 //   ให้ xp @boat 500 · เพิ่ม XP boat 1.5k เพราะช่วยงาน · give 500 xp to boat · xp boat -200
@@ -59,12 +59,12 @@ export function cleanTarget(raw: string): string {
     return raw.trim().replace(/^@+/, '').trim();
 }
 
-export const XP_ACTION_LABEL: Record<XpCommandAction, string> = {
+export const XP_ACTION_LABEL = byLang((): Record<XpCommandAction, string> => ({
     add: tr('ให้'),
     subtract: tr('หัก'),
     set: tr('ตั้ง'),
     reset: tr('รีเซ็ต'),
-};
+}));
 
 interface XpDraft {
     hasXpWord: boolean;
@@ -186,7 +186,7 @@ export function commandGuide(input: string): CommandGuide | null {
     const action = draft.action;
     const needsAmount = action !== 'reset';
     const steps: CommandGuideStep[] = [
-        { label: tr('ทำอะไร'), value: action ? XP_ACTION_LABEL[action] : undefined },
+        { label: tr('ทำอะไร'), value: action ? XP_ACTION_LABEL()[action] : undefined },
         { label: tr('สมาชิก'), value: draft.target ? `@${draft.target}` : undefined },
         ...(needsAmount ? [{ label: tr('จำนวน XP'), value: draft.amount ? draft.amount.value.toLocaleString(dateLocale()) : undefined }] : []),
         { label: tr('เหตุผล'), value: draft.reason, optional: true },
@@ -198,7 +198,7 @@ export function commandGuide(input: string): CommandGuide | null {
     else if (needsAmount && !draft.amount) next = tr('พิมพ์จำนวน XP เช่น 500 หรือ 1.5k');
     else if (!draft.reason) next = tr('ใส่เหตุผลได้ด้วยคำว่า “เพราะ…” (ไม่บังคับ) แล้วเลือกสมาชิกด้านล่าง');
 
-    const verb = action ? XP_ACTION_LABEL[action] : tr('ให้');
+    const verb = action ? XP_ACTION_LABEL()[action] : tr('ให้');
     return {
         title: action === 'reset' ? tr('รีเซ็ต XP ของสมาชิก') : tr('{0} XP สมาชิก', { 0: verb }),
         next,
@@ -210,7 +210,7 @@ export function commandGuide(input: string): CommandGuide | null {
 // "ให้ 500 XP" / "รีเซ็ต XP"
 export function describeXpCommand(action: XpCommandAction, amount: number): string {
     if (action === 'reset') return tr('รีเซ็ต XP');
-    return `${XP_ACTION_LABEL[action]} ${amount.toLocaleString(dateLocale())} XP`;
+    return `${XP_ACTION_LABEL()[action]} ${amount.toLocaleString(dateLocale())} XP`;
 }
 
 // XP หลังทำคำสั่ง (ใช้แสดงตัวอย่างก่อนยืนยัน — ค่าจริงคำนวณที่ backend)

@@ -370,8 +370,8 @@ export function MembersTab({
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <Badge variant="outline" className={cn('shrink-0', STATUS_LABEL[m.status].className)}>
-                                                    {STATUS_LABEL[m.status].text}
+                                                <Badge variant="outline" className={cn('shrink-0', STATUS_LABEL()[m.status].className)}>
+                                                    {STATUS_LABEL()[m.status].text}
                                                 </Badge>
                                             </div>
 
@@ -515,8 +515,8 @@ export function MembersTab({
                                                         {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
                                                     </td>
                                                     <td className="px-3 py-2.5">
-                                                        <Badge variant="outline" className={STATUS_LABEL[m.status].className}>
-                                                            {STATUS_LABEL[m.status].text}
+                                                        <Badge variant="outline" className={STATUS_LABEL()[m.status].className}>
+                                                            {STATUS_LABEL()[m.status].text}
                                                         </Badge>
                                                     </td>
                                                     <td className="px-3 py-2.5">

@@ -1,4 +1,4 @@
-import { tr, dateLocale } from '../../lib/i18n';
+import { tr, dateLocale, byLang } from '../../lib/i18n';
 import {
     RELATION_KIND_LABELS,
     RELATION_STATUS_TEXT,
@@ -26,24 +26,24 @@ import { Avatar, LinkSheet, PersonSheet } from './detail-sheets';
 import { BoardCanvas, type BoardHandle, type BoardSelection } from './board-canvas';
 import { assignGroups } from './layout';
 
-const RANGES = [
+const RANGES = byLang(() => [
     { days: 7, label: tr('7 วันล่าสุด') },
     { days: 30, label: tr('30 วันล่าสุด') },
     { days: 90, label: tr('90 วันล่าสุด') },
     { days: 365, label: tr('ทั้งหมดที่เก็บไว้') },
-];
+]);
 
-const LINE_FILTERS = [
+const LINE_FILTERS = byLang(() => [
     { tier: 1, label: tr('แสดงทุกเส้น') },
     { tier: 2, label: tr('เฉพาะเส้นสี') },
     { tier: 3, label: tr('เฉพาะคนที่สนิท') },
-];
+]);
 
-const LEGEND: { kind: RelationKind; color: string; unit: string }[] = [
+const LEGEND = byLang((): { kind: RelationKind; color: string; unit: string }[] => [
     { kind: 'voice', color: 'var(--chart-2)', unit: tr('ชั่วโมง') },
     { kind: 'chat', color: 'var(--chart-4)', unit: tr('จำนวนครั้ง') },
     { kind: 'mod', color: 'var(--chart-5)', unit: tr('จำนวนครั้ง') },
-];
+]);
 
 function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excluded: ReadonlySet<string>; onChange: (next: Set<string>) => void }) {
     const toggle = (roleId: string, checked: boolean) => {
@@ -102,7 +102,7 @@ function Legend({ showPresence }: { showPresence: boolean }) {
     return (
         <div className="pointer-events-none absolute bottom-3 left-3 max-w-[calc(100%-1.5rem)] rounded-lg border bg-neutral-900/90 px-3 py-2 text-xs text-neutral-100">
             <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {LEGEND.map(({ kind, color, unit }) => (
+                {LEGEND().map(({ kind, color, unit }) => (
                     <li key={kind} className="flex items-center gap-1.5">
                         <span
                             className="h-1 w-8 rounded-full"
@@ -202,7 +202,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {RANGES.map((range) => (
+                        {RANGES().map((range) => (
                             <SelectItem key={range.days} value={String(range.days)}>
                                 {range.label}
                             </SelectItem>
@@ -214,7 +214,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        {LINE_FILTERS.map((filter) => (
+                        {LINE_FILTERS().map((filter) => (
                             <SelectItem key={filter.tier} value={String(filter.tier)}>
                                 {filter.label}
                             </SelectItem>

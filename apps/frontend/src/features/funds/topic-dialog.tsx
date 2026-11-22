@@ -180,7 +180,7 @@ export function TopicDialog({
                             <span className="mr-1 flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
                                 <Sparkles className="size-3 text-primary" /> {tr('เทมเพลตด่วน:')}
                             </span>
-                            {TOPIC_TEMPLATES.map((tpl) => (
+                            {TOPIC_TEMPLATES().map((tpl) => (
                                 <Button
                                     key={tpl.id}
                                     type="button"

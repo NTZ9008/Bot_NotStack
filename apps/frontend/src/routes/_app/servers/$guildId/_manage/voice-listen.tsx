@@ -1,4 +1,4 @@
-import { tr } from '../../../../../lib/i18n';
+import { tr, byLang } from '../../../../../lib/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Headphones, LogOut, Play, Square, Volume2 } from '@/components/icons';
@@ -29,12 +29,12 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/voice-liste
     component: VoiceListenPage,
 });
 
-const STREAM_LABEL: Record<VoiceStreamStatus, string> = {
+const STREAM_LABEL = byLang((): Record<VoiceStreamStatus, string> => ({
     stopped: tr('ยังไม่ได้ฟัง'),
     connecting: tr('กำลังเชื่อมต่อ...'),
     live: tr('กำลังฟังสด'),
     reconnecting: tr('หลุด — กำลังต่อใหม่...'),
-};
+}));
 
 function VoiceListenPage() {
     const guildId = useGuildId();
@@ -118,7 +118,7 @@ function VoiceListenPage() {
                 <Card>
                     <CardHeader className="flex-row items-center justify-between gap-2">
                         <CardTitle>{tr('ฟังเสียง')}</CardTitle>
-                        <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL[stream.status]}</Badge>
+                        <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {stream.status === 'stopped' ? (

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from '@/components/icons';
@@ -19,12 +19,12 @@ import { formatDateTime, formatNumber } from '@/lib/format';
 
 const PAGE_SIZE = 20;
 
-const FILTERS: { value: 'all' | JiraTicketStatus; label: string }[] = [
+const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] => [
     { value: 'all', label: tr('ทั้งหมด') },
     { value: 'open', label: tr('รอสร้าง card') },
     { value: 'created', label: tr('สร้าง card แล้ว') },
     { value: 'closed', label: tr('ปิดห้องแล้ว') },
-];
+]);
 
 function StatusBadge({ status }: { status: JiraTicketStatus }) {
     if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('สร้าง card แล้ว')}</Badge>;
@@ -82,7 +82,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                     }}
                 >
                     <TabsList className="h-auto flex-wrap">
-                        {FILTERS.map((filter) => (
+                        {FILTERS().map((filter) => (
                             <TabsTrigger key={filter.value} value={filter.value}>
                                 {filter.label}
                             </TabsTrigger>

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { LIVE_KIND_META, LIVE_KINDS, liveEventLabel, type LiveEvent, type LiveKind, type LiveStats } from '@notstack/shared';
 import { Activity } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
@@ -10,13 +10,13 @@ import { useMockLive } from './use-mock-live';
 
 const GlobeCanvas = lazy(() => import('./globe-canvas'));
 
-const STATUS_TEXT: Record<StreamStatus, string> = {
+const STATUS_TEXT = byLang((): Record<StreamStatus, string> => ({
     connecting: tr('กำลังเชื่อมต่อ'),
     live: 'Live',
     reconnecting: tr('กำลังต่อใหม่'),
     disabled: tr('ปิดอยู่'),
     unauthorized: tr('ต้อง login ใหม่'),
-};
+}));
 
 function useReducedMotion(): boolean {
     const [reduced, setReduced] = useState(() => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -90,7 +90,7 @@ export function LiveStatus({ status, className }: { status: StreamStatus; classN
                 {live && <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75 motion-reduce:animate-none" />}
                 <span className={cn('relative inline-flex size-1.5 rounded-full', live ? 'bg-emerald-400' : 'bg-slate-500')} />
             </span>
-            {STATUS_TEXT[status]}
+            {STATUS_TEXT()[status]}
         </span>
     );
 }

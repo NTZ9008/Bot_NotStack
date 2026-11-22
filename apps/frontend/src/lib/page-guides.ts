@@ -1,4 +1,4 @@
-import { tr } from './i18n';
+import { tr, byLang } from './i18n';
 export interface PageGuide {
     title: string;
     summary: string;
@@ -8,7 +8,7 @@ export interface PageGuide {
 }
 
 // Shared vocabulary for page help, navigation, search and feature shortcuts.
-export const PAGE_GUIDES = {
+export const PAGE_GUIDES = byLang(() => ({
     servers: {
         title: tr('เซิร์ฟเวอร์ทั้งหมด'),
         summary: tr('เลือกเซิร์ฟเวอร์ที่ต้องการใช้งานก่อนเริ่มตั้งค่าบอท'),
@@ -247,6 +247,6 @@ export const PAGE_GUIDES = {
         steps: [tr('เลือกไฟล์บันทึกที่ต้องการจากรายการ'), tr('อ่านรายการเหตุการณ์และเวลาที่เกิด'), tr('กดรีเฟรชเพื่อโหลดข้อมูลล่าสุด')],
         saving: tr('หน้านี้อ่านข้อมูลจากไฟล์ ไม่มีการแก้ไขไฟล์บันทึก'),
     },
-} satisfies Record<string, PageGuide>;
+} satisfies Record<string, PageGuide>));
 
-export type PageGuideKey = keyof typeof PAGE_GUIDES;
+export type PageGuideKey = keyof ReturnType<typeof PAGE_GUIDES>;

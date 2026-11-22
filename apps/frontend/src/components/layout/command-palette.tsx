@@ -1,5 +1,5 @@
 import type { GuildSummary, MemberSearchResult } from '@notstack/shared';
-import { useT, tr } from '@/lib/i18n';
+import { useT, tr, byLang } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
@@ -77,12 +77,12 @@ function rememberRecent(entry: RecentEntry): void {
     }
 }
 
-const EXAMPLES = [
+const EXAMPLES = byLang(() => [
     { text: tr('ให้ xp @'), hint: tr('ให้ XP สมาชิก เช่น “ให้ xp @boat 500 เพราะช่วยงาน”') },
     { text: tr('หัก xp @'), hint: tr('หัก XP เช่น “หัก xp @boat 200”') },
     { text: 'log ', hint: tr('ค้นหาในประวัติเหตุการณ์ของเซิร์ฟเวอร์') },
     { text: '@', hint: tr('ค้นหาสมาชิก แล้วเลือกสิ่งที่จะทำ') },
-];
+]);
 
 function Row({ icon: Icon, media, title, hint, shortcut }: { icon?: LucideIcon; media?: ReactNode; title: ReactNode; hint?: ReactNode; shortcut?: ReactNode }) {
     return (
@@ -145,12 +145,12 @@ const toTarget = (member: MemberSearchResult): XpCommandTarget => ({
     avatar: member.avatar,
 });
 
-const MEMBER_XP_ACTIONS: { action: XpCommandAction; label: string; icon: LucideIcon }[] = [
+const MEMBER_XP_ACTIONS = byLang((): { action: XpCommandAction; label: string; icon: LucideIcon }[] => [
     { action: 'add', label: tr('ให้ XP…'), icon: Plus },
     { action: 'subtract', label: tr('หัก XP…'), icon: Minus },
     { action: 'set', label: tr('ตั้งค่า XP…'), icon: Wand2 },
     { action: 'reset', label: tr('รีเซ็ต XP…'), icon: RotateCcw },
-];
+]);
 
 // ==========================================
 // ⌘K COMMAND PALETTE — ค้นหาทุกอย่าง + สั่งงานด้วยข้อความ (Ctrl/⌘ + K)
@@ -237,14 +237,14 @@ export function CommandPalette() {
     const pageEntry = (item: NavItem): RecentEntry => ({
         id: `page:${item.to}`,
         label: item.label,
-        hint: PAGE_GUIDES[item.guide].summary,
+        hint: PAGE_GUIDES()[item.guide].summary,
         to: item.to,
         params: item.guild && guildId ? { guildId } : undefined,
     });
     const rankedPages = trimmed
         ? navGroups
               .flatMap((group) => group.items)
-              .map((item) => ({ item, score: matchScore(`${item.label} ${item.keywords} ${PAGE_GUIDES[item.guide].summary}`, trimmed) }))
+              .map((item) => ({ item, score: matchScore(`${item.label} ${item.keywords} ${PAGE_GUIDES()[item.guide].summary}`, trimmed) }))
               .filter((entry) => entry.score > 0)
               .sort((a, b) => b.score - a.score)
               .slice(0, 8)
@@ -308,7 +308,7 @@ export function CommandPalette() {
     const memberPage = member && guildId && (
         <>
             <CommandGroup heading={member.username}>
-                {MEMBER_XP_ACTIONS.filter(({ label }) => matchScore(`${label} xp`, trimmed) > 0).map(({ action, label, icon }) => (
+                {MEMBER_XP_ACTIONS().filter(({ label }) => matchScore(`${label} xp`, trimmed) > 0).map(({ action, label, icon }) => (
                     <CommandItem key={action} value={`xp-${action}`} onSelect={() => startXp({ member, action, amount: action === 'add' ? 100 : 0 })}>
                         <Row icon={icon} title={label} hint={tr('ยืนยันจำนวนและเหตุผลก่อนบันทึก')} />
                     </CommandItem>
@@ -478,7 +478,7 @@ export function CommandPalette() {
                       <CommandGroup heading={tr('หน้า')}>
                           {rankedPages.map(({ item }) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES[item.guide].summary)} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES()[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
@@ -487,7 +487,7 @@ export function CommandPalette() {
                       <CommandGroup key={group.label} heading={group.label}>
                           {group.items.map((item) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES[item.guide].summary)} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES()[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
@@ -525,7 +525,7 @@ export function CommandPalette() {
 
             {!trimmed && canManage && (
                 <CommandGroup heading={tr('ลองพิมพ์')}>
-                    {EXAMPLES.map((example) => (
+                    {EXAMPLES().map((example) => (
                         <CommandItem key={example.text} value={`example-${example.text}`} onSelect={() => setQuery(example.text)}>
                             <Row icon={History} title={<span className="font-mono">{example.text.trim()}…</span>} hint={example.hint} />
                         </CommandItem>

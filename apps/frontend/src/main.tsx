@@ -1,19 +1,36 @@
 import './index.css';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
-import { StrictMode } from 'react';
+import { Fragment, StrictMode, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ConfirmProvider } from '@/components/confirm-dialog';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useLang } from './lib/i18n';
 import { queryClient, router } from './router';
+
+// เปลี่ยนภาษาแบบไม่โหลดหน้าใหม่: remount ทั้งแอป (ข้อความที่แปลตอน render) + โหลดข้อมูล API ใหม่ (api.ts แปลป้ายกำกับตอนรับข้อมูล)
+// + invalidate router (title ของหน้า)
+function LangBoundary({ children }: { children: React.ReactNode }) {
+    const [lang] = useLang();
+    const first = useRef(lang);
+    useEffect(() => {
+        if (lang === first.current) return;
+        first.current = lang;
+        void queryClient.invalidateQueries();
+        void router.invalidate();
+    }, [lang]);
+    return <Fragment key={lang}>{children}</Fragment>;
+}
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <QueryClientProvider client={queryClient}>
             <TooltipProvider>
                 <ConfirmProvider>
-                    <RouterProvider router={router} />
+                    <LangBoundary>
+                        <RouterProvider router={router} />
+                    </LangBoundary>
                     <Toaster position="top-right" closeButton />
                 </ConfirmProvider>
             </TooltipProvider>

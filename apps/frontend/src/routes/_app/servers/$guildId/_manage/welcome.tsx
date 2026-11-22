@@ -1,4 +1,4 @@
-import { tr } from '../../../../../lib/i18n';
+import { tr, byLang } from '../../../../../lib/i18n';
 import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -40,12 +40,12 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     component: WelcomePage,
 });
 
-const SECTIONS: { value: Section; label: string }[] = [
+const SECTIONS = byLang((): { value: Section; label: string }[] => [
     { value: 'general', label: tr('ทั่วไป') },
     { value: 'background', label: tr('พื้นหลัง') },
     { value: 'avatar', label: tr('รูปโปรไฟล์') },
     { value: 'texts', label: tr('ข้อความบนรูป') },
-];
+]);
 
 const toDraft = (card: WelcomeCard): CardDraft => structuredClone({ ...pickDraft(card), id: card.id, enabled: card.enabled });
 
@@ -312,7 +312,7 @@ function WelcomePage() {
                         <div className="space-y-4">
                             <Tabs value={section} onValueChange={(value) => setSection(value as Section)}>
                                 <TabsList className="w-full">
-                                    {SECTIONS.map((s) => (
+                                    {SECTIONS().map((s) => (
                                         <TabsTrigger key={s.value} value={s.value} className="flex-1">
                                             {s.label}
                                         </TabsTrigger>

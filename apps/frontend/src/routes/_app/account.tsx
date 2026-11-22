@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
@@ -26,19 +26,19 @@ export const Route = createFileRoute('/_app/account')({
     component: AccountPage,
 });
 
-const passwordFormSchema = z
+const passwordFormSchema = byLang(() => z
     .object({
         currentPassword: z.string().min(1, tr('กรุณากรอกรหัสผ่านปัจจุบัน')),
         newPassword: passwordFieldSchema,
         confirm: z.string(),
     })
-    .refine((value) => value.newPassword === value.confirm, { message: tr('รหัสผ่านใหม่ไม่ตรงกัน'), path: ['confirm'] });
+    .refine((value) => value.newPassword === value.confirm, { message: tr('รหัสผ่านใหม่ไม่ตรงกัน'), path: ['confirm'] }));
 
 function PasswordForm() {
     const queryClient = useQueryClient();
     const form = useForm({
         defaultValues: { currentPassword: '', newPassword: '', confirm: '' },
-        validators: { onSubmit: passwordFormSchema },
+        validators: { onSubmit: passwordFormSchema() },
         onSubmit: async ({ value, formApi }) => {
             try {
                 await authApi.changePassword({ currentPassword: value.currentPassword, newPassword: value.newPassword });

@@ -5,7 +5,8 @@ import { EN } from './i18n-en';
 // 🌐 แปลภาษา (ไทย/English) แบบเบาๆ ในโปรเจกต์เอง — ใช้ข้อความภาษาไทยเป็น key
 // ข้อความที่ยังไม่มีคำแปลจะแสดงภาษาไทยเดิม จึงทยอยแปลทีละหน้าได้ (เพิ่มใน i18n-en.ts)
 // ตัวแปรในข้อความเขียนเป็น {name} แล้วส่งค่าใน params
-// เปลี่ยนภาษาแล้วโหลดหน้าใหม่ 1 ครั้ง ข้อความที่ประกาศนอก component (ค่าคงที่/ตัวเลือก) จึงแปลด้วย tr() ได้เลย
+// เปลี่ยนภาษาไม่ต้องโหลดหน้าใหม่: main.tsx remount ทั้งแอป + โหลดข้อมูล API ใหม่ ; ค่าคงที่นอก component ที่มีข้อความแปล
+// ต้องห่อด้วย byLang(() => ...) แล้วเรียก X() (ถ้าเรียก tr() ตรงๆ ตอน import จะค้างเป็นภาษาตอนเปิดหน้า)
 // ==========================================
 export type Lang = 'th' | 'en';
 
@@ -21,7 +22,16 @@ export function setLang(lang: Lang) {
         // โหมดส่วนตัว/ปิด storage: ใช้ได้แค่หน้านี้ (จะกลับเป็นค่าเดิมหลังโหลดใหม่)
     }
     listeners.forEach((fn) => fn());
-    window.location.reload();
+}
+
+// ค่าคงที่ระดับไฟล์ที่มีข้อความแปล — คำนวณครั้งแรกที่ใช้ในแต่ละภาษาแล้ว cache ไว้ (reference คงที่ภายในภาษาเดียวกัน)
+export function byLang<T>(make: () => T): () => T {
+    const cache = new Map<Lang, T>();
+    return () => {
+        const lang = read();
+        if (!cache.has(lang)) cache.set(lang, make());
+        return cache.get(lang) as T;
+    };
 }
 
 export function translate(lang: Lang, text: string, params?: Record<string, unknown>): string {

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { roundMoney, type FundMemberStatus, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { Banknote, BarChart3, CheckCircle2, PieChart as PieChartIcon, Receipt, TrendingUp } from '@/components/icons';
@@ -15,21 +15,21 @@ import { STATUS_LABEL } from './utils';
 // ==========================================
 // แดชบอร์ดกราฟ & สถิติวิเคราะห์ของหัวข้อ
 // ==========================================
-const statusChartConfig = {
-    paid: { label: tr('จ่ายครบแล้ว'), color: STATUS_LABEL.paid.color },
-    partial: { label: tr('จ่ายบางส่วน'), color: STATUS_LABEL.partial.color },
-    unpaid: { label: tr('ยังไม่จ่าย'), color: STATUS_LABEL.unpaid.color },
-} satisfies ChartConfig;
+const statusChartConfig = byLang(() => ({
+    paid: { label: tr('จ่ายครบแล้ว'), color: STATUS_LABEL().paid.color },
+    partial: { label: tr('จ่ายบางส่วน'), color: STATUS_LABEL().partial.color },
+    unpaid: { label: tr('ยังไม่จ่าย'), color: STATUS_LABEL().unpaid.color },
+} satisfies ChartConfig));
 
-const timelineChartConfig = {
+const timelineChartConfig = byLang(() => ({
     daily: { label: tr('รับเข้ารายวัน (บาท)'), color: '#38bdf8' },
     cumulative: { label: tr('ยอดสะสมรวม (บาท)'), color: '#10b981' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
-const memberBarConfig = {
+const memberBarConfig = byLang(() => ({
     paid: { label: tr('จ่ายแล้ว (บาท)'), color: '#10b981' },
     remaining: { label: tr('คงค้าง (บาท)'), color: '#f59e0b' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
 export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const [visibleMemberCount, setVisibleMemberCount] = useState(12);
@@ -38,8 +38,8 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const statusData = useMemo(() => {
         const counts: Record<FundMemberStatus, number> = { paid: 0, partial: 0, unpaid: 0 };
         for (const m of topic.members) counts[m.status] += 1;
-        return (Object.keys(statusChartConfig) as FundMemberStatus[])
-            .map((status) => ({ status, label: statusChartConfig[status].label, count: counts[status], fill: statusChartConfig[status].color }))
+        return (Object.keys(statusChartConfig()) as FundMemberStatus[])
+            .map((status) => ({ status, label: statusChartConfig()[status].label, count: counts[status], fill: statusChartConfig()[status].color }))
             .filter((item) => item.count > 0);
     }, [topic.members]);
 
@@ -136,7 +136,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         {statusData.length === 0 ? (
                             <EmptyState>{tr('ยังไม่มีสมาชิกในหัวข้อนี้')}</EmptyState>
                         ) : (
-                            <ChartContainer config={statusChartConfig} className="aspect-auto h-56 w-full sm:h-64">
+                            <ChartContainer config={statusChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <PieChart>
                                     <ChartTooltip content={<ChartTooltipContent nameKey="status" />} />
                                     <Pie data={statusData} dataKey="count" nameKey="status" innerRadius={48} outerRadius={80} paddingAngle={3} strokeWidth={2}>
@@ -164,7 +164,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         {timelineData.length === 0 ? (
                             <EmptyState>{tr('ยังไม่มีประวัติการรับเงินเพื่อแสดงกราฟแนวโน้ม')}</EmptyState>
                         ) : (
-                            <ChartContainer config={timelineChartConfig} className="aspect-auto h-56 w-full sm:h-64">
+                            <ChartContainer config={timelineChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <AreaChart data={timelineData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
                                     <CartesianGrid vertical={false} />
                                     <XAxis dataKey="date" tickLine={false} axisLine={false} minTickGap={20} className="text-[11px]" />
@@ -205,7 +205,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         </CardHeader>
                         <CardContent>
                             <ChartContainer
-                                config={memberBarConfig}
+                                config={memberBarConfig()}
                                 className="aspect-auto w-full"
                                 style={{ height: `${Math.max(384, visibleMemberChartData.length * 32 + 64)}px` }}
                             >

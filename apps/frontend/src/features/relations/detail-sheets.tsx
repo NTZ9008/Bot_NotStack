@@ -1,4 +1,4 @@
-import { tr, dateLocale } from '../../lib/i18n';
+import { tr, dateLocale, byLang } from '../../lib/i18n';
 import {
     RELATION_CHAT_WINDOW_MINUTES,
     RELATION_KIND_LABELS,
@@ -29,7 +29,7 @@ const KIND_TEXT: Record<RelationKind, string> = {
     chat: 'text-amber-700 dark:text-amber-400',
     mod: 'text-rose-700 dark:text-rose-400',
 };
-const TIER_LABELS = ['', tr('เบาบาง'), tr('พอรู้จัก'), tr('สนิท'), tr('แน่นแฟ้นมาก')];
+const TIER_LABELS = byLang(() => ['', tr('เบาบาง'), tr('พอรู้จัก'), tr('สนิท'), tr('แน่นแฟ้นมาก')]);
 
 export function Avatar({ person, userId, className }: { person?: RelationPerson; userId: string; className?: string }) {
     return <img src={person?.avatarUrl ?? fallbackAvatar(userId)} alt="" className={`shrink-0 rounded-full object-cover ${className ?? 'size-9'}`} />;
@@ -171,7 +171,7 @@ export function PersonSheet({
                                                     <span className="min-w-0 flex-1">
                                                         <span className="block truncate text-sm font-medium">{other?.name ?? otherId}</span>
                                                         <span className="block text-xs text-muted-foreground">
-                                                            {TIER_LABELS[link.tier]} · {tr(RELATION_KIND_LABELS[link.kind])}
+                                                            {TIER_LABELS()[link.tier]} · {tr(RELATION_KIND_LABELS[link.kind])}
                                                             {link.voiceMinutes > 0 && (
                                                                 <span className="text-sky-700 dark:text-sky-400">
                                                                     {' '}
@@ -303,7 +303,7 @@ export function LinkSheet({
                                 {first?.name ?? link.a} {tr('กับ')} {second?.name ?? link.b}
                             </SheetTitle>
                             <SheetDescription>
-                                {TIER_LABELS[link.tier]} {tr('· ส่วนใหญ่')}
+                                {TIER_LABELS()[link.tier]} {tr('· ส่วนใหญ่')}
                                 {tr(RELATION_KIND_LABELS[link.kind])} {tr('· ช่วง')} {days} {tr('วันล่าสุด')}
                             </SheetDescription>
                         </SheetHeader>

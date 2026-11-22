@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type {
     CustomSummaryChannelGroup,
     CustomSummaryChannelRow,
@@ -19,11 +19,11 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { formatBangkokShortTime, formatThaiDuration } from './timezone';
 
-const KIND_BADGE: Record<CustomSummaryChannelGroup, { label: string; className: string }> = {
+const KIND_BADGE = byLang((): Record<CustomSummaryChannelGroup, { label: string; className: string }> => ({
     text: { label: tr('ข้อความ'), className: 'border-highlight/30 bg-highlight/15 text-highlight' },
     voice: { label: tr('ห้องเสียง'), className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
     devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
-};
+}));
 
 const SOURCE_BADGE: Record<CustomSummaryLogRow['source'], { label: string; className: string }> = {
     activity: { label: 'Discord', className: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
@@ -54,7 +54,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorKey: 'kind',
                 header: tr('ประเภท'),
                 cell: ({ row }) => {
-                    const meta = KIND_BADGE[row.original.kind];
+                    const meta = KIND_BADGE()[row.original.kind];
                     return (
                         <Badge variant="outline" className={meta.className}>
                             {meta.label}

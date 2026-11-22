@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import {
     Bold,
     Code,
@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 export type MarkdownAction = 'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'quote' | 'list' | 'code' | 'codeblock' | 'spoiler' | 'link';
 
-const WRAP: Partial<Record<MarkdownAction, [string, string, string]>> = {
+const WRAP = byLang((): Partial<Record<MarkdownAction, [string, string, string]>> => ({
     bold: ['**', '**', tr('ข้อความตัวหนา')],
     italic: ['*', '*', tr('ข้อความตัวเอียง')],
     underline: ['__', '__', tr('ข้อความขีดเส้นใต้')],
@@ -30,11 +30,11 @@ const WRAP: Partial<Record<MarkdownAction, [string, string, string]>> = {
     code: ['`', '`', 'code'],
     codeblock: ['```\n', '\n```', 'code'],
     spoiler: ['||', '||', tr('ข้อความที่ซ่อนไว้')],
-};
+}));
 
 const PREFIX: Partial<Record<MarkdownAction, string>> = { h1: '# ', h2: '## ', h3: '### ', quote: '> ', list: '- ' };
 
-const BUTTONS: ({ action: MarkdownAction; icon: LucideIcon; title: string } | 'sep')[] = [
+const BUTTONS = byLang((): ({ action: MarkdownAction; icon: LucideIcon; title: string } | 'sep')[] => [
     { action: 'bold', icon: Bold, title: tr('ตัวหนา (Ctrl+B) — **ข้อความ**') },
     { action: 'italic', icon: Italic, title: tr('ตัวเอียง (Ctrl+I) — *ข้อความ*') },
     { action: 'underline', icon: Underline, title: tr('ขีดเส้นใต้ (Ctrl+U) — __ข้อความ__') },
@@ -50,7 +50,7 @@ const BUTTONS: ({ action: MarkdownAction; icon: LucideIcon; title: string } | 's
     { action: 'codeblock', icon: SquareCode, title: tr('บล็อกโค้ด — ```ข้อความ```') },
     { action: 'spoiler', icon: Eye, title: tr('ซ่อนข้อความ — ||ข้อความ||') },
     { action: 'link', icon: Link, title: tr('ลิงก์ — [ข้อความ](url)') },
-];
+]);
 
 /**
  * ครอบข้อความที่เลือก หรือเติมหน้าบรรทัด (กดซ้ำเพื่อเอาออก) แล้วคืนข้อความใหม่ + ตำแหน่งที่จะเลือกต่อ
@@ -75,7 +75,7 @@ export function applyMarkdown(value: string, start: number, end: number, action:
         return { value: value.slice(0, lineStart) + next + value.slice(lineEnd), selection: [lineStart, lineStart + next.length] };
     }
 
-    const [open, close, placeholder] = WRAP[action]!;
+    const [open, close, placeholder] = WRAP()[action]!;
     const body = selected || placeholder;
     return { value: value.slice(0, start) + open + body + close + value.slice(end), selection: [start + open.length, start + open.length + body.length] };
 }
@@ -84,7 +84,7 @@ export function applyMarkdown(value: string, start: number, end: number, action:
 export function MarkdownToolbar({ textareaRef, onApply }: { textareaRef: RefObject<HTMLTextAreaElement | null>; onApply: (action: MarkdownAction) => void }) {
     return (
         <div className="flex flex-wrap items-center gap-0.5 rounded-t-lg border border-b-0 bg-muted/40 p-1">
-            {BUTTONS.map((button, i) =>
+            {BUTTONS().map((button, i) =>
                 button === 'sep' ? (
                     <Separator key={`sep-${i}`} orientation="vertical" className="mx-1 h-5" />
                 ) : (

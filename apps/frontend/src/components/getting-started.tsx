@@ -42,7 +42,7 @@ export function GettingStarted() {
                                 <item.icon className="mt-0.5 size-5 shrink-0 text-highlight" />
                                 <div className="min-w-0 flex-1 space-y-1">
                                     <p className="text-sm font-medium">{key === 'config' ? tr('เริ่มที่นี่: ตั้งค่าบอท') : item.label}</p>
-                                    <p className="text-xs leading-relaxed text-muted-foreground">{PAGE_GUIDES[key].summary}</p>
+                                    <p className="text-xs leading-relaxed text-muted-foreground">{PAGE_GUIDES()[key].summary}</p>
                                 </div>
                                 <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                             </Link>
@@ -68,7 +68,7 @@ export function GettingStarted() {
                                         <item.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                                         <div className="space-y-0.5">
                                             <p className="text-sm font-medium">{item.label}</p>
-                                            <p className="text-xs text-muted-foreground">{PAGE_GUIDES[item.guide].summary}</p>
+                                            <p className="text-xs text-muted-foreground">{PAGE_GUIDES()[item.guide].summary}</p>
                                         </div>
                                     </Link>
                                 ))}

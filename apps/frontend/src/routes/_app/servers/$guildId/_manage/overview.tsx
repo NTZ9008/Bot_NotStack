@@ -1,4 +1,4 @@
-import { tr } from '../../../../../lib/i18n';
+import { tr, byLang } from '../../../../../lib/i18n';
 import type { ActivityStats } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -42,13 +42,13 @@ function ChartsSkeleton() {
     );
 }
 
-const PRESETS = [
+const PRESETS = byLang(() => [
     { value: '24', label: tr('24 ชม.') },
     { value: '168', label: tr('7 วัน') },
     { value: '720', label: tr('30 วัน') },
     { value: '2160', label: tr('90 วัน') },
     { value: 'custom', label: tr('กำหนดเอง') },
-];
+]);
 
 function rangeFromPreset(preset: string, custom: { from: string; to: string }): Pick<StatsParams, 'from' | 'to' | 'hours'> {
     if (preset === 'custom') {
@@ -92,7 +92,7 @@ const userCell = (name: string, id: string, isBot = false) => (
     </div>
 );
 
-const topUserColumns: ColumnDef<TopUser>[] = [
+const topUserColumns = byLang((): ColumnDef<TopUser>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
     { id: 'user', header: tr('ผู้ใช้'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId, u.isBot) },
     { accessorKey: 'total', header: tr('เหตุการณ์'), cell: ({ row }) => <strong>{formatNumber(row.original.total)}</strong> },
@@ -100,22 +100,22 @@ const topUserColumns: ColumnDef<TopUser>[] = [
     { accessorKey: 'voiceJoins', header: tr('เข้าห้องเสียง'), cell: ({ row }) => formatNumber(row.original.voiceJoins) },
     { accessorKey: 'commands', header: tr('คำสั่ง'), cell: ({ row }) => formatNumber(row.original.commands) },
     { accessorKey: 'lastSeen', header: tr('ล่าสุด'), cell: ({ row }) => <span className="text-xs">{formatDateTime(row.original.lastSeen)}</span> },
-];
+]);
 
-const voiceUserColumns: ColumnDef<VoiceUser>[] = [
+const voiceUserColumns = byLang((): ColumnDef<VoiceUser>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
     { id: 'user', header: tr('ผู้ใช้'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId) },
     { accessorKey: 'minutes', header: tr('เวลารวม'), cell: ({ row }) => formatMinutes(row.original.minutes) },
     { accessorKey: 'sessions', header: tr('จำนวนครั้ง'), cell: ({ row }) => formatNumber(row.original.sessions) },
-];
+]);
 
-const voiceChannelColumns: ColumnDef<VoiceChannelRow>[] = [
+const voiceChannelColumns = byLang((): ColumnDef<VoiceChannelRow>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
     { id: 'channel', header: tr('ห้อง'), cell: ({ row: { original: c } }) => userCell(c.channelName, c.channelId) },
     { accessorKey: 'joins', header: tr('คนเข้า (ครั้ง)'), cell: ({ row }) => formatNumber(row.original.joins) },
     { accessorKey: 'members', header: tr('คนไม่ซ้ำ'), cell: ({ row }) => formatNumber(row.original.members) },
     { accessorKey: 'minutes', header: tr('เวลารวม'), cell: ({ row }) => formatMinutes(row.original.minutes) },
-];
+]);
 
 function Tables({ data }: { data: ActivityStats }) {
     // เวลาในห้องเสียงคิดจากช่วงที่เลือกเท่านั้น จึงเก็บแยกไว้ผูกกับตารางห้อง
@@ -130,7 +130,7 @@ function Tables({ data }: { data: ActivityStats }) {
                 <CardContent>
                     <DataTable
                         label={tr('อันดับผู้ใช้ที่เคลื่อนไหวมากสุด')}
-                        columns={topUserColumns}
+                        columns={topUserColumns()}
                         data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
                         empty={empty}
                     />
@@ -143,7 +143,7 @@ function Tables({ data }: { data: ActivityStats }) {
                 <CardContent>
                     <DataTable
                         label={tr('เวลาอยู่ในห้องเสียงมากสุด')}
-                        columns={voiceUserColumns}
+                        columns={voiceUserColumns()}
                         data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
                         empty={empty}
                     />
@@ -156,7 +156,7 @@ function Tables({ data }: { data: ActivityStats }) {
                 <CardContent>
                     <DataTable
                         label={tr('ห้องเสียงที่ถูกใช้มากสุด')}
-                        columns={voiceChannelColumns}
+                        columns={voiceChannelColumns()}
                         data={data.topVoiceChannels.map((c, i) => ({ ...c, rank: i + 1, minutes: minutesByChannel.get(c.channelId) ?? 0 }))}
                         empty={empty}
                     />
@@ -244,7 +244,7 @@ function OverviewPage() {
                                 if (value !== 'custom') setRange(rangeFromPreset(value, custom));
                             }}
                         >
-                            {PRESETS.map((p) => (
+                            {PRESETS().map((p) => (
                                 <ToggleGroupItem key={p.value} value={p.value}>
                                     {p.label}
                                 </ToggleGroupItem>

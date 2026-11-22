@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { DEFAULT_LOG_APPEARANCE, formatLogEmbed, type LogAppearance, type LogEmbedContent, type LogEventSetting } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
 import { Check, RotateCcw, Save } from '@/components/icons';
@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
-const samples: Record<string, LogEmbedContent> = {
+const samples = byLang((): Record<string, LogEmbedContent> => ({
     messageUpdate: {
         title: tr('📝 แก้ไขข้อความ'),
         description: tr('@Mali แก้ไขข้อความใน #general'),
@@ -50,7 +50,7 @@ const samples: Record<string, LogEmbedContent> = {
             { name: tr('📝 เหตุผล'), value: 'ส่งข้อความรบกวนสมาชิกซ้ำหลังจากได้รับคำเตือน', inline: false },
         ],
     },
-};
+}));
 
 export function AppearanceEditor({
     guildId,
@@ -92,7 +92,7 @@ export function AppearanceEditor({
     });
     const patch = (next: Partial<LogAppearance>) => setDraft((current) => ({ ...current, ...next }));
     const event = events.find((e) => e.key === sample);
-    const preview = formatLogEmbed(sample, samples[sample]!, draft, event?.color, '2026-10-05T12:00:00.000Z');
+    const preview = formatLogEmbed(sample, samples()[sample]!, draft, event?.color, '2026-10-05T12:00:00.000Z');
     const toggles = [
         ['showFieldIcons', tr('ไอคอนหน้ารายละเอียด'), tr('เพิ่มสัญลักษณ์ช่วยแยกประเภทข้อมูล')],
         ['showIds', tr('แสดง ID'), tr('แสดงช่อง ID สำหรับอ้างอิงเมื่อเหตุการณ์มีข้อมูลนี้')],

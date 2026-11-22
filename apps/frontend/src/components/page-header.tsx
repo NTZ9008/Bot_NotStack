@@ -15,11 +15,11 @@ export function PageHeader({ title, description, actions, help }: { title: strin
             <div className="min-w-0 flex-1 basis-72 space-y-1">
                 <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
                 {description && <p className="text-sm text-muted-foreground">{description}</p>}
-                {help && <p className="text-xs leading-relaxed text-info">{t(PAGE_GUIDES[help].saving)}</p>}
+                {help && <p className="text-xs leading-relaxed text-info">{t(PAGE_GUIDES()[help].saving)}</p>}
             </div>
             {(help || actions) && (
                 <div className="flex max-w-full flex-wrap items-center gap-2">
-                    {help && <PageHelp guide={PAGE_GUIDES[help]} />}
+                    {help && <PageHelp guide={PAGE_GUIDES()[help]} />}
                     {actions}
                 </div>
             )}

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowRight, Loader2 } from '@/components/icons';
 import { useState } from 'react';
@@ -28,7 +28,7 @@ export interface XpCommandRequest {
     reason?: string;
 }
 
-const DEFAULT_REASON = tr('ปรับผ่าน Command Palette');
+const DEFAULT_REASON = byLang(() => tr('ปรับผ่าน Command Palette'));
 
 // ==========================================
 // ✅ ยืนยันก่อนแก้ XP จากช่อง ⌘K — เห็น XP ตอนนี้ → หลังแก้ แก้จำนวน / เหตุผลได้ก่อนกด
@@ -37,7 +37,7 @@ const DEFAULT_REASON = tr('ปรับผ่าน Command Palette');
 export function XpCommandDialog({ guildId, request, onClose }: { guildId: string; request: XpCommandRequest; onClose: () => void }) {
     const [action, setAction] = useState<XpCommandAction>(request.action);
     const [amount, setAmount] = useState(String(request.amount || ''));
-    const [reason, setReason] = useState(request.reason ?? DEFAULT_REASON);
+    const [reason, setReason] = useState(request.reason ?? DEFAULT_REASON());
     const client = useQueryClient();
     const { member } = request;
 
@@ -105,9 +105,9 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         value={action}
                         onValueChange={(next) => next && setAction(next as XpCommandAction)}
                     >
-                        {(Object.keys(XP_ACTION_LABEL) as XpCommandAction[]).map((key) => (
+                        {(Object.keys(XP_ACTION_LABEL()) as XpCommandAction[]).map((key) => (
                             <ToggleGroupItem key={key} value={key} className="flex-1">
-                                {XP_ACTION_LABEL[key]}
+                                {XP_ACTION_LABEL()[key]}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>

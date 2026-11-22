@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { PrBotStatsDays } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from '@/components/icons';
@@ -13,11 +13,11 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatNumber } from '@/lib/format';
 
-const config = {
+const config = byLang(() => ({
     sent: { label: tr('ส่งแจ้งเตือน'), color: '#38bdf8' },
     merged: { label: tr('อัปเดต Merge'), color: '#a78bfa' },
     closed: { label: tr('อัปเดตปิด PR'), color: '#f59e0b' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 const kinds = ['sent', 'merged', 'closed'] as const;
 
 export function PrBotStatsCard({ guildId }: { guildId: string }) {
@@ -77,7 +77,7 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                 {[
                                     { label: tr('รวมทั้งหมด (ครั้ง)'), value: total },
-                                    ...kinds.map((kind) => ({ label: config[kind].label, value: data.totals[kind] })),
+                                    ...kinds.map((kind) => ({ label: config()[kind].label, value: data.totals[kind] })),
                                 ].map((tile) => (
                                     <div key={tile.label} className="rounded-xl border p-4">
                                         <p className="text-2xl font-semibold tabular-nums">{formatNumber(tile.value)}</p>
@@ -95,7 +95,7 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                             {total === 0 ? (
                                 <EmptyState>{tr('ยังไม่มีการแจ้งเตือน PR ในช่วงเวลานี้ สถิติจะปรากฏเมื่อบอทส่งหรืออัปเดตข้อความสำเร็จ')}</EmptyState>
                             ) : (
-                                <ChartContainer config={config} className="aspect-auto h-72 w-full">
+                                <ChartContainer config={config()} className="aspect-auto h-72 w-full">
                                     <BarChart accessibilityLayer data={data[view]} margin={{ left: 0, right: 8 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis

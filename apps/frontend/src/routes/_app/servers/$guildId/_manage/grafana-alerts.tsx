@@ -1,4 +1,4 @@
-import { tr } from '../../../../../lib/i18n';
+import { tr, byLang } from '../../../../../lib/i18n';
 import type { GrafanaSettings, UpdateGrafanaSettingsInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -31,11 +31,11 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/grafana-ale
     component: GrafanaAlertsPage,
 });
 
-const chartConfig = {
+const chartConfig = byLang(() => ({
     firing: { label: 'Firing', color: '#f97316' },
     resolved: { label: 'Resolved', color: '#a78bfa' },
     sent: { label: tr('ส่งทั้งหมด'), color: '#38bdf8' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
 function GrafanaStatsCard({ guildId }: { guildId: string }) {
     const { data, isLoading, error, isFetching, refetch } = useQuery(grafanaStatsQuery(guildId));
@@ -61,11 +61,11 @@ function GrafanaStatsCard({ guildId }: { guildId: string }) {
                             {(['firing', 'resolved', 'sent'] as const).map((key) => (
                                 <div key={key} className="rounded-xl border p-3">
                                     <p className="text-2xl font-semibold tabular-nums">{data.totals[key].toLocaleString()}</p>
-                                    <p className="text-xs text-muted-foreground">{chartConfig[key].label}</p>
+                                    <p className="text-xs text-muted-foreground">{chartConfig()[key].label}</p>
                                 </div>
                             ))}
                         </div>
-                        <ChartContainer config={chartConfig} className="h-64 w-full">
+                        <ChartContainer config={chartConfig()} className="h-64 w-full">
                             <BarChart accessibilityLayer data={data.daily} margin={{ left: 4, right: 4 }}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value: string) => value.slice(5)} />

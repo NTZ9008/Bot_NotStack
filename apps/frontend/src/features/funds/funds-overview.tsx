@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { roundMoney, type FundTopicSummary } from '@notstack/shared';
 import { formatBaht } from './money';
 import {
@@ -44,10 +44,10 @@ export function TemplateIcon({ icon, className }: { icon: TopicTemplateIcon; cla
 // ==========================================
 // ภาพรวมทุกหัวข้อของเซิร์ฟเวอร์ (แบนเนอร์สรุป + กราฟเปรียบเทียบ) และรายการหัวข้อด้านซ้าย
 // ==========================================
-const overviewTopicsChartConfig = {
+const overviewTopicsChartConfig = byLang(() => ({
     collected: { label: tr('เก็บได้แล้ว'), color: '#10b981' },
     remaining: { label: tr('คงค้าง'), color: '#f59e0b' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
 export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] }) {
     const [showChart, setShowChart] = useState(false);
@@ -149,7 +149,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
 
                 {showChart && (
                     <div className="min-w-0 overflow-hidden rounded-lg border bg-background/50 p-2.5 pt-3 sm:p-3 sm:pt-4">
-                        <ChartContainer config={overviewTopicsChartConfig} className="aspect-auto h-52 w-full sm:h-60">
+                        <ChartContainer config={overviewTopicsChartConfig()} className="aspect-auto h-52 w-full sm:h-60">
                             <BarChart data={chartData} margin={{ left: 0, right: 8, top: 8, bottom: 4 }}>
                                 <CartesianGrid vertical={false} />
                                 <XAxis dataKey="name" tickLine={false} axisLine={false} minTickGap={16} className="text-[11px] sm:text-xs" />
@@ -263,7 +263,7 @@ export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCr
                         <Sparkles className="size-3.5 text-primary" /> {tr('หรือเลือกเทมเพลตสำเร็จรูปเพื่อกรอกข้อมูลเริ่มต้นให้อัตโนมัติ')}
                     </p>
                     <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
-                        {TOPIC_TEMPLATES.map((tpl) => (
+                        {TOPIC_TEMPLATES().map((tpl) => (
                             <button
                                 key={tpl.id}
                                 type="button"

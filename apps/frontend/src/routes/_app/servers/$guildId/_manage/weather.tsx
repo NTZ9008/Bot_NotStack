@@ -224,7 +224,7 @@ function WeatherPage() {
                     <div className="space-y-4">
                         <Tabs value={section} onValueChange={(value) => setSection(value as WeatherSection)}>
                             <TabsList className="h-auto w-full flex-wrap">
-                                {WEATHER_SECTIONS.map((s) => (
+                                {WEATHER_SECTIONS().map((s) => (
                                     <TabsTrigger key={s.value} value={s.value} className="flex-1">
                                         {s.label}
                                     </TabsTrigger>

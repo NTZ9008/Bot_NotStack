@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { CustomSummaryResponse } from '@notstack/shared';
 import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Volume2 } from '@/components/icons';
 import { useMemo, useState } from 'react';
@@ -10,29 +10,29 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { cn } from '@/lib/utils';
 import { formatThaiDuration } from './timezone';
 
-const TIMELINE_CONFIG = {
+const TIMELINE_CONFIG = byLang(() => ({
     messages: { label: tr('ข้อความที่ส่ง'), color: '#10b981' },
     voiceMinutes: { label: tr('เวลาห้องเสียง (นาที)'), color: '#0ea5e9' },
     prTotal: { label: 'GitHub PR', color: '#a855f7' },
     devopsTotal: { label: tr('DevOps & สมาชิก'), color: '#f59e0b' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
-const VOICE_CONFIG = {
+const VOICE_CONFIG = byLang(() => ({
     totalMinutes: { label: tr('เวลาใช้งานรวม (นาที)'), color: '#0ea5e9' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
-const PR_CONFIG = {
+const PR_CONFIG = byLang(() => ({
     sent: { label: tr('เปิด / อัปเดต PR'), color: 'var(--chart-1)' },
     merged: { label: tr('Merge แล้ว'), color: '#a855f7' },
     closed: { label: tr('ปิด PR (ไม่ Merge)'), color: '#f59e0b' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
-const DEVOPS_CONFIG = {
+const DEVOPS_CONFIG = byLang(() => ({
     grafanaAlerts: { label: 'Grafana Alert', color: '#0ea5e9' },
     jiraCards: { label: 'Jira Card', color: '#f59e0b' },
     memberJoin: { label: tr('เข้าเซิร์ฟเวอร์'), color: '#10b981' },
     memberLeave: { label: tr('ออกเซิร์ฟเวอร์'), color: '#ef4444' },
-} satisfies ChartConfig;
+} satisfies ChartConfig));
 
 /** ชุดกราฟเปรียบเทียบกิจกรรมตามโมดูลที่เลือก */
 export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
@@ -119,7 +119,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                     {timelineData.length === 0 ? (
                         <EmptyState>{tr('ไม่มีจุดข้อมูลในช่วงเวลาที่เลือก')}</EmptyState>
                     ) : (
-                        <ChartContainer config={TIMELINE_CONFIG} className="h-[280px] w-full">
+                        <ChartContainer config={TIMELINE_CONFIG()} className="h-[280px] w-full">
                             {chartMode === 'area' ? (
                                 <AreaChart data={timelineData} margin={{ left: -12, right: 10, top: 8 }}>
                                     <defs>
@@ -219,7 +219,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 {voiceData.length === 0 ? (
                                     <EmptyState>{tr('ไม่พบกิจกรรมห้องเสียงในช่วงเวลาที่เลือก')}</EmptyState>
                                 ) : (
-                                    <ChartContainer config={VOICE_CONFIG} className="h-[260px] w-full">
+                                    <ChartContainer config={VOICE_CONFIG()} className="h-[260px] w-full">
                                         <BarChart data={voiceData} layout="vertical" margin={{ left: 6, right: 16 }}>
                                             <CartesianGrid horizontal={false} stroke="var(--border)" />
                                             <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
@@ -309,7 +309,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 {prData.length === 0 ? (
                                     <EmptyState>{tr('ไม่พบการแจ้งเตือน GitHub PR ในช่วงเวลาที่เลือก')}</EmptyState>
                                 ) : (
-                                    <ChartContainer config={PR_CONFIG} className="h-[260px] w-full">
+                                    <ChartContainer config={PR_CONFIG()} className="h-[260px] w-full">
                                         <BarChart data={prData} layout="vertical" margin={{ left: 6, right: 16 }}>
                                             <CartesianGrid horizontal={false} stroke="var(--border)" />
                                             <XAxis
@@ -355,7 +355,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ChartContainer config={DEVOPS_CONFIG} className="h-[220px] w-full">
+                        <ChartContainer config={DEVOPS_CONFIG()} className="h-[220px] w-full">
                             <BarChart data={timelineData} margin={{ left: -12, right: 10 }}>
                                 <CartesianGrid vertical={false} stroke="var(--border)" />
                                 <XAxis

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { CustomSummaryChannelOption, CustomSummaryModule } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
@@ -45,22 +45,22 @@ export interface CustomSummaryDraftFilter {
     includeBots: boolean;
 }
 
-const DATE_PRESETS: Array<{ key: DatePresetKey; label: string; hours?: number }> = [
+const DATE_PRESETS = byLang((): Array<{ key: DatePresetKey; label: string; hours?: number }> => [
     { key: '24h', label: tr('24 ชม.'), hours: 24 },
     { key: '7d', label: tr('7 วัน'), hours: 24 * 7 },
     { key: '30d', label: tr('30 วัน'), hours: 24 * 30 },
     { key: '90d', label: tr('90 วัน'), hours: 24 * 90 },
     { key: 'custom', label: tr('กำหนดเอง') },
-];
+]);
 
-const MODULE_OPTIONS: Array<{
+const MODULE_OPTIONS = byLang((): Array<{
     key: CustomSummaryModule;
     title: string;
     hint: string;
     icon: typeof Volume2;
     activeClass: string;
     iconClass: string;
-}> = [
+}> => [
     {
         key: 'voice',
         title: tr('สถิติห้องเสียง'),
@@ -93,7 +93,7 @@ const MODULE_OPTIONS: Array<{
         activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
         iconClass: 'text-amber-700 dark:text-amber-400',
     },
-];
+]);
 
 export interface FilterBuilderProps {
     guildId: string;
@@ -177,7 +177,7 @@ export function FilterBuilder({
                             {tr('ช่วงเวลาดึงข้อมูล')}
                         </Label>
                         <div className="flex flex-wrap gap-1.5">
-                            {DATE_PRESETS.map((preset) => {
+                            {DATE_PRESETS().map((preset) => {
                                 const active = draft.preset === preset.key;
                                 return (
                                     <Button
@@ -358,7 +358,7 @@ export function FilterBuilder({
                 <div className="space-y-2">
                     <Label className="text-xs font-medium text-muted-foreground">{tr('ประเภทกิจกรรมที่ต้องการสรุป')}</Label>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                        {MODULE_OPTIONS.map((mod) => {
+                        {MODULE_OPTIONS().map((mod) => {
                             const Icon = mod.icon;
                             const checked = draft.modules.includes(mod.key);
                             return (

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import type { RankBackgroundType, RankCardMeta, RankCardStyle, RankCardTheme, RankPreviewKind, WelcomeAsset, WelcomeCard, WelcomeMeta } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, RotateCcw, Save } from '@/components/icons';
@@ -22,14 +22,14 @@ import { cn } from '@/lib/utils';
 import { RankPreview } from './rank-preview';
 
 export const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
-export const BACKGROUND_LABELS: Record<RankBackgroundType, string> = { color: tr('สีเดียว'), gradient: tr('ไล่สี'), image: tr('รูปจากคลัง') };
-const SHOW_LABELS: Record<keyof RankCardStyle['show'], string> = {
+export const BACKGROUND_LABELS = byLang((): Record<RankBackgroundType, string> => ({ color: tr('สีเดียว'), gradient: tr('ไล่สี'), image: tr('รูปจากคลัง') }));
+const SHOW_LABELS = byLang((): Record<keyof RankCardStyle['show'], string> => ({
     rank: tr('อันดับ (RANK)'),
     level: tr('เลเวล (LEVEL)'),
     xpText: tr('ตัวเลข XP'),
     username: '@username',
     serverName: tr('ชื่อเซิร์ฟเวอร์'),
-};
+}));
 
 // การ์ดเลือกแบบ (layout) — ใช้ทั้งหน้าธีมและหน้าการ์ดของฉัน
 export function LayoutPicker({ meta, value, onChange }: { meta: RankCardMeta; value: string; onChange: (layout: RankCardStyle['layout']) => void }) {
@@ -189,7 +189,7 @@ function ThemeEditor({
                         <CardContent className="space-y-4">
                             <Segmented
                                 value={style.background.type}
-                                options={BACKGROUND_LABELS}
+                                options={BACKGROUND_LABELS()}
                                 onChange={(type) =>
                                     patchStyle((s) => void (s.background.type = type === 'image' && !s.background.imageId && !assets.length ? 'color' : type))
                                 }
@@ -300,7 +300,7 @@ function ThemeEditor({
                                 <Field label={tr('รูปทรงรูปโปรไฟล์')}>
                                     <Segmented
                                         value={style.avatarShape}
-                                        options={SHAPE_LABELS}
+                                        options={SHAPE_LABELS()}
                                         onChange={(shape) => patchStyle((s) => void (s.avatarShape = shape))}
                                     />
                                 </Field>
@@ -321,10 +321,10 @@ function ThemeEditor({
                             <CardTitle>{tr('ข้อมูลที่แสดงบนการ์ด /rank')}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-2 sm:grid-cols-2">
-                            {(Object.keys(SHOW_LABELS) as (keyof RankCardStyle['show'])[]).map((key) => (
+                            {(Object.keys(SHOW_LABELS()) as (keyof RankCardStyle['show'])[]).map((key) => (
                                 <SwitchRow
                                     key={key}
-                                    label={SHOW_LABELS[key]}
+                                    label={SHOW_LABELS()[key]}
                                     checked={style.show[key]}
                                     onChange={(on) => patchStyle((s) => void (s.show[key] = on))}
                                 />

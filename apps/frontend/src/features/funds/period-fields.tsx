@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { AlertCircle, Calendar } from '@/components/icons';
@@ -6,12 +6,12 @@ import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { periodAmount, periodPresetRange, type PeriodPreset } from './utils';
 
-const PRESETS: readonly { key: PeriodPreset; label: string }[] = [
+const PRESETS = byLang((): readonly { key: PeriodPreset; label: string }[] => [
     { key: 'today', label: tr('วันนี้ (1 วัน)') },
     { key: '7d', label: tr('7 วันล่าสุด') },
     { key: '15d', label: tr('15 วันล่าสุด') },
     { key: 'month', label: tr('เดือนนี้ทั้งเดือน') },
-];
+]);
 
 // ช่องเลือก "ตั้งแต่วันที่ – ถึงวันที่" + ปุ่มลัดเลือกช่วงวัน + สรุปจำนวนวัน (และยอดตามอัตรารายวันถ้ามี)
 export function PeriodFields({
@@ -43,7 +43,7 @@ export function PeriodFields({
         <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1">
                 <span className="mr-1 text-[11px] text-muted-foreground">{tr('เลือกด่วน:')}</span>
-                {PRESETS.map((p) => (
+                {PRESETS().map((p) => (
                     <Button key={p.key} type="button" size="xs" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => applyPreset(p.key)}>
                         {p.label}
                     </Button>

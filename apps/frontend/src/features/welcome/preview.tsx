@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, byLang } from '../../lib/i18n';
 import { useObjectUrl } from '@/hooks/use-object-url';
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ import { useGuildId } from '@/hooks/use-guild';
 
 const PREVIEW_DELAY = 250;
 const MENTION_TOKEN = 'WCMENTIONTOKEN';
-const FALLBACK_VARS: WelcomeVars = { user: tr('สมาชิกใหม่'), username: 'new_member', id: '0', server: 'NotStack', memberCount: '0' };
+const FALLBACK_VARS = byLang((): WelcomeVars => ({ user: tr('สมาชิกใหม่'), username: 'new_member', id: '0', server: 'NotStack', memberCount: '0' }));
 
 export type Handle = 'avatar' | number;
 
@@ -94,7 +94,7 @@ export function WelcomePreview({
         retry: false,
     });
     const imageUrl = useObjectUrl(preview.data?.image);
-    const vars = preview.data?.vars ?? FALLBACK_VARS;
+    const vars = preview.data?.vars ?? FALLBACK_VARS();
     useEffect(() => {
         if (preview.data?.vars) onVars(preview.data.vars);
     }, [preview.data?.vars, onVars]);

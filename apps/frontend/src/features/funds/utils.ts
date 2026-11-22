@@ -1,4 +1,4 @@
-import { tr, dateLocale } from '../../lib/i18n';
+import { tr, dateLocale, byLang } from '../../lib/i18n';
 import {
     calculateDays,
     fundCsvFilename,
@@ -15,11 +15,11 @@ import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 import { toLocalInput } from '@/lib/format';
 
-export const STATUS_LABEL: Record<FundMemberStatus, { text: string; className: string; color: string }> = {
+export const STATUS_LABEL = byLang((): Record<FundMemberStatus, { text: string; className: string; color: string }> => ({
     paid: { text: tr('จ่ายครบ'), className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400', color: '#10b981' },
     partial: { text: tr('จ่ายบางส่วน'), className: 'border-amber-500/40 bg-amber-500/10 text-amber-400', color: '#f59e0b' },
     unpaid: { text: tr('ยังไม่จ่าย'), className: 'border-destructive/40 bg-destructive/10 text-destructive', color: '#ef4444' },
-};
+}));
 
 export type TopicTemplateIcon = 'wallet' | 'calendar' | 'gamepad' | 'party';
 
@@ -35,7 +35,7 @@ export interface TopicTemplate {
     dailyRate: string;
 }
 
-export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
+export const TOPIC_TEMPLATES = byLang((): readonly TopicTemplate[] => [
     {
         id: 'monthly',
         icon: 'wallet',
@@ -80,7 +80,7 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
         amount: '500',
         dailyRate: '15',
     },
-];
+]);
 
 export const percent = (collected: number, target: number) => (target > 0 ? Math.min(100, Math.round((collected / target) * 100)) : 0);
 
