@@ -526,13 +526,12 @@ export function CommandPalette() {
     return (
         <>
             <Button
-                aria-label="ค้นหาหรือสั่งงาน"
                 variant="outline"
                 className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-60"
                 onClick={() => setOpen(true)}
             >
                 <Search className="size-4" />
-                <span className="hidden flex-1 text-left md:inline">ค้นหา หรือพิมพ์คำสั่ง...</span>
+                <span className="sr-only flex-1 text-left md:not-sr-only">ค้นหา หรือพิมพ์คำสั่ง...</span>
                 <kbd className="pointer-events-none hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] md:inline">
                     {isMac ? '⌘ K' : 'Ctrl K'}
                 </kbd>
