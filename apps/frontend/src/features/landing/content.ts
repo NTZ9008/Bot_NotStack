@@ -1,3 +1,4 @@
+import { byLang, tr } from '../../lib/i18n';
 // ==========================================
 // 📄 เนื้อหาหน้า landing — ความสามารถ / คำสั่ง / ทีมผู้พัฒนา (อัปเดตที่นี่ที่เดียวเมื่อเพิ่มฟีเจอร์หรือคำสั่งใหม่)
 // ==========================================
@@ -14,62 +15,62 @@ export interface FeatureGroup {
     features: Feature[];
 }
 
-export const FEATURE_GROUPS: FeatureGroup[] = [
+export const FEATURE_GROUPS = byLang((): FeatureGroup[] => [
     {
         id: 'security',
-        label: 'กันคนป่วน',
-        intro: 'ดูแลเซิร์ฟให้ปลอดภัย',
+        label: tr('landing.groupSecurity'),
+        intro: tr('landing.groupSecurityIntro'),
         features: [
-            { title: 'Voice Monitor', description: 'แจ้งเตือนเมื่อมีคนแกล้งเปลี่ยน bitrate / region ห้องเสียง' },
-            { title: 'Voice Guard', description: 'กำหนดว่าใครเข้าห้องเสียงได้หรือไม่ได้' },
-            { title: 'Anti-spam', description: 'ลบข้อความเมื่อส่งรัวเกินไป' },
-            { title: 'กรองคำหยาบ', description: 'ลบคำหยาบ คำก้ำกึ่งให้ AI ช่วยดู' },
-            { title: 'Room Access', description: 'ให้สิทธิ์เข้าห้องลับ ตั้งเวลาหมดอายุได้' },
+            { title: 'Voice Monitor', description: tr('landing.featVoiceMonitor') },
+            { title: 'Voice Guard', description: tr('landing.featVoiceGuard') },
+            { title: 'Anti-spam', description: tr('landing.featAntiSpam') },
+            { title: tr('landing.featProfanityFilter'), description: tr('landing.featProfanityFilterDesc') },
+            { title: 'Room Access', description: tr('landing.featRoomAccess') },
         ],
     },
     {
         id: 'community',
-        label: 'ทำให้เซิร์ฟคึกคัก',
-        intro: 'ให้สมาชิกอยากเข้ามาคุย',
+        label: tr('landing.groupCommunity'),
+        intro: tr('landing.groupCommunityIntro'),
         features: [
-            { title: 'เลเวล & การ์ดอันดับ', description: 'คุย / เข้าห้องเสียง แล้วได้ XP เลเวลอัปได้ยศ' },
-            { title: 'แชทกับ AI', description: 'แท็กบอทแล้วถามได้เลย' },
-            { title: 'การ์ดต้อนรับ', description: 'ต้อนรับคนใหม่ด้วยการ์ดรูปภาพ' },
-            { title: 'ประกาศ', description: 'เขียนประกาศ ดูตัวอย่างก่อนส่ง' },
-            { title: 'รายงานอากาศ', description: 'ส่งพยากรณ์อากาศให้ทุกเช้า' },
-            { title: 'โพล & สุ่ม', description: 'โหวตไม่เปิดชื่อ สุ่มของ รับยศจาก reaction' },
+            { title: tr('landing.featLevels'), description: tr('landing.featLevelsDesc') },
+            { title: tr('landing.featAiChat'), description: tr('landing.featAiChatDesc') },
+            { title: tr('landing.featWelcome'), description: tr('landing.featWelcomeDesc') },
+            { title: tr('landing.featNews'), description: tr('landing.featNewsDesc') },
+            { title: tr('landing.featWeather'), description: tr('landing.featWeatherDesc') },
+            { title: tr('landing.featPollRandom'), description: tr('landing.featPollRandomDesc') },
         ],
     },
     {
         id: 'team',
-        label: 'ใช้กับทีม',
-        intro: 'ทำงานกันใน Discord ได้เลย',
+        label: tr('landing.groupTeam'),
+        intro: tr('landing.groupTeamIntro'),
         features: [
-            { title: 'แจ้งเตือน GitHub PR', description: 'PR ละข้อความเดียว อัปเดตสถานะให้เอง' },
-            { title: 'เปิด Jira card', description: 'เปิด card จาก Discord ไม่ต้องมีบัญชี Jira' },
-            { title: 'เก็บเงิน', description: 'บันทึกใครจ่ายแล้ว ส่งสรุปเข้าห้อง' },
+            { title: tr('landing.featGithubPr'), description: tr('landing.featGithubPrDesc') },
+            { title: tr('landing.featJira'), description: tr('landing.featJiraDesc') },
+            { title: tr('landing.featFunds'), description: tr('landing.featFundsDesc') },
         ],
     },
     {
         id: 'logs',
-        label: 'ย้อนดูได้',
-        intro: 'รู้ว่าเกิดอะไรขึ้นในเซิร์ฟ',
+        label: tr('landing.groupLogs'),
+        intro: tr('landing.groupLogsIntro'),
         features: [
-            { title: 'Log Manager', description: 'เลือกเหตุการณ์ที่จะเก็บ และห้องที่จะส่ง' },
-            { title: 'ภาพรวมเซิร์ฟ', description: 'กราฟคนเข้า-ออก และคนที่แอคทีฟ' },
-            { title: 'ประวัติการตั้งค่า', description: 'ใครแก้อะไรใน Dashboard เมื่อไร' },
+            { title: 'Log Manager', description: tr('landing.featLogManagerDesc') },
+            { title: tr('landing.featOverview'), description: tr('landing.featOverviewDesc') },
+            { title: tr('landing.featAudit'), description: tr('landing.featAuditDesc') },
         ],
     },
-];
+]);
 
 export type CommandCategory = 'level' | 'tool' | 'info' | 'home';
 
-export const COMMAND_CATEGORIES: { id: CommandCategory; label: string }[] = [
-    { id: 'level', label: 'เลเวล' },
-    { id: 'tool', label: 'ของใช้' },
-    { id: 'info', label: 'ข้อมูล' },
-    { id: 'home', label: 'เฉพาะเซิร์ฟหลัก' },
-];
+export const COMMAND_CATEGORIES = byLang((): { id: CommandCategory; label: string }[] => [
+    { id: 'level', label: tr('landing.catLevel') },
+    { id: 'tool', label: tr('landing.catTool') },
+    { id: 'info', label: tr('landing.catInfo') },
+    { id: 'home', label: tr('landing.catHome') },
+]);
 
 export interface CommandOption {
     name: string;
@@ -89,143 +90,143 @@ export interface Command {
     keywords?: string;
 }
 
-export const COMMANDS: Command[] = [
+export const COMMANDS = byLang((): Command[] => [
     {
         name: 'rank',
         category: 'level',
-        summary: 'ดูการ์ดเลเวลของตัวเองหรือเพื่อน',
-        detail: 'ส่งการ์ดรูปภาพที่มีรูปโปรไฟล์ อันดับในเซิร์ฟ เลเวล XP และหลอดความคืบหน้าไปเลเวลถัดไป',
-        options: [{ name: 'target', description: 'สมาชิกที่อยากดู เว้นว่าง = ของตัวเอง' }],
-        example: '/rank target:@เพื่อน',
+        summary: tr('landing.cmdRankSummary'),
+        detail: tr('landing.cmdRankDetail'),
+        options: [{ name: 'target', description: tr('landing.optTargetMember') }],
+        example: tr('landing.exRank'),
         keywords: 'level xp การ์ด อันดับ',
     },
     {
         name: 'leaderboard',
         category: 'level',
-        summary: 'ตารางอันดับ XP ของเซิร์ฟ',
-        detail: 'ส่งรูปตารางอันดับหน้าละ 10 คน มีปุ่ม ◀ ▶ ให้เลื่อนดูหน้าอื่น',
-        options: [{ name: 'page', description: 'หน้าที่อยากเปิด (เริ่มที่ 1)' }],
+        summary: tr('landing.cmdLeaderboardSummary'),
+        detail: tr('landing.cmdLeaderboardDetail'),
+        options: [{ name: 'page', description: tr('landing.optPage') }],
         example: '/leaderboard page:2',
-        notes: ['กดเปลี่ยนหน้าได้ทุก 3 วินาทีต่อคน'],
+        notes: [tr('landing.noteLeaderboardCooldown')],
         keywords: 'top ranking อันดับ',
     },
     {
         name: 'rankcard',
         category: 'level',
-        summary: 'แต่งการ์ด /rank ของตัวเอง',
-        detail: 'เปิดเมนูให้เลือกแบบการ์ด สีหลัก และพื้นหลัง เห็นตัวอย่างก่อนบันทึก เมนูนี้เห็นแค่คุณคนเดียว',
-        notes: ['สีต้องเป็นรหัสแบบ #RRGGBB เช่น #818CF8', 'ถ้าแอดมินปิดการแต่งการ์ดเอง ทุกคนจะใช้ธีมของเซิร์ฟ'],
+        summary: tr('landing.cmdRankcardSummary'),
+        detail: tr('landing.cmdRankcardDetail'),
+        notes: [tr('landing.noteRankcardColor'), tr('landing.noteRankcardDisabled')],
         keywords: 'theme สี พื้นหลัง customize',
     },
     {
         name: 'xp history',
         category: 'level',
-        summary: 'ดูว่า XP ได้มา/หายไปจากอะไร',
-        detail: 'แสดง XP 10 รายการล่าสุด พร้อม XP ที่ได้วันนี้เทียบกับเพดานต่อวัน เห็นแค่คุณคนเดียว',
-        options: [{ name: 'member', description: 'ดูของคนอื่น (ต้องมีสิทธิ์ Manage Server)' }],
+        summary: tr('landing.cmdXpHistorySummary'),
+        detail: tr('landing.cmdXpHistoryDetail'),
+        options: [{ name: 'member', description: tr('landing.optXpHistoryMember') }],
         example: '/xp history',
-        notes: ['เก็บประวัติย้อนหลัง 90 วัน'],
+        notes: [tr('landing.noteXpHistoryRetention')],
         keywords: 'ประวัติ log',
     },
     {
         name: 'weather',
         category: 'tool',
-        summary: 'รายงานอากาศ กราฟพยากรณ์ และเรดาร์ฝน',
-        detail: 'บอกอุณหภูมิ โอกาสฝน ความชื้น ลม และ PM2.5 พร้อมกราฟพยากรณ์และแผนที่เรดาร์ฝนแบบเคลื่อนไหว',
-        options: [{ name: 'city', description: 'ชื่อเมือง สถานที่ หรือพิกัด เว้นว่าง = ใช้สถานที่เดียวกับรายงานประจำวันของเซิร์ฟ' }],
-        example: '/weather city:เชียงใหม่',
-        notes: ['ใช้ได้คนละครั้งทุก 30 วินาที'],
+        summary: tr('landing.cmdWeatherSummary'),
+        detail: tr('landing.cmdWeatherDetail'),
+        options: [{ name: 'city', description: tr('landing.optWeatherCity') }],
+        example: tr('landing.exWeather'),
+        notes: [tr('landing.noteWeatherCooldown')],
         keywords: 'อากาศ ฝน pm2.5 ฝุ่น forecast rain',
     },
     {
         name: 'poll',
         category: 'tool',
-        summary: 'โพลแบบไม่เปิดเผยชื่อคนโหวต',
-        detail: 'สร้างโพลพร้อมปุ่มให้กด หนึ่งคนหนึ่งเสียง กดใหม่ = เปลี่ยนคำตอบ ไม่มีใครเห็นว่าใครโหวตอะไร',
+        summary: tr('landing.cmdPollSummary'),
+        detail: tr('landing.cmdPollDetail'),
         options: [
-            { name: 'question', required: true, description: 'คำถาม (ไม่เกิน 200 ตัวอักษร)' },
-            { name: 'choices', required: true, description: 'ตัวเลือก 2–5 ข้อ คั่นด้วยจุลภาค' },
+            { name: 'question', required: true, description: tr('landing.optPollQuestion') },
+            { name: 'choices', required: true, description: tr('landing.optPollChoices') },
         ],
-        example: '/poll question:เย็นนี้กินอะไร choices:กะเพรา,ส้มตำ,ชาบู',
+        example: tr('landing.exPoll'),
         keywords: 'vote โหวต',
     },
     {
         name: 'random',
         category: 'tool',
-        summary: 'สุ่มเลือกหนึ่งอย่างจากรายการ',
-        detail: 'พิมพ์ตัวเลือกคั่นด้วยจุลภาค บอทจะสุ่มมาให้หนึ่งอย่าง เหมาะกับเวลาตกลงกันไม่ได้',
-        options: [{ name: 'items', required: true, description: 'ตัวเลือกอย่างน้อย 2 อย่าง คั่นด้วยจุลภาค' }],
-        example: '/random items:แดง,น้ำเงิน,เขียว',
+        summary: tr('landing.cmdRandomSummary'),
+        detail: tr('landing.cmdRandomDetail'),
+        options: [{ name: 'items', required: true, description: tr('landing.optRandomItems') }],
+        example: tr('landing.exRandom'),
         keywords: 'สุ่ม random pick',
     },
     {
         name: 'gethelp',
         category: 'info',
-        summary: 'ดูคำสั่งที่ใช้ได้ในเซิร์ฟนี้',
-        detail: 'แสดงรายการคำสั่งทั้งหมดที่ใช้ได้ในเซิร์ฟที่พิมพ์ เซิร์ฟหลักจะเห็นคำสั่งพิเศษเพิ่มมา',
+        summary: tr('landing.cmdGethelpSummary'),
+        detail: tr('landing.cmdGethelpDetail'),
         keywords: 'help ช่วยเหลือ คำสั่ง',
     },
     {
         name: 'userinfo',
         category: 'info',
-        summary: 'ข้อมูลบัญชีของสมาชิก',
-        detail: 'บอกวันที่สร้างบัญชี วันที่เข้าเซิร์ฟ และยศที่มี',
-        options: [{ name: 'target', description: 'สมาชิกที่อยากดู เว้นว่าง = ของตัวเอง' }],
-        example: '/userinfo target:@เพื่อน',
+        summary: tr('landing.cmdUserinfoSummary'),
+        detail: tr('landing.cmdUserinfoDetail'),
+        options: [{ name: 'target', description: tr('landing.optTargetMember') }],
+        example: tr('landing.exUserinfo'),
         keywords: 'user profile',
     },
     {
         name: 'serverinfo',
         category: 'info',
-        summary: 'ข้อมูลของเซิร์ฟนี้',
-        detail: 'สรุปข้อมูลของเซิร์ฟที่พิมพ์คำสั่ง',
+        summary: tr('landing.cmdServerinfoSummary'),
+        detail: tr('landing.cmdServerinfoDetail'),
         keywords: 'server guild',
     },
     {
         name: 'botinfo',
         category: 'info',
-        summary: 'สถานะของบอท',
-        detail: 'บอทเปิดมานานเท่าไร ใช้ RAM / CPU เท่าไร และรันบน OS อะไร',
+        summary: tr('landing.cmdBotinfoSummary'),
+        detail: tr('landing.cmdBotinfoDetail'),
         keywords: 'uptime status ram cpu',
     },
     {
         name: 'ping',
         category: 'info',
-        summary: 'เช็คว่าบอทตอบช้าแค่ไหน',
-        detail: 'วัดเวลาตอบสนองของบอทและการเชื่อมต่อกับ Discord',
+        summary: tr('landing.cmdPingSummary'),
+        detail: tr('landing.cmdPingDetail'),
         keywords: 'latency lag แลค',
     },
     {
         name: 'verify',
         category: 'home',
-        summary: 'ยืนยันรุ่นเพื่อรับยศ',
-        detail: 'เลือกรุ่นของตัวเองแล้วใส่รหัสผ่านที่ได้จากแอดมิน ถ้ารหัสถูกจะได้ยศรุ่นนั้น',
-        notes: ['ใส่รหัสผิด 5 ครั้งใน 15 นาที ต้องรอก่อนลองใหม่'],
+        summary: tr('landing.cmdVerifySummary'),
+        detail: tr('landing.cmdVerifyDetail'),
+        notes: [tr('landing.notePasswordLockout')],
         keywords: 'ยืนยันตัวตน รุ่น',
     },
     {
         name: 'addroles',
         category: 'home',
-        summary: 'รับยศพิเศษด้วยรหัสผ่าน',
-        detail: 'รับยศพิเศษ (บัตร VIP) ด้วยรหัสผ่าน ถ้ามียศอยู่แล้ว ใส่รหัสอีกรอบจะเป็นการถอดยศออก',
-        notes: ['ใส่รหัสผิด 5 ครั้งใน 15 นาที ต้องรอก่อนลองใหม่'],
+        summary: tr('landing.cmdAddrolesSummary'),
+        detail: tr('landing.cmdAddrolesDetail'),
+        notes: [tr('landing.notePasswordLockout')],
         keywords: 'vip ยศ role',
     },
     {
         name: 'setuproles',
         category: 'home',
-        summary: 'ส่งข้อความรับยศด้วย reaction',
-        detail: 'ส่งข้อความพร้อม reaction ในห้องที่พิมพ์ สมาชิกกด reaction เพื่อรับหรือเอายศรุ่นออก',
+        summary: tr('landing.cmdSetuprolesSummary'),
+        detail: tr('landing.cmdSetuprolesDetail'),
         keywords: 'reaction role ยศ',
     },
     {
         name: 'admininfo',
         category: 'home',
-        summary: 'ข้อมูลผู้สร้างบอท',
-        detail: 'แสดงข้อมูลของผู้สร้างบอท',
+        summary: tr('landing.cmdAdmininfoSummary'),
+        detail: tr('landing.cmdAdmininfoDetail'),
         keywords: 'admin ผู้สร้าง',
     },
-];
+]);
 
 export interface TeamMember {
     name: string;
@@ -234,17 +235,17 @@ export interface TeamMember {
     description: string;
 }
 
-export const TEAM: TeamMember[] = [
+export const TEAM = byLang((): TeamMember[] => [
     {
         name: 'Arlif Thongrakjan',
         github: 'NTZ9008',
-        role: 'คนเริ่มโปรเจกต์ · AT Tech',
-        description: 'เริ่มทำบอทตัวนี้',
+        role: tr('landing.teamFounderRole'),
+        description: tr('landing.teamFounderDesc'),
     },
     {
         name: 'โปรแกรมเมอร์แต่งของแทร่ลู่ๆกันอยู่',
         github: 'boatngin',
-        role: 'ร่วมพัฒนา',
-        description: 'ทำฟีเจอร์และ Dashboard',
+        role: tr('landing.teamContributorRole'),
+        description: tr('landing.teamContributorDesc'),
     },
-];
+]);

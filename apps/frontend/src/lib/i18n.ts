@@ -18,7 +18,14 @@ export async function loadLang(lang: Lang) {
     if (lang === 'en' && !Object.keys(DICT.en).length) DICT.en = (await import('../locales/en.json', { with: { type: 'json' } })).default;
 }
 // ข้อความไทยที่มาตอนรันไทม์ (ข้อมูลจาก API, ป้ายจาก @notstack/shared ที่บอทใช้ร่วม) → key
-const KEY_BY_TEXT = new Map(Object.entries(th).map(([key, text]) => [text, key as MessageKey]));
+// ข้อความไทยเดียวกันมีได้หลาย key (แปลอังกฤษต่างกันตามบริบท) → ใช้ data.* ก่อน แล้วค่อย key แรกตามลำดับในไฟล์
+export function keyByText(dict: Record<string, string>) {
+    const map = new Map<string, MessageKey>();
+    const entries = Object.entries(dict);
+    for (const [key, text] of [...entries.filter(([k]) => k.startsWith('data.')), ...entries]) if (!map.has(text)) map.set(text, key as MessageKey);
+    return map;
+}
+const KEY_BY_TEXT = keyByText(th);
 
 const listeners = new Set<() => void>();
 // ใน Node (เทสต์) ไม่มี document → ภาษาไทย

@@ -557,7 +557,7 @@ function Manifesto() {
 function Features({ botName, botAvatar }: { botName: string; botAvatar: string }) {
     return (
         <div className="grid gap-5 lg:grid-cols-6">
-            {FEATURE_GROUPS.map((group, index) => {
+            {FEATURE_GROUPS().map((group, index) => {
                 const wide = BENTO_SPANS[index % BENTO_SPANS.length] === 'lg:col-span-4';
                 return (
                     <Reveal
@@ -714,7 +714,7 @@ export function LandingPage() {
         document.addEventListener('click', scrollToSection);
         return () => document.removeEventListener('click', scrollToSection);
     }, []);
-    const featureNames = FEATURE_GROUPS.flatMap((group) => group.features.map((feature) => feature.title));
+    const featureNames = FEATURE_GROUPS().flatMap((group) => group.features.map((feature) => feature.title));
 
     usePageMeta('/');
 
@@ -813,7 +813,7 @@ export function LandingPage() {
                             flip
                         />
                         <ul className="grid gap-4 md:grid-cols-2">
-                            {TEAM.map((member, index) => (
+                            {TEAM().map((member, index) => (
                                 <Reveal
                                     as="li"
                                     key={member.github}

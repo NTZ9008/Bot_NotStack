@@ -1,12 +1,13 @@
 import { Check, ChevronDown, Copy, Search, X } from '@/components/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { COMMAND_CATEGORIES, COMMANDS, type Command, type CommandCategory } from './content';
+import { byLang, tr } from '../../lib/i18n';
 
 // ==========================================
 // 🔎 ค้นหาคำสั่ง — พิมพ์ชื่อ / คำอธิบาย / คำค้น (ไทย-อังกฤษ) แล้วกดดูวิธีใช้ ; กด / เพื่อโฟกัสช่องค้นหา
 // ==========================================
 
-const CATEGORY_LABEL = Object.fromEntries(COMMAND_CATEGORIES.map((c) => [c.id, c.label])) as Record<CommandCategory, string>;
+const CATEGORY_LABEL = byLang(() => Object.fromEntries(COMMAND_CATEGORIES().map((c) => [c.id, c.label])) as Record<CommandCategory, string>);
 
 function searchText(command: Command) {
     return [command.name, command.summary, command.detail, command.keywords, ...(command.options ?? []).map((o) => `${o.name} ${o.description}`)]
@@ -34,7 +35,7 @@ function CopyExample({ text }: { text: string }) {
             className="flex shrink-0 items-center gap-1 rounded px-1.5 py-0.5 text-xs whitespace-nowrap text-muted-foreground hover:bg-muted hover:text-foreground"
         >
             {copied ? <Check className="size-3.5 text-emerald-400" /> : <Copy className="size-3.5" />}
-            {copied ? 'คัดลอกแล้ว' : 'คัดลอก'}
+            {copied ? tr('landing.copied') : tr('common.copy')}
         </button>
     );
 }
@@ -46,12 +47,14 @@ function CommandDetail({ command }: { command: Command }) {
 
             {command.options && (
                 <div>
-                    <p className="mb-1.5 text-xs text-muted-foreground">ตัวเลือก</p>
+                    <p className="mb-1.5 text-xs text-muted-foreground">{tr('landing.options')}</p>
                     <ul className="space-y-1">
                         {command.options.map((option) => (
                             <li key={option.name} className="flex flex-wrap gap-x-2">
                                 <code className="font-mono text-indigo-200">{option.name}</code>
-                                <span className="text-xs leading-5 text-muted-foreground">{option.required ? 'ต้องใส่' : 'ไม่ใส่ก็ได้'}</span>
+                                <span className="text-xs leading-5 text-muted-foreground">
+                                    {option.required ? tr('landing.required') : tr('landing.optional')}
+                                </span>
                                 <span className="basis-full text-slate-400 sm:basis-auto">— {option.description}</span>
                             </li>
                         ))}
@@ -61,7 +64,7 @@ function CommandDetail({ command }: { command: Command }) {
 
             {command.example && (
                 <div>
-                    <p className="mb-1.5 text-xs text-muted-foreground">ตัวอย่าง</p>
+                    <p className="mb-1.5 text-xs text-muted-foreground">{tr('landing.example')}</p>
                     <div className="flex items-center justify-between gap-2 rounded-md bg-[#2b2d31] py-1.5 pr-1.5 pl-3">
                         <code className="min-w-0 truncate font-mono text-slate-200">{command.example}</code>
                         <CopyExample text={command.example} />
@@ -102,17 +105,19 @@ export function CommandSearch() {
 
     const results = useMemo(() => {
         const words = query.toLowerCase().replace(/^\//, '').split(/\s+/).filter(Boolean);
-        return COMMANDS.filter((command) => category === 'all' || command.category === category).filter((command) => {
-            const text = searchText(command);
-            return words.every((word) => text.includes(word));
-        });
+        return COMMANDS()
+            .filter((command) => category === 'all' || command.category === category)
+            .filter((command) => {
+                const text = searchText(command);
+                return words.every((word) => text.includes(word));
+            });
     }, [query, category]);
 
     return (
         <div className="space-y-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <label className="relative flex-1">
-                    <span className="sr-only">ค้นหาคำสั่ง</span>
+                    <span className="sr-only">{tr('landing.searchCommands')}</span>
                     <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         ref={inputRef}
@@ -122,7 +127,7 @@ export function CommandSearch() {
                             if (event.key === 'Escape') setQuery('');
                             if (event.key === 'Enter' && results[0]) setOpen(results[0].name);
                         }}
-                        placeholder="ค้นหา เช่น rank, อากาศ, โพล"
+                        placeholder={tr('landing.searchCommandsPlaceholder')}
                         className="h-11 w-full rounded-lg border bg-background pr-16 pl-9 text-sm outline-none placeholder:text-muted-foreground/70 focus:border-indigo-400/60 focus:ring-3 focus:ring-indigo-500/20"
                     />
                     {query ? (
@@ -130,7 +135,7 @@ export function CommandSearch() {
                             type="button"
                             onClick={() => setQuery('')}
                             className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
-                            aria-label="ล้างคำค้นหา"
+                            aria-label={tr('landing.clearSearch')}
                         >
                             <X className="size-4" />
                         </button>
@@ -140,8 +145,8 @@ export function CommandSearch() {
                         </kbd>
                     )}
                 </label>
-                <div className="flex flex-wrap gap-1.5" role="group" aria-label="หมวดคำสั่ง">
-                    {[{ id: 'all' as const, label: 'ทั้งหมด' }, ...COMMAND_CATEGORIES].map((item) => (
+                <div className="flex flex-wrap gap-1.5" role="group" aria-label={tr('landing.commandCategories')}>
+                    {[{ id: 'all' as const, label: tr('landing.allCategories') }, ...COMMAND_CATEGORIES()].map((item) => (
                         <button
                             key={item.id}
                             type="button"
@@ -158,7 +163,7 @@ export function CommandSearch() {
             <div className="overflow-hidden rounded-lg border">
                 {results.length === 0 ? (
                     <div className="px-4 py-10 text-center text-sm text-muted-foreground">
-                        ไม่เจอคำสั่งที่ตรงกับ “{query}” — ลองคำอื่น หรือพิมพ์ <code className="font-mono">/gethelp</code> ใน Discord
+                        {tr('landing.noCommandMatch', { 0: query })} <code className="font-mono">/gethelp</code> {tr('landing.inDiscord')}
                     </div>
                 ) : (
                     <ul className="divide-y">
@@ -177,7 +182,7 @@ export function CommandSearch() {
                                             <span className="block truncate text-sm text-slate-300">{command.summary}</span>
                                         </span>
                                         {command.category === 'home' && (
-                                            <span className="hidden shrink-0 text-xs text-amber-300/80 sm:inline">{CATEGORY_LABEL.home}</span>
+                                            <span className="hidden shrink-0 text-xs text-amber-300/80 sm:inline">{CATEGORY_LABEL().home}</span>
                                         )}
                                         <ChevronDown className={`size-4 shrink-0 text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`} />
                                     </button>
@@ -188,9 +193,7 @@ export function CommandSearch() {
                     </ul>
                 )}
             </div>
-            <p className="text-xs text-muted-foreground">
-                {results.length} จาก {COMMANDS.length} คำสั่ง
-            </p>
+            <p className="text-xs text-muted-foreground">{tr('landing.commandCount', { 0: results.length, 1: COMMANDS().length })}</p>
         </div>
     );
 }

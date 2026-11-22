@@ -1,6 +1,7 @@
 import { queryOptions, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { apiUrl } from '@/lib/api';
+import { dateLocale, tr } from '../../lib/i18n';
 
 // ==========================================
 // 🟢 สถานะระบบ + uptime — อ่านจาก GET /api/health (สาธารณะ) ทุก 1 นาที แล้วนับวินาทีต่อเองในหน้า
@@ -63,20 +64,28 @@ export function SystemStatus() {
     const apiOk = isPending ? undefined : !isError && data !== undefined;
 
     const rows: { label: string; ok: boolean | undefined; note: string }[] = [
-        { label: 'บอทใน Discord', ok: isPending ? undefined : Boolean(data?.discord), note: data?.discord ? 'เชื่อมต่ออยู่' : 'ไม่ได้เชื่อมต่อ' },
-        { label: 'API / Dashboard', ok: apiOk, note: apiOk ? 'ใช้งานได้' : 'ติดต่อไม่ได้' },
-        { label: 'ฐานข้อมูล', ok: isPending ? undefined : Boolean(data?.database), note: data?.database ? 'ปกติ' : 'มีปัญหา' },
+        {
+            label: tr('landing.statusBot'),
+            ok: isPending ? undefined : Boolean(data?.discord),
+            note: data?.discord ? tr('landing.statusConnected') : tr('landing.statusDisconnected'),
+        },
+        { label: 'API / Dashboard', ok: apiOk, note: apiOk ? tr('landing.statusAvailable') : tr('landing.statusUnreachable') },
+        {
+            label: tr('landing.statusDatabase'),
+            ok: isPending ? undefined : Boolean(data?.database),
+            note: data?.database ? tr('landing.statusHealthy') : tr('landing.statusUnhealthy'),
+        },
     ];
 
     return (
         <div className="grid overflow-hidden rounded-xl border md:grid-cols-[1.3fr_1fr]">
             <div className="space-y-3 border-b p-6 md:border-r md:border-b-0">
-                <p className="text-sm text-muted-foreground">เปิดต่อเนื่องมาแล้ว</p>
+                <p className="text-sm text-muted-foreground">{tr('landing.uptimeLabel')}</p>
                 {uptime ? (
                     <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 font-mono tabular-nums">
                         <span>
                             <span className="text-4xl font-semibold text-foreground sm:text-5xl">{uptime.days}</span>
-                            <span className="ml-1.5 text-sm text-muted-foreground">วัน</span>
+                            <span className="ml-1.5 text-sm text-muted-foreground">{tr('common.days')}</span>
                         </span>
                         <span className="text-3xl text-slate-300 sm:text-4xl">
                             {pad(uptime.hours)}:{pad(uptime.minutes)}:<span className="text-slate-500">{pad(uptime.seconds)}</span>
@@ -85,7 +94,7 @@ export function SystemStatus() {
                 ) : (
                     <p className="font-mono text-4xl text-slate-600">{isError ? '—' : '··'}</p>
                 )}
-                <p className="text-xs text-muted-foreground">นับจากเปิดระบบครั้งล่าสุด</p>
+                <p className="text-xs text-muted-foreground">{tr('landing.uptimeSince')}</p>
             </div>
             <div className="flex flex-col">
                 <ul className="flex-1 divide-y">
@@ -99,10 +108,12 @@ export function SystemStatus() {
                 </ul>
                 <p className="border-t px-5 py-2.5 text-xs text-muted-foreground">
                     {data
-                        ? `เช็คล่าสุด ${new Date(data.checkedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })} · อัปเดตทุก 1 นาที`
+                        ? tr('landing.lastChecked', {
+                              0: new Date(data.checkedAt).toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                          })
                         : isError
-                          ? 'ติดต่อเซิร์ฟเวอร์ไม่ได้ จะลองใหม่อัตโนมัติ'
-                          : 'กำลังเช็ค…'}
+                          ? tr('landing.statusRetrying')
+                          : tr('landing.statusChecking')}
                 </p>
             </div>
         </div>

@@ -22,12 +22,14 @@ const simpleBody = (heading: string, text: string) => () =>
 const BODIES: Record<PublicPath, () => string> = {
     '/': () =>
         `<main class="seo-prerender"><h1>${escapeHtml(HOME_H1)}</h1><p>${escapeHtml(HOME_INTRO)}</p>` +
-        FEATURE_GROUPS.map(
-            (group) =>
-                `<section><h2>${escapeHtml(group.label)} — ${escapeHtml(group.intro)}</h2><ul>` +
-                group.features.map((f) => `<li><strong>${escapeHtml(f.title)}</strong>: ${escapeHtml(f.description)}</li>`).join('') +
-                `</ul></section>`,
-        ).join('') +
+        FEATURE_GROUPS()
+            .map(
+                (group) =>
+                    `<section><h2>${escapeHtml(group.label)} — ${escapeHtml(group.intro)}</h2><ul>` +
+                    group.features.map((f) => `<li><strong>${escapeHtml(f.title)}</strong>: ${escapeHtml(f.description)}</li>`).join('') +
+                    `</ul></section>`,
+            )
+            .join('') +
         `<section><h2>เริ่มใช้ใน 3 ขั้นตอน</h2><ol><li>เชิญบอทเข้าเซิร์ฟ Discord</li><li>Login เข้า Dashboard ด้วยบัญชี Discord</li><li>เลือกห้อง แล้วเปิดสิ่งที่อยากใช้</li></ol></section>` +
         `${footerLinks()}</main>`,
     '/privacy': simpleBody('นโยบายความเป็นส่วนตัว', 'ข้อมูลที่ Bot_NotStack จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน'),
