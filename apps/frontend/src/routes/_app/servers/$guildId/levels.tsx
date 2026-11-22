@@ -1,5 +1,5 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
-import { useT } from '@/lib/i18n';
+import { useT, tr } from '@/lib/i18n';
 import { Award, History, IdCard, Palette, Settings, Trophy, Users } from '@/components/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -54,14 +54,14 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                     }}
                 >
                     <Input
-                        aria-label="ค้นหาสมาชิกด้วยชื่อหรือ Discord User ID"
+                        aria-label={tr('ค้นหาสมาชิกด้วยชื่อหรือ Discord User ID')}
                         className="max-w-xs"
-                        placeholder="ชื่อขึ้นต้น หรือ Discord User ID"
+                        placeholder={tr('ชื่อขึ้นต้น หรือ Discord User ID')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                     <Button type="submit" variant="outline">
-                        ค้นหา
+                        {tr('ค้นหา')}
                     </Button>
                     <Button
                         type="button"
@@ -72,7 +72,7 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                             setPage(1);
                         }}
                     >
-                        ทั้งหมด
+                        {tr('ทั้งหมด')}
                     </Button>
                     {user.discordId && (
                         <Button
@@ -84,12 +84,12 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                                 setPage(1);
                             }}
                         >
-                            อันดับของฉัน
+                            {tr('อันดับของฉัน')}
                         </Button>
                     )}
                 </form>
                 {query.data?.searchLimited && (
-                    <p className="text-sm text-amber-700 dark:text-amber-400">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>
+                    <p className="text-sm text-amber-700 dark:text-amber-400">{tr('พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น')}</p>
                 )}
                 {query.isLoading ? (
                     <LeaderboardTableSkeleton />
@@ -101,10 +101,10 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                             <table className="w-full text-left text-sm">
                                 <thead>
                                     <tr className="border-b text-muted-foreground">
-                                        <th className="p-3">อันดับ</th>
-                                        <th className="p-3">สมาชิก</th>
-                                        <th className="p-3">เลเวล</th>
-                                        <th className="p-3">XP สะสม / เลเวลถัดไป</th>
+                                        <th className="p-3">{tr('อันดับ')}</th>
+                                        <th className="p-3">{tr('สมาชิก')}</th>
+                                        <th className="p-3">{tr('เลเวล')}</th>
+                                        <th className="p-3">{tr('XP สะสม / เลเวลถัดไป')}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -127,7 +127,7 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                                                         {row.xp.toLocaleString()} / {next.toLocaleString()} XP
                                                     </p>
                                                     <progress
-                                                        aria-label={`ความคืบหน้าเลเวลของ ${row.username}`}
+                                                        aria-label={tr('ความคืบหน้าเลเวลของ {0}', { 0: row.username })}
                                                         className="mt-2 h-2 w-full accent-primary"
                                                         max={100}
                                                         value={percent}
@@ -139,7 +139,7 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                                     {!query.data?.items.length && (
                                         <tr>
                                             <td colSpan={4} className="p-10 text-center text-muted-foreground">
-                                                ยังไม่มีข้อมูล XP ที่ตรงกับการค้นหา
+                                                {tr('ยังไม่มีข้อมูล XP ที่ตรงกับการค้นหา')}
                                             </td>
                                         </tr>
                                     )}
@@ -148,18 +148,18 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                         </div>
                         <div className="flex items-center justify-between gap-2">
                             <p className="text-sm text-muted-foreground">
-                                {query.data?.total.toLocaleString()} คน · หน้า {page}
+                                {query.data?.total.toLocaleString()} {tr('คน · หน้า')} {page}
                             </p>
                             <div className="flex gap-2">
                                 <Button variant="outline" disabled={page === 1 || query.isFetching} onClick={() => setPage((p) => p - 1)}>
-                                    ก่อนหน้า
+                                    {tr('ก่อนหน้า')}
                                 </Button>
                                 <Button
                                     variant="outline"
                                     disabled={page * 25 >= (query.data?.total ?? 0) || query.isFetching}
                                     onClick={() => setPage((p) => p + 1)}
                                 >
-                                    ถัดไป
+                                    {tr('ถัดไป')}
                                 </Button>
                             </div>
                         </div>
@@ -206,33 +206,33 @@ function LevelsPage() {
         <>
             <PageHeader
                 help="levels"
-                title="อันดับและเลเวล"
+                title={tr('อันดับและเลเวล')}
                 description={t('ระบบประสบการณ์ของ {name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP', { name: guild.name })}
             />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList variant="line" className="mb-4">
                     <TabsTrigger value="leaderboard">
-                        <Trophy /> อันดับสมาชิก
+                        <Trophy /> {tr('อันดับสมาชิก')}
                     </TabsTrigger>
                     <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
-                        <IdCard /> การ์ดของฉัน
+                        <IdCard /> {tr('การ์ดของฉัน')}
                     </TabsTrigger>
                     {manage && (
                         <>
                             <TabsTrigger value="card-theme" {...intent(['meta', 'theme', 'welcome-meta', 'assets', 'cards'])}>
-                                <Palette /> ธีมการ์ด
+                                <Palette /> {tr('ธีมการ์ด')}
                             </TabsTrigger>
                             <TabsTrigger value="level-up" {...intent(['meta', 'theme', 'level-up', 'channels', 'roles'])}>
-                                <Award /> เลเวลอัป & ยศรางวัล
+                                <Award /> {tr('เลเวลอัป & ยศรางวัล')}
                             </TabsTrigger>
                             <TabsTrigger value="settings" {...intent(['settings', 'channels', 'roles'])}>
-                                <Settings /> กฎและอัตรา XP
+                                <Settings /> {tr('กฎและอัตรา XP')}
                             </TabsTrigger>
                             <TabsTrigger value="members">
-                                <Users /> จัดการสมาชิก
+                                <Users /> {tr('จัดการสมาชิก')}
                             </TabsTrigger>
                             <TabsTrigger value="history" {...intent(['history'])}>
-                                <History /> ประวัติ
+                                <History /> {tr('ประวัติ')}
                             </TabsTrigger>
                         </>
                     )}

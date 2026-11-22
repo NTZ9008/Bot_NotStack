@@ -1,3 +1,4 @@
+import { tr, dateLocale } from '../../lib/i18n';
 import {
     RELATION_STATUS_LABELS,
     RELATION_STATUS_TEXT,
@@ -98,9 +99,9 @@ function placeZone(el: HTMLElement, zone: ZoneRect): void {
 
 function linkSummary(link: RelationLink): string {
     return [
-        link.voiceMinutes > 0 && `ห้องเสียง ${compactVoiceTime(link.voiceMinutes)}`,
-        link.chatExchanges > 0 && `คุย ${link.chatExchanges.toLocaleString('th-TH')} ครั้ง`,
-        link.modActions > 0 && `ลงมือ ${link.modActions.toLocaleString('th-TH')} ครั้ง`,
+        link.voiceMinutes > 0 && tr('ห้องเสียง {0}', { 0: compactVoiceTime(link.voiceMinutes) }),
+        link.chatExchanges > 0 && tr('คุย {0} ครั้ง', { 0: link.chatExchanges.toLocaleString(dateLocale()) }),
+        link.modActions > 0 && tr('ลงมือ {0} ครั้ง', { 0: link.modActions.toLocaleString(dateLocale()) }),
     ]
         .filter(Boolean)
         .join(' · ');
@@ -124,11 +125,11 @@ const PersonCard = memo(function PersonCard({
     register: (id: string, el: HTMLElement | null) => void;
 }) {
     const gone = person.status !== 'member';
-    const tag = gone ? RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS] : person.isBot ? 'บอท' : '';
+    const tag = gone ? tr(RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS]) : person.isBot ? tr('บอท') : '';
     const presenceLine = relationPresenceLine(presence);
     const voiceTime = heat ? compactVoiceTime(person.voiceMinutes) : '';
-    const voiceText = voiceTime ? `, ห้องเสียง ${voiceTime}` : '';
-    const statusText = presence ? `, ${RELATION_STATUS_TEXT[presence.status]}` : '';
+    const voiceText = voiceTime ? tr(', ห้องเสียง {0}', { 0: voiceTime }) : '';
+    const statusText = presence ? `, ${tr(RELATION_STATUS_TEXT[presence.status])}` : '';
     return (
         <button
             type="button"
@@ -138,7 +139,13 @@ const PersonCard = memo(function PersonCard({
             data-gone={gone || undefined}
             data-heat={heat || undefined}
             data-selected={selected || undefined}
-            aria-label={`${person.name}${tag ? ` (${tag})` : ''}${statusText}${presenceLine ? `, ${presenceLine}` : ''}${voiceText} ดูประวัติ`}
+            aria-label={tr('{0}{1}{2}{3}{4} ดูประวัติ', {
+                0: person.name,
+                1: tag ? ` (${tag})` : '',
+                2: statusText,
+                3: presenceLine ? `, ${presenceLine}` : '',
+                4: voiceText,
+            })}
             style={{ transform: cardTransform(point, tiltOf(person.userId)) }}
         >
             <span className="rb-pin" />
@@ -565,7 +572,9 @@ export function BoardCanvas({
                             <div className="rb-zone-label">
                                 <span className="rb-zone-dot" />
                                 <span className="rb-zone-name">{group.name}</span>
-                                <span className="rb-zone-count">{group.members.length.toLocaleString('th-TH')} คน</span>
+                                <span className="rb-zone-count">
+                                    {group.members.length.toLocaleString(dateLocale())} {tr('คน')}
+                                </span>
                             </div>
                         </div>
                     );

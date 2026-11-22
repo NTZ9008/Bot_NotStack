@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useEffect, useState } from 'react';
 import { HEX_COLOR_RE } from '@notstack/shared';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ export function ColorField({ value, onChange, className, id }: { value: string; 
         <div className={cn('flex items-center gap-2', className)}>
             <input
                 type="color"
-                aria-label="เลือกสี"
+                aria-label={tr('เลือกสี')}
                 className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-input bg-transparent p-1"
                 value={HEX_COLOR_RE.test(value) ? value : '#000000'}
                 onChange={(e) => onChange(e.target.value.toLowerCase())}

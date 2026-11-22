@@ -1,7 +1,7 @@
 import { cn } from 'cn';
 import { Moon, Palette, Sun } from '@/components/icons';
 import { useTheme, type Theme } from '@/hooks/use-theme';
-import { useLang, useT, type Lang } from '@/lib/i18n';
+import { useLang, useT, type Lang, tr } from '@/lib/i18n';
 
 // ปุ่มแบบแบ่งช่อง (segmented) ท้ายเมนูซ้าย — เลือกธีม / ภาษา
 function Segmented<T extends string>({
@@ -57,11 +57,11 @@ export function LanguageSwitcher() {
     const [lang, setLang] = useLang();
     return (
         <Segmented<Lang>
-            label="ภาษา / Language"
+            label={tr('ภาษา / Language')}
             value={lang}
             onChange={setLang}
             options={[
-                { value: 'th', label: 'ไทย' },
+                { value: 'th', label: tr('ไทย') },
                 { value: 'en', label: 'English' },
             ]}
         />

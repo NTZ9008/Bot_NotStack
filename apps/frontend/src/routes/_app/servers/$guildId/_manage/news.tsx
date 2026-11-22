@@ -1,5 +1,5 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
-import { useT } from '@/lib/i18n';
+import { useT, tr } from '@/lib/i18n';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, Send } from '@/components/icons';
@@ -46,9 +46,9 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
     const pendingSelection = useRef<[number, number] | null>(null);
 
     useUnsavedChangesGuard(Object.values(form).some(Boolean), {
-        title: 'ทิ้งประกาศที่ยังไม่ได้ส่ง?',
-        description: `ประกาศสำหรับเซิร์ฟเวอร์ ${guildName} ยังไม่ได้ส่ง หากออกจากหน้านี้หรือสลับเซิร์ฟเวอร์ ข้อความที่ร่างไว้จะถูกล้าง`,
-        confirmText: 'ทิ้งข้อความ',
+        title: tr('ทิ้งประกาศที่ยังไม่ได้ส่ง?'),
+        description: tr('ประกาศสำหรับเซิร์ฟเวอร์ {0} ยังไม่ได้ส่ง หากออกจากหน้านี้หรือสลับเซิร์ฟเวอร์ ข้อความที่ร่างไว้จะถูกล้าง', { 0: guildName }),
+        confirmText: tr('ทิ้งข้อความ'),
         destructive: true,
     });
 
@@ -71,24 +71,26 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
     const mutation = useMutation({
         mutationFn: (input: Parameters<typeof sendNews>[1]) => sendNews(guildId, input),
         onSuccess: () => {
-            toast.success('ส่งประกาศสำเร็จ!', { description: 'ประกาศของคุณถูกส่งเข้าดิสคอร์ดเรียบร้อยแล้ว' });
+            toast.success(tr('ส่งประกาศสำเร็จ!'), { description: tr('ประกาศของคุณถูกส่งเข้าดิสคอร์ดเรียบร้อยแล้ว') });
             setForm(EMPTY);
             setColor(NEWS_PRESETS[type].color);
         },
-        onError: (err) => toast.error('ส่งประกาศไม่สำเร็จ', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('ส่งประกาศไม่สำเร็จ'), { description: errorMessage(err) }),
     });
 
     const send = async () => {
         const title = form.title.trim();
         const content = form.content.trim();
-        if (!title || !content) return toast.warning('ข้อมูลไม่ครบถ้วน', { description: 'กรุณากรอกหัวข้อและรายละเอียดข่าวสารให้ครบก่อนส่ง' });
+        if (!title || !content) return toast.warning(tr('ข้อมูลไม่ครบถ้วน'), { description: tr('กรุณากรอกหัวข้อและรายละเอียดข่าวสารให้ครบก่อนส่ง') });
         if (content.length > NEWS_LIMITS.content) {
-            return toast.warning('เนื้อหายาวเกินไป', { description: `Discord รับได้ไม่เกิน ${NEWS_LIMITS.content} ตัวอักษร (ตอนนี้ ${content.length} ตัว)` });
+            return toast.warning(tr('เนื้อหายาวเกินไป'), {
+                description: tr('Discord รับได้ไม่เกิน {0} ตัวอักษร (ตอนนี้ {1} ตัว)', { 0: NEWS_LIMITS.content, 1: content.length }),
+            });
         }
         const ok = await confirm({
-            title: 'ยืนยันการส่งประกาศ?',
-            description: `ข้อความนี้จะถูกส่งไปยังห้องประกาศที่ตั้งค่าไว้ของเซิร์ฟเวอร์ ${guildName} ทันที`,
-            confirmText: 'ส่งเลย!',
+            title: tr('ยืนยันการส่งประกาศ?'),
+            description: tr('ข้อความนี้จะถูกส่งไปยังห้องประกาศที่ตั้งค่าไว้ของเซิร์ฟเวอร์ {0} ทันที', { 0: guildName }),
+            confirmText: tr('ส่งเลย!'),
         });
         if (!ok) return;
         mutation.mutate({
@@ -109,20 +111,20 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
         <>
             <PageHeader
                 help="news"
-                title="ส่งประกาศ"
+                title={tr('ส่งประกาศ')}
                 description={t('ประกาศสำหรับเซิร์ฟเวอร์ {name} — จัดรูปแบบข้อความและดูตัวอย่างก่อนส่งจริง', { name: guildName })}
             />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            ก่อนส่งครั้งแรก เลือกห้องประกาศใน{' '}
+                            {tr('ก่อนส่งครั้งแรก เลือกห้องประกาศใน')}{' '}
                             <Link to="/servers/$guildId/config" params={{ guildId }} className="text-highlight underline underline-offset-4">
-                                ตั้งค่าบอท
+                                {tr('ตั้งค่าบอท')}
                             </Link>
                         </p>
                         <div>
-                            <Field label="ประเภทข่าวสาร">
+                            <Field label={tr('ประเภทข่าวสาร')}>
                                 <Select
                                     value={type}
                                     onValueChange={(value) => {
@@ -137,7 +139,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                     <SelectContent>
                                         {(Object.keys(NEWS_PRESETS) as NewsType[]).map((key) => (
                                             <SelectItem key={key} value={key}>
-                                                {NEWS_PRESETS[key].label}
+                                                {tr(NEWS_PRESETS[key].label)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -145,24 +147,24 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             </Field>
                         </div>
                         <Field
-                            label="หัวข้อประกาศ"
+                            label={tr('หัวข้อประกาศ')}
                             htmlFor="news-title"
-                            hint={`Discord แสดงหัวข้อเป็นข้อความธรรมดา จัดตัวหนา/เอียงไม่ได้ · ${form.title.length}/${NEWS_LIMITS.title}`}
+                            hint={tr('Discord แสดงหัวข้อเป็นข้อความธรรมดา จัดตัวหนา/เอียงไม่ได้ · {0}/{1}', { 0: form.title.length, 1: NEWS_LIMITS.title })}
                         >
                             <Input
                                 id="news-title"
                                 maxLength={NEWS_LIMITS.title}
-                                placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่..."
+                                placeholder={tr('ตัวอย่าง: แพตช์อัปเดตระบบใหม่...')}
                                 value={form.title}
                                 onChange={set('title')}
                             />
                         </Field>
                         <Field
-                            label="รายละเอียด"
+                            label={tr('รายละเอียด')}
                             htmlFor="news-content"
                             hint={
                                 <span className={cn(form.content.length > NEWS_LIMITS.content && 'text-destructive')}>
-                                    รองรับ Markdown ของ Discord · {form.content.length}/{NEWS_LIMITS.content}
+                                    {tr('รองรับ Markdown ของ Discord ·')} {form.content.length}/{NEWS_LIMITS.content}
                                 </span>
                             }
                         >
@@ -173,7 +175,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                     ref={textarea}
                                     rows={11}
                                     className="rounded-t-none"
-                                    placeholder="พิมพ์เนื้อหาข่าวสาร — ลากคลุมข้อความแล้วกดปุ่มด้านบนเพื่อจัดรูปแบบ"
+                                    placeholder={tr('พิมพ์เนื้อหาข่าวสาร — ลากคลุมข้อความแล้วกดปุ่มด้านบนเพื่อจัดรูปแบบ')}
                                     value={form.content}
                                     onChange={set('content')}
                                     onKeyDown={(e) => {
@@ -188,14 +190,14 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                         </Field>
                         <details className="rounded-lg border">
                             <summary className="cursor-pointer rounded-lg p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
-                                ปรับแต่งเพิ่มเติม · สี รูปภาพ ข้อความท้าย
+                                {tr('ปรับแต่งเพิ่มเติม · สี รูปภาพ ข้อความท้าย')}
                             </summary>
                             <div className="space-y-4 border-t p-3">
-                                <Field label="สีแถบด้านซ้ายของ embed">
+                                <Field label={tr('สีแถบด้านซ้ายของ embed')}>
                                     <ColorField value={color} onChange={setColor} />
                                 </Field>
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field label="ข้อความท้ายประกาศ" htmlFor="news-footer">
+                                    <Field label={tr('ข้อความท้ายประกาศ')} htmlFor="news-footer">
                                         <Input
                                             id="news-footer"
                                             maxLength={NEWS_LIMITS.footer}
@@ -205,13 +207,13 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                         />
                                     </Field>
                                     <Field
-                                        label="ลิงก์รูปภาพประกอบ"
+                                        label={tr('ลิงก์รูปภาพประกอบ')}
                                         htmlFor="news-image"
-                                        error={form.imageUrl.trim() && !imageOk ? 'ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://' : undefined}
+                                        error={form.imageUrl.trim() && !imageOk ? tr('ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://') : undefined}
                                     >
                                         <Input
                                             id="news-image"
-                                            placeholder="https://... (ไม่บังคับ)"
+                                            placeholder={tr('https://... (ไม่บังคับ)')}
                                             spellCheck={false}
                                             value={form.imageUrl}
                                             onChange={set('imageUrl')}
@@ -221,14 +223,14 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             </div>
                         </details>
                         <Button className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400" onClick={() => void send()} disabled={mutation.isPending}>
-                            {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} ส่งประกาศเข้า Discord
+                            {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('ส่งประกาศเข้า Discord')}
                         </Button>
                     </CardContent>
                 </Card>
 
                 {/* ตัวอย่างข้อความที่จะไปโผล่ใน Discord (อัปเดตสดขณะพิมพ์) */}
                 <div className="space-y-2 xl:sticky xl:top-20 xl:self-start">
-                    <p className="text-sm text-muted-foreground">ตัวอย่างที่จะเห็นใน Discord</p>
+                    <p className="text-sm text-muted-foreground">{tr('ตัวอย่างที่จะเห็นใน Discord')}</p>
                     <DiscordMessage>
                         <div
                             className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3"
@@ -242,7 +244,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             {form.content.trim() ? (
                                 <div className="discord-md" dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(form.content) }} />
                             ) : (
-                                <p className="text-sm text-[#949ba4] italic">ยังไม่ได้พิมพ์เนื้อหา</p>
+                                <p className="text-sm text-[#949ba4] italic">{tr('ยังไม่ได้พิมพ์เนื้อหา')}</p>
                             )}
                             {imageOk && <img src={form.imageUrl.trim()} alt="" className="mt-3 max-h-72 rounded" />}
                             <p className="mt-2 text-xs text-[#b5bac1]">{form.footer.trim() || NEWS_DEFAULT_FOOTER}</p>

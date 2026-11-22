@@ -1,3 +1,4 @@
+import { tr } from '../../../../../lib/i18n';
 import { DEFAULT_LOG_APPEARANCE } from '@notstack/shared';
 import { Brush, Filter, ListTree } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -41,7 +42,7 @@ function LogManagerPage() {
         mutationFn: (enabled: boolean) => logSettingsApi.toggleSystem(guildId, enabled),
         onSuccess: ({ systemEnabled }) => {
             cache.patch((d) => ({ ...d, systemEnabled }));
-            savedToast(systemEnabled ? 'เปิดระบบ Log แล้ว' : 'ปิดระบบ Log แล้ว');
+            savedToast(systemEnabled ? tr('เปิดระบบ Log แล้ว') : tr('ปิดระบบ Log แล้ว'));
         },
         onError: failedToast,
     });
@@ -53,12 +54,12 @@ function LogManagerPage() {
         <>
             <PageHeader
                 help="logManager"
-                title="ตั้งค่าบันทึกเหตุการณ์"
-                description="ติดตามเหตุการณ์สำคัญ ออกแบบข้อความให้อ่านง่าย และเลือกห้องรับแจ้งเตือน"
+                title={tr('ตั้งค่าบันทึกเหตุการณ์')}
+                description={tr('ติดตามเหตุการณ์สำคัญ ออกแบบข้อความให้อ่านง่าย และเลือกห้องรับแจ้งเตือน')}
                 actions={
                     data && (
                         <Label className="flex items-center gap-3 rounded-lg border px-3 py-2">
-                            ระบบ Log ทั้งหมด
+                            {tr('ระบบ Log ทั้งหมด')}
                             <Switch
                                 disabled={toggleSystem.isPending}
                                 checked={data.systemEnabled}
@@ -71,36 +72,38 @@ function LogManagerPage() {
             {isLoading ? (
                 <LogManagerBodySkeleton />
             ) : error ? (
-                <ErrorState error={error} title="โหลดการตั้งค่า Log ไม่สำเร็จ" />
+                <ErrorState error={error} title={tr('โหลดการตั้งค่า Log ไม่สำเร็จ')} />
             ) : (
                 data && (
                     <>
                         <div className="flex flex-wrap items-center gap-2 text-sm">
-                            <Badge variant={data.systemEnabled ? 'secondary' : 'outline'}>{data.systemEnabled ? 'ระบบเปิดอยู่' : 'หยุดส่ง Log ชั่วคราว'}</Badge>
+                            <Badge variant={data.systemEnabled ? 'secondary' : 'outline'}>
+                                {data.systemEnabled ? tr('ระบบเปิดอยู่') : tr('หยุดส่ง Log ชั่วคราว')}
+                            </Badge>
                             <span className="text-muted-foreground">
-                                พร้อมส่ง {ready} / {data.events.length} ประเภท
+                                {tr('พร้อมส่ง')} {ready} / {data.events.length} {tr('ประเภท')}
                             </span>
                             {unconfigured > 0 && (
                                 <Badge variant="outline" className="text-amber-700 dark:text-amber-400">
-                                    รอเลือกห้อง {unconfigured} ประเภท
+                                    {tr('รอเลือกห้อง')} {unconfigured} {tr('ประเภท')}
                                 </Badge>
                             )}
                         </div>
                         {!data.systemEnabled && (
                             <p role="status" className="rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground">
-                                ระบบหยุดส่ง embed เข้า Discord อยู่ คุณยังแก้ไขการตั้งค่าได้ ส่วนการบันทึก Activity ขึ้นอยู่กับค่าที่เลือกในแท็บตัวกรอง
+                                {tr('ระบบหยุดส่ง embed เข้า Discord อยู่ คุณยังแก้ไขการตั้งค่าได้ ส่วนการบันทึก Activity ขึ้นอยู่กับค่าที่เลือกในแท็บตัวกรอง')}
                             </p>
                         )}
                         <Tabs defaultValue="events" className="gap-5">
                             <TabsList variant="line" className="overflow-x-auto">
                                 <TabsTrigger value="events">
-                                    <ListTree /> เหตุการณ์และห้อง
+                                    <ListTree /> {tr('เหตุการณ์และห้อง')}
                                 </TabsTrigger>
                                 <TabsTrigger value="appearance">
-                                    <Brush /> รูปแบบข้อความ
+                                    <Brush /> {tr('รูปแบบข้อความ')}
                                 </TabsTrigger>
                                 <TabsTrigger value="filters">
-                                    <Filter /> ตัวกรอง
+                                    <Filter /> {tr('ตัวกรอง')}
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="appearance" forceMount className="data-[state=inactive]:hidden">

@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
@@ -23,11 +24,11 @@ import { DAY_BUTTONS, DAY_PRESETS, RADAR_SOURCE_LABELS, THEME_LABELS, ZOOM_LABEL
 export type WeatherSection = 'schedule' | 'location' | 'embed' | 'chart' | 'radar';
 
 export const WEATHER_SECTIONS: { value: WeatherSection; label: string }[] = [
-    { value: 'schedule', label: 'เวลา & ห้อง' },
-    { value: 'location', label: 'สถานที่' },
-    { value: 'embed', label: 'ข้อความ & ข้อมูล' },
-    { value: 'chart', label: 'กราฟ' },
-    { value: 'radar', label: 'เรดาร์' },
+    { value: 'schedule', label: tr('เวลา & ห้อง') },
+    { value: 'location', label: tr('สถานที่') },
+    { value: 'embed', label: tr('ข้อความ & ข้อมูล') },
+    { value: 'chart', label: tr('กราฟ') },
+    { value: 'radar', label: tr('เรดาร์') },
 ];
 
 interface FormProps {
@@ -103,22 +104,22 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
     return (
         <div className="space-y-4">
             <Field
-                label="ห้องที่จะส่ง"
+                label={tr('ห้องที่จะส่ง')}
                 hint={
                     channels.length
-                        ? 'บอทต้องมีสิทธิ์ดูห้อง ส่งข้อความ ฝังลิงก์ และแนบไฟล์ (สำหรับรูปกราฟ/เรดาร์) ในห้องนี้'
-                        : 'บอทยังไม่ออนไลน์ จึงยังโหลดรายชื่อห้องไม่ได้'
+                        ? tr('บอทต้องมีสิทธิ์ดูห้อง ส่งข้อความ ฝังลิงก์ และแนบไฟล์ (สำหรับรูปกราฟ/เรดาร์) ในห้องนี้')
+                        : tr('บอทยังไม่ออนไลน์ จึงยังโหลดรายชื่อห้องไม่ได้')
                 }
             >
                 <ChannelSelect
                     channels={channels}
                     value={draft.channelId}
                     onChange={(channelId) => patch((d) => void (d.channelId = channelId))}
-                    placeholder="— เลือกห้องที่จะส่ง —"
+                    placeholder={tr('— เลือกห้องที่จะส่ง —')}
                 />
             </Field>
 
-            <Field label="เวลาที่ส่ง" hint={`เวลาไทย (${meta.timezone})`}>
+            <Field label={tr('เวลาที่ส่ง')} hint={tr('เวลาไทย ({0})', { 0: meta.timezone })}>
                 <DateTimeInput
                     mode="time"
 
@@ -128,7 +129,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                 />
             </Field>
 
-            <Field label="วันที่ส่ง">
+            <Field label={tr('วันที่ส่ง')}>
                 <div className="grid max-w-md grid-cols-7 gap-1.5">
                     {DAY_BUTTONS.map((day) => {
                         const on = schedule.days.includes(day.value);
@@ -157,12 +158,15 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
 
             <TemplateInput
                 meta={meta}
-                label="ข้อความที่ส่งคู่กับ embed"
-                hint={`รองรับ Markdown ของ Discord · แท็กได้เฉพาะยศที่ใส่ไว้ในข้อความ (@everyone / @here จะไม่ทำงาน) · ${draft.content.length}/${meta.limits.maxContentLength}`}
+                label={tr('ข้อความที่ส่งคู่กับ embed')}
+                hint={tr('รองรับ Markdown ของ Discord · แท็กได้เฉพาะยศที่ใส่ไว้ในข้อความ (@everyone / @here จะไม่ทำงาน) · {0}/{1}', {
+                    0: draft.content.length,
+                    1: meta.limits.maxContentLength,
+                })}
                 value={draft.content}
                 max={meta.limits.maxContentLength}
                 multiline
-                placeholder="เว้นว่างไว้ = ส่งแค่ embed"
+                placeholder={tr('เว้นว่างไว้ = ส่งแค่ embed')}
                 onChange={(content) => patch((d) => void (d.content = content))}
             />
             <Select
@@ -174,7 +178,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                 }}
             >
                 <SelectTrigger className="w-full max-w-sm">
-                    <SelectValue placeholder="+ แท็กยศในข้อความ..." />
+                    <SelectValue placeholder={tr('+ แท็กยศในข้อความ...')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
                     {roles.map((role) => (
@@ -206,7 +210,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
             setPlaces(await weatherApi.searchLocations(guildId, q));
         } catch (err) {
             setPlaces(null);
-            toast.error('ค้นหาสถานที่ไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('ค้นหาสถานที่ไม่สำเร็จ'), { description: errorMessage(err) });
         } finally {
             setSearching(false);
         }
@@ -222,7 +226,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
             };
         });
         setPlaces(null);
-        toast.success(`เลือก "${place.name}" แล้ว`, { description: 'อย่าลืมกดบันทึก' });
+        toast.success(tr('เลือก "{0}" แล้ว', { 0: place.name }), { description: tr('อย่าลืมกดบันทึก') });
     };
 
     return (
@@ -238,7 +242,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                 </div>
             </div>
 
-            <Field label="ชื่อที่แสดงในรายงาน" hint='ใช้แทนตัวแปร {location} — เปลี่ยนชื่อได้โดยไม่ต้องค้นหาใหม่ (เช่น "ม.มหิดล ศาลายา")'>
+            <Field label={tr('ชื่อที่แสดงในรายงาน')} hint={tr('ใช้แทนตัวแปร {location} — เปลี่ยนชื่อได้โดยไม่ต้องค้นหาใหม่ (เช่น "ม.มหิดล ศาลายา")')}>
                 <Input
                     maxLength={meta.limits.maxLocationNameLength}
                     value={location.name}
@@ -246,7 +250,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                 />
             </Field>
 
-            <Field label="เปลี่ยนสถานที่" hint="พิมพ์ชื่อภาษาไทยหรืออังกฤษ หรือคัดลอกพิกัดจาก Google Maps มาวางเพื่อความแม่นยำ">
+            <Field label={tr('เปลี่ยนสถานที่')} hint={tr('พิมพ์ชื่อภาษาไทยหรืออังกฤษ หรือคัดลอกพิกัดจาก Google Maps มาวางเพื่อความแม่นยำ')}>
                 <form
                     className="flex gap-2"
                     onSubmit={(e) => {
@@ -255,20 +259,20 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                     }}
                 >
                     <Input
-                        placeholder="เช่น ศาลายา, Bangkok หรือพิกัด 13.7946, 100.3234"
+                        placeholder={tr('เช่น ศาลายา, Bangkok หรือพิกัด 13.7946, 100.3234')}
                         autoComplete="off"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     <Button type="submit" disabled={searching || !query.trim()}>
-                        {searching ? <Loader2 className="animate-spin" /> : <Search />} ค้นหา
+                        {searching ? <Loader2 className="animate-spin" /> : <Search />} {tr('ค้นหา')}
                     </Button>
                 </form>
             </Field>
 
             {places && (
                 <div className="grid gap-2">
-                    {places.length === 0 && <p className="text-sm text-muted-foreground">ไม่พบสถานที่นี้ — ลองพิมพ์ชื่อภาษาอังกฤษ หรือวางพิกัดแทน</p>}
+                    {places.length === 0 && <p className="text-sm text-muted-foreground">{tr('ไม่พบสถานที่นี้ — ลองพิมพ์ชื่อภาษาอังกฤษ หรือวางพิกัดแทน')}</p>}
                     {places.map((place, i) => (
                         <div key={`${place.lat},${place.lon},${i}`} className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2">
                             <div className="min-w-0">
@@ -281,7 +285,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                                 </p>
                             </div>
                             <Button size="sm" variant="secondary" onClick={() => pick(place)}>
-                                เลือก
+                                {tr('เลือก')}
                             </Button>
                         </div>
                     ))}
@@ -333,13 +337,13 @@ function FieldList({ meta, draft, patch }: FormProps) {
                         </Label>
                         {on && (
                             <div className="flex shrink-0 gap-1">
-                                <Button size="icon-xs" variant="ghost" aria-label="เลื่อนขึ้น" disabled={index === 0} onClick={() => move(field.key, -1)}>
+                                <Button size="icon-xs" variant="ghost" aria-label={tr('เลื่อนขึ้น')} disabled={index === 0} onClick={() => move(field.key, -1)}>
                                     <ArrowUp />
                                 </Button>
                                 <Button
                                     size="icon-xs"
                                     variant="ghost"
-                                    aria-label="เลื่อนลง"
+                                    aria-label={tr('เลื่อนลง')}
                                     disabled={index === selected.length - 1}
                                     onClick={() => move(field.key, 1)}
                                 >
@@ -358,37 +362,37 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
     const { embed } = draft.options;
     return (
         <div className="space-y-4">
-            <Field label="สีแถบด้านซ้ายของ embed">
+            <Field label={tr('สีแถบด้านซ้ายของ embed')}>
                 <ColorField value={embed.color} onChange={(color) => patch((d) => void (d.options.embed.color = upper(color)))} className="max-w-60" />
             </Field>
             <TemplateInput
                 meta={meta}
-                label="หัวข้อ"
+                label={tr('หัวข้อ')}
                 value={embed.title}
                 max={meta.limits.maxTitleLength}
                 onChange={(title) => patch((d) => void (d.options.embed.title = title))}
             />
             <SwitchRow
-                label="ทำหัวข้อเป็นลิงก์ไปหน้าเมืองบน OpenWeatherMap"
+                label={tr('ทำหัวข้อเป็นลิงก์ไปหน้าเมืองบน OpenWeatherMap')}
                 checked={embed.link}
                 onChange={(link) => patch((d) => void (d.options.embed.link = link))}
             />
             <TemplateInput
                 meta={meta}
-                label="รายละเอียด (ใต้หัวข้อ)"
-                hint="รองรับ Markdown ของ Discord · เว้นว่างได้"
+                label={tr('รายละเอียด (ใต้หัวข้อ)')}
+                hint={tr('รองรับ Markdown ของ Discord · เว้นว่างได้')}
                 value={embed.description}
                 max={meta.limits.maxDescriptionLength}
                 multiline
                 onChange={(description) => patch((d) => void (d.options.embed.description = description))}
             />
             <Field
-                label={`ช่องข้อมูล (${embed.fields.length}/${meta.fields.length})`}
-                hint="Discord เรียงช่องข้อมูลแถวละ 3 ช่อง — เลือก 3, 6 หรือ 9 ช่องจะได้ตารางเต็มแถวพอดี"
+                label={tr('ช่องข้อมูล ({0}/{1})', { 0: embed.fields.length, 1: meta.fields.length })}
+                hint={tr('Discord เรียงช่องข้อมูลแถวละ 3 ช่อง — เลือก 3, 6 หรือ 9 ช่องจะได้ตารางเต็มแถวพอดี')}
             >
                 <FieldList meta={meta} draft={draft} patch={patch} />
             </Field>
-            <Field label="ข้อความท้าย embed" hint="เช่น แหล่งข้อมูล หรือเครดิตผู้ทำบอท (Discord แสดงเป็นตัวหนังสือเล็ก ไม่รองรับ Markdown)">
+            <Field label={tr('ข้อความท้าย embed')} hint={tr('เช่น แหล่งข้อมูล หรือเครดิตผู้ทำบอท (Discord แสดงเป็นตัวหนังสือเล็ก ไม่รองรับ Markdown)')}>
                 <Input
                     maxLength={meta.limits.maxFooterLength}
                     value={embed.footer}
@@ -396,18 +400,18 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
                 />
             </Field>
             <SwitchRow
-                label="แสดงวันเวลาที่ดึงข้อมูลท้าย embed"
+                label={tr('แสดงวันเวลาที่ดึงข้อมูลท้าย embed')}
                 checked={embed.timestamp}
                 onChange={(timestamp) => patch((d) => void (d.options.embed.timestamp = timestamp))}
             />
             <SwitchRow
-                label="รูปไอคอนสภาพอากาศมุมขวาบน"
-                hint="เมื่อเปิด Discord จะเรียงช่องข้อมูลแถวละ 2 ช่องแทน 3"
+                label={tr('รูปไอคอนสภาพอากาศมุมขวาบน')}
+                hint={tr('เมื่อเปิด Discord จะเรียงช่องข้อมูลแถวละ 2 ช่องแทน 3')}
                 checked={embed.thumbnail}
                 onChange={(thumbnail) => patch((d) => void (d.options.embed.thumbnail = thumbnail))}
             />
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-                <p className="mb-1 font-medium">ตัวแปรที่ใช้ได้ในหัวข้อ / รายละเอียด / ข้อความคู่ embed</p>
+                <p className="mb-1 font-medium">{tr('ตัวแปรที่ใช้ได้ในหัวข้อ / รายละเอียด / ข้อความคู่ embed')}</p>
                 <ul className="grid gap-0.5 text-xs text-muted-foreground">
                     {meta.placeholders.map((p) => (
                         <li key={p.key}>
@@ -425,28 +429,28 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
 // ==========================================
 function ChartSection({ meta, draft, patch }: FormProps) {
     const { chart } = draft.options;
-    const hours = Object.fromEntries(meta.chartHours.map((h) => [String(h), `${h} ชม.`])) as Record<string, string>;
+    const hours = Object.fromEntries(meta.chartHours.map((h) => [String(h), tr('{0} ชม.', { 0: h })])) as Record<string, string>;
     return (
         <div className="space-y-4">
             <SwitchRow
-                label="แนบกราฟพยากรณ์ใน embed"
-                hint="เส้นอุณหภูมิ + แท่งโอกาสฝนตก ทุก 3 ชั่วโมง"
+                label={tr('แนบกราฟพยากรณ์ใน embed')}
+                hint={tr('เส้นอุณหภูมิ + แท่งโอกาสฝนตก ทุก 3 ชั่วโมง')}
                 checked={chart.enabled}
                 onChange={(enabled) => patch((d) => void (d.options.chart.enabled = enabled))}
             />
             <fieldset disabled={!chart.enabled} className={cn('space-y-4', !chart.enabled && 'pointer-events-none opacity-50')}>
-                <Field label="ช่วงเวลาที่แสดง">
+                <Field label={tr('ช่วงเวลาที่แสดง')}>
                     <Segmented value={String(chart.hours)} options={hours} onChange={(value) => patch((d) => void (d.options.chart.hours = Number(value)))} />
                 </Field>
                 <SwitchRow
-                    label="แสดงแท่งโอกาสฝนตก"
+                    label={tr('แสดงแท่งโอกาสฝนตก')}
                     checked={chart.showRain}
                     onChange={(showRain) => patch((d) => void (d.options.chart.showRain = showRain))}
                 />
-                <Field label="ธีมของกราฟ">
+                <Field label={tr('ธีมของกราฟ')}>
                     <Segmented value={chart.theme} options={THEME_LABELS} onChange={(theme) => patch((d) => void (d.options.chart.theme = theme))} />
                 </Field>
-                <Field label="สีเส้นอุณหภูมิ">
+                <Field label={tr('สีเส้นอุณหภูมิ')}>
                     <ColorField value={chart.color} onChange={(color) => patch((d) => void (d.options.chart.color = upper(color)))} className="max-w-60" />
                 </Field>
             </fieldset>
@@ -456,56 +460,61 @@ function ChartSection({ meta, draft, patch }: FormProps) {
 
 function RadarSection({ meta, draft, patch }: FormProps) {
     const { radar } = draft.options;
-    const zooms = Object.fromEntries(meta.radarZooms.map((z) => [String(z), ZOOM_LABELS[z] ?? `ซูม ${z}`])) as Record<string, string>;
+    const zooms = Object.fromEntries(meta.radarZooms.map((z) => [String(z), ZOOM_LABELS[z] ?? tr('ซูม {0}', { 0: z })])) as Record<string, string>;
     const tmd = radar.source === 'tmd';
     return (
         <div className="space-y-4">
             <SwitchRow
-                label="แนบแผนที่เรดาร์ฝน"
-                hint="ฝนที่กำลังตกรอบสถานที่ — ถ้าเปิดกราฟด้วย เรดาร์จะอยู่ embed ที่ 2 ต่อจากกราฟ"
+                label={tr('แนบแผนที่เรดาร์ฝน')}
+                hint={tr('ฝนที่กำลังตกรอบสถานที่ — ถ้าเปิดกราฟด้วย เรดาร์จะอยู่ embed ที่ 2 ต่อจากกราฟ')}
                 checked={radar.enabled}
                 onChange={(enabled) => patch((d) => void (d.options.radar.enabled = enabled))}
             />
             <fieldset disabled={!radar.enabled} className={cn('space-y-4', !radar.enabled && 'pointer-events-none opacity-50')}>
                 <Field
-                    label="แหล่งข้อมูลเรดาร์"
+                    label={tr('แหล่งข้อมูลเรดาร์')}
                     hint={
                         tmd
-                            ? 'เครือข่ายเรดาร์ของกรมอุตุฯ ทั่วไทย ภาพใหม่ทุก 15 นาที (ช้ากว่าเวลาจริงราว 15-30 นาที) · ครอบคลุมเฉพาะไทยและประเทศใกล้เคียง'
-                            : 'ภาพเรดาร์รวมจากหลายประเทศ ภาพใหม่ทุก 10 นาที · ใช้ได้ทั่วโลก'
+                            ? tr('เครือข่ายเรดาร์ของกรมอุตุฯ ทั่วไทย ภาพใหม่ทุก 15 นาที (ช้ากว่าเวลาจริงราว 15-30 นาที) · ครอบคลุมเฉพาะไทยและประเทศใกล้เคียง')
+                            : tr('ภาพเรดาร์รวมจากหลายประเทศ ภาพใหม่ทุก 10 นาที · ใช้ได้ทั่วโลก')
                     }
                 >
                     <Segmented value={radar.source} options={RADAR_SOURCE_LABELS} onChange={(source) => patch((d) => void (d.options.radar.source = source))} />
                 </Field>
                 <SwitchRow
-                    label="ภาพเคลื่อนไหวย้อนหลัง 1 ชั่วโมง (GIF)"
-                    hint="เห็นทิศทางที่ฝนเคลื่อน · ปิด = ภาพนิ่งของภาพล่าสุด (PNG)"
+                    label={tr('ภาพเคลื่อนไหวย้อนหลัง 1 ชั่วโมง (GIF)')}
+                    hint={tr('เห็นทิศทางที่ฝนเคลื่อน · ปิด = ภาพนิ่งของภาพล่าสุด (PNG)')}
                     checked={radar.animated}
                     onChange={(animated) => patch((d) => void (d.options.radar.animated = animated))}
                 />
                 <Field
-                    label="ระยะที่แสดง"
-                    hint={`ความกว้างของภาพ: ภูมิภาค ~700 กม. · กลาง ~350 กม. · ใกล้ ~180 กม. — ยิ่งใกล้ขอบฝนยิ่งเบลอ (ข้อมูลเรดาร์ละเอียดราว ${tmd ? '800' : '600'} ม. ต่อจุด)`}
+                    label={tr('ระยะที่แสดง')}
+                    hint={tr(
+                        'ความกว้างของภาพ: ภูมิภาค ~700 กม. · กลาง ~350 กม. · ใกล้ ~180 กม. — ยิ่งใกล้ขอบฝนยิ่งเบลอ (ข้อมูลเรดาร์ละเอียดราว {0} ม. ต่อจุด)',
+                        { 0: tmd ? '800' : '600' },
+                    )}
                 >
                     <Segmented value={String(radar.zoom)} options={zooms} onChange={(value) => patch((d) => void (d.options.radar.zoom = Number(value)))} />
                 </Field>
-                <Field label="ธีมของแผนที่">
+                <Field label={tr('ธีมของแผนที่')}>
                     <Segmented value={radar.theme} options={THEME_LABELS} onChange={(theme) => patch((d) => void (d.options.radar.theme = theme))} />
                 </Field>
             </fieldset>
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-                <p className="mb-1 font-medium">เกี่ยวกับเรดาร์</p>
+                <p className="mb-1 font-medium">{tr('เกี่ยวกับเรดาร์')}</p>
                 <ul className="list-disc space-y-0.5 pl-5 text-xs text-muted-foreground">
-                    <li>แสดงฝนที่ตก ณ ตอนส่งและย้อนหลัง ไม่ใช่พยากรณ์ — วันที่ฟ้าโปร่งภาพจะเป็นแผนที่เปล่า</li>
+                    <li>{tr('แสดงฝนที่ตก ณ ตอนส่งและย้อนหลัง ไม่ใช่พยากรณ์ — วันที่ฟ้าโปร่งภาพจะเป็นแผนที่เปล่า')}</li>
                     {tmd ? (
                         <>
-                            <li>ภาพเรดาร์อัปเดตทุก 15 นาที จากภาพรวมเรดาร์ (TMD Radar Monitor) ของกรมอุตุนิยมวิทยา · แผนที่ © OpenStreetMap contributors</li>
-                            <li>ถ้าดึงเรดาร์ของกรมอุตุฯ ไม่ได้ หรือสถานที่อยู่นอกประเทศไทย จะใช้ภาพจาก RainViewer แทนอัตโนมัติ</li>
+                            <li>
+                                {tr('ภาพเรดาร์อัปเดตทุก 15 นาที จากภาพรวมเรดาร์ (TMD Radar Monitor) ของกรมอุตุนิยมวิทยา · แผนที่ © OpenStreetMap contributors')}
+                            </li>
+                            <li>{tr('ถ้าดึงเรดาร์ของกรมอุตุฯ ไม่ได้ หรือสถานที่อยู่นอกประเทศไทย จะใช้ภาพจาก RainViewer แทนอัตโนมัติ')}</li>
                         </>
                     ) : (
-                        <li>ภาพเรดาร์อัปเดตทุก 10 นาที จาก RainViewer · แผนที่ © OpenStreetMap contributors</li>
+                        <li>{tr('ภาพเรดาร์อัปเดตทุก 10 นาที จาก RainViewer · แผนที่ © OpenStreetMap contributors')}</li>
                     )}
-                    <li>ถ้าดึงเรดาร์ไม่ได้ รายงานยังส่งได้ตามปกติ แค่ไม่มีภาพเรดาร์</li>
+                    <li>{tr('ถ้าดึงเรดาร์ไม่ได้ รายงานยังส่งได้ตามปกติ แค่ไม่มีภาพเรดาร์')}</li>
                 </ul>
             </div>
         </div>

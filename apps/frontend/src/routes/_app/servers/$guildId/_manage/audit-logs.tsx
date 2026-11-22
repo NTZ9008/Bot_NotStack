@@ -1,3 +1,4 @@
+import { tr } from '../../../../../lib/i18n';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
 import { BrandDiscord, LayoutDashboard } from '@/components/icons';
 import { useMemo } from 'react';
@@ -49,8 +50,8 @@ function AuditLogsPage() {
         <>
             <PageHeader
                 help="audit"
-                title="ประวัติเซิร์ฟเวอร์"
-                description="ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord"
+                title={tr('ประวัติเซิร์ฟเวอร์')}
+                description={tr('ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord')}
             />
             <Card>
                 <CardContent>
@@ -67,7 +68,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
                             >
-                                <LayoutDashboard /> การตั้งค่าบน Dashboard
+                                <LayoutDashboard /> {tr('การตั้งค่าบน Dashboard')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="discord"
@@ -75,7 +76,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:discord`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
                             >
-                                <BrandDiscord /> เหตุการณ์ในเซิร์ฟเวอร์ Discord
+                                <BrandDiscord /> {tr('เหตุการณ์ในเซิร์ฟเวอร์ Discord')}
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">

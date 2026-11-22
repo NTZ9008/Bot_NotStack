@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { PrBotStatsDays } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { RefreshCw } from '@/components/icons';
@@ -13,9 +14,9 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { formatNumber } from '@/lib/format';
 
 const config = {
-    sent: { label: 'ส่งแจ้งเตือน', color: '#38bdf8' },
-    merged: { label: 'อัปเดต Merge', color: '#a78bfa' },
-    closed: { label: 'อัปเดตปิด PR', color: '#f59e0b' },
+    sent: { label: tr('ส่งแจ้งเตือน'), color: '#38bdf8' },
+    merged: { label: tr('อัปเดต Merge'), color: '#a78bfa' },
+    closed: { label: tr('อัปเดตปิด PR'), color: '#f59e0b' },
 } satisfies ChartConfig;
 const kinds = ['sent', 'merged', 'closed'] as const;
 
@@ -28,8 +29,8 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>ความถี่การแจ้งเตือน PR</CardTitle>
-                <CardDescription>นับการส่งแจ้งเตือนและอัปเดตข้อความที่สำเร็จ ตามเวลาไทย (Asia/Bangkok) เริ่มเก็บข้อมูลหลังเปิดใช้สถิติ</CardDescription>
+                <CardTitle>{tr('ความถี่การแจ้งเตือน PR')}</CardTitle>
+                <CardDescription>{tr('นับการส่งแจ้งเตือนและอัปเดตข้อความที่สำเร็จ ตามเวลาไทย (Asia/Bangkok) เริ่มเก็บข้อมูลหลังเปิดใช้สถิติ')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -37,14 +38,14 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                         type="single"
                         variant="outline"
                         value={String(days)}
-                        aria-label="ช่วงเวลาของสถิติ"
+                        aria-label={tr('ช่วงเวลาของสถิติ')}
                         onValueChange={(value) => {
                             if (value) setDays(Number(value) as PrBotStatsDays);
                         }}
                     >
                         {[7, 30, 90].map((value) => (
                             <ToggleGroupItem key={value} value={String(value)}>
-                                {value} วัน
+                                {value} {tr('วัน')}
                             </ToggleGroupItem>
                         ))}
                     </ToggleGroup>
@@ -53,15 +54,15 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                             type="single"
                             variant="outline"
                             value={view}
-                            aria-label="รูปแบบกราฟ"
+                            aria-label={tr('รูปแบบกราฟ')}
                             onValueChange={(value) => {
                                 if (value === 'daily' || value === 'hourly') setView(value);
                             }}
                         >
-                            <ToggleGroupItem value="daily">รายวัน</ToggleGroupItem>
-                            <ToggleGroupItem value="hourly">แยกตามชั่วโมง</ToggleGroupItem>
+                            <ToggleGroupItem value="daily">{tr('รายวัน')}</ToggleGroupItem>
+                            <ToggleGroupItem value="hourly">{tr('แยกตามชั่วโมง')}</ToggleGroupItem>
                         </ToggleGroup>
-                        <Button variant="outline" size="icon" aria-label="รีเฟรชสถิติ PR" disabled={isFetching} onClick={() => void refetch()}>
+                        <Button variant="outline" size="icon" aria-label={tr('รีเฟรชสถิติ PR')} disabled={isFetching} onClick={() => void refetch()}>
                             <RefreshCw className={isFetching ? 'animate-spin' : undefined} />
                         </Button>
                     </div>
@@ -75,7 +76,7 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                         <>
                             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                                 {[
-                                    { label: 'รวมทั้งหมด (ครั้ง)', value: total },
+                                    { label: tr('รวมทั้งหมด (ครั้ง)'), value: total },
                                     ...kinds.map((kind) => ({ label: config[kind].label, value: data.totals[kind] })),
                                 ].map((tile) => (
                                     <div key={tile.label} className="rounded-xl border p-4">
@@ -86,12 +87,13 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                             </div>
                             <p className="text-sm text-muted-foreground">
                                 {view === 'daily'
-                                    ? `จำนวนครั้งในแต่ละวัน ย้อนหลัง ${days} วันรวมวันนี้`
-                                    : `จำนวนครั้งรวมในแต่ละชั่วโมง (00–23 น.) จาก ${days} วันรวมวันนี้`}
-                                {' · '}วันนี้นับถึงเวลาที่โหลดข้อมูล
+                                    ? tr('จำนวนครั้งในแต่ละวัน ย้อนหลัง {0} วันรวมวันนี้', { 0: days })
+                                    : tr('จำนวนครั้งรวมในแต่ละชั่วโมง (00–23 น.) จาก {0} วันรวมวันนี้', { 0: days })}
+                                {' · '}
+                                {tr('วันนี้นับถึงเวลาที่โหลดข้อมูล')}
                             </p>
                             {total === 0 ? (
-                                <EmptyState>ยังไม่มีการแจ้งเตือน PR ในช่วงเวลานี้ สถิติจะปรากฏเมื่อบอทส่งหรืออัปเดตข้อความสำเร็จ</EmptyState>
+                                <EmptyState>{tr('ยังไม่มีการแจ้งเตือน PR ในช่วงเวลานี้ สถิติจะปรากฏเมื่อบอทส่งหรืออัปเดตข้อความสำเร็จ')}</EmptyState>
                             ) : (
                                 <ChartContainer config={config} className="aspect-auto h-72 w-full">
                                     <BarChart accessibilityLayer data={data[view]} margin={{ left: 0, right: 8 }}>
@@ -113,7 +115,9 @@ export function PrBotStatsCard({ guildId }: { guildId: string }) {
                                 </ChartContainer>
                             )}
                             <p className="text-xs text-muted-foreground">
-                                ส่งแจ้งเตือนรวมการเปิด PR, เปิดอีกครั้ง และพร้อมรีวิว · Merge/ปิด PR นับเมื่อแก้ข้อความเดิมสำเร็จ · PR เดียวอาจมีหลายเหตุการณ์
+                                {tr(
+                                    'ส่งแจ้งเตือนรวมการเปิด PR, เปิดอีกครั้ง และพร้อมรีวิว · Merge/ปิด PR นับเมื่อแก้ข้อความเดิมสำเร็จ · PR เดียวอาจมีหลายเหตุการณ์',
+                                )}
                             </p>
                         </>
                     )

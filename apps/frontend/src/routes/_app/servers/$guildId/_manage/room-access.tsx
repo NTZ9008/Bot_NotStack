@@ -1,3 +1,4 @@
+import { tr } from '../../../../../lib/i18n';
 import { ALL_ROOMS, type AccessRoom, type GrantAccessInput, type RoomAccessItem } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -80,9 +81,9 @@ function RoomsCard({ rooms }: { rooms: AccessRoom[] }) {
         onSuccess: (next) => {
             onRooms(next);
             setChannelId('');
-            toast.success('เพิ่มห้องแล้ว');
+            toast.success(tr('เพิ่มห้องแล้ว'));
         },
-        onError: (err) => toast.error('เพิ่มห้องไม่สำเร็จ', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('เพิ่มห้องไม่สำเร็จ'), { description: errorMessage(err) }),
     });
     const remove = useMutation({
         mutationFn: (id: string) => roomAccessApi.removeRoom(guildId, id),
@@ -90,32 +91,36 @@ function RoomsCard({ rooms }: { rooms: AccessRoom[] }) {
             onRooms(next);
             void queryClient.invalidateQueries({ queryKey: roomAccessQuery(guildId).queryKey });
         },
-        onError: (err) => toast.error('เอาห้องออกไม่สำเร็จ', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('เอาห้องออกไม่สำเร็จ'), { description: errorMessage(err) }),
     });
     const available = channels.filter((channel) => !channel.isCategory && !rooms.some((room) => room.id === channel.id));
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>ห้องที่ใช้ระบบตั๋ว</CardTitle>
-                <CardDescription>ห้องพิเศษที่ให้สิทธิ์เข้าได้จากหน้านี้ — บอทต้องมีสิทธิ์ Manage Channels / Manage Roles ในห้องนั้น</CardDescription>
+                <CardTitle>{tr('ห้องที่ใช้ระบบตั๋ว')}</CardTitle>
+                <CardDescription>{tr('ห้องพิเศษที่ให้สิทธิ์เข้าได้จากหน้านี้ — บอทต้องมีสิทธิ์ Manage Channels / Manage Roles ในห้องนั้น')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                    {rooms.length === 0 && <p className="text-sm text-muted-foreground">ยังไม่มีห้อง — เพิ่มห้องด้านล่างก่อนเริ่มให้สิทธิ์</p>}
+                    {rooms.length === 0 && <p className="text-sm text-muted-foreground">{tr('ยังไม่มีห้อง — เพิ่มห้องด้านล่างก่อนเริ่มให้สิทธิ์')}</p>}
                     {rooms.map((room) => (
                         <Badge key={room.id} variant="secondary" className="gap-1.5 py-1 pr-1 pl-2.5 text-sm">
-                            <span className={room.exists ? undefined : 'text-muted-foreground line-through'}>{room.exists ? `#${room.name}` : `ID: ${room.id}`}</span>
+                            <span className={room.exists ? undefined : 'text-muted-foreground line-through'}>
+                                {room.exists ? `#${room.name}` : `ID: ${room.id}`}
+                            </span>
                             <button
                                 type="button"
                                 className="rounded p-0.5 hover:bg-destructive/20 hover:text-destructive"
-                                aria-label={`เอาห้อง ${room.name} ออก`}
+                                aria-label={tr('เอาห้อง {0} ออก', { 0: room.name })}
                                 disabled={remove.isPending}
                                 onClick={async () => {
                                     const ok = await confirm({
-                                        title: 'เอาห้องนี้ออกจากระบบตั๋ว?',
-                                        description: 'ตั๋วชั่วคราวของห้องนี้จะไม่ถูกถอนอัตโนมัติอีก (สิทธิ์ที่ให้ไปแล้วยังอยู่ในห้อง — ถอนสิทธิ์ก่อนถ้าไม่ต้องการ)',
-                                        confirmText: 'เอาออก',
+                                        title: tr('เอาห้องนี้ออกจากระบบตั๋ว?'),
+                                        description: tr(
+                                            'ตั๋วชั่วคราวของห้องนี้จะไม่ถูกถอนอัตโนมัติอีก (สิทธิ์ที่ให้ไปแล้วยังอยู่ในห้อง — ถอนสิทธิ์ก่อนถ้าไม่ต้องการ)',
+                                        ),
+                                        confirmText: tr('เอาออก'),
                                         destructive: true,
                                     });
                                     if (ok) remove.mutate(room.id);
@@ -127,9 +132,9 @@ function RoomsCard({ rooms }: { rooms: AccessRoom[] }) {
                     ))}
                 </div>
                 <div className="flex max-w-xl gap-2">
-                    <ChannelSelect channels={available} value={channelId} onChange={setChannelId} placeholder="เลือกห้องที่จะเพิ่ม..." />
+                    <ChannelSelect channels={available} value={channelId} onChange={setChannelId} placeholder={tr('เลือกห้องที่จะเพิ่ม...')} />
                     <Button onClick={() => add.mutate()} disabled={!channelId || add.isPending}>
-                        {add.isPending ? <Loader2 className="animate-spin" /> : <Plus />} เพิ่ม
+                        {add.isPending ? <Loader2 className="animate-spin" /> : <Plus />} {tr('เพิ่ม')}
                     </Button>
                 </div>
             </CardContent>
@@ -156,45 +161,45 @@ function RoomAccessPage() {
     });
 
     const submit = async () => {
-        if (!user) return toast.warning('ข้อมูลไม่ครบถ้วน', { description: 'กรุณาเลือกผู้ใช้จากรายการค้นหา (หรือพิมพ์ User ID)' });
+        if (!user) return toast.warning(tr('ข้อมูลไม่ครบถ้วน'), { description: tr('กรุณาเลือกผู้ใช้จากรายการค้นหา (หรือพิมพ์ User ID)') });
         let minutes: number | undefined;
         if (action === 'grant_temp') {
             if (duration.h === 0 && duration.m === 0 && duration.s === 0) {
-                return toast.warning('ข้อมูลไม่ครบถ้วน', { description: 'กรุณาระบุระยะเวลาที่มากกว่า 0' });
+                return toast.warning(tr('ข้อมูลไม่ครบถ้วน'), { description: tr('กรุณาระบุระยะเวลาที่มากกว่า 0') });
             }
             // backend รับเป็นนาที (ทศนิยมได้ สำหรับวินาที)
             minutes = duration.h * 60 + duration.m + duration.s / 60;
         }
         const apiAction = action === 'revoke' ? 'revoke' : 'grant';
-        const actionText = apiAction === 'grant' ? 'ให้สิทธิ์' : 'ถอนสิทธิ์';
+        const actionText = apiAction === 'grant' ? tr('ให้สิทธิ์') : tr('ถอนสิทธิ์');
         const ok = await confirm({
-            title: `ยืนยันการ${actionText}?`,
-            description: `คุณต้องการ${actionText} ${user.username} เข้าห้องใช่หรือไม่?`,
+            title: tr('ยืนยันการ{0}?', { 0: actionText }),
+            description: tr('คุณต้องการ{0} {1} เข้าห้องใช่หรือไม่?', { 0: actionText, 1: user.username }),
             destructive: apiAction === 'revoke',
         });
         if (!ok) return;
         try {
             const result = await mutation.mutateAsync({ userId: user.userId, roomId, action: apiAction, duration: minutes });
-            if (result.errors?.length) toast.warning('ดำเนินการเสร็จสิ้น (มีปัญหาบางส่วน)', { description: [result.message, ...result.errors].join('\n') });
-            else toast.success('ดำเนินการเสร็จสิ้น', { description: result.message });
+            if (result.errors?.length) toast.warning(tr('ดำเนินการเสร็จสิ้น (มีปัญหาบางส่วน)'), { description: [result.message, ...result.errors].join('\n') });
+            else toast.success(tr('ดำเนินการเสร็จสิ้น'), { description: result.message });
         } catch (err) {
-            toast.error('ดำเนินการไม่สำเร็จ', { description: errorMessage(err) });
+            toast.error(tr('ดำเนินการไม่สำเร็จ'), { description: errorMessage(err) });
         }
     };
 
     const revoke = async (item: RoomAccessItem) => {
         const ok = await confirm({
-            title: 'ยืนยันการถอนสิทธิ์?',
-            description: `ถอนสิทธิ์ ${item.username} จากห้อง ${item.roomName} ทันที`,
-            confirmText: 'ถอนสิทธิ์',
+            title: tr('ยืนยันการถอนสิทธิ์?'),
+            description: tr('ถอนสิทธิ์ {0} จากห้อง {1} ทันที', { 0: item.username, 1: item.roomName }),
+            confirmText: tr('ถอนสิทธิ์'),
             destructive: true,
         });
         if (!ok) return;
         try {
             await mutation.mutateAsync({ userId: item.userId, roomId: item.roomId, action: 'revoke' });
-            toast.success('ถอนสิทธิ์สำเร็จ');
+            toast.success(tr('ถอนสิทธิ์สำเร็จ'));
         } catch (err) {
-            toast.error('ข้อผิดพลาด', { description: errorMessage(err) });
+            toast.error(tr('ข้อผิดพลาด'), { description: errorMessage(err) });
         }
     };
 
@@ -218,9 +223,9 @@ function RoomAccessPage() {
             header: 'Type',
             cell: ({ row }) =>
                 row.original.type === 'temporary' ? (
-                    <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">จำกัดเวลา</Badge>
+                    <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('จำกัดเวลา')}</Badge>
                 ) : (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">ถาวร</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('ถาวร')}</Badge>
                 ),
         },
         {
@@ -229,7 +234,7 @@ function RoomAccessPage() {
             cell: ({ row: { original: item } }) => {
                 if (item.type !== 'temporary' || !item.expireAt) return '—';
                 const left = item.expireAt - now;
-                return left <= 0 ? <span className="text-destructive">หมดเวลาแล้ว</span> : <span className="font-mono">{formatCountdown(left)}</span>;
+                return left <= 0 ? <span className="text-destructive">{tr('หมดเวลาแล้ว')}</span> : <span className="font-mono">{formatCountdown(left)}</span>;
             },
         },
         {
@@ -237,7 +242,7 @@ function RoomAccessPage() {
             header: 'Action',
             cell: ({ row }) => (
                 <Button size="xs" variant="destructive" onClick={() => void revoke(row.original)}>
-                    ถอนสิทธิ์
+                    {tr('ถอนสิทธิ์')}
                 </Button>
             ),
         },
@@ -247,16 +252,16 @@ function RoomAccessPage() {
         <>
             <PageHeader
                 help="roomAccess"
-                title="ให้สิทธิ์เข้าห้อง"
-                description="ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)"
+                title={tr('ให้สิทธิ์เข้าห้อง')}
+                description={tr('ให้สิทธิ์ผู้ใช้ในการมองเห็นห้องพิเศษ — ถาวร หรือจำกัดเวลา (บอทถอนสิทธิ์และแจ้งเตือนทาง DM ให้เอง)')}
             />
             <RoomsCard rooms={rooms} />
             <Card>
                 <CardContent className="grid gap-4 md:max-w-xl">
-                    <Field label="ผู้ใช้" hint="พิมพ์ชื่อแล้วเลือกจากรายการ — หรือพิมพ์ User ID ลงไปตรงๆ ก็ได้">
-                        <UserPicker value={user} onSelect={setUser} onClear={() => setUser(null)} placeholder="พิมพ์ชื่อหรือ username ของสมาชิก..." />
+                    <Field label={tr('ผู้ใช้')} hint={tr('พิมพ์ชื่อแล้วเลือกจากรายการ — หรือพิมพ์ User ID ลงไปตรงๆ ก็ได้')}>
+                        <UserPicker value={user} onSelect={setUser} onClear={() => setUser(null)} placeholder={tr('พิมพ์ชื่อหรือ username ของสมาชิก...')} />
                     </Field>
-                    <Field label="เลือกห้องที่ต้องการให้สิทธิ์">
+                    <Field label={tr('เลือกห้องที่ต้องการให้สิทธิ์')}>
                         <Select value={roomId} onValueChange={setRoomId}>
                             <SelectTrigger className="w-full">
                                 <SelectValue />
@@ -264,44 +269,47 @@ function RoomAccessPage() {
                             <SelectContent>
                                 {rooms.map((room) => (
                                     <SelectItem key={room.id} value={room.id}>
-                                        {room.exists ? `#${room.name}` : `ID: ${room.id} (ไม่พบห้องนี้)`}
+                                        {room.exists ? `#${room.name}` : tr('ID: {0} (ไม่พบห้องนี้)', { 0: room.id })}
                                     </SelectItem>
                                 ))}
-                                <SelectItem value={ALL_ROOMS}>ทุกห้องในรายการ ({rooms.length} ห้อง)</SelectItem>
+                                <SelectItem value={ALL_ROOMS}>
+                                    {tr('ทุกห้องในรายการ (')}
+                                    {rooms.length} {tr('ห้อง)')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field label="เลือกรูปแบบการดำเนินการ">
+                    <Field label={tr('เลือกรูปแบบการดำเนินการ')}>
                         <Select value={action} onValueChange={(value) => setAction(value as Action)}>
                             <SelectTrigger className="w-full">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="grant">ให้สิทธิ์ถาวร</SelectItem>
-                                <SelectItem value="grant_temp">ให้สิทธิ์ชั่วคราว</SelectItem>
-                                <SelectItem value="revoke">ถอนสิทธิ์</SelectItem>
+                                <SelectItem value="grant">{tr('ให้สิทธิ์ถาวร')}</SelectItem>
+                                <SelectItem value="grant_temp">{tr('ให้สิทธิ์ชั่วคราว')}</SelectItem>
+                                <SelectItem value="revoke">{tr('ถอนสิทธิ์')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </Field>
                     {action === 'grant_temp' && (
-                        <Field label="ระยะเวลา (ชั่วโมง : นาที : วินาที)">
+                        <Field label={tr('ระยะเวลา (ชั่วโมง : นาที : วินาที)')}>
                             <div className="flex items-center gap-2">
-                                <DurationSelect value={duration.h} max={73} unit="ชม." onChange={(h) => setDuration((d) => ({ ...d, h }))} />:
-                                <DurationSelect value={duration.m} max={60} unit="นาที" onChange={(m) => setDuration((d) => ({ ...d, m }))} />:
-                                <DurationSelect value={duration.s} max={60} unit="วิ" onChange={(s) => setDuration((d) => ({ ...d, s }))} />
+                                <DurationSelect value={duration.h} max={73} unit={tr('ชม.')} onChange={(h) => setDuration((d) => ({ ...d, h }))} />:
+                                <DurationSelect value={duration.m} max={60} unit={tr('นาที')} onChange={(m) => setDuration((d) => ({ ...d, m }))} />:
+                                <DurationSelect value={duration.s} max={60} unit={tr('วิ')} onChange={(s) => setDuration((d) => ({ ...d, s }))} />
                             </div>
                         </Field>
                     )}
                     <Button className="w-full" onClick={() => void submit()} disabled={mutation.isPending || rooms.length === 0}>
-                        {mutation.isPending && <Loader2 className="animate-spin" />} ดำเนินการ
+                        {mutation.isPending && <Loader2 className="animate-spin" />} {tr('ดำเนินการ')}
                     </Button>
                 </CardContent>
             </Card>
 
             <Card>
                 <CardHeader>
-                    <CardTitle>รายชื่อผู้ได้รับสิทธิ์เข้าห้อง</CardTitle>
-                    <CardDescription>ผู้ที่มีสิทธิ์ถาวร และจำกัดเวลา (อัปเดตอัตโนมัติ)</CardDescription>
+                    <CardTitle>{tr('รายชื่อผู้ได้รับสิทธิ์เข้าห้อง')}</CardTitle>
+                    <CardDescription>{tr('ผู้ที่มีสิทธิ์ถาวร และจำกัดเวลา (อัปเดตอัตโนมัติ)')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {list.isLoading ? (
@@ -309,7 +317,7 @@ function RoomAccessPage() {
                     ) : list.error ? (
                         <ErrorState error={list.error} />
                     ) : (
-                        <DataTable columns={columns} data={list.data ?? []} empty="ไม่มีผู้ได้รับสิทธิ์" />
+                        <DataTable columns={columns} data={list.data ?? []} empty={tr('ไม่มีผู้ได้รับสิทธิ์')} />
                     )}
                 </CardContent>
             </Card>

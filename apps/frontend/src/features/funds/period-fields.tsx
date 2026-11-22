@@ -1,4 +1,5 @@
-import { formatBaht } from '@notstack/shared';
+import { tr } from '../../lib/i18n';
+import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { AlertCircle, Calendar } from '@/components/icons';
 import { Field } from '@/components/field';
@@ -6,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { periodAmount, periodPresetRange, type PeriodPreset } from './utils';
 
 const PRESETS: readonly { key: PeriodPreset; label: string }[] = [
-    { key: 'today', label: 'วันนี้ (1 วัน)' },
-    { key: '7d', label: '7 วันล่าสุด' },
-    { key: '15d', label: '15 วันล่าสุด' },
-    { key: 'month', label: 'เดือนนี้ทั้งเดือน' },
+    { key: 'today', label: tr('วันนี้ (1 วัน)') },
+    { key: '7d', label: tr('7 วันล่าสุด') },
+    { key: '15d', label: tr('15 วันล่าสุด') },
+    { key: 'month', label: tr('เดือนนี้ทั้งเดือน') },
 ];
 
 // ช่องเลือก "ตั้งแต่วันที่ – ถึงวันที่" + ปุ่มลัดเลือกช่วงวัน + สรุปจำนวนวัน (และยอดตามอัตรารายวันถ้ามี)
@@ -41,7 +42,7 @@ export function PeriodFields({
     return (
         <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1">
-                <span className="mr-1 text-[11px] text-muted-foreground">เลือกด่วน:</span>
+                <span className="mr-1 text-[11px] text-muted-foreground">{tr('เลือกด่วน:')}</span>
                 {PRESETS.map((p) => (
                     <Button key={p.key} type="button" size="xs" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => applyPreset(p.key)}>
                         {p.label}
@@ -49,34 +50,38 @@ export function PeriodFields({
                 ))}
                 {topicStartDate && (
                     <Button type="button" size="xs" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => applyPreset('since_start')}>
-                        ตั้งแต่เริ่มเก็บถึงวันนี้
+                        {tr('ตั้งแต่เริ่มเก็บถึงวันนี้')}
                     </Button>
                 )}
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Field label="ตั้งแต่วันที่" htmlFor={`${idPrefix}-period-start`}>
+                <Field label={tr('ตั้งแต่วันที่')} htmlFor={`${idPrefix}-period-start`}>
                     <DateTimeInput mode="date" id={`${idPrefix}-period-start`} value={start} onValueChange={(v) => onChange(v, end)} />
                 </Field>
-                <Field label="ถึงวันที่" htmlFor={`${idPrefix}-period-end`}>
+                <Field label={tr('ถึงวันที่')} htmlFor={`${idPrefix}-period-end`}>
                     <DateTimeInput mode="date" id={`${idPrefix}-period-end`} value={end} onValueChange={(v) => onChange(start, v)} />
                 </Field>
             </div>
             {invalid ? (
                 <p className="flex items-center gap-1 text-xs text-destructive">
                     <AlertCircle className="size-3.5 shrink-0" />
-                    วันที่เริ่มต้นต้องไม่หลังวันที่สิ้นสุด
+
+                    {tr('วันที่เริ่มต้นต้องไม่หลังวันที่สิ้นสุด')}
                 </p>
             ) : (
                 days > 0 && (
                     <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Calendar className="size-3.5 text-primary" />
                         <span>
-                            รวม <span className="font-semibold text-foreground">{days} วัน</span>
+                            {tr('รวม')}{' '}
+                            <span className="font-semibold text-foreground">
+                                {days} {tr('วัน')}
+                            </span>
                             {dailyRate && (
                                 <span>
                                     {' '}
-                                    (วันละ {formatBaht(dailyRate)} ={' '}
+                                    {tr('(วันละ')} {formatBaht(dailyRate)} ={' '}
                                     <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                                         {formatBaht(days * dailyRate)}
                                         {amountSuffix}

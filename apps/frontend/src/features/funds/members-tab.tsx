@@ -1,4 +1,6 @@
-import { formatBaht, roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
+import { tr } from '../../lib/i18n';
+import { roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
+import { formatBaht } from './money';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Loader2, Trash2, Users, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
@@ -58,7 +60,7 @@ export function MembersTab({
     const add = useMutation({
         mutationFn: (input: { userIds?: string[]; roleId?: string }) => fundApi.addMembers(guildId, topic.id, input),
         onSuccess: (res) => {
-            toast.success(res.message ?? 'เพิ่มคนแล้ว');
+            toast.success(res.message ?? tr('เพิ่มคนแล้ว'));
             setRoleId('');
             void refresh();
         },
@@ -66,9 +68,9 @@ export function MembersTab({
     });
 
     const payFull = useMutation({
-        mutationFn: (member: FundMemberView) => fundApi.addPayment(guildId, topic.id, { memberId: member.id, amount: member.remaining, note: 'จ่ายครบ' }),
+        mutationFn: (member: FundMemberView) => fundApi.addPayment(guildId, topic.id, { memberId: member.id, amount: member.remaining, note: tr('จ่ายครบ') }),
         onSuccess: () => {
-            toast.success('บันทึกว่าจ่ายครบแล้ว');
+            toast.success(tr('บันทึกว่าจ่ายครบแล้ว'));
             void refresh();
         },
         onError: onFundError,
@@ -79,12 +81,12 @@ export function MembersTab({
         mutationFn: async (membersToPay: FundMemberView[]) => {
             for (const m of membersToPay) {
                 if (m.remaining > 0) {
-                    await fundApi.addPayment(guildId, topic.id, { memberId: m.id, amount: m.remaining, note: 'จ่ายครบ' });
+                    await fundApi.addPayment(guildId, topic.id, { memberId: m.id, amount: m.remaining, note: tr('จ่ายครบ') });
                 }
             }
         },
         onSuccess: (_, membersToPay) => {
-            toast.success(`บันทึกจ่ายครบให้ ${membersToPay.length} คนเรียบร้อยแล้ว`);
+            toast.success(tr('บันทึกจ่ายครบให้ {0} คนเรียบร้อยแล้ว', { 0: membersToPay.length }));
             setSelectedIds([]);
             void refresh();
         },
@@ -93,19 +95,19 @@ export function MembersTab({
 
     const remove = async (member: FundMemberView) => {
         const ok = await confirm({
-            title: 'ลบคนออกจากหัวข้อ?',
+            title: tr('ลบคนออกจากหัวข้อ?'),
             description:
                 member.paid > 0
-                    ? `${member.displayName} มีรายการรับเงินรวม ${formatBaht(member.paid)} — รายการเหล่านั้นจะถูกลบไปด้วย`
-                    : `เอา ${member.displayName} ออกจาก “${topic.name}”`,
-            confirmText: 'ลบ',
+                    ? tr('{0} มีรายการรับเงินรวม {1} — รายการเหล่านั้นจะถูกลบไปด้วย', { 0: member.displayName, 1: formatBaht(member.paid) })
+                    : tr('เอา {0} ออกจาก “{1}”', { 0: member.displayName, 1: topic.name }),
+            confirmText: tr('ลบ'),
             destructive: true,
         });
         if (!ok) return;
         try {
             await fundApi.removeMember(guildId, topic.id, member.id);
             setSelectedIds((prev) => prev.filter((id) => id !== member.id));
-            toast.success('ลบคนแล้ว');
+            toast.success(tr('ลบคนแล้ว'));
             void refresh();
         } catch (err) {
             onFundError(err);
@@ -175,9 +177,9 @@ export function MembersTab({
     const handleBulkPayFull = async () => {
         if (selectedUnpaidMembers.length === 0) return;
         const ok = await confirm({
-            title: `บันทึกจ่ายครบให้ ${selectedUnpaidMembers.length} คน?`,
-            description: `ระบบจะบันทึกรับเงินตามยอดคงค้างของแต่ละคน รวมเป็นเงินทั้งสิ้น ${formatBaht(selectedRemainingTotal)}`,
-            confirmText: `บันทึกจ่ายครบ (${formatBaht(selectedRemainingTotal)})`,
+            title: tr('บันทึกจ่ายครบให้ {0} คน?', { 0: selectedUnpaidMembers.length }),
+            description: tr('ระบบจะบันทึกรับเงินตามยอดคงค้างของแต่ละคน รวมเป็นเงินทั้งสิ้น {0}', { 0: formatBaht(selectedRemainingTotal) }),
+            confirmText: tr('บันทึกจ่ายครบ ({0})', { 0: formatBaht(selectedRemainingTotal) }),
         });
         if (!ok) return;
         bulkPayFull.mutate(selectedUnpaidMembers);
@@ -187,19 +189,19 @@ export function MembersTab({
         <div className="min-w-0 space-y-3">
             {!topic.closed && (
                 <div className="grid grid-cols-1 gap-2.5 rounded-xl border bg-muted/15 p-3 md:grid-cols-2">
-                    <Field label="เพิ่มสมาชิกรายคน">
+                    <Field label={tr('เพิ่มสมาชิกรายคน')}>
                         <UserPicker
                             keepSelection={false}
-                            placeholder="พิมพ์ชื่อหรือ username เพื่อเพิ่มเข้าหัวข้อ..."
+                            placeholder={tr('พิมพ์ชื่อหรือ username เพื่อเพิ่มเข้าหัวข้อ...')}
                             exclude={topic.members.map((m) => m.userId)}
                             onSelect={(user) => add.mutate({ userIds: [user.userId] })}
                         />
                     </Field>
-                    <Field label="ดึงสมาชิกทุกคนจากยศ (Role)">
+                    <Field label={tr('ดึงสมาชิกทุกคนจากยศ (Role)')}>
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Select value={roleId} onValueChange={setRoleId}>
                                 <SelectTrigger className="w-full min-w-0 sm:flex-1">
-                                    <SelectValue placeholder="-- เลือกยศในเซิร์ฟเวอร์ --" />
+                                    <SelectValue placeholder={tr('-- เลือกยศในเซิร์ฟเวอร์ --')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
                                     {roles.map((role) => (
@@ -215,7 +217,7 @@ export function MembersTab({
                                 disabled={!roleId || add.isPending}
                                 onClick={() => add.mutate({ roleId })}
                             >
-                                {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} เพิ่มทั้งยศ
+                                {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} {tr('เพิ่มทั้งยศ')}
                             </Button>
                         </div>
                     </Field>
@@ -223,18 +225,18 @@ export function MembersTab({
             )}
 
             {topic.members.length === 0 ? (
-                <EmptyState>ยังไม่มีคนในหัวข้อนี้ — เพิ่มทีละคนหรือดึงทั้งยศจากแถบด้านบน</EmptyState>
+                <EmptyState>{tr('ยังไม่มีคนในหัวข้อนี้ — เพิ่มทีละคนหรือดึงทั้งยศจากแถบด้านบน')}</EmptyState>
             ) : (
                 <>
                     <div className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                         <div className="flex flex-wrap items-center gap-1.5">
                             {(
                                 [
-                                    ['all', `ทั้งหมด (${topic.members.length})`],
-                                    ['owing', `ค้างชำระ (${counts.owing})`],
-                                    ...(counts.partial > 0 ? ([['partial', `จ่ายบางส่วน (${counts.partial})`]] as const) : []),
-                                    ...(counts.unpaid > 0 ? ([['unpaid', `ยังไม่จ่าย (${counts.unpaid})`]] as const) : []),
-                                    ['paid', `จ่ายครบแล้ว (${counts.paid})`],
+                                    ['all', tr('ทั้งหมด ({0})', { 0: topic.members.length })],
+                                    ['owing', tr('ค้างชำระ ({0})', { 0: counts.owing })],
+                                    ...(counts.partial > 0 ? ([['partial', tr('จ่ายบางส่วน ({0})', { 0: counts.partial })]] as const) : []),
+                                    ...(counts.unpaid > 0 ? ([['unpaid', tr('ยังไม่จ่าย ({0})', { 0: counts.unpaid })]] as const) : []),
+                                    ['paid', tr('จ่ายครบแล้ว ({0})', { 0: counts.paid })],
                                 ] as const
                             ).map(([value, label]) => (
                                 <Button
@@ -250,17 +252,17 @@ export function MembersTab({
                         </div>
 
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-                            <SearchInput value={search} onChange={setSearch} placeholder="ค้นหาชื่อ หรือ User ID..." className="w-full sm:w-56" />
+                            <SearchInput value={search} onChange={setSearch} placeholder={tr('ค้นหาชื่อ หรือ User ID...')} className="w-full sm:w-56" />
                             <Select value={sortBy} onValueChange={(v) => setSortBy(v as MemberSort)}>
                                 <SelectTrigger className="h-8 w-full text-xs sm:w-40">
                                     <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="default">เรียงตามลำดับเพิ่ม</SelectItem>
-                                    <SelectItem value="remaining_desc">คงค้างมากสุด</SelectItem>
-                                    <SelectItem value="paid_desc">จ่ายแล้วมากสุด</SelectItem>
-                                    <SelectItem value="name_asc">ชื่อ (ก-ฮ / A-Z)</SelectItem>
+                                    <SelectItem value="default">{tr('เรียงตามลำดับเพิ่ม')}</SelectItem>
+                                    <SelectItem value="remaining_desc">{tr('คงค้างมากสุด')}</SelectItem>
+                                    <SelectItem value="paid_desc">{tr('จ่ายแล้วมากสุด')}</SelectItem>
+                                    <SelectItem value="name_asc">{tr('ชื่อ (ก-ฮ / A-Z)')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -269,10 +271,12 @@ export function MembersTab({
                     {!topic.closed && validSelectedIds.length > 0 && (
                         <div className="flex flex-col gap-2 rounded-xl border border-primary/30 bg-primary/8 px-3 py-2.5 text-xs sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-3.5 sm:py-2">
                             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                                <span className="font-semibold text-primary">เลือกแล้ว {validSelectedIds.length} คน</span>
+                                <span className="font-semibold text-primary">
+                                    {tr('เลือกแล้ว')} {validSelectedIds.length} {tr('คน')}
+                                </span>
                                 {selectedUnpaidMembers.length > 0 && (
                                     <span className="text-muted-foreground tabular-nums">
-                                        (ค้างชำระ {selectedUnpaidMembers.length} คน · รวม{' '}
+                                        {tr('(ค้างชำระ')} {selectedUnpaidMembers.length} {tr('คน · รวม')}{' '}
                                         <span className="font-semibold text-amber-700 dark:text-amber-400">{formatBaht(selectedRemainingTotal)}</span>)
                                     </span>
                                 )}
@@ -281,23 +285,25 @@ export function MembersTab({
                                 {selectedUnpaidMembers.length > 0 && (
                                     <Button type="button" size="xs" disabled={bulkPayFull.isPending} onClick={() => void handleBulkPayFull()}>
                                         {bulkPayFull.isPending ? <Loader2 className="animate-spin" /> : <CheckCheck />}
-                                        จ่ายครบทุกคนที่เลือก ({formatBaht(selectedRemainingTotal)})
+                                        {tr('จ่ายครบทุกคนที่เลือก (')}
+                                        {formatBaht(selectedRemainingTotal)})
                                     </Button>
                                 )}
                                 {onBatchPay && (
                                     <Button type="button" size="xs" variant="outline" onClick={() => onBatchPay(validSelectedIds)}>
-                                        <Calendar /> บันทึกตามห้วงเวลา ({validSelectedIds.length} คน)
+                                        <Calendar /> {tr('บันทึกตามห้วงเวลา (')}
+                                        {validSelectedIds.length} {tr('คน)')}
                                     </Button>
                                 )}
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds([])}>
-                                    <X /> ล้างการเลือก
+                                    <X /> {tr('ล้างการเลือก')}
                                 </Button>
                             </div>
                         </div>
                     )}
 
                     {filteredMembers.length === 0 ? (
-                        <EmptyState>ไม่พบสมาชิกที่ตรงกับเงื่อนไขการค้นหา</EmptyState>
+                        <EmptyState>{tr('ไม่พบสมาชิกที่ตรงกับเงื่อนไขการค้นหา')}</EmptyState>
                     ) : (
                         <>
                             {/* มุมมองการ์ดสำหรับหน้าจอมือถือ (< md) */}
@@ -308,11 +314,18 @@ export function MembersTab({
                                             <Checkbox
                                                 checked={allFilteredSelected}
                                                 onCheckedChange={toggleSelectAllFiltered}
-                                                aria-label="เลือกทั้งหมดในรายการ"
+                                                aria-label={tr('เลือกทั้งหมดในรายการ')}
                                             />
-                                            <span>เลือกทั้งหมดในรายการ ({filteredMembers.length} คน)</span>
+                                            <span>
+                                                {tr('เลือกทั้งหมดในรายการ (')}
+                                                {filteredMembers.length} {tr('คน)')}
+                                            </span>
                                         </label>
-                                        {validSelectedIds.length > 0 && <span className="font-semibold text-primary">เลือก {validSelectedIds.length} คน</span>}
+                                        {validSelectedIds.length > 0 && (
+                                            <span className="font-semibold text-primary">
+                                                {tr('เลือก')} {validSelectedIds.length} {tr('คน')}
+                                            </span>
+                                        )}
                                     </div>
                                 )}
 
@@ -336,7 +349,7 @@ export function MembersTab({
                                                         <Checkbox
                                                             checked={isSelected}
                                                             onCheckedChange={() => toggleMember(m.id)}
-                                                            aria-label={`เลือก ${m.displayName}`}
+                                                            aria-label={tr('เลือก {0}', { 0: m.displayName })}
                                                         />
                                                     )}
                                                     <img src={m.avatar} alt="" className="size-9 shrink-0 rounded-full object-cover ring-1 ring-border" />
@@ -349,9 +362,9 @@ export function MembersTab({
                                                                     type="button"
                                                                     onClick={() => onViewHistory(m.id)}
                                                                     className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                                                                    title="ดูประวัติการโอนของคนนี้"
+                                                                    title={tr('ดูประวัติการโอนของคนนี้')}
                                                                 >
-                                                                    <History className="size-2.5" /> {payCount} ครั้ง
+                                                                    <History className="size-2.5" /> {payCount} {tr('ครั้ง')}
                                                                 </button>
                                                             )}
                                                         </div>
@@ -364,19 +377,19 @@ export function MembersTab({
 
                                             <div className="grid grid-cols-3 gap-2 rounded-lg border bg-muted/20 p-2 text-xs">
                                                 <div className="min-w-0 space-y-0.5">
-                                                    <p className="text-[10px] text-muted-foreground">ต้องจ่าย</p>
+                                                    <p className="text-[10px] text-muted-foreground">{tr('ต้องจ่าย')}</p>
                                                     <div className="text-xs font-medium">
                                                         <TargetCell topic={topic} member={m} />
                                                     </div>
                                                 </div>
                                                 <div className="min-w-0 space-y-0.5">
-                                                    <p className="text-[10px] text-muted-foreground">จ่ายแล้ว</p>
+                                                    <p className="text-[10px] text-muted-foreground">{tr('จ่ายแล้ว')}</p>
                                                     <div className="text-xs">
                                                         <PaidCell topic={topic} member={m} align="left" showProgress={false} />
                                                     </div>
                                                 </div>
                                                 <div className="min-w-0 space-y-0.5 text-right">
-                                                    <p className="text-[10px] text-muted-foreground">คงค้าง</p>
+                                                    <p className="text-[10px] text-muted-foreground">{tr('คงค้าง')}</p>
                                                     <p
                                                         className={cn(
                                                             'py-0.5 text-xs tabular-nums',
@@ -396,7 +409,7 @@ export function MembersTab({
                                             {!topic.closed && (
                                                 <div className="flex items-center justify-end gap-1.5 pt-0.5">
                                                     <Button size="xs" variant="outline" className="flex-1" disabled={topic.closed} onClick={() => onPay(m)}>
-                                                        <Banknote /> รับเงิน
+                                                        <Banknote /> {tr('รับเงิน')}
                                                     </Button>
                                                     {m.remaining > 0 && (
                                                         <Button
@@ -405,16 +418,16 @@ export function MembersTab({
                                                             className="flex-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                                                             disabled={topic.closed || payFull.isPending}
                                                             onClick={() => payFull.mutate(m)}
-                                                            title={`บันทึกรับยอดคงค้าง ${formatBaht(m.remaining)}`}
+                                                            title={tr('บันทึกรับยอดคงค้าง {0}', { 0: formatBaht(m.remaining) })}
                                                         >
-                                                            {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} จ่ายครบ
+                                                            {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} {tr('จ่ายครบ')}
                                                         </Button>
                                                     )}
                                                     <Button
                                                         size="icon-xs"
                                                         variant="ghost"
-                                                        aria-label="ลบคน"
-                                                        title="ลบออกจากหัวข้อ"
+                                                        aria-label={tr('ลบคน')}
+                                                        title={tr('ลบออกจากหัวข้อ')}
                                                         disabled={topic.closed}
                                                         onClick={() => void remove(m)}
                                                     >
@@ -437,16 +450,16 @@ export function MembersTab({
                                                     <Checkbox
                                                         checked={allFilteredSelected}
                                                         onCheckedChange={toggleSelectAllFiltered}
-                                                        aria-label="เลือกทั้งหมดในรายการ"
+                                                        aria-label={tr('เลือกทั้งหมดในรายการ')}
                                                     />
                                                 </th>
                                             )}
-                                            <th className="px-3 py-2.5 text-left font-medium">ชื่อสมาชิก</th>
-                                            <th className="px-3 py-2.5 text-left font-medium">ต้องจ่าย (กดแก้ได้)</th>
-                                            <th className="px-3 py-2.5 text-right font-medium">จ่ายแล้ว (กดแก้ได้)</th>
-                                            <th className="px-3 py-2.5 text-right font-medium">คงค้าง</th>
-                                            <th className="px-3 py-2.5 text-left font-medium">สถานะ</th>
-                                            <th className="px-3 py-2.5 text-right font-medium">จัดการ</th>
+                                            <th className="px-3 py-2.5 text-left font-medium">{tr('ชื่อสมาชิก')}</th>
+                                            <th className="px-3 py-2.5 text-left font-medium">{tr('ต้องจ่าย (กดแก้ได้)')}</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">{tr('จ่ายแล้ว (กดแก้ได้)')}</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">{tr('คงค้าง')}</th>
+                                            <th className="px-3 py-2.5 text-left font-medium">{tr('สถานะ')}</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">{tr('จัดการ')}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -462,7 +475,7 @@ export function MembersTab({
                                                             <Checkbox
                                                                 checked={isSelected}
                                                                 onCheckedChange={() => toggleMember(m.id)}
-                                                                aria-label={`เลือก ${m.displayName}`}
+                                                                aria-label={tr('เลือก {0}', { 0: m.displayName })}
                                                             />
                                                         </td>
                                                     )}
@@ -478,9 +491,9 @@ export function MembersTab({
                                                                             type="button"
                                                                             onClick={() => onViewHistory(m.id)}
                                                                             className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[10px] text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                                                                            title="ดูประวัติการโอนของคนนี้"
+                                                                            title={tr('ดูประวัติการโอนของคนนี้')}
                                                                         >
-                                                                            <History className="size-2.5" /> {payCount} ครั้ง
+                                                                            <History className="size-2.5" /> {payCount} {tr('ครั้ง')}
                                                                         </button>
                                                                     )}
                                                                 </div>
@@ -509,7 +522,7 @@ export function MembersTab({
                                                     <td className="px-3 py-2.5">
                                                         <div className="flex justify-end gap-1">
                                                             <Button size="xs" variant="outline" disabled={topic.closed} onClick={() => onPay(m)}>
-                                                                <Banknote /> รับเงิน
+                                                                <Banknote /> {tr('รับเงิน')}
                                                             </Button>
                                                             {m.remaining > 0 && (
                                                                 <Button
@@ -518,16 +531,16 @@ export function MembersTab({
                                                                     className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
                                                                     disabled={topic.closed || payFull.isPending}
                                                                     onClick={() => payFull.mutate(m)}
-                                                                    title={`บันทึกรับยอดคงค้าง ${formatBaht(m.remaining)}`}
+                                                                    title={tr('บันทึกรับยอดคงค้าง {0}', { 0: formatBaht(m.remaining) })}
                                                                 >
-                                                                    {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} จ่ายครบ
+                                                                    {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} {tr('จ่ายครบ')}
                                                                 </Button>
                                                             )}
                                                             <Button
                                                                 size="icon-xs"
                                                                 variant="ghost"
-                                                                aria-label="ลบคน"
-                                                                title="ลบออกจากหัวข้อ"
+                                                                aria-label={tr('ลบคน')}
+                                                                title={tr('ลบออกจากหัวข้อ')}
                                                                 disabled={topic.closed}
                                                                 onClick={() => void remove(m)}
                                                             >

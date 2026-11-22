@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { useObjectUrl } from '@/hooks/use-object-url';
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
@@ -14,7 +15,7 @@ import { useGuildId } from '@/hooks/use-guild';
 
 const PREVIEW_DELAY = 250;
 const MENTION_TOKEN = 'WCMENTIONTOKEN';
-const FALLBACK_VARS: WelcomeVars = { user: 'สมาชิกใหม่', username: 'new_member', id: '0', server: 'NotStack', memberCount: '0' };
+const FALLBACK_VARS: WelcomeVars = { user: tr('สมาชิกใหม่'), username: 'new_member', id: '0', server: 'NotStack', memberCount: '0' };
 
 export type Handle = 'avatar' | number;
 
@@ -46,9 +47,9 @@ function renderMessage(content: string, vars: WelcomeVars, roles: GuildRole[], c
     return renderDiscordMarkdown(filled)
         .split(MENTION_TOKEN)
         .join(mention(`@${vars.user}`))
-        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? 'ยศ'}`))
-        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? 'ห้อง'}`))
-        .replace(/&lt;@!?(\d+)&gt;/g, () => mention('@ผู้ใช้'));
+        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? tr('ยศ')}`))
+        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? tr('ห้อง')}`))
+        .replace(/&lt;@!?(\d+)&gt;/g, () => mention(tr('@ผู้ใช้')));
 }
 
 /**
@@ -159,7 +160,7 @@ export function WelcomePreview({
                 className="relative mt-1 w-full max-w-xl touch-none overflow-hidden rounded-lg bg-black/30 select-none"
                 style={{ aspectRatio: `${design.width} / ${design.height}` }}
             >
-                {preview.data && <img src={imageUrl} alt="ตัวอย่างการ์ดต้อนรับ" className="absolute inset-0 size-full" draggable={false} />}
+                {preview.data && <img src={imageUrl} alt={tr('ตัวอย่างการ์ดต้อนรับ')} className="absolute inset-0 size-full" draggable={false} />}
 
                 {guides.v && <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-pink-400" />}
                 {guides.h && <div className="pointer-events-none absolute inset-x-0 top-1/2 h-px bg-pink-400" />}
@@ -169,7 +170,7 @@ export function WelcomePreview({
                         {design.avatar.visible && (
                             <div
                                 role="button"
-                                title="ลากเพื่อย้ายรูปโปรไฟล์"
+                                title={tr('ลากเพื่อย้ายรูปโปรไฟล์')}
                                 className={cn(
                                     'absolute cursor-move border-2 border-dashed border-white/0 transition-colors hover:border-white/70',
                                     design.avatar.shape === 'circle' ? 'rounded-full' : 'rounded-md',
@@ -200,7 +201,7 @@ export function WelcomePreview({
 
                 {(!preview.data || preview.error) && (
                     <div className="absolute inset-0 flex items-center justify-center p-4 text-center text-sm text-[#b5bac1]">
-                        {preview.error ? `สร้างรูปตัวอย่างไม่สำเร็จ: ${errorMessage(preview.error)}` : 'กำลังสร้างรูปตัวอย่าง...'}
+                        {preview.error ? tr('สร้างรูปตัวอย่างไม่สำเร็จ: {0}', { 0: errorMessage(preview.error) }) : tr('กำลังสร้างรูปตัวอย่าง...')}
                     </div>
                 )}
                 {preview.isFetching && preview.data && <Loader2 className="absolute top-2 right-2 size-4 animate-spin text-white/80" />}

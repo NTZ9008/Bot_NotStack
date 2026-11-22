@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { xpMemberMutationSchema, type XpMemberMutation, type XpMemberMutationResult, type XpResetGuildResult } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -16,11 +17,11 @@ import { formatDateTime } from '@/lib/format';
 import { NumberField } from './settings';
 
 const ACTIONS: Record<XpMemberMutation['action'], string> = {
-    add: 'เพิ่ม XP / สร้างสมาชิก',
-    subtract: 'ลด XP',
-    set: 'กำหนด XP ใหม่',
-    reset: 'รีเซ็ตเป็น 0',
-    delete: 'ลบสมาชิกจากอันดับ',
+    add: tr('เพิ่ม XP / สร้างสมาชิก'),
+    subtract: tr('ลด XP'),
+    set: tr('กำหนด XP ใหม่'),
+    reset: tr('รีเซ็ตเป็น 0'),
+    delete: tr('ลบสมาชิกจากอันดับ'),
 };
 type CompletedChange = { kind: 'member'; data: XpMemberMutationResult; username: string } | { kind: 'guild'; data: XpResetGuildResult };
 
@@ -58,8 +59,8 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
         <div className="grid gap-5 lg:grid-cols-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>จัดการ XP สมาชิก</CardTitle>
-                    <CardDescription>เลเวลคำนวณจาก XP ให้อัตโนมัติ · การเพิ่มโดยผู้ดูแลไม่ติดเพดานกิจกรรมรายวัน</CardDescription>
+                    <CardTitle>{tr('จัดการ XP สมาชิก')}</CardTitle>
+                    <CardDescription>{tr('เลเวลคำนวณจาก XP ให้อัตโนมัติ · การเพิ่มโดยผู้ดูแลไม่ติดเพดานกิจกรรมรายวัน')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -72,7 +73,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                             if (
                                 await confirm({
                                     title: `${ACTIONS[request.input.action]}: ${request.username}?`,
-                                    description: `เหตุผล: ${request.input.reason}`,
+                                    description: tr('เหตุผล: {0}', { 0: request.input.reason }),
                                     destructive: request.input.action !== 'add',
                                 })
                             )
@@ -82,7 +83,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                         <fieldset disabled={mutation.isPending || reset.isPending} className="space-y-4">
                             <UserPicker value={user} onSelect={setUser} onClear={() => setUser(null)} />
                             <label className="grid gap-1.5 text-sm">
-                                การดำเนินการ
+                                {tr('การดำเนินการ')}
                                 <select
                                     className="h-9 rounded-md border bg-background px-3"
                                     value={action}
@@ -96,32 +97,32 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                 </select>
                             </label>
                             {!['reset', 'delete'].includes(action) && (
-                                <NumberField label="จำนวน XP" value={amount} max={2000000000} onChange={setAmount} />
+                                <NumberField label={tr('จำนวน XP')} value={amount} max={2000000000} onChange={setAmount} />
                             )}
                             <label className="grid gap-1.5 text-sm">
-                                เหตุผล (บันทึกในประวัติ)
+                                {tr('เหตุผล (บันทึกในประวัติ)')}
                                 <Input
                                     required
                                     maxLength={300}
                                     value={reason}
                                     onChange={(e) => setReason(e.target.value)}
-                                    placeholder="เช่น รางวัลกิจกรรมประจำสัปดาห์"
+                                    placeholder={tr('เช่น รางวัลกิจกรรมประจำสัปดาห์')}
                                 />
                             </label>
                             <Button type="submit" disabled={!xpMemberMutationSchema.safeParse(input).success || mutation.isPending}>
-                                ยืนยันการเปลี่ยนแปลง
+                                {tr('ยืนยันการเปลี่ยนแปลง')}
                             </Button>
                         </fieldset>
                     </form>
                     <p className="mt-3 text-xs text-muted-foreground">
-                        การรีเซ็ต/ลบคง cooldown และโควตาของวันนี้ไว้ สมาชิกที่ถูกลบจะกลับมาในอันดับเมื่อได้ XP ครั้งใหม่
+                        {tr('การรีเซ็ต/ลบคง cooldown และโควตาของวันนี้ไว้ สมาชิกที่ถูกลบจะกลับมาในอันดับเมื่อได้ XP ครั้งใหม่')}
                     </p>
                 </CardContent>
             </Card>
             <Card className="border-destructive/40">
                 <CardHeader>
-                    <CardTitle>รีเซ็ตทั้งเซิร์ฟเวอร์</CardTitle>
-                    <CardDescription>ลบ XP และอันดับของทุกคน โดยเก็บกฎและประวัติไว้ การดำเนินการนี้ย้อนกลับจากหน้านี้ไม่ได้</CardDescription>
+                    <CardTitle>{tr('รีเซ็ตทั้งเซิร์ฟเวอร์')}</CardTitle>
+                    <CardDescription>{tr('ลบ XP และอันดับของทุกคน โดยเก็บกฎและประวัติไว้ การดำเนินการนี้ย้อนกลับจากหน้านี้ไม่ได้')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form
@@ -132,9 +133,9 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                             const request = { reason: resetReason, confirmation: resetText };
                             if (
                                 await confirm({
-                                    title: 'รีเซ็ต XP ของสมาชิกทุกคน?',
-                                    description: 'XP และอันดับทั้งหมดจะถูกลบถาวร ตรวจสอบว่าเลือกเซิร์ฟเวอร์ถูกต้อง',
-                                    confirmText: 'รีเซ็ตทุกคน',
+                                    title: tr('รีเซ็ต XP ของสมาชิกทุกคน?'),
+                                    description: tr('XP และอันดับทั้งหมดจะถูกลบถาวร ตรวจสอบว่าเลือกเซิร์ฟเวอร์ถูกต้อง'),
+                                    confirmText: tr('รีเซ็ตทุกคน'),
                                     destructive: true,
                                 })
                             )
@@ -143,15 +144,15 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                     >
                         <fieldset disabled={reset.isPending || mutation.isPending} className="space-y-4">
                             <label className="grid gap-1.5 text-sm">
-                                เหตุผล
+                                {tr('เหตุผล')}
                                 <Input required maxLength={300} value={resetReason} onChange={(e) => setResetReason(e.target.value)} />
                             </label>
                             <label className="grid gap-1.5 text-sm">
-                                พิมพ์ RESET XP เพื่อยืนยัน
+                                {tr('พิมพ์ RESET XP เพื่อยืนยัน')}
                                 <Input value={resetText} onChange={(e) => setResetText(e.target.value)} autoComplete="off" />
                             </label>
                             <Button type="submit" variant="destructive" disabled={resetText !== 'RESET XP' || !resetReason.trim() || reset.isPending}>
-                                รีเซ็ต XP ทั้งเซิร์ฟเวอร์
+                                {tr('รีเซ็ต XP ทั้งเซิร์ฟเวอร์')}
                             </Button>
                         </fieldset>
                     </form>
@@ -165,25 +166,23 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
             >
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>ดำเนินการสำเร็จ</DialogTitle>
+                        <DialogTitle>{tr('ดำเนินการสำเร็จ')}</DialogTitle>
                         <DialogDescription>
                             {completed?.kind === 'member'
                                 ? `${ACTIONS[completed.data.action]} · ${completed.username}`
-                                : `รีเซ็ต XP ทั้งเซิร์ฟเวอร์ · ${completed?.data.affectedMembers.toLocaleString() ?? 0} คน`}
+                                : tr('รีเซ็ต XP ทั้งเซิร์ฟเวอร์ · {0} คน', { 0: completed?.data.affectedMembers.toLocaleString() ?? 0 })}
                         </DialogDescription>
                     </DialogHeader>
                     {completed && (
                         <>
-                            {completed.kind === 'member' && (
-                                <p className="break-all text-xs text-muted-foreground">Discord ID: {completed.data.userId}</p>
-                            )}
+                            {completed.kind === 'member' && <p className="break-all text-xs text-muted-foreground">Discord ID: {completed.data.userId}</p>}
                             <dl className="space-y-3 rounded-lg border p-4 text-sm">
                                 <div className="flex flex-wrap justify-between gap-2">
-                                    <dt>{completed.kind === 'guild' ? 'XP รวมเดิม' : 'XP เดิม'}</dt>
+                                    <dt>{completed.kind === 'guild' ? tr('XP รวมเดิม') : tr('XP เดิม')}</dt>
                                     <dd className="font-semibold tabular-nums">{completed.data.beforeXp.toLocaleString()} XP</dd>
                                 </div>
                                 <div className="flex flex-wrap justify-between gap-2">
-                                    <dt>เปลี่ยนแปลง</dt>
+                                    <dt>{tr('เปลี่ยนแปลง')}</dt>
                                     <dd
                                         className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-emerald-700 dark:text-emerald-400'}`}
                                     >
@@ -192,19 +191,19 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                     </dd>
                                 </div>
                                 <div className="flex flex-wrap justify-between gap-2 border-t pt-3">
-                                    <dt>{completed.kind === 'guild' ? 'XP รวมหลังทำรายการ' : 'XP หลังทำรายการ'}</dt>
+                                    <dt>{completed.kind === 'guild' ? tr('XP รวมหลังทำรายการ') : tr('XP หลังทำรายการ')}</dt>
                                     <dd className="text-lg font-bold tabular-nums">{completed.data.afterXp.toLocaleString()} XP</dd>
                                 </div>
                             </dl>
                             {completed.kind === 'member' && completed.data.action === 'delete' && (
-                                <p className="text-sm text-muted-foreground">ลบสมาชิกออกจากอันดับแล้ว สมาชิกจะกลับมาเมื่อได้รับ XP ครั้งใหม่</p>
+                                <p className="text-sm text-muted-foreground">{tr('ลบสมาชิกออกจากอันดับแล้ว สมาชิกจะกลับมาเมื่อได้รับ XP ครั้งใหม่')}</p>
                             )}
-                            <p className="text-xs text-muted-foreground">ยอด ณ เวลาที่ทำรายการสำเร็จ กิจกรรมหลังจากนี้อาจเปลี่ยนยอดได้</p>
+                            <p className="text-xs text-muted-foreground">{tr('ยอด ณ เวลาที่ทำรายการสำเร็จ กิจกรรมหลังจากนี้อาจเปลี่ยนยอดได้')}</p>
                         </>
                     )}
                     <DialogFooter>
                         <Button type="button" onClick={() => setCompleted(null)}>
-                            ปิด
+                            {tr('ปิด')}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -224,12 +223,12 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>ประวัติ XP</CardTitle>
-                <CardDescription>เก็บย้อนหลัง 90 วัน ทั้งกิจกรรมและการแก้ไขโดยผู้ดูแล</CardDescription>
+                <CardTitle>{tr('ประวัติ XP')}</CardTitle>
+                <CardDescription>{tr('เก็บย้อนหลัง 90 วัน ทั้งกิจกรรมและการแก้ไขโดยผู้ดูแล')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="max-w-md">
-                    <UserPicker value={user} onSelect={pick} onClear={() => pick(null)} placeholder="กรองประวัติของสมาชิก..." />
+                    <UserPicker value={user} onSelect={pick} onClear={() => pick(null)} placeholder={tr('กรองประวัติของสมาชิก...')} />
                 </div>
                 {query.isLoading ? (
                     <XpHistoryTableSkeleton />
@@ -240,11 +239,13 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                         <table className="w-full text-left text-sm">
                             <thead>
                                 <tr className="border-b text-muted-foreground">
-                                    {['เวลา', 'สมาชิก', 'กิจกรรม / เหตุผล', 'เปลี่ยนแปลง', 'XP หลังทำรายการ', 'ผู้ดูแล (ID)'].map((label) => (
-                                        <th key={label} className="p-3">
-                                            {label}
-                                        </th>
-                                    ))}
+                                    {[tr('เวลา'), tr('สมาชิก'), tr('กิจกรรม / เหตุผล'), tr('เปลี่ยนแปลง'), tr('XP หลังทำรายการ'), tr('ผู้ดูแล (ID)')].map(
+                                        (label) => (
+                                            <th key={label} className="p-3">
+                                                {label}
+                                            </th>
+                                        ),
+                                    )}
                                 </tr>
                             </thead>
                             <tbody>
@@ -261,13 +262,13 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                                             {row.delta.toLocaleString()}
                                         </td>
                                         <td className="p-3">{row.balance.toLocaleString()}</td>
-                                        <td className="p-3">{row.actorId ?? 'อัตโนมัติ'}</td>
+                                        <td className="p-3">{row.actorId ?? tr('อัตโนมัติ')}</td>
                                     </tr>
                                 ))}
                                 {!query.data?.items.length && (
                                     <tr>
                                         <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                                            ยังไม่มีประวัติ
+                                            {tr('ยังไม่มีประวัติ')}
                                         </td>
                                     </tr>
                                 )}
@@ -276,19 +277,15 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                     </div>
                 )}
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        disabled={cursors.length === 1 || query.isFetching}
-                        onClick={() => setCursors((old) => old.slice(0, -1))}
-                    >
-                        ก่อนหน้า
+                    <Button variant="outline" disabled={cursors.length === 1 || query.isFetching} onClick={() => setCursors((old) => old.slice(0, -1))}>
+                        {tr('ก่อนหน้า')}
                     </Button>
                     <Button
                         variant="outline"
                         disabled={!query.data?.nextCursor || query.isFetching}
                         onClick={() => setCursors((old) => [...old, query.data!.nextCursor!])}
                     >
-                        ถัดไป
+                        {tr('ถัดไป')}
                     </Button>
                 </div>
             </CardContent>

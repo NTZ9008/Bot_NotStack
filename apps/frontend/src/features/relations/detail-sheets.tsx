@@ -1,3 +1,4 @@
+import { tr, dateLocale } from '../../lib/i18n';
 import {
     RELATION_CHAT_WINDOW_MINUTES,
     RELATION_KIND_LABELS,
@@ -23,8 +24,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { fallbackAvatar, formatDateTime, formatMinutes } from '@/lib/format';
 
 const KIND_ICON: Record<RelationKind, LucideIcon> = { voice: Mic, chat: MessagesSquare, mod: ShieldAlert };
-const KIND_TEXT: Record<RelationKind, string> = { voice: 'text-sky-700 dark:text-sky-400', chat: 'text-amber-700 dark:text-amber-400', mod: 'text-rose-700 dark:text-rose-400' };
-const TIER_LABELS = ['', 'เบาบาง', 'พอรู้จัก', 'สนิท', 'แน่นแฟ้นมาก'];
+const KIND_TEXT: Record<RelationKind, string> = {
+    voice: 'text-sky-700 dark:text-sky-400',
+    chat: 'text-amber-700 dark:text-amber-400',
+    mod: 'text-rose-700 dark:text-rose-400',
+};
+const TIER_LABELS = ['', tr('เบาบาง'), tr('พอรู้จัก'), tr('สนิท'), tr('แน่นแฟ้นมาก')];
 
 export function Avatar({ person, userId, className }: { person?: RelationPerson; userId: string; className?: string }) {
     return <img src={person?.avatarUrl ?? fallbackAvatar(userId)} alt="" className={`shrink-0 rounded-full object-cover ${className ?? 'size-9'}`} />;
@@ -46,7 +51,7 @@ function VoiceStat({ label, minutes, days }: { label: string; minutes: number; d
             <div className="min-w-0">
                 <div className="text-xs text-muted-foreground">
                     {label}
-                    {days ? ` · ${days} วันล่าสุด` : ''}
+                    {days ? tr(' · {0} วันล่าสุด', { 0: days }) : ''}
                 </div>
                 <div className="text-xl font-bold text-sky-700 dark:text-sky-300">{formatMinutes(minutes)}</div>
             </div>
@@ -55,8 +60,8 @@ function VoiceStat({ label, minutes, days }: { label: string; minutes: number; d
 }
 
 function StatusBadge({ person }: { person: RelationPerson }) {
-    if (person.status === 'member') return <Badge variant="secondary">อยู่ในเซิร์ฟเวอร์</Badge>;
-    return <Badge variant="destructive">{RELATION_STATUS_LABELS[person.status]}</Badge>;
+    if (person.status === 'member') return <Badge variant="secondary">{tr('อยู่ในเซิร์ฟเวอร์')}</Badge>;
+    return <Badge variant="destructive">{tr(RELATION_STATUS_LABELS[person.status])}</Badge>;
 }
 
 const STATUS_DOT: Record<RelationPresenceStatus, string> = {
@@ -72,11 +77,11 @@ function PresenceBlock({ presence }: { presence: RelationPresence }) {
         <div className="space-y-1 rounded-lg border bg-muted/40 p-3 text-sm">
             <div className="flex items-center gap-2 font-medium">
                 <span className={`size-2.5 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
-                {RELATION_STATUS_TEXT[status]}
+                {tr(RELATION_STATUS_TEXT[status])}
             </div>
             {activity && (
                 <p className="break-words">
-                    {RELATION_ACTIVITY_LABELS[activity.kind]} <span className="font-medium">{activity.name}</span>
+                    {tr(RELATION_ACTIVITY_LABELS[activity.kind])} <span className="font-medium">{activity.name}</span>
                     {activity.detail && <span className="text-muted-foreground"> · {activity.detail}</span>}
                 </p>
             )}
@@ -130,22 +135,26 @@ export function PersonSheet({
                                     <SheetTitle className="truncate">{person.name}</SheetTitle>
                                     <SheetDescription className="flex flex-wrap items-center gap-1.5">
                                         <StatusBadge person={person} />
-                                        {person.isBot && <Badge variant="outline">บอท</Badge>}
+                                        {person.isBot && <Badge variant="outline">{tr('บอท')}</Badge>}
                                     </SheetDescription>
                                 </div>
                             </div>
                         </SheetHeader>
                         <div className="space-y-5 px-4 pb-6">
                             {presence && <PresenceBlock presence={presence} />}
-                            {person.leftAt && <p className="text-sm text-muted-foreground">ออกจากเซิร์ฟเวอร์เมื่อ {formatDateTime(person.leftAt)}</p>}
-                            <VoiceStat label="เวลารวมในห้องเสียง" minutes={person.voiceMinutes} days={days} />
+                            {person.leftAt && (
+                                <p className="text-sm text-muted-foreground">
+                                    {tr('ออกจากเซิร์ฟเวอร์เมื่อ')} {formatDateTime(person.leftAt)}
+                                </p>
+                            )}
+                            <VoiceStat label={tr('เวลารวมในห้องเสียง')} minutes={person.voiceMinutes} days={days} />
                             <div className="grid grid-cols-2 gap-2">
-                                <Stat label="เหตุการณ์ในช่วงนี้" value={person.events.toLocaleString('th-TH')} />
-                                <Stat label="คนที่เกี่ยวข้อง" value={connections.length.toLocaleString('th-TH')} />
+                                <Stat label={tr('เหตุการณ์ในช่วงนี้')} value={person.events.toLocaleString(dateLocale())} />
+                                <Stat label={tr('คนที่เกี่ยวข้อง')} value={connections.length.toLocaleString(dateLocale())} />
                             </div>
                             <section className="space-y-2">
-                                <h3 className="text-sm font-semibold">ความสัมพันธ์</h3>
-                                {connections.length === 0 && <EmptyState>ยังไม่มีเส้นเชื่อมกับใครในช่วงเวลานี้</EmptyState>}
+                                <h3 className="text-sm font-semibold">{tr('ความสัมพันธ์')}</h3>
+                                {connections.length === 0 && <EmptyState>{tr('ยังไม่มีเส้นเชื่อมกับใครในช่วงเวลานี้')}</EmptyState>}
                                 <ul className="space-y-1">
                                     {connections.slice(0, 12).map((link) => {
                                         const otherId = link.a === person.userId ? link.b : link.a;
@@ -162,9 +171,12 @@ export function PersonSheet({
                                                     <span className="min-w-0 flex-1">
                                                         <span className="block truncate text-sm font-medium">{other?.name ?? otherId}</span>
                                                         <span className="block text-xs text-muted-foreground">
-                                                            {TIER_LABELS[link.tier]} · {RELATION_KIND_LABELS[link.kind]}
+                                                            {TIER_LABELS[link.tier]} · {tr(RELATION_KIND_LABELS[link.kind])}
                                                             {link.voiceMinutes > 0 && (
-                                                                <span className="text-sky-700 dark:text-sky-400"> · ห้องเสียง {formatMinutes(link.voiceMinutes)}</span>
+                                                                <span className="text-sky-700 dark:text-sky-400">
+                                                                    {' '}
+                                                                    {tr('· ห้องเสียง')} {formatMinutes(link.voiceMinutes)}
+                                                                </span>
                                                             )}
                                                         </span>
                                                     </span>
@@ -189,10 +201,10 @@ function PersonHistory({ guildId, userId }: { guildId: string; userId: string })
     const items = history.data?.pages.flatMap((page) => page.items) ?? [];
     return (
         <section className="space-y-2">
-            <h3 className="text-sm font-semibold">ประวัติทั้งหมด</h3>
+            <h3 className="text-sm font-semibold">{tr('ประวัติทั้งหมด')}</h3>
             {history.isPending && <ListSkeleton />}
             {history.isError && <ErrorState error={history.error} />}
-            {history.isSuccess && items.length === 0 && <EmptyState>ไม่พบเหตุการณ์ของคนนี้ใน log</EmptyState>}
+            {history.isSuccess && items.length === 0 && <EmptyState>{tr('ไม่พบเหตุการณ์ของคนนี้ใน log')}</EmptyState>}
             <ol className="space-y-2">
                 {items.map((item) => (
                     <li key={item.id} className="rounded-lg border p-3">
@@ -201,16 +213,22 @@ function PersonHistory({ guildId, userId }: { guildId: string; userId: string })
                             <time className="shrink-0 text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</time>
                         </div>
                         {item.summary && <p className="mt-1 text-sm break-words text-muted-foreground">{item.summary}</p>}
-                        {item.executorName && item.executorId !== userId && <p className="mt-1 text-xs text-muted-foreground">โดย {item.executorName}</p>}
+                        {item.executorName && item.executorId !== userId && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {tr('โดย')} {item.executorName}
+                            </p>
+                        )}
                         {item.executorId === userId && item.userName && item.userId !== userId && (
-                            <p className="mt-1 text-xs text-muted-foreground">ลงมือกับ {item.userName}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                {tr('ลงมือกับ')} {item.userName}
+                            </p>
                         )}
                     </li>
                 ))}
             </ol>
             {history.hasNextPage && (
                 <Button variant="outline" className="w-full" disabled={history.isFetchingNextPage} onClick={() => void history.fetchNextPage()}>
-                    {history.isFetchingNextPage ? 'กำลังโหลด...' : 'โหลดเพิ่ม'}
+                    {history.isFetchingNextPage ? tr('กำลังโหลด...') : tr('โหลดเพิ่ม')}
                 </Button>
             )}
         </section>
@@ -224,16 +242,16 @@ function TimelineRow({ item }: { item: RelationTimelineItem }) {
     if (item.type === 'voice') {
         title = (
             <>
-                อยู่ห้องเสียงด้วยกัน <span className="text-sky-700 dark:text-sky-400">{formatMinutes(item.minutes)}</span>
+                {tr('อยู่ห้องเสียงด้วยกัน')} <span className="text-sky-700 dark:text-sky-400">{formatMinutes(item.minutes)}</span>
             </>
         );
-        detail = item.channelName ? `ห้อง ${item.channelName}` : null;
+        detail = item.channelName ? tr('ห้อง {0}', { 0: item.channelName }) : null;
     } else if (item.type === 'chat') {
-        title = `คุยกัน ${item.exchanges.toLocaleString('th-TH')} ครั้ง`;
-        detail = item.channelName ? `ห้อง #${item.channelName}` : null;
+        title = tr('คุยกัน {0} ครั้ง', { 0: item.exchanges.toLocaleString(dateLocale()) });
+        detail = item.channelName ? tr('ห้อง #{0}', { 0: item.channelName }) : null;
     } else {
         title = item.label;
-        detail = `${item.actorName ?? item.actorId} ลงมือกับ ${item.targetName ?? 'อีกฝ่าย'}`;
+        detail = tr('{0} ลงมือกับ {1}', { 0: item.actorName ?? item.actorId, 1: item.targetName ?? 'อีกฝ่าย' });
     }
     return (
         <li className="flex gap-3 rounded-lg border p-3">
@@ -282,42 +300,43 @@ export function LinkSheet({
                                 <Avatar person={second} userId={link.b} className="size-12 ring-2 ring-background" />
                             </div>
                             <SheetTitle>
-                                {first?.name ?? link.a} กับ {second?.name ?? link.b}
+                                {first?.name ?? link.a} {tr('กับ')} {second?.name ?? link.b}
                             </SheetTitle>
                             <SheetDescription>
-                                {TIER_LABELS[link.tier]} · ส่วนใหญ่{RELATION_KIND_LABELS[link.kind]} · ช่วง {days} วันล่าสุด
+                                {TIER_LABELS[link.tier]} {tr('· ส่วนใหญ่')}
+                                {tr(RELATION_KIND_LABELS[link.kind])} {tr('· ช่วง')} {days} {tr('วันล่าสุด')}
                             </SheetDescription>
                         </SheetHeader>
                         <div className="space-y-5 px-4 pb-6">
                             <div className="flex flex-wrap gap-2">
                                 <Button size="sm" variant="outline" onClick={() => onSelectPerson(link.a)}>
-                                    ดูประวัติ {first?.name ?? link.a}
+                                    {tr('ดูประวัติ')} {first?.name ?? link.a}
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => onSelectPerson(link.b)}>
-                                    ดูประวัติ {second?.name ?? link.b}
+                                    {tr('ดูประวัติ')} {second?.name ?? link.b}
                                 </Button>
                             </div>
-                            <VoiceStat label="อยู่ห้องเสียงด้วยกัน" minutes={link.voiceMinutes} />
+                            <VoiceStat label={tr('อยู่ห้องเสียงด้วยกัน')} minutes={link.voiceMinutes} />
                             <div className="grid grid-cols-2 gap-2">
-                                <Stat label="คุยกัน" value={`${link.chatExchanges.toLocaleString('th-TH')} ครั้ง`} />
-                                <Stat label="แอดมินลงมือ" value={`${link.modActions.toLocaleString('th-TH')} ครั้ง`} />
+                                <Stat label={tr('คุยกัน')} value={`${link.chatExchanges.toLocaleString(dateLocale())} ครั้ง`} />
+                                <Stat label={tr('แอดมินลงมือ')} value={`${link.modActions.toLocaleString(dateLocale())} ครั้ง`} />
                             </div>
                             <p className="text-xs leading-relaxed text-muted-foreground">
-                                “คุยกัน” นับเมื่อสองคนส่งข้อความต่อกันในห้องเดียวกันภายใน {RELATION_CHAT_WINDOW_MINUTES} นาที เป็นการประมาณจาก log
-                                ไม่ได้อ่านเนื้อหาข้อความ
+                                {tr('“คุยกัน” นับเมื่อสองคนส่งข้อความต่อกันในห้องเดียวกันภายใน')} {RELATION_CHAT_WINDOW_MINUTES}{' '}
+                                {tr('นาที เป็นการประมาณจาก log ไม่ได้อ่านเนื้อหาข้อความ')}
                             </p>
                             <section className="space-y-2">
-                                <h3 className="text-sm font-semibold">ไทม์ไลน์</h3>
+                                <h3 className="text-sm font-semibold">{tr('ไทม์ไลน์')}</h3>
                                 {detail.isPending && <ListSkeleton />}
                                 {detail.isError && <ErrorState error={detail.error} />}
-                                {detail.isSuccess && detail.data.timeline.length === 0 && <EmptyState>ไม่พบรายการในช่วงเวลานี้</EmptyState>}
+                                {detail.isSuccess && detail.data.timeline.length === 0 && <EmptyState>{tr('ไม่พบรายการในช่วงเวลานี้')}</EmptyState>}
                                 <ol className="space-y-2">
                                     {detail.data?.timeline.map((item, index) => (
                                         <TimelineRow key={`${item.type}:${item.at}:${index}`} item={item} />
                                     ))}
                                 </ol>
                                 {detail.data?.truncated && (
-                                    <p className="text-xs text-muted-foreground">แสดงเฉพาะรายการล่าสุด ตัวเลขสรุปด้านบนยังนับครบทุกรายการ</p>
+                                    <p className="text-xs text-muted-foreground">{tr('แสดงเฉพาะรายการล่าสุด ตัวเลขสรุปด้านบนยังนับครบทุกรายการ')}</p>
                                 )}
                             </section>
                         </div>

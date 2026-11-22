@@ -1,5 +1,5 @@
 import { Info } from '@/components/icons';
-import { useT } from '@/lib/i18n';
+import { useT, tr } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { PageGuide } from '@/lib/page-guides';
@@ -20,7 +20,7 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
                     </DialogTitle>
                     <DialogDescription>{t(guide.summary)}</DialogDescription>
                 </DialogHeader>
-                <ol className="space-y-4" aria-label="ขั้นตอนการใช้งาน">
+                <ol className="space-y-4" aria-label={tr('ขั้นตอนการใช้งาน')}>
                     {guide.steps.map((step, index) => (
                         <li key={step} className="flex items-start gap-3 leading-relaxed">
                             <span
@@ -34,13 +34,13 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
                     ))}
                 </ol>
                 <div className="space-y-1 rounded-lg border bg-muted/40 p-3">
-                    <p className="font-medium">การบันทึกและผลที่เกิดขึ้น</p>
+                    <p className="font-medium">{tr('การบันทึกและผลที่เกิดขึ้น')}</p>
                     <p className="text-sm leading-relaxed text-muted-foreground">{t(guide.saving)}</p>
                 </div>
                 {guide.tip && <p className="text-sm leading-relaxed text-muted-foreground">{guide.tip}</p>}
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button">เข้าใจแล้ว</Button>
+                        <Button type="button">{tr('เข้าใจแล้ว')}</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>

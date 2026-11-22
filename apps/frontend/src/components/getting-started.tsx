@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { Link } from '@tanstack/react-router';
 import { ArrowRight, ChevronDown, Compass } from '@/components/icons';
 import { visibleNavGroups } from '@/components/layout/nav-items';
@@ -20,9 +21,11 @@ export function GettingStarted() {
         <Card className="border-primary/25 bg-primary/5">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Compass className="size-5 text-highlight" /> เริ่มต้นใช้งานบอท
+                    <Compass className="size-5 text-highlight" /> {tr('เริ่มต้นใช้งานบอท')}
                 </CardTitle>
-                <CardDescription>เลือกสิ่งที่อยากทำใน {guild.name} — ไม่จำเป็นต้องตั้งค่าทุกฟีเจอร์ แต่ละหน้ามีปุ่ม ⓘ วิธีใช้งาน</CardDescription>
+                <CardDescription>
+                    {tr('เลือกสิ่งที่อยากทำใน')} {guild.name} {tr('— ไม่จำเป็นต้องตั้งค่าทุกฟีเจอร์ แต่ละหน้ามีปุ่ม ⓘ วิธีใช้งาน')}
+                </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-3 md:grid-cols-3">
@@ -38,7 +41,7 @@ export function GettingStarted() {
                             >
                                 <item.icon className="mt-0.5 size-5 shrink-0 text-highlight" />
                                 <div className="min-w-0 flex-1 space-y-1">
-                                    <p className="text-sm font-medium">{key === 'config' ? 'เริ่มที่นี่: ตั้งค่าบอท' : item.label}</p>
+                                    <p className="text-sm font-medium">{key === 'config' ? tr('เริ่มที่นี่: ตั้งค่าบอท') : item.label}</p>
                                     <p className="text-xs leading-relaxed text-muted-foreground">{PAGE_GUIDES[key].summary}</p>
                                 </div>
                                 <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -48,7 +51,7 @@ export function GettingStarted() {
                 </div>
                 <details className="group rounded-lg border bg-card/50">
                     <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-lg p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden">
-                        ดูทุกฟีเจอร์ของเซิร์ฟเวอร์
+                        {tr('ดูทุกฟีเจอร์ของเซิร์ฟเวอร์')}
                         <ChevronDown className="size-4 transition-transform group-open:rotate-180" />
                     </summary>
                     <div className="grid gap-5 border-t p-4 sm:grid-cols-2">

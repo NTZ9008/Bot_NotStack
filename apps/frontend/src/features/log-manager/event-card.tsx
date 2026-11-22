@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { GuildChannel, LogEventSetting } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
@@ -49,7 +50,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                     {event.label}
                 </span>
                 <Switch
-                    aria-label={`เปิด log ${event.label}`}
+                    aria-label={tr('เปิด log {0}', { 0: event.label })}
                     disabled={mutation.isPending}
                     checked={event.enabled}
                     onCheckedChange={(enabled) => mutation.mutate({ enabled })}
@@ -59,14 +60,14 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 channels={channels.filter((ch) => ch.sendable)}
                 disabled={mutation.isPending}
                 value={event.channelId}
-                noneLabel="ยังไม่เลือกห้อง"
-                placeholder="เลือกห้องปลายทาง"
+                noneLabel={tr('ยังไม่เลือกห้อง')}
+                placeholder={tr('เลือกห้องปลายทาง')}
                 onChange={(channelId) => mutation.mutate({ channelId })}
             />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                สี
+                {tr('สี')}
                 <input
-                    aria-label={`สีของ ${event.label}`}
+                    aria-label={tr('สีของ {0}', { 0: event.label })}
                     disabled={mutation.isPending}
                     type="color"
                     className="h-6 w-10 cursor-pointer rounded border border-input bg-transparent"
@@ -75,7 +76,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 />
                 <span className="font-mono">{color.toUpperCase()}</span>
                 <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-700 dark:text-amber-400' : ''}`}>
-                    {mutation.isPending ? 'กำลังบันทึก…' : !event.enabled ? 'ปิดอยู่' : !event.channelId ? 'รอเลือกห้อง' : 'เปิดใช้งาน'}
+                    {mutation.isPending ? tr('กำลังบันทึก…') : !event.enabled ? tr('ปิดอยู่') : !event.channelId ? tr('รอเลือกห้อง') : tr('เปิดใช้งาน')}
                 </span>
             </div>
         </div>

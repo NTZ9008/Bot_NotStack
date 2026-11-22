@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLang, useT, type Lang } from '@/lib/i18n';
+import { useLang, useT, type Lang, tr } from '@/lib/i18n';
 import { cn } from 'cn';
 import { Calendar as CalendarIcon, Clock } from '@/components/icons';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => pad(i));
 
 function formatLabel(mode: DateTimeMode, date: Date | undefined, time: string | undefined, lang: Lang): string {
     const day = date?.toLocaleDateString(lang === 'en' ? 'en-GB' : 'th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-    const unit = lang === 'en' ? '' : ' น.';
+    const unit = lang === 'en' ? '' : tr(' น.');
     if (mode === 'date') return day ?? '';
     if (mode === 'time') return time ? `${time}${unit}` : '';
     return day ? `${day} ${time ?? '00:00'}${unit}` : '';
@@ -116,7 +116,7 @@ export function DateTimeInput({
                                 ))}
                             </SelectContent>
                         </Select>
-                        {lang === 'th' && <span className="text-sm text-muted-foreground">น.</span>}
+                        {lang === 'th' && <span className="text-sm text-muted-foreground">{tr('น.')}</span>}
                     </div>
                 )}
                 <div className="flex items-center justify-between gap-2 border-t p-2">

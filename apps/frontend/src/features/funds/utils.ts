@@ -1,3 +1,4 @@
+import { tr, dateLocale } from '../../lib/i18n';
 import {
     calculateDays,
     fundCsvFilename,
@@ -15,9 +16,9 @@ import { errorMessage } from '@/lib/api';
 import { toLocalInput } from '@/lib/format';
 
 export const STATUS_LABEL: Record<FundMemberStatus, { text: string; className: string; color: string }> = {
-    paid: { text: 'จ่ายครบ', className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400', color: '#10b981' },
-    partial: { text: 'จ่ายบางส่วน', className: 'border-amber-500/40 bg-amber-500/10 text-amber-400', color: '#f59e0b' },
-    unpaid: { text: 'ยังไม่จ่าย', className: 'border-destructive/40 bg-destructive/10 text-destructive', color: '#ef4444' },
+    paid: { text: tr('จ่ายครบ'), className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400', color: '#10b981' },
+    partial: { text: tr('จ่ายบางส่วน'), className: 'border-amber-500/40 bg-amber-500/10 text-amber-400', color: '#f59e0b' },
+    unpaid: { text: tr('ยังไม่จ่าย'), className: 'border-destructive/40 bg-destructive/10 text-destructive', color: '#ef4444' },
 };
 
 export type TopicTemplateIcon = 'wallet' | 'calendar' | 'gamepad' | 'party';
@@ -38,10 +39,10 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     {
         id: 'monthly',
         icon: 'wallet',
-        title: 'กองกลางรายเดือน',
-        subtitle: 'เก็บยอดคงที่เท่ากันทุกคน',
-        name: 'ค่ากองกลางประจำเดือน',
-        description: 'โอนผ่านพร้อมเพย์ 08X-XXX-XXXX แล้วแจ้งสลิปในห้องได้เลย',
+        title: tr('กองกลางรายเดือน'),
+        subtitle: tr('เก็บยอดคงที่เท่ากันทุกคน'),
+        name: tr('ค่ากองกลางประจำเดือน'),
+        description: tr('โอนผ่านพร้อมเพย์ 08X-XXX-XXXX แล้วแจ้งสลิปในห้องได้เลย'),
         mode: 'fixed',
         amount: '300',
         dailyRate: '15',
@@ -49,10 +50,10 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     {
         id: 'daily-15',
         icon: 'calendar',
-        title: 'เก็บเงินรายวัน 15 ฿',
-        subtitle: 'คิดยอดอัตโนมัติตามจำนวนวัน',
-        name: 'กองกลางรายวัน (วันละ 15 บาท)',
-        description: 'สะสมวันละ 15 บาท จ่ายรายสัปดาห์หรือรวบยอดตามห้วงวันได้',
+        title: tr('เก็บเงินรายวัน 15 ฿'),
+        subtitle: tr('คิดยอดอัตโนมัติตามจำนวนวัน'),
+        name: tr('กองกลางรายวัน (วันละ 15 บาท)'),
+        description: tr('สะสมวันละ 15 บาท จ่ายรายสัปดาห์หรือรวบยอดตามห้วงวันได้'),
         mode: 'daily',
         amount: '450',
         dailyRate: '15',
@@ -60,10 +61,10 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     {
         id: 'server-share',
         icon: 'gamepad',
-        title: 'หารค่าเซิร์ฟเวอร์ / เกม',
-        subtitle: 'หารค่าเช่าเซิร์ฟเวอร์หรือซับรายเดือน',
-        name: 'หารค่าเช่าเซิร์ฟเวอร์เกม',
-        description: 'หารค่าเช่าเซิร์ฟเวอร์ประจำเดือน',
+        title: tr('หารค่าเซิร์ฟเวอร์ / เกม'),
+        subtitle: tr('หารค่าเช่าเซิร์ฟเวอร์หรือซับรายเดือน'),
+        name: tr('หารค่าเช่าเซิร์ฟเวอร์เกม'),
+        description: tr('หารค่าเช่าเซิร์ฟเวอร์ประจำเดือน'),
         mode: 'fixed',
         amount: '150',
         dailyRate: '15',
@@ -71,10 +72,10 @@ export const TOPIC_TEMPLATES: readonly TopicTemplate[] = [
     {
         id: 'party-trip',
         icon: 'party',
-        title: 'ทริป / ปาร์ตี้กลุ่ม',
-        subtitle: 'เก็บเงินมัดจำหรือค่ากิจกรรมกลุ่ม',
-        name: 'ค่าทริป / ปาร์ตี้กลุ่ม',
-        description: 'เก็บเงินกองกลางสำหรับงานมีตติ้งกลุ่ม',
+        title: tr('ทริป / ปาร์ตี้กลุ่ม'),
+        subtitle: tr('เก็บเงินมัดจำหรือค่ากิจกรรมกลุ่ม'),
+        name: tr('ค่าทริป / ปาร์ตี้กลุ่ม'),
+        description: tr('เก็บเงินกองกลางสำหรับงานมีตติ้งกลุ่ม'),
         mode: 'fixed',
         amount: '500',
         dailyRate: '15',
@@ -141,9 +142,9 @@ export function dueDateStatus(dueDate: string | null, closed: boolean, now = new
     if (!dueDate) return null;
     const due = new Date(dueDate);
     if (Number.isNaN(due.getTime())) return null;
-    const formatted = due.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+    const formatted = due.toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', year: '2-digit' });
     if (closed) {
-        return { label: `ครบกำหนด ${formatted}`, shortLabel: formatted, tone: 'closed', daysLeft: 0 };
+        return { label: tr('ครบกำหนด {0}', { 0: formatted }), shortLabel: formatted, tone: 'closed', daysLeft: 0 };
     }
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const startOfDue = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
@@ -152,19 +153,24 @@ export function dueDateStatus(dueDate: string | null, closed: boolean, now = new
     if (daysLeft < 0) {
         const overdueDays = Math.abs(daysLeft);
         return {
-            label: `เลยกำหนด ${overdueDays} วัน · ${formatted}`,
-            shortLabel: `เลยกำหนด ${overdueDays} วัน`,
+            label: tr('เลยกำหนด {0} วัน · {1}', { 0: overdueDays, 1: formatted }),
+            shortLabel: tr('เลยกำหนด {0} วัน', { 0: overdueDays }),
             tone: 'overdue',
             daysLeft,
         };
     }
     if (daysLeft === 0) {
-        return { label: `ครบกำหนดวันนี้ · ${formatted}`, shortLabel: 'ครบกำหนดวันนี้', tone: 'soon', daysLeft: 0 };
+        return { label: tr('ครบกำหนดวันนี้ · {0}', { 0: formatted }), shortLabel: tr('ครบกำหนดวันนี้'), tone: 'soon', daysLeft: 0 };
     }
     if (daysLeft <= 3) {
-        return { label: `อีก ${daysLeft} วันครบกำหนด · ${formatted}`, shortLabel: `อีก ${daysLeft} วัน`, tone: 'soon', daysLeft };
+        return {
+            label: tr('อีก {0} วันครบกำหนด · {1}', { 0: daysLeft, 1: formatted }),
+            shortLabel: tr('อีก {0} วัน', { 0: daysLeft }),
+            tone: 'soon',
+            daysLeft,
+        };
     }
-    return { label: `ครบกำหนด ${formatted} · อีก ${daysLeft} วัน`, shortLabel: formatted, tone: 'normal', daysLeft };
+    return { label: tr('ครบกำหนด {0} · อีก {1} วัน', { 0: formatted, 1: daysLeft }), shortLabel: formatted, tone: 'normal', daysLeft };
 }
 
 // ดึงเลขบัญชีหรือเบอร์พร้อมเพย์จากคำอธิบายหัวข้อ (ถ้ามีตัวเลข 10-15 หลัก) เพื่อให้กดคัดลอกได้ทันที
@@ -198,7 +204,7 @@ export function useFundRefresh() {
     return () => queryClient.invalidateQueries({ queryKey: fundsKey(guildId) });
 }
 
-export const onFundError = (err: unknown) => toast.error('ข้อผิดพลาด', { description: errorMessage(err) });
+export const onFundError = (err: unknown) => toast.error(tr('ข้อผิดพลาด'), { description: errorMessage(err) });
 
 // ดาวน์โหลด CSV ทันทีจากข้อมูลในหน้าเว็บ (ไม่ต้องรอโหลดซ้ำจากเซิร์ฟเวอร์ และรองรับ UTF-8 BOM สำหรับ Excel)
 export function downloadFundCsv(topic: FundTopicDetail) {

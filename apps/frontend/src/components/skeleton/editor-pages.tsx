@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { ReactNode } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
@@ -89,7 +90,7 @@ function WelcomeCardListSkeleton() {
 
 export function WelcomePageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดการ์ดต้อนรับ">
+        <SkeletonStack label={tr('กำลังโหลดการ์ดต้อนรับ')}>
             <PageHeaderSkeleton actions={<ButtonBone className="w-32" />} />
             <WelcomeCardListSkeleton />
             <Card>
@@ -121,7 +122,7 @@ export function WelcomePageSkeleton() {
 // ---------- รายงานสภาพอากาศ ----------
 export function WeatherPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดรายงานสภาพอากาศ">
+        <SkeletonStack label={tr('กำลังโหลดรายงานสภาพอากาศ')}>
             <PageHeaderSkeleton help={false} />
             <Card>
                 <StatusHeaderSkeleton lines={2} />
@@ -170,7 +171,7 @@ function JiraTicketsCardSkeleton() {
 
 export function JiraPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดการตั้งค่า Jira">
+        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า Jira')}>
             <PageHeaderSkeleton />
             <Card>
                 <StatusHeaderSkeleton />
@@ -285,7 +286,7 @@ function LogEventsSkeleton() {
 
 export function LogManagerBodySkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดการตั้งค่า Log">
+        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า Log')}>
             <div className="flex flex-wrap items-center gap-2">
                 <BadgeBone className="w-24" />
                 <Line size="sm" className="w-40" />
@@ -304,7 +305,7 @@ export function LogManagerBodySkeleton() {
 
 export function LogManagerPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดการตั้งค่า Log">
+        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า Log')}>
             <PageHeaderSkeleton actions={<Bone className="h-[38px] w-44 rounded-lg" />} />
             <LogManagerBodySkeleton />
         </SkeletonStack>
@@ -315,7 +316,7 @@ export function LogManagerPageSkeleton() {
 // แผงของหัวข้อที่เลือก: สรุปยอด + ส่งรายงาน + แท็บรายชื่อ
 export function FundTopicPanelSkeleton() {
     return (
-        <div className="min-w-0 space-y-4" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อ">
+        <div className="min-w-0 space-y-4" role="status" aria-busy="true" aria-label={tr('กำลังโหลดหัวข้อ')}>
             <Card>
                 <CardHeader className="flex flex-col items-start justify-between gap-2 sm:flex-row">
                     <div className="min-w-0 flex-1 space-y-1">
@@ -374,7 +375,7 @@ export function FundTopicPanelSkeleton() {
 // รายการหัวข้อด้านซ้าย + แผงหัวข้อ
 export function FundsBodySkeleton() {
     return (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]" role="status" aria-busy="true" aria-label="กำลังโหลดหัวข้อเก็บเงิน">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[19rem_minmax(0,1fr)]" role="status" aria-busy="true" aria-label={tr('กำลังโหลดหัวข้อเก็บเงิน')}>
             <div className="space-y-2">
                 {Array.from({ length: 3 }, (_, i) => (
                     <div key={i} className="space-y-2 rounded-lg border px-3 py-2.5">
@@ -394,7 +395,7 @@ export function FundsBodySkeleton() {
 
 export function FundsPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดหัวข้อเก็บเงิน">
+        <SkeletonStack label={tr('กำลังโหลดหัวข้อเก็บเงิน')}>
             <PageHeaderSkeleton actions={<ButtonBone className="w-28" />} />
             <FundsBodySkeleton />
         </SkeletonStack>

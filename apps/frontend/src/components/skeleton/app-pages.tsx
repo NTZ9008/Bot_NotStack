@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BadgeBone, Bone, ButtonBone, CardSkeleton, FieldBone, InputBone, Line, PageHeaderSkeleton, SkeletonStack, TableSkeleton } from './primitives';
@@ -9,7 +10,7 @@ import { BadgeBone, Bone, ButtonBone, CardSkeleton, FieldBone, InputBone, Line, 
 // การ์ดเซิร์ฟเวอร์ (ไอคอน + ชื่อ + ป้าย) และการ์ดเชิญบอท — ใช้ตอนรายชื่อเซิร์ฟเวอร์กำลังโหลด
 export function GuildListSkeleton({ count = 3 }: { count?: number }) {
     return (
-        <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true" aria-label="กำลังโหลดเซิร์ฟเวอร์">
+        <div className="grid gap-3 md:grid-cols-2" role="status" aria-busy="true" aria-label={tr('กำลังโหลดเซิร์ฟเวอร์')}>
             {Array.from({ length: count }, (_, i) => (
                 <div key={i} className="flex items-center gap-4 rounded-xl border bg-card p-4">
                     <Bone className="size-14 shrink-0 rounded-2xl" />
@@ -37,7 +38,7 @@ export function GuildListSkeleton({ count = 3 }: { count?: number }) {
 
 export function ServersPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดหน้าเซิร์ฟเวอร์">
+        <SkeletonStack label={tr('กำลังโหลดหน้าเซิร์ฟเวอร์')}>
             <PageHeaderSkeleton actions={<ButtonBone />} />
             <GuildListSkeleton />
         </SkeletonStack>
@@ -46,7 +47,7 @@ export function ServersPageSkeleton() {
 
 export function AccountPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดบัญชี">
+        <SkeletonStack label={tr('กำลังโหลดบัญชี')}>
             <PageHeaderSkeleton />
             <div className="grid gap-6 lg:grid-cols-2">
                 <CardSkeleton description={false} contentClassName="space-y-4">
@@ -86,7 +87,7 @@ export const UsersTableSkeleton = () => <TableSkeleton columns={7} rows={5} twoL
 
 export function AdminUsersPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดผู้ใช้">
+        <SkeletonStack label={tr('กำลังโหลดผู้ใช้')}>
             <PageHeaderSkeleton />
             <CardSkeleton>
                 <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_8rem_auto]">
@@ -111,7 +112,12 @@ const LOG_LINE_WIDTHS = ['w-11/12', 'w-3/4', 'w-5/6', 'w-2/3', 'w-full', 'w-4/5'
 
 export function LogContentSkeleton() {
     return (
-        <div className="h-[60vh] space-y-2.5 overflow-hidden rounded-lg border bg-muted p-4" role="status" aria-busy="true" aria-label="กำลังโหลดไฟล์บันทึก">
+        <div
+            className="h-[60vh] space-y-2.5 overflow-hidden rounded-lg border bg-muted p-4"
+            role="status"
+            aria-busy="true"
+            aria-label={tr('กำลังโหลดไฟล์บันทึก')}
+        >
             {LOG_LINE_WIDTHS.map((width, i) => (
                 <Skeleton key={i} className={`h-3 bg-white/10 ${width}`} />
             ))}
@@ -121,7 +127,7 @@ export function LogContentSkeleton() {
 
 export function AdminLogsPageSkeleton() {
     return (
-        <SkeletonStack label="กำลังโหลดไฟล์บันทึก">
+        <SkeletonStack label={tr('กำลังโหลดไฟล์บันทึก')}>
             <PageHeaderSkeleton />
             <Card>
                 <CardContent className="space-y-4">

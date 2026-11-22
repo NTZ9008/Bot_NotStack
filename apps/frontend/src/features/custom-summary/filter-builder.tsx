@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { CustomSummaryChannelOption, CustomSummaryModule } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
@@ -45,11 +46,11 @@ export interface CustomSummaryDraftFilter {
 }
 
 const DATE_PRESETS: Array<{ key: DatePresetKey; label: string; hours?: number }> = [
-    { key: '24h', label: '24 ชม.', hours: 24 },
-    { key: '7d', label: '7 วัน', hours: 24 * 7 },
-    { key: '30d', label: '30 วัน', hours: 24 * 30 },
-    { key: '90d', label: '90 วัน', hours: 24 * 90 },
-    { key: 'custom', label: 'กำหนดเอง' },
+    { key: '24h', label: tr('24 ชม.'), hours: 24 },
+    { key: '7d', label: tr('7 วัน'), hours: 24 * 7 },
+    { key: '30d', label: tr('30 วัน'), hours: 24 * 30 },
+    { key: '90d', label: tr('90 วัน'), hours: 24 * 90 },
+    { key: 'custom', label: tr('กำหนดเอง') },
 ];
 
 const MODULE_OPTIONS: Array<{
@@ -62,32 +63,32 @@ const MODULE_OPTIONS: Array<{
 }> = [
     {
         key: 'voice',
-        title: 'สถิติห้องเสียง',
-        hint: 'voiceJoin, voiceLeave, เวลารวม & เฉลี่ยต่อครั้ง',
+        title: tr('สถิติห้องเสียง'),
+        hint: tr('voiceJoin, voiceLeave, เวลารวม & เฉลี่ยต่อครั้ง'),
         icon: Volume2,
         activeClass: 'border-sky-500/50 bg-sky-500/10 text-sky-900 dark:text-sky-100',
         iconClass: 'text-sky-700 dark:text-sky-400',
     },
     {
         key: 'messages',
-        title: 'สถิติห้องข้อความ',
-        hint: 'messageSent, ลบ/แก้ไข, ห้องที่คึกคักที่สุด',
+        title: tr('สถิติห้องข้อความ'),
+        hint: tr('messageSent, ลบ/แก้ไข, ห้องที่คึกคักที่สุด'),
         icon: MessageSquareText,
         activeClass: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100',
         iconClass: 'text-emerald-700 dark:text-emerald-400',
     },
     {
         key: 'githubPr',
-        title: 'สถิติ GitHub PR',
-        hint: 'PR เปิด/อัปเดต, Merge, ปิด PR แยกตาม Repo/ห้อง',
+        title: tr('สถิติ GitHub PR'),
+        hint: tr('PR เปิด/อัปเดต, Merge, ปิด PR แยกตาม Repo/ห้อง'),
         icon: GitPullRequest,
         activeClass: 'border-purple-500/50 bg-purple-500/10 text-purple-900 dark:text-purple-100',
         iconClass: 'text-purple-700 dark:text-purple-400',
     },
     {
         key: 'devopsOther',
-        title: 'สถิติ DevOps & อื่นๆ',
-        hint: 'Grafana Alert, Jira Card, สมาชิกเข้า/ออกเซิร์ฟเวอร์',
+        title: tr('สถิติ DevOps & อื่นๆ'),
+        hint: tr('Grafana Alert, Jira Card, สมาชิกเข้า/ออกเซิร์ฟเวอร์'),
         icon: Activity,
         activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
         iconClass: 'text-amber-700 dark:text-amber-400',
@@ -152,16 +153,17 @@ export function FilterBuilder({
                         <Filter className="size-4" />
                     </span>
                     <div>
-                        <h2 className="text-sm font-semibold text-foreground">ตัวกรองและตั้งค่ารายงาน</h2>
+                        <h2 className="text-sm font-semibold text-foreground">{tr('ตัวกรองและตั้งค่ารายงาน')}</h2>
                         <p className="text-xs text-muted-foreground">
-                            เลือกช่วงเวลา ห้อง กิจกรรม และผู้ใช้ที่ต้องการสรุป — กด &ldquo;ประมวลผลสรุป&rdquo; เพื่ออัปเดตผลลัพธ์
+                            {tr('เลือกช่วงเวลา ห้อง กิจกรรม และผู้ใช้ที่ต้องการสรุป — กด “ประมวลผลสรุป” เพื่ออัปเดตผลลัพธ์')}
                         </p>
                     </div>
                 </div>
 
                 <Button type="button" size="sm" variant="ghost" onClick={onReset} className="text-muted-foreground hover:bg-muted/70 hover:text-foreground">
                     <RotateCcw className="mr-1.5 size-3.5" />
-                    ล้างตัวกรอง
+
+                    {tr('ล้างตัวกรอง')}
                 </Button>
             </div>
 
@@ -171,7 +173,8 @@ export function FilterBuilder({
                     <div className="space-y-2 lg:col-span-5">
                         <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                             <CalendarClock className="size-3.5 text-highlight" />
-                            ช่วงเวลาดึงข้อมูล
+
+                            {tr('ช่วงเวลาดึงข้อมูล')}
                         </Label>
                         <div className="flex flex-wrap gap-1.5">
                             {DATE_PRESETS.map((preset) => {
@@ -199,37 +202,37 @@ export function FilterBuilder({
 
                     <div className="grid gap-3 sm:grid-cols-3 lg:col-span-7">
                         <div className="space-y-1.5">
-                            <Label className="text-[11px] text-muted-foreground">วัน-เวลาเริ่มต้น</Label>
+                            <Label className="text-[11px] text-muted-foreground">{tr('วัน-เวลาเริ่มต้น')}</Label>
                             <DateTimeInput
                                 mode="datetime"
 
-                                aria-label="วัน-เวลาเริ่มต้น"
+                                aria-label={tr('วัน-เวลาเริ่มต้น')}
                                 value={draft.fromInput}
                                 onValueChange={(v) => onUpdate({ preset: 'custom', fromInput: v })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-[11px] text-muted-foreground">วัน-เวลาสิ้นสุด</Label>
+                            <Label className="text-[11px] text-muted-foreground">{tr('วัน-เวลาสิ้นสุด')}</Label>
                             <DateTimeInput
                                 mode="datetime"
 
-                                aria-label="วัน-เวลาสิ้นสุด"
+                                aria-label={tr('วัน-เวลาสิ้นสุด')}
                                 value={draft.toInput}
                                 onValueChange={(v) => onUpdate({ preset: 'custom', toInput: v })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
                             />
                         </div>
                         <div className="space-y-1.5">
-                            <Label className="text-[11px] text-muted-foreground">ความละเอียดกราฟ</Label>
+                            <Label className="text-[11px] text-muted-foreground">{tr('ความละเอียดกราฟ')}</Label>
                             <Select value={draft.interval} onValueChange={(v) => onUpdate({ interval: v as 'auto' | 'hour' | 'day' })}>
-                                <SelectTrigger aria-label="ความละเอียดกราฟ" className="h-9 w-full border-border bg-background text-xs text-foreground">
+                                <SelectTrigger aria-label={tr('ความละเอียดกราฟ')} className="h-9 w-full border-border bg-background text-xs text-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="border-border bg-card text-foreground">
-                                    <SelectItem value="auto">อัตโนมัติ</SelectItem>
-                                    <SelectItem value="hour">รายชั่วโมง</SelectItem>
-                                    <SelectItem value="day">รายวัน</SelectItem>
+                                    <SelectItem value="auto">{tr('อัตโนมัติ')}</SelectItem>
+                                    <SelectItem value="hour">{tr('รายชั่วโมง')}</SelectItem>
+                                    <SelectItem value="day">{tr('รายวัน')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -239,7 +242,7 @@ export function FilterBuilder({
                 {/* แถวที่ 2: เลือกห้อง + กรองผู้ใช้ / บอท */}
                 <div className="grid gap-4 lg:grid-cols-12">
                     <div className="space-y-1.5 lg:col-span-6">
-                        <Label className="text-xs font-medium text-muted-foreground">เลือกห้อง</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{tr('เลือกห้อง')}</Label>
                         <ChannelMultiSelect
                             channels={channels}
                             selectedIds={draft.channelIds}
@@ -252,7 +255,8 @@ export function FilterBuilder({
                         <div className="space-y-1.5 sm:col-span-8">
                             <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                                 <UserRound className="size-3.5 text-highlight" />
-                                กรองตามผู้ใช้ / User ID
+
+                                {tr('กรองตามผู้ใช้ / User ID')}
                             </Label>
                             <div className="flex gap-1.5">
                                 <div className="relative flex-1">
@@ -267,13 +271,13 @@ export function FilterBuilder({
                                                 onUpdate({ userId: null, userQuery: val, selectedUserLabel: null });
                                             }
                                         }}
-                                        placeholder="พิมพ์ชื่อผู้ใช้ หรือ Discord User ID..."
+                                        placeholder={tr('พิมพ์ชื่อผู้ใช้ หรือ Discord User ID...')}
                                         className="h-9 border-border bg-background pr-7 pl-8 text-xs text-foreground placeholder:text-muted-foreground"
                                     />
                                     {(draft.userId || draft.userQuery) && (
                                         <button
                                             type="button"
-                                            aria-label="ล้างตัวกรองผู้ใช้"
+                                            aria-label={tr('ล้างตัวกรองผู้ใช้')}
                                             onClick={() => onUpdate({ userId: null, userQuery: '', selectedUserLabel: null })}
                                             className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                         >
@@ -290,23 +294,23 @@ export function FilterBuilder({
                                             size="sm"
                                             className="h-9 shrink-0 border-border bg-background px-2.5 text-xs text-muted-foreground hover:bg-muted"
                                         >
-                                            ค้นหาสมาชิก
+                                            {tr('ค้นหาสมาชิก')}
                                         </Button>
                                     </PopoverTrigger>
                                     <PopoverContent align="end" className="w-72 border-border bg-card p-2.5 text-foreground">
                                         <Input
                                             value={memberSearch}
                                             onChange={(e) => setMemberSearch(e.target.value)}
-                                            placeholder="พิมพ์ชื่อ Discord หรือ username..."
+                                            placeholder={tr('พิมพ์ชื่อ Discord หรือ username...')}
                                             className="mb-2 h-8 border-border bg-background text-xs"
                                         />
                                         <div className="max-h-48 space-y-1 overflow-y-auto">
                                             {!memberSearch.trim() ? (
-                                                <p className="py-4 text-center text-xs text-muted-foreground">พิมพ์ชื่อเพื่อค้นหาสมาชิกในเซิร์ฟเวอร์</p>
+                                                <p className="py-4 text-center text-xs text-muted-foreground">{tr('พิมพ์ชื่อเพื่อค้นหาสมาชิกในเซิร์ฟเวอร์')}</p>
                                             ) : searchingMembers ? (
-                                                <p className="py-4 text-center text-xs text-muted-foreground">กำลังค้นหา...</p>
+                                                <p className="py-4 text-center text-xs text-muted-foreground">{tr('กำลังค้นหา...')}</p>
                                             ) : foundMembers.length === 0 ? (
-                                                <p className="py-4 text-center text-xs text-muted-foreground">ไม่พบสมาชิกที่ตรงกับคำค้นหา</p>
+                                                <p className="py-4 text-center text-xs text-muted-foreground">{tr('ไม่พบสมาชิกที่ตรงกับคำค้นหา')}</p>
                                             ) : (
                                                 foundMembers.map((member) => {
                                                     const displayName = member.nickname || member.username;
@@ -339,10 +343,11 @@ export function FilterBuilder({
                         <div className="space-y-1.5 sm:col-span-4">
                             <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                                 <Bot className="size-3.5 text-muted-foreground" />
-                                บัญชีบอท
+
+                                {tr('บัญชีบอท')}
                             </Label>
                             <label className="flex h-9 cursor-pointer items-center justify-between rounded-lg border border-border bg-background px-3 text-xs text-foreground">
-                                <span>รวมบอท</span>
+                                <span>{tr('รวมบอท')}</span>
                                 <Switch checked={draft.includeBots} onCheckedChange={(checked) => onUpdate({ includeBots: Boolean(checked) })} />
                             </label>
                         </div>
@@ -351,7 +356,7 @@ export function FilterBuilder({
 
                 {/* แถวที่ 3: เลือกประเภทกิจกรรม */}
                 <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">ประเภทกิจกรรมที่ต้องการสรุป</Label>
+                    <Label className="text-xs font-medium text-muted-foreground">{tr('ประเภทกิจกรรมที่ต้องการสรุป')}</Label>
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         {MODULE_OPTIONS.map((mod) => {
                             const Icon = mod.icon;
@@ -395,7 +400,7 @@ export function FilterBuilder({
                             <span className="font-medium text-red-700 dark:text-red-400">{validationError}</span>
                         ) : (
                             <span className="text-muted-foreground">
-                                เวลาทั้งหมดคำนวณตามโซนเวลาไทย <span className="font-medium text-foreground">Asia/Bangkok (+07:00)</span>
+                                {tr('เวลาทั้งหมดคำนวณตามโซนเวลาไทย')} <span className="font-medium text-foreground">Asia/Bangkok (+07:00)</span>
                             </span>
                         )}
                     </div>
@@ -408,7 +413,7 @@ export function FilterBuilder({
                             className="h-9 bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/80"
                         >
                             {isProcessing ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Play className="mr-1.5 size-4" />}
-                            {isProcessing ? 'กำลังประมวลผล...' : 'ประมวลผลสรุป'}
+                            {isProcessing ? tr('กำลังประมวลผล...') : tr('ประมวลผลสรุป')}
                         </Button>
 
                         <Button
@@ -419,7 +424,8 @@ export function FilterBuilder({
                             className="h-9 border-highlight/40 bg-highlight/10 px-4 font-medium text-highlight hover:bg-highlight/20 hover:text-highlight"
                         >
                             <Download className="mr-1.5 size-4" />
-                            Export เป็น PDF
+
+                            {tr('Export เป็น PDF')}
                         </Button>
                     </div>
                 </div>

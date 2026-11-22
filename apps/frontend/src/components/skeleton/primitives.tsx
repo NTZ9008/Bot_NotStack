@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { CSSProperties, ReactNode } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -242,7 +243,7 @@ export function NoticeBone({ lines = 1, className }: { lines?: number; className
 
 // ครอบโครงร่างหลายส่วนที่เรียงต่อกัน — ระยะห่าง space-y-6 เท่ากับ <main> ของ layout
 // และบอก screen reader ว่ากำลังโหลด
-export function SkeletonStack({ children, label = 'กำลังโหลดข้อมูล', className }: { children: ReactNode; label?: string; className?: string }) {
+export function SkeletonStack({ children, label = tr('กำลังโหลดข้อมูล'), className }: { children: ReactNode; label?: string; className?: string }) {
     return (
         <div className={cn('space-y-6', className)} role="status" aria-busy="true" aria-label={label}>
             {children}

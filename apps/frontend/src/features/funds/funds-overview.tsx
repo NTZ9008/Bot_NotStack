@@ -1,4 +1,6 @@
-import { formatBaht, roundMoney, type FundTopicSummary } from '@notstack/shared';
+import { tr } from '../../lib/i18n';
+import { roundMoney, type FundTopicSummary } from '@notstack/shared';
+import { formatBaht } from './money';
 import {
     AlertTriangle,
     Banknote,
@@ -43,8 +45,8 @@ export function TemplateIcon({ icon, className }: { icon: TopicTemplateIcon; cla
 // ภาพรวมทุกหัวข้อของเซิร์ฟเวอร์ (แบนเนอร์สรุป + กราฟเปรียบเทียบ) และรายการหัวข้อด้านซ้าย
 // ==========================================
 const overviewTopicsChartConfig = {
-    collected: { label: 'เก็บได้แล้ว', color: '#10b981' },
-    remaining: { label: 'คงค้าง', color: '#f59e0b' },
+    collected: { label: tr('เก็บได้แล้ว'), color: '#10b981' },
+    remaining: { label: tr('คงค้าง'), color: '#f59e0b' },
 } satisfies ChartConfig;
 
 export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] }) {
@@ -88,52 +90,52 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         <div className="flex size-7 items-center justify-center rounded-lg bg-primary/15 text-primary">
                             <Wallet className="size-4" />
                         </div>
-                        <span className="text-sm font-semibold">ภาพรวมกองกลางทั้งเซิร์ฟเวอร์</span>
+                        <span className="text-sm font-semibold">{tr('ภาพรวมกองกลางทั้งเซิร์ฟเวอร์')}</span>
                         <Badge variant="outline" className="text-[11px]">
-                            ทั้งหมด {topics.length} หัวข้อ · เปิดอยู่ {totals.activeCount}
+                            {tr('ทั้งหมด')} {topics.length} {tr('หัวข้อ · เปิดอยู่')} {totals.activeCount}
                         </Badge>
                         {totals.completedCount > 0 && (
                             <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400">
-                                <CheckCircle2 className="size-3" /> ครบเป้า {totals.completedCount} หัวข้อ
+                                <CheckCircle2 className="size-3" /> {tr('ครบเป้า')} {totals.completedCount} {tr('หัวข้อ')}
                             </Badge>
                         )}
                     </div>
                     <Button variant="outline" size="xs" className="w-full sm:w-auto" onClick={() => setShowChart((v) => !v)}>
                         <BarChart3 className="size-3.5" />
-                        {showChart ? 'ซ่อนกราฟเปรียบเทียบ' : 'เปรียบเทียบทุกหัวข้อ'}
+                        {showChart ? tr('ซ่อนกราฟเปรียบเทียบ') : tr('เปรียบเทียบทุกหัวข้อ')}
                     </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
                     <StatTile
-                        label="เป้ารวมทุกหัวข้อ"
+                        label={tr('เป้ารวมทุกหัวข้อ')}
                         value={formatBaht(totals.target)}
-                        subtext={`จาก ${topics.length} หัวข้อเก็บเงิน`}
+                        subtext={tr('จาก {0} หัวข้อเก็บเงิน', { 0: topics.length })}
                         icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
                         variant="overview"
                     />
                     <StatTile
-                        label="เก็บได้รวมทั้งหมด"
+                        label={tr('เก็บได้รวมทั้งหมด')}
                         value={formatBaht(totals.collected)}
-                        subtext={`คืบหน้ารวม ${totals.pct}%`}
+                        subtext={tr('คืบหน้ารวม {0}%', { 0: totals.pct })}
                         icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
                         valueClassName="text-emerald-700 dark:text-emerald-400"
                         tone="emerald"
                         variant="overview"
                     />
                     <StatTile
-                        label="ยอดคงค้างรวม"
+                        label={tr('ยอดคงค้างรวม')}
                         value={formatBaht(totals.remaining)}
-                        subtext={totals.remaining > 0 ? 'รอเก็บเพิ่มเติม' : 'เก็บครบทุกหัวข้อแล้ว'}
+                        subtext={totals.remaining > 0 ? tr('รอเก็บเพิ่มเติม') : tr('เก็บครบทุกหัวข้อแล้ว')}
                         icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
                         valueClassName={totals.remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
                         tone={totals.remaining > 0 ? 'amber' : 'default'}
                         variant="overview"
                     />
                     <StatTile
-                        label="ความคืบหน้ารวม"
+                        label={tr('ความคืบหน้ารวม')}
                         value={`${totals.pct}%`}
-                        subtext={`จ่ายครบ ${totals.memberPaid} จาก ${totals.memberTotal} คน`}
+                        subtext={tr('จ่ายครบ {0} จาก {1} คน', { 0: totals.memberPaid, 1: totals.memberTotal })}
                         icon={<TrendingUp className="size-3.5 text-sky-700 dark:text-sky-400" />}
                         tone="sky"
                         variant="overview"
@@ -185,14 +187,14 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                 <p className={cn('truncate text-sm font-semibold', active && 'text-primary')}>{topic.name}</p>
                 {topic.closed ? (
                     <Badge variant="secondary" className="h-5 shrink-0 gap-1 px-1.5 text-[10px]">
-                        <Lock className="size-2.5" /> ปิด
+                        <Lock className="size-2.5" /> {tr('ปิด')}
                     </Badge>
                 ) : isCompleted ? (
                     <Badge
                         variant="outline"
                         className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400"
                     >
-                        <CheckCircle2 className="size-2.5" /> ครบเป้า
+                        <CheckCircle2 className="size-2.5" /> {tr('ครบเป้า')}
                     </Badge>
                 ) : due?.tone === 'overdue' ? (
                     <Badge variant="outline" className="h-5 shrink-0 gap-1 border-destructive/40 bg-destructive/10 px-1.5 text-[10px] text-destructive">
@@ -211,11 +213,11 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
             <div className="flex flex-wrap items-center gap-1.5">
                 {dailyRate ? (
                     <Badge variant="outline" className="gap-1 border-primary/30 bg-primary/5 text-[10px] text-primary">
-                        <Calendar className="size-2.5" /> วันละ {formatBaht(dailyRate)}
+                        <Calendar className="size-2.5" /> {tr('วันละ')} {formatBaht(dailyRate)}
                     </Badge>
                 ) : (
                     <Badge variant="outline" className="gap-1 text-[10px] text-muted-foreground">
-                        <Banknote className="size-2.5" /> คนละ {formatBaht(topic.amountPerMember)}
+                        <Banknote className="size-2.5" /> {tr('คนละ')} {formatBaht(topic.amountPerMember)}
                     </Badge>
                 )}
                 <span className="ml-auto text-xs font-bold tabular-nums text-foreground">{pct}%</span>
@@ -228,7 +230,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                     <span className="font-medium text-emerald-700 dark:text-emerald-400">{formatBaht(topic.collected)}</span> / {formatBaht(topic.target)}
                 </span>
                 <span className="shrink-0">
-                    ครบ {topic.paidCount}/{topic.memberCount} คน
+                    {tr('ครบ')} {topic.paidCount}/{topic.memberCount} {tr('คน')}
                 </span>
             </div>
         </button>
@@ -243,20 +245,22 @@ export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCr
                 <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/15 text-primary">
                     <Wallet className="size-6" />
                 </div>
-                <h2 className="text-base font-semibold sm:text-lg">เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์</h2>
+                <h2 className="text-base font-semibold sm:text-lg">{tr('เริ่มต้นสร้างหัวข้อเก็บเงินแรกของเซิร์ฟเวอร์')}</h2>
                 <p className="mt-1 max-w-lg text-xs text-muted-foreground sm:text-sm">
-                    จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งการ์ดรูปภาพรายงานเข้าห้อง Discord อัตโนมัติ
+                    {tr(
+                        'จัดการกองกลาง หารค่าเซิร์ฟเวอร์ หรือเก็บเงินรายวันพร้อมติดตามยอดค้างชำระรายคน กราฟสรุป และส่งการ์ดรูปภาพรายงานเข้าห้อง Discord อัตโนมัติ',
+                    )}
                 </p>
 
                 <div className="mt-5 w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto" onClick={onCreateBlank}>
-                        <Plus /> สร้างหัวข้อเก็บเงินใหม่
+                        <Plus /> {tr('สร้างหัวข้อเก็บเงินใหม่')}
                     </Button>
                 </div>
 
                 <div className="mt-8 w-full max-w-3xl space-y-2.5 text-left">
                     <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
-                        <Sparkles className="size-3.5 text-primary" /> หรือเลือกเทมเพลตสำเร็จรูปเพื่อกรอกข้อมูลเริ่มต้นให้อัตโนมัติ
+                        <Sparkles className="size-3.5 text-primary" /> {tr('หรือเลือกเทมเพลตสำเร็จรูปเพื่อกรอกข้อมูลเริ่มต้นให้อัตโนมัติ')}
                     </p>
                     <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
                         {TOPIC_TEMPLATES.map((tpl) => (

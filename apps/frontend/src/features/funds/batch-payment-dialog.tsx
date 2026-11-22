@@ -1,4 +1,6 @@
-import { formatBaht, roundMoney, type FundTopicDetail } from '@notstack/shared';
+import { tr } from '../../lib/i18n';
+import { roundMoney, type FundTopicDetail } from '@notstack/shared';
+import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
 import { Calendar, CheckCircle2, Loader2 } from '@/components/icons';
@@ -101,7 +103,7 @@ export function BatchPaymentDialog({
                 periodEnd: periodEnd ? endOfDayIso(periodEnd) : null,
             }),
         onSuccess: (res) => {
-            toast.success(res.message ?? 'บันทึกการรับเงินเรียบร้อยแล้ว');
+            toast.success(res.message ?? tr('บันทึกการรับเงินเรียบร้อยแล้ว'));
             void refresh();
             onOpenChange(false);
         },
@@ -112,8 +114,10 @@ export function BatchPaymentDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>บันทึกรับเงินตามห้วงเวลา (หลายคน)</DialogTitle>
-                    <DialogDescription>{topic.name} — บันทึกเก็บยอดรายวันหรือรายงวดให้สมาชิกหลายคนพร้อมกันในครั้งเดียว</DialogDescription>
+                    <DialogTitle>{tr('บันทึกรับเงินตามห้วงเวลา (หลายคน)')}</DialogTitle>
+                    <DialogDescription>
+                        {topic.name} {tr('— บันทึกเก็บยอดรายวันหรือรายงวดให้สมาชิกหลายคนพร้อมกันในครั้งเดียว')}
+                    </DialogDescription>
                 </DialogHeader>
                 <form
                     id="fund-batch-form"
@@ -126,7 +130,7 @@ export function BatchPaymentDialog({
                 >
                     <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                         <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                            <Calendar className="size-3.5 text-primary" /> กำหนดห้วงเวลาที่จ่าย
+                            <Calendar className="size-3.5 text-primary" /> {tr('กำหนดห้วงเวลาที่จ่าย')}
                         </p>
                         <PeriodFields
                             idPrefix="batch"
@@ -135,12 +139,12 @@ export function BatchPaymentDialog({
                             onChange={handlePeriodChange}
                             dailyRate={dailyRate}
                             topicStartDate={topic.startDate}
-                            amountSuffix=" ต่อคน"
+                            amountSuffix={tr(' ต่อคน')}
                         />
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                        <Field label="ยอดเงินต่อคน (บาท)" htmlFor="batch-amount">
+                        <Field label={tr('ยอดเงินต่อคน (บาท)')} htmlFor="batch-amount">
                             <Input
                                 id="batch-amount"
                                 type="number"
@@ -152,42 +156,47 @@ export function BatchPaymentDialog({
                                 placeholder="0"
                             />
                         </Field>
-                        <Field label="วันเวลาที่บันทึกรับเงิน" htmlFor="batch-paid-at">
+                        <Field label={tr('วันเวลาที่บันทึกรับเงิน')} htmlFor="batch-paid-at">
                             <DateTimeInput mode="datetime" id="batch-paid-at" value={paidAt} onValueChange={(v) => setPaidAt(v)} />
                         </Field>
                     </div>
 
-                    <Field label="หมายเหตุ (ไม่บังคับ)" htmlFor="batch-note">
+                    <Field label={tr('หมายเหตุ (ไม่บังคับ)')} htmlFor="batch-note">
                         <Input
                             id="batch-note"
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
                             maxLength={200}
-                            placeholder="เช่น งวดวันที่ 01/10 ถึง 15/10"
+                            placeholder={tr('เช่น งวดวันที่ 01/10 ถึง 15/10')}
                         />
                     </Field>
 
                     <div className="space-y-2">
                         <div className="flex flex-wrap items-center justify-between gap-1 text-xs">
                             <Label className="font-medium">
-                                เลือกคนที่จ่าย ({selectedIds.length}/{topic.members.length} คน)
+                                {tr('เลือกคนที่จ่าย (')}
+                                {selectedIds.length}/{topic.members.length} {tr('คน)')}
                             </Label>
                             <div className="flex flex-wrap gap-1">
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds(allIdsOf(topic))}>
-                                    ทั้งหมด ({topic.members.length})
+                                    {tr('ทั้งหมด (')}
+                                    {topic.members.length})
                                 </Button>
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds(unpaidIdsOf(topic))}>
-                                    เฉพาะค้าง ({unpaidIdsOf(topic).length})
+                                    {tr('เฉพาะค้าง (')}
+                                    {unpaidIdsOf(topic).length})
                                 </Button>
                                 <Button type="button" size="xs" variant="ghost" onClick={() => setSelectedIds([])}>
-                                    ล้าง
+                                    {tr('ล้าง')}
                                 </Button>
                             </div>
                         </div>
-                        {topic.members.length > 5 && <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="ค้นหาชื่อสมาชิกในรายการ..." />}
+                        {topic.members.length > 5 && (
+                            <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder={tr('ค้นหาชื่อสมาชิกในรายการ...')} />
+                        )}
                         <div className="max-h-48 divide-y overflow-y-auto rounded-lg border bg-background p-1">
                             {filteredMembers.length === 0 ? (
-                                <p className="py-4 text-center text-xs text-muted-foreground">ไม่พบสมาชิกที่ค้นหา</p>
+                                <p className="py-4 text-center text-xs text-muted-foreground">{tr('ไม่พบสมาชิกที่ค้นหา')}</p>
                             ) : (
                                 filteredMembers.map((m) => {
                                     const checkboxId = `batch-member-${m.id}`;
@@ -202,10 +211,10 @@ export function BatchPaymentDialog({
                                             </div>
                                             <span className="shrink-0 text-muted-foreground tabular-nums">
                                                 {m.remaining > 0 ? (
-                                                    `ค้าง ${formatBaht(m.remaining)}`
+                                                    tr('ค้าง {0}', { 0: formatBaht(m.remaining) })
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
-                                                        <CheckCircle2 className="size-3" /> จ่ายครบแล้ว
+                                                        <CheckCircle2 className="size-3" /> {tr('จ่ายครบแล้ว')}
                                                     </span>
                                                 )}
                                             </span>
@@ -218,12 +227,15 @@ export function BatchPaymentDialog({
                 </form>
                 <DialogFooter className="flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-xs text-muted-foreground">
-                        <span>ยอดรับรวม ({selectedIds.length} คน): </span>
+                        <span>
+                            {tr('ยอดรับรวม (')}
+                            {selectedIds.length} {tr('คน):')}{' '}
+                        </span>
                         <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
                     </div>
                     <div className="flex w-full justify-end gap-2 sm:w-auto">
                         <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => onOpenChange(false)}>
-                            ยกเลิก
+                            {tr('ยกเลิก')}
                         </Button>
                         <Button
                             type="submit"
@@ -232,7 +244,7 @@ export function BatchPaymentDialog({
                             disabled={save.isPending || selectedIds.length === 0 || !(numAmount > 0) || invalidPeriod}
                         >
                             {save.isPending && <Loader2 className="animate-spin" />}
-                            บันทึก {selectedIds.length} คน
+                            {tr('บันทึก')} {selectedIds.length} {tr('คน')}
                         </Button>
                     </div>
                 </DialogFooter>

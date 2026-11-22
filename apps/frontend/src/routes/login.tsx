@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
@@ -42,7 +43,7 @@ function LoginPage() {
     // ข้อความ error ที่ส่งกลับมาจาก Discord OAuth (/login?error=...)
     useEffect(() => {
         if (!search.error) return;
-        toast.error('เข้าสู่ระบบไม่สำเร็จ', { description: LOGIN_ERRORS[search.error] ?? 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง' });
+        toast.error(tr('เข้าสู่ระบบไม่สำเร็จ'), { description: tr(LOGIN_ERRORS[search.error]) ?? tr('เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง') });
         void navigate({ to: '/login', search: {}, replace: true });
     }, [search.error, navigate]);
 
@@ -55,10 +56,10 @@ function LoginPage() {
                 const me: MeResponse = { user: result.user, discordEnabled: Boolean(providers?.discord) };
                 replaceSession(queryClient, me);
                 await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
-                toast.success('เข้าสู่ระบบสำเร็จ!');
+                toast.success(tr('เข้าสู่ระบบสำเร็จ!'));
                 await navigate({ to: search.redirect?.startsWith('/') ? search.redirect : '/dashboard' });
             } catch (err) {
-                toast.error('เข้าสู่ระบบล้มเหลว', { description: errorMessage(err) });
+                toast.error(tr('เข้าสู่ระบบล้มเหลว'), { description: errorMessage(err) });
             }
         },
     });
@@ -67,18 +68,14 @@ function LoginPage() {
         <div className="flex min-h-svh items-center justify-center p-4">
             <div className="w-full max-w-sm space-y-6">
                 <div className="flex justify-center">
-                    <Link to="/" aria-label="กลับหน้าแรก">
-                        <img
-                            src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
-                            alt="Bot Logo"
-                            className="size-18 rounded-full border-2 border-border"
-                        />
+                    <Link to="/" aria-label={tr('กลับหน้าแรก')}>
+                        <img src={info?.bot?.avatar ?? DEFAULT_BOT.avatar} alt="Bot Logo" className="size-18 rounded-full border-2 border-border" />
                     </Link>
                 </div>
                 <Card>
                     <CardHeader className="text-center">
                         <CardTitle className="text-xl">BotNotStack Dashboard</CardTitle>
-                        <CardDescription>เข้าสู่ระบบเพื่อจัดการบอท</CardDescription>
+                        <CardDescription>{tr('เข้าสู่ระบบเพื่อจัดการบอท')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
                         <form
@@ -129,13 +126,14 @@ function LoginPage() {
                         {providers?.discord && (
                             <>
                                 <div className="flex items-center gap-3 text-xs text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-                                    หรือ
+                                    {tr('หรือ')}
                                 </div>
                                 <Button asChild className="h-10 w-full bg-[#5865F2] text-white hover:bg-[#4752C4]">
                                     {/* ลิงก์ธรรมดา (ไม่ใช่ SPA) เพราะต้องออกไปหน้า Discord แล้วกลับมาที่ callback ของ API */}
                                     <a href={apiUrl('/auth/discord')}>
                                         <DiscordIcon />
-                                        เข้าสู่ระบบด้วย Discord
+
+                                        {tr('เข้าสู่ระบบด้วย Discord')}
                                     </a>
                                 </Button>
                             </>
@@ -145,19 +143,20 @@ function LoginPage() {
                         <Button asChild variant="ghost" className="h-10 w-full gap-2 text-muted-foreground">
                             <Link to="/">
                                 <ArrowLeft className="size-4" aria-hidden="true" />
-                                กลับหน้าแรก
+
+                                {tr('กลับหน้าแรก')}
                             </Link>
                         </Button>
                     </CardFooter>
                 </Card>
                 <p className="text-center text-xs text-muted-foreground">
-                    การเข้าสู่ระบบถือว่าคุณยอมรับ{' '}
+                    {tr('การเข้าสู่ระบบถือว่าคุณยอมรับ')}{' '}
                     <Link to="/terms" className="underline underline-offset-4 hover:text-foreground">
-                        ข้อกำหนดการใช้งาน
+                        {tr('ข้อกำหนดการใช้งาน')}
                     </Link>{' '}
-                    และ{' '}
+                    {tr('และ')}{' '}
                     <Link to="/privacy" className="underline underline-offset-4 hover:text-foreground">
-                        นโยบายความเป็นส่วนตัว
+                        {tr('นโยบายความเป็นส่วนตัว')}
                     </Link>
                 </p>
             </div>

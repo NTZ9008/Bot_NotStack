@@ -1,3 +1,4 @@
+import { tr } from '../../../../../lib/i18n';
 import type { VoiceGuardChannel, VoiceGuardMode } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -44,7 +45,7 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
     const confirm = useConfirm();
     const refresh = () => queryClient.invalidateQueries({ queryKey: voiceGuardQuery(guildId, mode).queryKey });
     const onError = (err: unknown) => {
-        toast.error('ข้อผิดพลาด', { description: errorMessage(err) });
+        toast.error(tr('ข้อผิดพลาด'), { description: errorMessage(err) });
         void refresh();
     };
 
@@ -56,7 +57,7 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
     const addUser = useMutation({
         mutationFn: (userId: string) => voiceGuardApi.addUser(guildId, mode, { channelId: channel.channelId, userId }),
         onSuccess: () => {
-            toast.success('เพิ่มสมาชิกสำเร็จ');
+            toast.success(tr('เพิ่มสมาชิกสำเร็จ'));
             void refresh();
         },
         onError,
@@ -64,7 +65,7 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
     const removeUser = useMutation({
         mutationFn: (userId: string) => voiceGuardApi.removeUser(guildId, mode, { channelId: channel.channelId, userId }),
         onSuccess: () => {
-            toast.success('ลบสมาชิกสำเร็จ');
+            toast.success(tr('ลบสมาชิกสำเร็จ'));
             void refresh();
         },
         onError,
@@ -72,15 +73,15 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
 
     const remove = async () => {
         const ok = await confirm({
-            title: 'ยืนยันการลบ',
-            description: `ลบห้อง ${channel.channelName} ออกจาก ${mode} ใช่หรือไม่?`,
-            confirmText: 'ลบ',
+            title: tr('ยืนยันการลบ'),
+            description: tr('ลบห้อง {0} ออกจาก {1} ใช่หรือไม่?', { 0: channel.channelName, 1: mode }),
+            confirmText: tr('ลบ'),
             destructive: true,
         });
         if (!ok) return;
         try {
             await voiceGuardApi.deleteChannel(guildId, mode, channel.channelId);
-            toast.success('ลบห้องสำเร็จ');
+            toast.success(tr('ลบห้องสำเร็จ'));
             void refresh();
         } catch (err) {
             onError(err);
@@ -92,25 +93,25 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
             <CardHeader className="flex-row items-center justify-between gap-2">
                 <CardTitle className="truncate">🔊 {channel.channelName}</CardTitle>
                 <div className="flex items-center gap-2">
-                    <Switch checked={channel.enabled} onCheckedChange={(enabled) => update.mutate({ enabled })} aria-label="เปิดใช้งาน" />
-                    <Button variant="ghost" size="icon-sm" onClick={() => void remove()} aria-label="ลบห้อง">
+                    <Switch checked={channel.enabled} onCheckedChange={(enabled) => update.mutate({ enabled })} aria-label={tr('เปิดใช้งาน')} />
+                    <Button variant="ghost" size="icon-sm" onClick={() => void remove()} aria-label={tr('ลบห้อง')}>
                         <Trash2 className="text-destructive" />
                     </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-3">
                 <Label className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 font-normal">
-                    ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออก
+                    {tr('ส่ง DM แจ้งผู้ใช้เมื่อถูกเตะออก')}
                     <Switch checked={channel.notify} onCheckedChange={(notify) => update.mutate({ notify })} />
                 </Label>
                 <UserPicker
                     keepSelection={false}
-                    placeholder="เพิ่มสมาชิก — พิมพ์ชื่อหรือ username..."
+                    placeholder={tr('เพิ่มสมาชิก — พิมพ์ชื่อหรือ username...')}
                     exclude={channel.users.map((u) => u.userId)}
                     onSelect={(user) => addUser.mutate(user.userId)}
                 />
                 {channel.users.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">ยังไม่มีสมาชิก</p>
+                    <p className="text-sm text-muted-foreground">{tr('ยังไม่มีสมาชิก')}</p>
                 ) : (
                     <ul className="space-y-1.5">
                         {channel.users.map((u) => (
@@ -120,7 +121,7 @@ function ChannelCard({ mode, channel }: { mode: VoiceGuardMode; channel: VoiceGu
                                     <p className="truncate text-sm font-medium">{u.username}</p>
                                     <p className="truncate font-mono text-xs text-muted-foreground">{u.userId}</p>
                                 </div>
-                                <Button variant="ghost" size="icon-xs" aria-label="ลบสมาชิก" onClick={() => removeUser.mutate(u.userId)}>
+                                <Button variant="ghost" size="icon-xs" aria-label={tr('ลบสมาชิก')} onClick={() => removeUser.mutate(u.userId)}>
                                     <X />
                                 </Button>
                             </li>
@@ -144,19 +145,19 @@ function VoiceGuardPage() {
     const add = useMutation({
         mutationFn: () => voiceGuardApi.updateChannel(guildId, mode, { channelId, enabled: true }),
         onSuccess: () => {
-            toast.success('เพิ่มห้องสำเร็จ');
+            toast.success(tr('เพิ่มห้องสำเร็จ'));
             setChannelId('');
             void queryClient.invalidateQueries({ queryKey: voiceGuardQuery(guildId, mode).queryKey });
         },
-        onError: (err) => toast.error('ข้อผิดพลาด', { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('ข้อผิดพลาด'), { description: errorMessage(err) }),
     });
 
     return (
         <>
             <PageHeader
                 help="voiceGuard"
-                title="ดูแลห้องเสียง"
-                description="จัดการ Whitelist / Blacklist สำหรับห้องเสียง — คนที่ไม่มีสิทธิ์จะถูกเตะออกจากห้องทันทีที่เข้า"
+                title={tr('ดูแลห้องเสียง')}
+                description={tr('จัดการ Whitelist / Blacklist สำหรับห้องเสียง — คนที่ไม่มีสิทธิ์จะถูกเตะออกจากห้องทันทีที่เข้า')}
                 actions={
                     <ToggleGroup
                         type="single"
@@ -166,25 +167,25 @@ function VoiceGuardPage() {
                             value && void navigate({ to: '/servers/$guildId/voice-guard', params: { guildId }, search: { mode: value as VoiceGuardMode } })
                         }
                     >
-                        <ToggleGroupItem value="whitelist">อนุญาตเฉพาะ</ToggleGroupItem>
+                        <ToggleGroupItem value="whitelist">{tr('อนุญาตเฉพาะ')}</ToggleGroupItem>
                         <ToggleGroupItem value="blacklist" className="data-[state=on]:text-destructive">
-                            ห้ามเข้า
+                            {tr('ห้ามเข้า')}
                         </ToggleGroupItem>
                     </ToggleGroup>
                 }
             />
             <p className="rounded-lg border bg-muted/30 p-3 text-sm leading-relaxed" role="status">
                 {mode === 'whitelist'
-                    ? 'อนุญาตเฉพาะ (Whitelist): สมาชิกที่ไม่อยู่ในรายการจะถูกเตะออก ห้องที่เพิ่มจะเปิดใช้งานทันที แม้ยังไม่มีสมาชิกในรายการ'
-                    : 'ห้ามเข้า (Blacklist): เฉพาะสมาชิกในรายการจะถูกเตะออก หากเปิด Whitelist ด้วย สมาชิกต้องอยู่ใน Whitelist จึงจะเข้าได้'}
+                    ? tr('อนุญาตเฉพาะ (Whitelist): สมาชิกที่ไม่อยู่ในรายการจะถูกเตะออก ห้องที่เพิ่มจะเปิดใช้งานทันที แม้ยังไม่มีสมาชิกในรายการ')
+                    : tr('ห้ามเข้า (Blacklist): เฉพาะสมาชิกในรายการจะถูกเตะออก หากเปิด Whitelist ด้วย สมาชิกต้องอยู่ใน Whitelist จึงจะเข้าได้')}
             </p>
             <Card>
                 <CardContent>
-                    <Field label={`เพิ่มห้องเสียงเข้า ${mode}`}>
+                    <Field label={tr('เพิ่มห้องเสียงเข้า {0}', { 0: mode })}>
                         <div className="flex gap-2 md:max-w-xl">
                             <Select value={channelId} onValueChange={setChannelId}>
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="-- เลือกห้องเสียง --" />
+                                    <SelectValue placeholder={tr('-- เลือกห้องเสียง --')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
                                     {channels.data?.map((ch) => (
@@ -194,8 +195,8 @@ function VoiceGuardPage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button onClick={() => (channelId ? add.mutate() : toast.warning('กรุณาเลือกห้องเสียง'))} disabled={add.isPending}>
-                                <Plus /> เพิ่มห้อง
+                            <Button onClick={() => (channelId ? add.mutate() : toast.warning(tr('กรุณาเลือกห้องเสียง')))} disabled={add.isPending}>
+                                <Plus /> {tr('เพิ่มห้อง')}
                             </Button>
                         </div>
                     </Field>
@@ -213,7 +214,9 @@ function VoiceGuardPage() {
                     ))}
                 </div>
             ) : (
-                <EmptyState>ยังไม่มีห้องใน {mode}</EmptyState>
+                <EmptyState>
+                    {tr('ยังไม่มีห้องใน')} {mode}
+                </EmptyState>
             )}
         </>
     );

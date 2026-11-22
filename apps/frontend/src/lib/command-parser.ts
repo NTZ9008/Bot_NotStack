@@ -1,3 +1,4 @@
+import { tr, dateLocale } from './i18n';
 // ==========================================
 // ⌨️ แปลงข้อความที่พิมพ์ในช่อง ⌘K เป็นคำสั่ง (ไทย / อังกฤษ)
 //   ให้ xp @boat 500 · เพิ่ม XP boat 1.5k เพราะช่วยงาน · give 500 xp to boat · xp boat -200
@@ -59,10 +60,10 @@ export function cleanTarget(raw: string): string {
 }
 
 export const XP_ACTION_LABEL: Record<XpCommandAction, string> = {
-    add: 'ให้',
-    subtract: 'หัก',
-    set: 'ตั้ง',
-    reset: 'รีเซ็ต',
+    add: tr('ให้'),
+    subtract: tr('หัก'),
+    set: tr('ตั้ง'),
+    reset: tr('รีเซ็ต'),
 };
 
 interface XpDraft {
@@ -162,19 +163,19 @@ export function commandGuide(input: string): CommandGuide | null {
 
     if (LOG_START_RE.test(text)) {
         return {
-            title: 'ค้นหาในประวัติเซิร์ฟเวอร์',
-            next: 'พิมพ์คำที่จะค้น เช่น ชื่อสมาชิก ชื่อห้อง หรือ “ห้องเสียง”',
+            title: tr('ค้นหาในประวัติเซิร์ฟเวอร์'),
+            next: tr('พิมพ์คำที่จะค้น เช่น ชื่อสมาชิก ชื่อห้อง หรือ “ห้องเสียง”'),
             example: 'log boat',
-            steps: [{ label: 'คำค้น' }],
+            steps: [{ label: tr('คำค้น') }],
         };
     }
 
     if (text === '@') {
         return {
-            title: 'ค้นหาสมาชิก',
-            next: 'พิมพ์ชื่อหรือ username ต่อจาก @ แล้วเลือกสมาชิก เพื่อดูสิ่งที่ทำได้ (ให้ XP, ดูอันดับ, ดูกิจกรรม)',
+            title: tr('ค้นหาสมาชิก'),
+            next: tr('พิมพ์ชื่อหรือ username ต่อจาก @ แล้วเลือกสมาชิก เพื่อดูสิ่งที่ทำได้ (ให้ XP, ดูอันดับ, ดูกิจกรรม)'),
             example: '@boat',
-            steps: [{ label: 'ชื่อสมาชิก' }],
+            steps: [{ label: tr('ชื่อสมาชิก') }],
         };
     }
 
@@ -185,31 +186,31 @@ export function commandGuide(input: string): CommandGuide | null {
     const action = draft.action;
     const needsAmount = action !== 'reset';
     const steps: CommandGuideStep[] = [
-        { label: 'ทำอะไร', value: action ? XP_ACTION_LABEL[action] : undefined },
-        { label: 'สมาชิก', value: draft.target ? `@${draft.target}` : undefined },
-        ...(needsAmount ? [{ label: 'จำนวน XP', value: draft.amount ? draft.amount.value.toLocaleString('th-TH') : undefined }] : []),
-        { label: 'เหตุผล', value: draft.reason, optional: true },
+        { label: tr('ทำอะไร'), value: action ? XP_ACTION_LABEL[action] : undefined },
+        { label: tr('สมาชิก'), value: draft.target ? `@${draft.target}` : undefined },
+        ...(needsAmount ? [{ label: tr('จำนวน XP'), value: draft.amount ? draft.amount.value.toLocaleString(dateLocale()) : undefined }] : []),
+        { label: tr('เหตุผล'), value: draft.reason, optional: true },
     ];
 
     let next: string | null = null;
-    if (!action) next = 'เริ่มด้วยคำสั่ง ให้ / หัก / ตั้ง / รีเซ็ต';
-    else if (!draft.target) next = 'พิมพ์ชื่อสมาชิกหลัง @ (หรือวาง User ID)';
-    else if (needsAmount && !draft.amount) next = 'พิมพ์จำนวน XP เช่น 500 หรือ 1.5k';
-    else if (!draft.reason) next = 'ใส่เหตุผลได้ด้วยคำว่า “เพราะ…” (ไม่บังคับ) แล้วเลือกสมาชิกด้านล่าง';
+    if (!action) next = tr('เริ่มด้วยคำสั่ง ให้ / หัก / ตั้ง / รีเซ็ต');
+    else if (!draft.target) next = tr('พิมพ์ชื่อสมาชิกหลัง @ (หรือวาง User ID)');
+    else if (needsAmount && !draft.amount) next = tr('พิมพ์จำนวน XP เช่น 500 หรือ 1.5k');
+    else if (!draft.reason) next = tr('ใส่เหตุผลได้ด้วยคำว่า “เพราะ…” (ไม่บังคับ) แล้วเลือกสมาชิกด้านล่าง');
 
-    const verb = action ? XP_ACTION_LABEL[action] : 'ให้';
+    const verb = action ? XP_ACTION_LABEL[action] : tr('ให้');
     return {
-        title: action === 'reset' ? 'รีเซ็ต XP ของสมาชิก' : `${verb} XP สมาชิก`,
+        title: action === 'reset' ? tr('รีเซ็ต XP ของสมาชิก') : tr('{0} XP สมาชิก', { 0: verb }),
         next,
-        example: action === 'reset' ? 'รีเซ็ต xp @boat เพราะเริ่มฤดูกาลใหม่' : `${verb} xp @boat 500 เพราะช่วยตอบคำถาม`,
+        example: action === 'reset' ? tr('รีเซ็ต xp @boat เพราะเริ่มฤดูกาลใหม่') : tr('{0} xp @boat 500 เพราะช่วยตอบคำถาม', { 0: verb }),
         steps,
     };
 }
 
 // "ให้ 500 XP" / "รีเซ็ต XP"
 export function describeXpCommand(action: XpCommandAction, amount: number): string {
-    if (action === 'reset') return 'รีเซ็ต XP';
-    return `${XP_ACTION_LABEL[action]} ${amount.toLocaleString('th-TH')} XP`;
+    if (action === 'reset') return tr('รีเซ็ต XP');
+    return `${XP_ACTION_LABEL[action]} ${amount.toLocaleString(dateLocale())} XP`;
 }
 
 // XP หลังทำคำสั่ง (ใช้แสดงตัวอย่างก่อนยืนยัน — ค่าจริงคำนวณที่ backend)

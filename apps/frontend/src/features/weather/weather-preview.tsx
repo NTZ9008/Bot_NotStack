@@ -1,3 +1,4 @@
+import { tr } from '@/lib/i18n';
 import type { GuildChannel, GuildRole, PreviewEmbed, WeatherOptions } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Loader2 } from '@/components/icons';
@@ -32,7 +33,10 @@ function EmbedView({ embed, files, roles, channels }: { embed: PreviewEmbed; fil
     const image = resolveFile(files, embed.image?.url);
     const footer = [embed.footer?.text, embed.timestamp ? `วันนี้ เวลา ${timeLabel(embed.timestamp)}` : ''].filter(Boolean).join(' • ');
     return (
-        <div className="dark max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4" style={{ borderLeftColor: `#${(embed.color ?? 0).toString(16).padStart(6, '0')}` }}>
+        <div
+            className="dark max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4"
+            style={{ borderLeftColor: `#${(embed.color ?? 0).toString(16).padStart(6, '0')}` }}
+        >
             {embed.thumbnail?.url && <img src={embed.thumbnail.url} alt="" className="float-right mb-2 ml-4 size-20 rounded object-contain" />}
             {embed.title &&
                 (embed.url ? (
@@ -42,7 +46,9 @@ function EmbedView({ embed, files, roles, channels }: { embed: PreviewEmbed; fil
                 ) : (
                     <p className="font-semibold text-white">{embed.title}</p>
                 ))}
-            {embed.description && <div className="discord-md mt-1 text-sm" dangerouslySetInnerHTML={{ __html: markdown(embed.description, roles, channels) }} />}
+            {embed.description && (
+                <div className="discord-md mt-1 text-sm" dangerouslySetInnerHTML={{ __html: markdown(embed.description, roles, channels) }} />
+            )}
             {embed.fields?.length ? (
                 <div className={cn('mt-2 grid gap-x-3 gap-y-2', embed.thumbnail ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-3')}>
                     {embed.fields.map((field, i) => (
@@ -92,18 +98,22 @@ export function WeatherPreview({
     return (
         <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-                ตัวอย่างใน Discord — ใช้ข้อมูลอากาศจริงของสถานที่ที่เลือก {data && `(ข้อมูล ณ ${timeLabel(data.fetchedAt)} น.)`}
+                {tr('ตัวอย่างใน Discord — ใช้ข้อมูลอากาศจริงของสถานที่ที่เลือก')} {data && tr('(ข้อมูล ณ {0} น.)', { 0: timeLabel(data.fetchedAt) })}
             </p>
             <DiscordMessage>
                 <div className={cn('space-y-1 transition-opacity', preview.isFetching && 'opacity-60')}>
                     {data?.content && <div className="discord-md" dangerouslySetInnerHTML={{ __html: markdown(data.content, roles, channels) }} />}
-                    {data?.embeds.map((embed, i) => <EmbedView key={i} embed={embed} files={data.files} roles={roles} channels={channels} />)}
+                    {data?.embeds.map((embed, i) => (
+                        <EmbedView key={i} embed={embed} files={data.files} roles={roles} channels={channels} />
+                    ))}
                     {!data && preview.isFetching && (
                         <p className="flex items-center gap-2 text-sm text-[#949ba4]">
-                            <Loader2 className="size-4 animate-spin" /> กำลังโหลดข้อมูลอากาศ...
+                            <Loader2 className="size-4 animate-spin" /> {tr('กำลังโหลดข้อมูลอากาศ...')}
                         </p>
                     )}
-                    {preview.error && <p className="text-sm text-red-700 dark:text-red-400">สร้างตัวอย่างไม่สำเร็จ: {errorMessage(preview.error)}</p>}
+                    {preview.error && (
+                        <p className="text-sm text-red-700 dark:text-red-400">{tr('สร้างตัวอย่างไม่สำเร็จ: {0}', { 0: errorMessage(preview.error) })}</p>
+                    )}
                     {data?.warnings.length ? (
                         <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-300">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" /> {data.warnings.join(' · ')}

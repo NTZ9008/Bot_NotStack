@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import { PAGE_GUIDES, type PageGuideKey } from '../../lib/page-guides';
 import type { GuildSummary } from '@notstack/shared';
 // import ตรงจาก tabler (ไม่ผ่าน alias @/) เพราะ tests/frontend-lib.test.cjs โหลดไฟล์นี้ด้วย Node
@@ -49,7 +50,7 @@ export interface NavGroup {
 // หน้าของเซิร์ฟเวอร์ที่กำลังเลือก
 const GUILD_GROUPS: NavGroup[] = [
     {
-        label: 'ภาพรวม',
+        label: tr('ภาพรวม'),
         items: [
             {
                 to: '/servers/$guildId/overview',
@@ -62,7 +63,7 @@ const GUILD_GROUPS: NavGroup[] = [
         ],
     },
     {
-        label: 'ตั้งค่าพื้นฐาน',
+        label: tr('ตั้งค่าพื้นฐาน'),
         items: [
             {
                 to: '/servers/$guildId/config',
@@ -74,7 +75,7 @@ const GUILD_GROUPS: NavGroup[] = [
             },
             {
                 to: '/servers/$guildId/ai',
-                label: 'ตั้งค่า AI Chat',
+                label: tr('ตั้งค่า AI Chat'),
                 guide: 'config',
                 icon: Bot,
                 guild: 'manage',
@@ -83,7 +84,7 @@ const GUILD_GROUPS: NavGroup[] = [
         ],
     },
     {
-        label: 'สื่อสารกับสมาชิก',
+        label: tr('สื่อสารกับสมาชิก'),
         items: [
             {
                 to: '/servers/$guildId/news',
@@ -112,7 +113,7 @@ const GUILD_GROUPS: NavGroup[] = [
         ],
     },
     {
-        label: 'ดูแลเซิร์ฟเวอร์',
+        label: tr('ดูแลเซิร์ฟเวอร์'),
         items: [
             {
                 to: '/servers/$guildId/room-access',
@@ -181,7 +182,7 @@ const GUILD_GROUPS: NavGroup[] = [
         ],
     },
     {
-        label: 'ข้อมูล & ประวัติ',
+        label: tr('ข้อมูล & ประวัติ'),
         items: [
             {
                 to: '/servers/$guildId/levels',
@@ -222,7 +223,7 @@ const GUILD_GROUPS: NavGroup[] = [
 // หน้าส่วนกลาง (ไม่ผูกกับเซิร์ฟเวอร์)
 const GLOBAL_GROUPS: NavGroup[] = [
     {
-        label: 'ระบบ',
+        label: tr('ระบบ'),
         items: [
             {
                 to: '/servers',

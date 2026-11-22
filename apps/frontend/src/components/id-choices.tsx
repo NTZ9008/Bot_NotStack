@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -20,11 +21,11 @@ export function IdChoices({
     emptyHint?: string;
 }) {
     const [search, setSearch] = useState('');
-    const all = [...options, ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: `${id} (ไม่พบใน Discord)` }))];
+    const all = [...options, ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: tr('{0} (ไม่พบใน Discord)', { 0: id }) }))];
     return (
         <details className="rounded-md border p-3">
             <summary className="cursor-pointer text-sm">
-                {title} · เลือก {values.length}
+                {title} {tr('· เลือก')} {values.length}
             </summary>
             <div className="my-2 flex flex-wrap gap-2">
                 {voiceIds && (
@@ -36,23 +37,29 @@ export function IdChoices({
                         onClick={() => {
                             const next = [...new Set([...values, ...voiceIds])];
                             if (next.length > 100) {
-                                toast.error('เลือกได้สูงสุด 100 รายการ', {
-                                    description: 'หากต้องการให้กฎเสียงใช้ได้ทุกห้อง ให้ล้างการเลือกห้องของกฎนี้',
+                                toast.error(tr('เลือกได้สูงสุด 100 รายการ'), {
+                                    description: tr('หากต้องการให้กฎเสียงใช้ได้ทุกห้อง ให้ล้างการเลือกห้องของกฎนี้'),
                                 });
                                 return;
                             }
                             onChange(next);
                         }}
                     >
-                        เลือกห้องเสียงทั้งหมด
+                        {tr('เลือกห้องเสียงทั้งหมด')}
                     </Button>
                 )}
                 <Button type="button" size="sm" variant="ghost" disabled={!values.length} onClick={() => onChange([])}>
-                    ล้างการเลือก
+                    {tr('ล้างการเลือก')}
                 </Button>
             </div>
             {emptyHint && <p className="mb-2 text-xs text-muted-foreground">{emptyHint}</p>}
-            <Input aria-label={`ค้นหา${title}`} placeholder="ค้นหาชื่อหรือ ID" value={search} onChange={(e) => setSearch(e.target.value)} className="my-2" />
+            <Input
+                aria-label={tr('ค้นหา{0}', { 0: title })}
+                placeholder={tr('ค้นหาชื่อหรือ ID')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="my-2"
+            />
             <div className="grid max-h-48 gap-2 overflow-y-auto">
                 {all
                     .filter((o) => `${o.name} ${o.id}`.toLowerCase().includes(search.toLowerCase()))
@@ -67,7 +74,7 @@ export function IdChoices({
                             {o.name}
                         </label>
                     ))}
-                {!all.length && <p className="text-xs text-muted-foreground">ยังไม่มีรายการให้เลือก</p>}
+                {!all.length && <p className="text-xs text-muted-foreground">{tr('ยังไม่มีรายการให้เลือก')}</p>}
             </div>
         </details>
     );

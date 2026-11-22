@@ -1,4 +1,6 @@
-import { calculateDailyAmount, calculateDays, formatBaht, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
+import { tr, dateLocale } from '../../lib/i18n';
+import { calculateDailyAmount, calculateDays, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
+import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from '@/components/icons';
@@ -141,7 +143,7 @@ export function TopicDialog({
             return topic ? fundApi.update(guildId, topic.id, input) : fundApi.create(guildId, input);
         },
         onSuccess: (saved) => {
-            toast.success(topic ? 'บันทึกหัวข้อแล้ว' : 'สร้างหัวข้อแล้ว');
+            toast.success(topic ? tr('บันทึกหัวข้อแล้ว') : tr('สร้างหัวข้อแล้ว'));
             void refresh();
             onSaved?.(saved);
             onOpenChange(false);
@@ -161,8 +163,8 @@ export function TopicDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>{topic ? 'แก้ไขหัวข้อเก็บเงิน' : 'สร้างหัวข้อเก็บเงิน'}</DialogTitle>
-                    <DialogDescription>ตั้งชื่อเรื่อง ยอดเก็บต่อคน หรือเลือกเก็บแบบรายวัน (เช่น วันละ 15 บาท)</DialogDescription>
+                    <DialogTitle>{topic ? tr('แก้ไขหัวข้อเก็บเงิน') : tr('สร้างหัวข้อเก็บเงิน')}</DialogTitle>
+                    <DialogDescription>{tr('ตั้งชื่อเรื่อง ยอดเก็บต่อคน หรือเลือกเก็บแบบรายวัน (เช่น วันละ 15 บาท)')}</DialogDescription>
                 </DialogHeader>
                 <form
                     id="fund-topic-form"
@@ -176,7 +178,7 @@ export function TopicDialog({
                     {!topic && (
                         <div className="flex flex-wrap items-center gap-1 rounded-lg border bg-muted/20 px-2.5 py-2">
                             <span className="mr-1 flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-                                <Sparkles className="size-3 text-primary" /> เทมเพลตด่วน:
+                                <Sparkles className="size-3 text-primary" /> {tr('เทมเพลตด่วน:')}
                             </span>
                             {TOPIC_TEMPLATES.map((tpl) => (
                                 <Button
@@ -193,20 +195,20 @@ export function TopicDialog({
                         </div>
                     )}
 
-                    <Field label="ชื่อหัวข้อ" htmlFor="fund-name">
+                    <Field label={tr('ชื่อหัวข้อ')} htmlFor="fund-name">
                         <Input
                             id="fund-name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="เช่น ค่ากองกลางกลุ่ม / เก็บเงินรายวัน"
+                            placeholder={tr('เช่น ค่ากองกลางกลุ่ม / เก็บเงินรายวัน')}
                             maxLength={100}
                             autoFocus
                         />
                     </Field>
                     <Field
-                        label="รายละเอียด / ช่องทางโอนเงิน (ไม่บังคับ)"
+                        label={tr('รายละเอียด / ช่องทางโอนเงิน (ไม่บังคับ)')}
                         htmlFor="fund-desc"
-                        hint="หากใส่เบอร์พร้อมเพย์หรือเลขบัญชี 10–15 หลัก จะมีปุ่มคัดลอกเลขบัญชีให้สมาชิกกดได้ทันที"
+                        hint={tr('หากใส่เบอร์พร้อมเพย์หรือเลขบัญชี 10–15 หลัก จะมีปุ่มคัดลอกเลขบัญชีให้สมาชิกกดได้ทันที')}
                     >
                         <Textarea
                             id="fund-desc"
@@ -214,14 +216,14 @@ export function TopicDialog({
                             onChange={(e) => setDescription(e.target.value)}
                             rows={2}
                             maxLength={500}
-                            placeholder="เช่น พร้อมเพย์ 081-234-5678 (ชื่อบัญชี ...) โอนแล้วส่งสลิปในห้องได้เลย"
+                            placeholder={tr('เช่น พร้อมเพย์ 081-234-5678 (ชื่อบัญชี ...) โอนแล้วส่งสลิปในห้องได้เลย')}
                         />
                     </Field>
 
-                    <Field label="รูปแบบการเก็บเงิน">
+                    <Field label={tr('รูปแบบการเก็บเงิน')}>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                             <Button type="button" size="sm" variant={mode === 'fixed' ? 'default' : 'outline'} onClick={() => setMode('fixed')}>
-                                <Banknote className="size-3.5" /> ยอดคงที่ต่อคน
+                                <Banknote className="size-3.5" /> {tr('ยอดคงที่ต่อคน')}
                             </Button>
                             <Button
                                 type="button"
@@ -233,7 +235,7 @@ export function TopicDialog({
                                     if (!startDate) setStartDate(todayInput());
                                 }}
                             >
-                                <Calendar className="size-3.5" /> ยอดรายวัน (เช่น 15 บาท)
+                                <Calendar className="size-3.5" /> {tr('ยอดรายวัน (เช่น 15 บาท)')}
                             </Button>
                         </div>
                     </Field>
@@ -241,7 +243,7 @@ export function TopicDialog({
                     {mode === 'daily' ? (
                         <div className="space-y-3 rounded-lg border bg-muted/20 p-3">
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Field label="ยอดเก็บต่อวัน (บาท/วัน)" htmlFor="fund-daily-rate">
+                                <Field label={tr('ยอดเก็บต่อวัน (บาท/วัน)')} htmlFor="fund-daily-rate">
                                     <div className="space-y-1.5">
                                         <Input
                                             id="fund-daily-rate"
@@ -269,13 +271,13 @@ export function TopicDialog({
                                                         setManualAmount(false);
                                                     }}
                                                 >
-                                                    {preset} ฿
+                                                    {preset} {tr('฿')}
                                                 </Button>
                                             ))}
                                         </div>
                                     </div>
                                 </Field>
-                                <Field label="วันที่เริ่มเก็บ" htmlFor="fund-start-date">
+                                <Field label={tr('วันที่เริ่มเก็บ')} htmlFor="fund-start-date">
                                     <DateTimeInput
                                         mode="date"
                                         id="fund-start-date"
@@ -289,7 +291,7 @@ export function TopicDialog({
                                 </Field>
                             </div>
                             <div className="grid gap-3 sm:grid-cols-2">
-                                <Field label="วันครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
+                                <Field label={tr('วันครบกำหนด (ไม่บังคับ)')} htmlFor="fund-due">
                                     <div className="space-y-1.5">
                                         <DateTimeInput
                                             mode="date"
@@ -310,7 +312,7 @@ export function TopicDialog({
                                                 className="h-5 px-1.5 text-[10px]"
                                                 onClick={() => applyDuePreset('7d')}
                                             >
-                                                +7 วัน
+                                                {tr('+7 วัน')}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -319,7 +321,7 @@ export function TopicDialog({
                                                 className="h-5 px-1.5 text-[10px]"
                                                 onClick={() => applyDuePreset('15d')}
                                             >
-                                                +15 วัน
+                                                {tr('+15 วัน')}
                                             </Button>
                                             <Button
                                                 type="button"
@@ -328,15 +330,19 @@ export function TopicDialog({
                                                 className="h-5 px-1.5 text-[10px]"
                                                 onClick={() => applyDuePreset('month_end')}
                                             >
-                                                สิ้นเดือนนี้
+                                                {tr('สิ้นเดือนนี้')}
                                             </Button>
                                         </div>
                                     </div>
                                 </Field>
                                 <Field
-                                    label="ยอดเป้าหมายต่อคน (บาท)"
+                                    label={tr('ยอดเป้าหมายต่อคน (บาท)')}
                                     htmlFor="fund-amount"
-                                    hint={computedDailyTotal > 0 ? `คำนวณจาก ${days} วัน × ${formatBaht(Number(dailyRate))}` : 'ปล่อยเป็น 0 หรือใส่เป้าหมาย'}
+                                    hint={
+                                        computedDailyTotal > 0
+                                            ? tr('คำนวณจาก {0} วัน × {1}', { 0: days, 1: formatBaht(Number(dailyRate)) })
+                                            : tr('ปล่อยเป็น 0 หรือใส่เป้าหมาย')
+                                    }
                                 >
                                     <Input
                                         id="fund-amount"
@@ -356,13 +362,14 @@ export function TopicDialog({
                             {invalidDateRange && (
                                 <p className="flex items-center gap-1.5 text-xs text-destructive">
                                     <AlertCircle className="size-3.5 shrink-0" />
-                                    วันที่เริ่มเก็บต้องไม่หลังวันครบกำหนด
+
+                                    {tr('วันที่เริ่มเก็บต้องไม่หลังวันครบกำหนด')}
                                 </p>
                             )}
                         </div>
                     ) : (
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <Field label="ยอดเก็บต่อคน (บาท)" htmlFor="fund-amount">
+                            <Field label={tr('ยอดเก็บต่อคน (บาท)')} htmlFor="fund-amount">
                                 <div className="space-y-1.5">
                                     <Input
                                         id="fund-amount"
@@ -384,13 +391,13 @@ export function TopicDialog({
                                                 className="h-5 px-1.5 text-[10px]"
                                                 onClick={() => setAmount(String(preset))}
                                             >
-                                                {preset.toLocaleString('th-TH')} ฿
+                                                {preset.toLocaleString(dateLocale())} {tr('฿')}
                                             </Button>
                                         ))}
                                     </div>
                                 </div>
                             </Field>
-                            <Field label="ครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
+                            <Field label={tr('ครบกำหนด (ไม่บังคับ)')} htmlFor="fund-due">
                                 <div className="space-y-1.5">
                                     <DateTimeInput mode="date" clearable id="fund-due" value={dueDate} onValueChange={(v) => setDueDate(v)} />
                                     <div className="flex flex-wrap gap-1">
@@ -401,7 +408,7 @@ export function TopicDialog({
                                             className="h-5 px-1.5 text-[10px]"
                                             onClick={() => applyDuePreset('7d')}
                                         >
-                                            +7 วัน
+                                            {tr('+7 วัน')}
                                         </Button>
                                         <Button
                                             type="button"
@@ -410,7 +417,7 @@ export function TopicDialog({
                                             className="h-5 px-1.5 text-[10px]"
                                             onClick={() => applyDuePreset('15d')}
                                         >
-                                            +15 วัน
+                                            {tr('+15 วัน')}
                                         </Button>
                                         <Button
                                             type="button"
@@ -419,7 +426,7 @@ export function TopicDialog({
                                             className="h-5 px-1.5 text-[10px]"
                                             onClick={() => applyDuePreset('month_end')}
                                         >
-                                            สิ้นเดือนนี้
+                                            {tr('สิ้นเดือนนี้')}
                                         </Button>
                                     </div>
                                 </div>
@@ -427,17 +434,17 @@ export function TopicDialog({
                         </div>
                     )}
 
-                    <Field label="ห้องส่งรายงาน" hint="เปลี่ยนได้ภายหลัง หรือเลือกห้องอื่นตอนกดส่งรายงาน">
-                        <ChannelSelect channels={textChannels} value={reportChannelId} onChange={setReportChannelId} noneLabel="ยังไม่เลือก" />
+                    <Field label={tr('ห้องส่งรายงาน')} hint={tr('เปลี่ยนได้ภายหลัง หรือเลือกห้องอื่นตอนกดส่งรายงาน')}>
+                        <ChannelSelect channels={textChannels} value={reportChannelId} onChange={setReportChannelId} noneLabel={tr('ยังไม่เลือก')} />
                     </Field>
                 </form>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>
-                        ยกเลิก
+                        {tr('ยกเลิก')}
                     </Button>
                     <Button type="submit" form="fund-topic-form" disabled={save.isPending || !name.trim() || invalidDateRange}>
                         {save.isPending && <Loader2 className="animate-spin" />}
-                        {topic ? 'บันทึก' : 'สร้างหัวข้อ'}
+                        {topic ? tr('บันทึก') : tr('สร้างหัวข้อ')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

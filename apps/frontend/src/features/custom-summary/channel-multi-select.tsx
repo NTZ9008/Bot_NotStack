@@ -1,3 +1,4 @@
+import { tr } from '../../lib/i18n';
 import type { CustomSummaryChannelGroup, CustomSummaryChannelOption } from '@notstack/shared';
 import { Check, ChevronDown, GitPullRequest, Hash, Search, Volume2, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
@@ -11,15 +12,15 @@ import { cn } from '@/lib/utils';
 
 const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> = {
     text: {
-        label: 'ห้องแชทข้อความ',
+        label: tr('ห้องแชทข้อความ'),
         badgeClass: 'bg-highlight/15 text-highlight border-highlight/30',
     },
     voice: {
-        label: 'ห้องเสียง',
+        label: tr('ห้องเสียง'),
         badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
     },
     devops: {
-        label: 'ห้องแจ้งเตือน DevOps',
+        label: tr('ห้องแจ้งเตือน DevOps'),
         badgeClass: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
     },
 };
@@ -51,10 +52,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
         if (!q) return channels;
         return channels.filter(
             (ch) =>
-                ch.name.toLowerCase().includes(q) ||
-                ch.category.toLowerCase().includes(q) ||
-                ch.id.includes(q) ||
-                ch.devopsTags.some((tag) => tag.includes(q)),
+                ch.name.toLowerCase().includes(q) || ch.category.toLowerCase().includes(q) || ch.id.includes(q) || ch.devopsTags.some((tag) => tag.includes(q)),
         );
     }, [channels, query]);
 
@@ -87,18 +85,15 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
         }
     };
 
-    const selectedChannels = useMemo(
-        () => channels.filter((ch) => selectedSet.has(ch.id)),
-        [channels, selectedSet],
-    );
+    const selectedChannels = useMemo(() => channels.filter((ch) => selectedSet.has(ch.id)), [channels, selectedSet]);
 
     const triggerSummary = loading
-        ? 'กำลังโหลดรายชื่อห้อง...'
+        ? tr('กำลังโหลดรายชื่อห้อง...')
         : isAllMode
-          ? `ทั้งหมดในเซิร์ฟเวอร์ (${channels.length} ห้อง)`
+          ? tr('ทั้งหมดในเซิร์ฟเวอร์ ({0} ห้อง)', { 0: channels.length })
           : selectedIds.length === channels.length
-            ? `เลือกครบทุกห้อง (${channels.length} ห้อง)`
-            : `เลือกแล้ว ${selectedIds.length} ห้อง`;
+            ? tr('เลือกครบทุกห้อง ({0} ห้อง)', { 0: channels.length })
+            : tr('เลือกแล้ว {0} ห้อง', { 0: selectedIds.length });
 
     return (
         <div className="space-y-2">
@@ -124,7 +119,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                             <Input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder="ค้นหาชื่อห้อง, หมวดหมู่ หรือ tags (pr, grafana)..."
+                                placeholder={tr('ค้นหาชื่อห้อง, หมวดหมู่ หรือ tags (pr, grafana)...')}
                                 className="h-8 border-border bg-background pl-8 text-xs text-foreground placeholder:text-muted-foreground"
                             />
                         </div>
@@ -138,7 +133,8 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     onClick={() => onChange(allIds)}
                                 >
                                     <Check className="mr-1 size-3" />
-                                    เลือกทั้งหมด ({channels.length})
+                                    {tr('เลือกทั้งหมด (')}
+                                    {channels.length})
                                 </Button>
                                 <Button
                                     type="button"
@@ -147,18 +143,20 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     className="text-muted-foreground hover:bg-muted hover:text-foreground"
                                     onClick={() => onChange([])}
                                 >
-                                    ดูรวมทั้งเซิร์ฟเวอร์
+                                    {tr('ดูรวมทั้งเซิร์ฟเวอร์')}
                                 </Button>
                             </div>
                             {selectedIds.length > 0 && (
-                                <span className="text-[11px] text-highlight">เลือกเจาะจง {selectedIds.length} ห้อง</span>
+                                <span className="text-[11px] text-highlight">
+                                    {tr('เลือกเจาะจง')} {selectedIds.length} {tr('ห้อง')}
+                                </span>
                             )}
                         </div>
                     </div>
 
                     <ScrollArea className="h-72 p-2">
                         {grouped.length === 0 ? (
-                            <div className="py-10 text-center text-xs text-muted-foreground">ไม่พบห้องที่ตรงกับคำค้นหา</div>
+                            <div className="py-10 text-center text-xs text-muted-foreground">{tr('ไม่พบห้องที่ตรงกับคำค้นหา')}</div>
                         ) : (
                             <div className="space-y-3">
                                 {grouped.map(({ group, items }) => {
@@ -175,7 +173,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                     onClick={() => toggleGroup(items)}
                                                     className="text-[11px] font-medium text-highlight hover:text-highlight"
                                                 >
-                                                    {allGroupSelected ? 'เอาออกทั้งกลุ่ม' : 'เลือกทั้งกลุ่ม'}
+                                                    {allGroupSelected ? tr('เอาออกทั้งกลุ่ม') : tr('เลือกทั้งกลุ่ม')}
                                                 </button>
                                             </div>
                                             <div className="space-y-0.5 pl-1">
@@ -186,9 +184,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                             key={ch.id}
                                                             className={cn(
                                                                 'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors',
-                                                                checked
-                                                                    ? 'bg-highlight/15 text-foreground'
-                                                                    : 'text-muted-foreground hover:bg-muted/60',
+                                                                checked ? 'bg-highlight/15 text-foreground' : 'text-muted-foreground hover:bg-muted/60',
                                                             )}
                                                         >
                                                             <span className="flex min-w-0 items-center gap-2">
@@ -210,7 +206,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                                 ))}
                                                                 {ch.historicalOnly && (
                                                                     <span className="rounded border border-border bg-muted/80 px-1.5 text-[10px] text-muted-foreground">
-                                                                        ประวัติเก่า
+                                                                        {tr('ประวัติเก่า')}
                                                                     </span>
                                                                 )}
                                                             </span>
@@ -230,15 +226,11 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
             {selectedChannels.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {selectedChannels.slice(0, 8).map((ch) => (
-                        <Badge
-                            key={ch.id}
-                            variant="outline"
-                            className={cn('gap-1 pr-1 text-[11px]', GROUP_META[ch.group].badgeClass)}
-                        >
+                        <Badge key={ch.id} variant="outline" className={cn('gap-1 pr-1 text-[11px]', GROUP_META[ch.group].badgeClass)}>
                             <span>#{ch.name}</span>
                             <button
                                 type="button"
-                                aria-label={`ลบ ${ch.name}`}
+                                aria-label={tr('ลบ {0}', { 0: ch.name })}
                                 onClick={() => toggleOne(ch.id)}
                                 className="rounded-full p-0.5 hover:bg-foreground/10"
                             >
@@ -248,7 +240,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                     ))}
                     {selectedChannels.length > 8 && (
                         <Badge variant="outline" className="border-border bg-background text-[11px] text-muted-foreground">
-                            +{selectedChannels.length - 8} ห้องเพิ่มเติม
+                            +{selectedChannels.length - 8} {tr('ห้องเพิ่มเติม')}
                         </Badge>
                     )}
                 </div>

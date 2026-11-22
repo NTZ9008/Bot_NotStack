@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import type { MemberSearchResult } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, X } from '@/components/icons';
@@ -25,7 +26,7 @@ export function UserPicker({
     value,
     onSelect,
     onClear,
-    placeholder = 'พิมพ์ชื่อหรือ username เพื่อค้นหา...',
+    placeholder = tr('พิมพ์ชื่อหรือ username เพื่อค้นหา...'),
     exclude = [],
     keepSelection = true,
     className,
@@ -47,7 +48,14 @@ export function UserPicker({
     const results: PickedUser[] = data.filter((member) => !exclude.includes(member.userId));
     // พิมพ์เป็นตัวเลขล้วน → เลือกใช้เป็น User ID ตรงๆ ได้เลย (เผื่อคนไม่ได้อยู่ในเซิร์ฟเวอร์แล้ว)
     if (SNOWFLAKE.test(query) && !results.some((member) => member.userId === query) && !exclude.includes(query)) {
-        results.unshift({ userId: query, username: `ใช้ User ID: ${query}`, tag: query, avatar: fallbackAvatar(query), nickname: null, raw: true });
+        results.unshift({
+            userId: query,
+            username: tr('ใช้ User ID: {0}', { 0: query }),
+            tag: query,
+            avatar: fallbackAvatar(query),
+            nickname: null,
+            raw: true,
+        });
     }
 
     const select = (user: PickedUser) => {
@@ -76,21 +84,28 @@ export function UserPicker({
                     <CommandList className="absolute top-full right-0 left-0 z-50 mt-1 max-h-72 rounded-lg border bg-popover p-1 shadow-lg">
                         {waiting && results.length === 0 ? (
                             <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                                <Loader2 className="size-4 animate-spin" /> กำลังค้นหา...
+                                <Loader2 className="size-4 animate-spin" /> {tr('กำลังค้นหา...')}
                             </div>
                         ) : (
                             <>
-                                <CommandEmpty>{isError ? 'ค้นหาไม่สำเร็จ กรุณาลองใหม่' : 'ไม่พบสมาชิกที่ตรงกับคำค้นนี้'}</CommandEmpty>
+                                <CommandEmpty>{isError ? tr('ค้นหาไม่สำเร็จ กรุณาลองใหม่') : tr('ไม่พบสมาชิกที่ตรงกับคำค้นนี้')}</CommandEmpty>
                                 <CommandGroup>
                                     {results.map((member) => (
-                                        <CommandItem key={member.userId} value={member.userId} onSelect={() => select(member)} onMouseDown={(e) => e.preventDefault()}>
+                                        <CommandItem
+                                            key={member.userId}
+                                            value={member.userId}
+                                            onSelect={() => select(member)}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                        >
                                             <img src={member.avatar || fallbackAvatar(member.userId)} alt="" className="size-7 rounded-full" />
                                             <div className="min-w-0">
                                                 <p className="truncate font-medium">
                                                     {member.username}
                                                     {member.nickname && <span className="text-muted-foreground"> ({member.nickname})</span>}
                                                 </p>
-                                                <p className="truncate text-xs text-muted-foreground">{member.raw ? 'ไม่ได้อยู่ในรายชื่อสมาชิก' : `@${member.tag}`}</p>
+                                                <p className="truncate text-xs text-muted-foreground">
+                                                    {member.raw ? tr('ไม่ได้อยู่ในรายชื่อสมาชิก') : `@${member.tag}`}
+                                                </p>
                                             </div>
                                         </CommandItem>
                                     ))}
@@ -109,7 +124,7 @@ export function UserPicker({
                         <p className="truncate font-mono text-xs text-muted-foreground">{value.userId}</p>
                     </div>
                     {onClear && (
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} aria-label="ล้างที่เลือกไว้">
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} aria-label={tr('ล้างที่เลือกไว้')}>
                             <X />
                         </Button>
                     )}

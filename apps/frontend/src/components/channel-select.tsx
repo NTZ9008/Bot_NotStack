@@ -1,3 +1,4 @@
+import { tr } from '../lib/i18n';
 import type { GuildChannel } from '@notstack/shared';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ export function ChannelSelect({
     channels,
     value,
     onChange,
-    placeholder = 'เลือกห้อง ..',
+    placeholder = tr('เลือกห้อง ..'),
     noneLabel,
     showCategories = false,
     className,
@@ -35,7 +36,7 @@ export function ChannelSelect({
     const byCategory = new Map<string, GuildChannel[]>();
     for (const channel of channels) {
         if (channel.isCategory && !showCategories) continue;
-        const key = channel.isCategory ? '📂 หมวดหมู่' : channel.category;
+        const key = channel.isCategory ? tr('📂 หมวดหมู่') : channel.category;
         byCategory.set(key, [...(byCategory.get(key) ?? []), channel]);
     }
     const missing = value && !channels.some((channel) => channel.id === value);
@@ -52,12 +53,16 @@ export function ChannelSelect({
                         <SelectLabel>{category}</SelectLabel>
                         {list.map((channel) => (
                             <SelectItem key={channel.id} value={channel.id}>
-                                {channel.isCategory ? `📂 ${channel.name} (ทั้งหมวด)` : `#${channel.name}`}
+                                {channel.isCategory ? tr('📂 {0} (ทั้งหมวด)', { 0: channel.name }) : `#${channel.name}`}
                             </SelectItem>
                         ))}
                     </SelectGroup>
                 ))}
-                {missing && <SelectItem value={value}>ID: {value} (ไม่พบห้องนี้)</SelectItem>}
+                {missing && (
+                    <SelectItem value={value}>
+                        ID: {value} {tr('(ไม่พบห้องนี้)')}
+                    </SelectItem>
+                )}
             </SelectContent>
         </Select>
     );
