@@ -72,9 +72,9 @@ function JiraPage() {
     const patchOptions = (next: Partial<JiraOptions>) => setDraft((current) => (current ? { ...current, options: { ...current.options, ...next } } : current));
 
     useUnsavedChangesGuard(dirty, {
-        title: tr('ทิ้งการแก้ไขที่ยังไม่บันทึก?'),
-        description: tr('การตั้งค่า Jira มีการแก้ไขที่ยังไม่ได้กดบันทึก'),
-        confirmText: tr('ทิ้งการแก้ไข'),
+        title: tr('common.discardUnsavedChanges'),
+        description: tr('jira.jiraSettingsHaveUnsavedChanges'),
+        confirmText: tr('common.discardChanges'),
         destructive: true,
     });
 
@@ -84,10 +84,10 @@ function JiraPage() {
         try {
             const result = await jiraApi.save(guildId, draft);
             load(result.settings);
-            if (result.warning) toast.warning(tr('บันทึกแล้ว แต่ยังมีปัญหา'), { description: result.warning });
-            else toast.success(tr('บันทึกการตั้งค่าแล้ว'));
+            if (result.warning) toast.warning(tr('jira.savedButThereAreStillProblems'), { description: result.warning });
+            else toast.success(tr('common.settingsSaved'));
         } catch (err) {
-            toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.saveFailed'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -101,10 +101,10 @@ function JiraPage() {
         try {
             const result = await jiraApi.save(guildId, { enabled });
             queryClient.setQueryData(jiraSettingsQuery(guildId).queryKey, result.settings);
-            if (result.warning) toast.warning(enabled ? tr('เปิดใช้งานแล้ว แต่ยังมีปัญหา') : tr('ปิดใช้งานแล้ว'), { description: result.warning });
-            else toast.success(enabled ? tr('เปิดระบบ Jira card แล้ว') : tr('ปิดระบบ Jira card แล้ว'));
+            if (result.warning) toast.warning(enabled ? tr('jira.enabledButThereAreStillProblems') : tr('jira.disabled'), { description: result.warning });
+            else toast.success(enabled ? tr('jira.jiraCardsEnabled') : tr('jira.jiraCardsDisabled'));
         } catch (err) {
-            toast.error(tr('เปลี่ยนสถานะไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.failedToChangeStatus'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -116,71 +116,65 @@ function JiraPage() {
         try {
             const result = await jiraApi.test(guildId, { siteUrl: draft.siteUrl, email: draft.email, apiToken: draft.apiToken, projectKey: draft.projectKey });
             setConnection(result);
-            toast.success(tr('เชื่อมต่อ Jira สำเร็จ'), {
-                description: tr('{0} · โปรเจกต์ {1} ({2} ประเภท)', { 0: result.accountName, 1: result.projectName, 2: result.issueTypes.length }),
+            toast.success(tr('jira.jiraConnected'), {
+                description: tr('jira.projectTypes', { 0: result.accountName, 1: result.projectName, 2: result.issueTypes.length }),
             });
         } catch (err) {
             setConnection(null);
-            toast.error(tr('เชื่อมต่อ Jira ไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('jira.failedToConnectToJira'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
     };
 
     const sendPanel = async () => {
-        if (!saved?.panelChannelId) return toast.error(tr('ยังส่งแผงไม่ได้'), { description: tr('เลือกห้องแผงแล้วกด "บันทึก" ก่อน') });
-        if (dirty) return toast.error(tr('ยังส่งแผงไม่ได้'), { description: tr('มีการแก้ไขที่ยังไม่บันทึก — กด "บันทึก" ก่อน') });
+        if (!saved?.panelChannelId) return toast.error(tr('jira.cantSendThePanelYet'), { description: tr('jira.pickAPanelChannelAndPress') });
+        if (dirty) return toast.error(tr('jira.cantSendThePanelYet'), { description: tr('jira.youHaveUnsavedChangesPressSave') });
         const ok = await confirm({
-            title: tr('ส่งแผงเข้า {0}?', { 0: channelLabel(allChannels, saved.panelChannelId) }),
-            description: tr('ถ้าเคยส่งแผงไว้ในห้องนี้แล้ว บอทจะแก้ข้อความเดิมแทนการส่งใหม่'),
-            confirmText: tr('ส่งแผง'),
+            title: tr('jira.sendThePanelTo', { 0: channelLabel(allChannels, saved.panelChannelId) }),
+            description: tr('jira.ifAPanelWasAlreadySent'),
+            confirmText: tr('jira.sendPanel'),
         });
         if (!ok) return;
         setBusy('panel');
         try {
             const result = await jiraApi.sendPanel(guildId);
-            toast.success(result.message ?? tr('ส่งแผงแล้ว'));
+            toast.success(result.message ?? tr('jira.panelSent'));
             await queryClient.invalidateQueries({ queryKey: jiraSettingsQuery(guildId).queryKey });
         } catch (err) {
-            toast.error(tr('ส่งแผงไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('jira.failedToSendPanel'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
     };
 
     if (settings.isLoading) return <JiraPageSkeleton />;
-    if (settings.error) return <ErrorState error={settings.error} title={tr('โหลดการตั้งค่า Jira ไม่สำเร็จ')} />;
+    if (settings.error) return <ErrorState error={settings.error} title={tr('jira.failedToLoadJiraSettings')} />;
     const current = settings.data!;
     if (!draft) return <JiraPageSkeleton />;
 
     return (
         <>
-            <PageHeader
-                help="jira"
-                title={tr('เปิด Jira card')}
-                description={tr(
-                    'ให้สมาชิกเปิด card ใน Jira จาก Discord แบบระบบ ticket — กดปุ่มในห้องแผง บอทสร้างห้องส่วนตัวให้เลือกประเภทและกรอกหัวข้อ/รายละเอียด แล้วส่งลิงก์ card กลับมา',
-                )}
-            />
+            <PageHeader help="jira" title={tr('common.jiraCards')} description={tr('jira.letMembersOpenJiraCardsFrom')} />
 
             <Card>
                 <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
                         {current.enabled ? (
-                            <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('เปิดอยู่')}</Badge>
+                            <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('common.on')}</Badge>
                         ) : (
                             <Badge variant="secondary" className="mr-1.5">
-                                {tr('ปิดอยู่')}
+                                {tr('common.off')}
                             </Badge>
                         )}
                         {current.panelMessageId
-                            ? tr('แผงอยู่ที่ {0}', { 0: channelLabel(allChannels, current.panelChannelId) ?? '-' })
-                            : tr('ยังไม่ได้ส่งแผงเข้าห้อง')}
+                            ? tr('jira.panelIsIn', { 0: channelLabel(allChannels, current.panelChannelId) ?? '-' })
+                            : tr('jira.panelNotSentToAChannel')}
                     </div>
                     <div className="flex items-center gap-3">
-                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('มีการแก้ไขที่ยังไม่บันทึก')}</Badge>}
-                        <Label className="flex items-center gap-2" title={tr('เปิด/ปิดการเปิด card จาก Discord (บันทึกทันที)')}>
-                            {tr('เปิดใช้งาน')}
+                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('common.youHaveUnsavedChanges')}</Badge>}
+                        <Label className="flex items-center gap-2" title={tr('jira.turnOpeningCardsFromDiscordOn')}>
+                            {tr('common.enabled')}
                             <Switch checked={current.enabled} disabled={busy === 'toggle'} onCheckedChange={(checked) => void toggle(checked)} />
                         </Label>
                     </div>
@@ -203,13 +197,14 @@ function JiraPage() {
 
             <div className="flex flex-wrap gap-2">
                 <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('บันทึก')}
+                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
                 </Button>
                 <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                    <RotateCcw /> {tr('ยกเลิกการแก้ไข')}
+                    <RotateCcw /> {tr('common.cancelChanges')}
                 </Button>
                 <Button variant="secondary" onClick={() => void sendPanel()} disabled={busy === 'panel'}>
-                    {busy === 'panel' ? <Loader2 className="animate-spin" /> : <Send />} {current.panelMessageId ? tr('อัปเดตแผง') : tr('ส่งแผงเข้าห้อง')}
+                    {busy === 'panel' ? <Loader2 className="animate-spin" /> : <Send />}{' '}
+                    {current.panelMessageId ? tr('jira.updatePanel') : tr('jira.sendPanelToChannel')}
                 </Button>
             </div>
 

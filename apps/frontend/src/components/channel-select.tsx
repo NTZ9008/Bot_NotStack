@@ -14,7 +14,7 @@ export function ChannelSelect({
     channels,
     value,
     onChange,
-    placeholder = tr('เลือกห้อง ..'),
+    placeholder = tr('common.selectAChannel'),
     noneLabel,
     showCategories = false,
     className,
@@ -36,7 +36,7 @@ export function ChannelSelect({
     const byCategory = new Map<string, GuildChannel[]>();
     for (const channel of channels) {
         if (channel.isCategory && !showCategories) continue;
-        const key = channel.isCategory ? tr('📂 หมวดหมู่') : channel.category;
+        const key = channel.isCategory ? tr('common.category') : channel.category;
         byCategory.set(key, [...(byCategory.get(key) ?? []), channel]);
     }
     const missing = value && !channels.some((channel) => channel.id === value);
@@ -53,14 +53,14 @@ export function ChannelSelect({
                         <SelectLabel>{category}</SelectLabel>
                         {list.map((channel) => (
                             <SelectItem key={channel.id} value={channel.id}>
-                                {channel.isCategory ? tr('📂 {0} (ทั้งหมวด)', { 0: channel.name }) : `#${channel.name}`}
+                                {channel.isCategory ? tr('common.wholeCategory', { 0: channel.name }) : `#${channel.name}`}
                             </SelectItem>
                         ))}
                     </SelectGroup>
                 ))}
                 {missing && (
                     <SelectItem value={value}>
-                        ID: {value} {tr('(ไม่พบห้องนี้)')}
+                        ID: {value} {tr('common.channelNotFound')}
                     </SelectItem>
                 )}
             </SelectContent>

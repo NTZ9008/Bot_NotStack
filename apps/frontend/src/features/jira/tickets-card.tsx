@@ -20,16 +20,16 @@ import { formatDateTime, formatNumber } from '@/lib/format';
 const PAGE_SIZE = 20;
 
 const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] => [
-    { value: 'all', label: tr('ทั้งหมด') },
-    { value: 'open', label: tr('รอสร้าง card') },
-    { value: 'created', label: tr('สร้าง card แล้ว') },
-    { value: 'closed', label: tr('ปิดห้องแล้ว') },
+    { value: 'all', label: tr('common.total') },
+    { value: 'open', label: tr('jira.waitingForCard') },
+    { value: 'created', label: tr('jira.cardCreated') },
+    { value: 'closed', label: tr('jira.channelClosed') },
 ]);
 
 function StatusBadge({ status }: { status: JiraTicketStatus }) {
-    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('สร้าง card แล้ว')}</Badge>;
-    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('รอสร้าง card')}</Badge>;
-    return <Badge variant="secondary">{tr('ปิดห้องแล้ว')}</Badge>;
+    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('jira.cardCreated')}</Badge>;
+    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('jira.waitingForCard')}</Badge>;
+    return <Badge variant="secondary">{tr('jira.channelClosed')}</Badge>;
 }
 
 // รายการห้องส่วนตัวที่สมาชิกเปิด + card ที่สร้าง — ปิดห้องที่ค้างอยู่จากหน้านี้ได้
@@ -44,11 +44,9 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
 
     const close = async (ticket: JiraTicket) => {
         const ok = await confirm({
-            title: tr('ปิดห้องของ {0}?', { 0: ticket.userName }),
-            description: ticket.issueKey
-                ? tr('ห้องใน Discord จะถูกลบ — card {0} ใน Jira ยังอยู่ตามเดิม', { 0: ticket.issueKey })
-                : tr('ห้องใน Discord จะถูกลบ — ยังไม่ได้สร้าง card จากห้องนี้'),
-            confirmText: tr('ปิดห้อง'),
+            title: tr('jira.closeSChannel', { 0: ticket.userName }),
+            description: ticket.issueKey ? tr('jira.theDiscordChannelWillBeDeleted', { 0: ticket.issueKey }) : tr('jira.theDiscordChannelWillBeDeleted2'),
+            confirmText: tr('jira.closeChannel'),
             destructive: true,
         });
         if (!ok) return;
@@ -56,9 +54,9 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
         try {
             await jiraApi.closeTicket(guildId, ticket.id);
             await queryClient.invalidateQueries({ queryKey: [...guildKey(guildId), 'jira', 'tickets'] });
-            toast.success(tr('ปิดห้องแล้ว'));
+            toast.success(tr('jira.channelClosed'));
         } catch (err) {
-            toast.error(tr('ปิดห้องไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('jira.failedToCloseChannel'), { description: errorMessage(err) });
         } finally {
             setClosing(null);
         }
@@ -67,10 +65,10 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{tr('ห้องและ card ล่าสุด')}</CardTitle>
+                <CardTitle>{tr('jira.recentChannelsAndCards')}</CardTitle>
                 <CardDescription>
-                    {tr('ห้องที่เปิดอยู่')} {formatNumber(data?.openCount)} {tr('ห้อง · สร้าง card ไปแล้วทั้งหมด')} {formatNumber(data?.createdCount)}{' '}
-                    {tr('ใบ')}
+                    {tr('jira.openChannels')} {formatNumber(data?.openCount)} {tr('jira.channelsCardsCreatedInTotal')} {formatNumber(data?.createdCount)}{' '}
+                    {tr('jira.cards')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -95,17 +93,17 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                 ) : error ? (
                     <ErrorState error={error} />
                 ) : !data?.items.length ? (
-                    <EmptyState>{tr('ยังไม่มีรายการ')}</EmptyState>
+                    <EmptyState>{tr('jira.noEntriesYet')}</EmptyState>
                 ) : (
                     <div className="overflow-x-auto">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>{tr('ผู้เปิด')}</TableHead>
+                                    <TableHead>{tr('jira.openedBy')}</TableHead>
                                     <TableHead>Card</TableHead>
-                                    <TableHead>{tr('สถานะ')}</TableHead>
-                                    <TableHead>{tr('เปิดเมื่อ')}</TableHead>
-                                    <TableHead className="text-right">{tr('จัดการ')}</TableHead>
+                                    <TableHead>{tr('common.status')}</TableHead>
+                                    <TableHead>{tr('jira.openedAt')}</TableHead>
+                                    <TableHead className="text-right">{tr('common.actions')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -144,11 +142,11 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                             target="_blank"
                                                             rel="noreferrer"
                                                         >
-                                                            <ExternalLink /> {tr('ไปที่ห้อง')}
+                                                            <ExternalLink /> {tr('jira.goToChannel')}
                                                         </a>
                                                     </Button>
                                                     <Button variant="outline" size="sm" disabled={closing === ticket.id} onClick={() => void close(ticket)}>
-                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} {tr('ปิดห้อง')}
+                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} {tr('jira.closeChannel')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -162,13 +160,13 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
 
                 {pages > 1 && (
                     <div className="flex items-center justify-end gap-2 text-sm">
-                        <Button variant="outline" size="icon" aria-label={tr('หน้าก่อน')} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+                        <Button variant="outline" size="icon" aria-label={tr('jira.previousPage')} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
                             <ChevronLeft />
                         </Button>
                         <span>
-                            {tr('หน้า')} {page} / {pages}
+                            {tr('common.pages')} {page} / {pages}
                         </span>
-                        <Button variant="outline" size="icon" aria-label={tr('หน้าถัดไป')} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+                        <Button variant="outline" size="icon" aria-label={tr('jira.nextPage')} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
                             <ChevronRight />
                         </Button>
                     </div>

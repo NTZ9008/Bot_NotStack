@@ -15,14 +15,14 @@ export function JiraPanelCard({ draft, patchOptions }: Pick<JiraDraftProps, 'dra
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{tr('4. ข้อความแผง')}</CardTitle>
-                <CardDescription>{tr('ข้อความพร้อมปุ่มที่บอทส่งเข้าห้องแผง — แก้แล้วบันทึก จากนั้นกด “ส่ง/อัปเดตแผง”')}</CardDescription>
+                <CardTitle>{tr('jira.n4PanelMessage')}</CardTitle>
+                <CardDescription>{tr('jira.theMessageWithAButtonThe')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-                <Field label={tr('หัวข้อ')}>
+                <Field label={tr('common.topics')}>
                     <Input maxLength={JIRA_LIMITS.maxPanelTitleLength} value={panel.title} onChange={(e) => patchPanel({ title: e.target.value })} />
                 </Field>
-                <Field label={tr('รายละเอียด')}>
+                <Field label={tr('common.details')}>
                     <Textarea
                         rows={3}
                         maxLength={JIRA_LIMITS.maxPanelDescriptionLength}
@@ -31,14 +31,14 @@ export function JiraPanelCard({ draft, patchOptions }: Pick<JiraDraftProps, 'dra
                     />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label={tr('ข้อความบนปุ่ม')}>
+                    <Field label={tr('jira.buttonText')}>
                         <Input
                             maxLength={JIRA_LIMITS.maxButtonLabelLength}
                             value={panel.buttonLabel}
                             onChange={(e) => patchPanel({ buttonLabel: e.target.value })}
                         />
                     </Field>
-                    <Field label={tr('สีแถบ embed')}>
+                    <Field label={tr('jira.embedBarColor')}>
                         <ColorField value={panel.color} onChange={(color) => patchPanel({ color })} />
                     </Field>
                 </div>

@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 export function DataTable<TData>({
     columns,
     data,
-    empty = tr('ไม่มีข้อมูล'),
+    empty = tr('common.noData'),
     globalFilter,
     rowClassName,
     className,

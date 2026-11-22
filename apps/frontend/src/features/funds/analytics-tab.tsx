@@ -15,21 +15,30 @@ import { STATUS_LABEL } from './utils';
 // ==========================================
 // แดชบอร์ดกราฟ & สถิติวิเคราะห์ของหัวข้อ
 // ==========================================
-const statusChartConfig = byLang(() => ({
-    paid: { label: tr('จ่ายครบแล้ว'), color: STATUS_LABEL().paid.color },
-    partial: { label: tr('จ่ายบางส่วน'), color: STATUS_LABEL().partial.color },
-    unpaid: { label: tr('ยังไม่จ่าย'), color: STATUS_LABEL().unpaid.color },
-} satisfies ChartConfig));
+const statusChartConfig = byLang(
+    () =>
+        ({
+            paid: { label: tr('funds.fullyPaid2'), color: STATUS_LABEL().paid.color },
+            partial: { label: tr('funds.partiallyPaid'), color: STATUS_LABEL().partial.color },
+            unpaid: { label: tr('funds.unpaid'), color: STATUS_LABEL().unpaid.color },
+        }) satisfies ChartConfig,
+);
 
-const timelineChartConfig = byLang(() => ({
-    daily: { label: tr('รับเข้ารายวัน (บาท)'), color: '#38bdf8' },
-    cumulative: { label: tr('ยอดสะสมรวม (บาท)'), color: '#10b981' },
-} satisfies ChartConfig));
+const timelineChartConfig = byLang(
+    () =>
+        ({
+            daily: { label: tr('funds.dailyIncomeThb'), color: '#38bdf8' },
+            cumulative: { label: tr('funds.runningTotalThb'), color: '#10b981' },
+        }) satisfies ChartConfig,
+);
 
-const memberBarConfig = byLang(() => ({
-    paid: { label: tr('จ่ายแล้ว (บาท)'), color: '#10b981' },
-    remaining: { label: tr('คงค้าง (บาท)'), color: '#f59e0b' },
-} satisfies ChartConfig));
+const memberBarConfig = byLang(
+    () =>
+        ({
+            paid: { label: tr('funds.paidThb'), color: '#10b981' },
+            remaining: { label: tr('funds.outstandingThb'), color: '#f59e0b' },
+        }) satisfies ChartConfig,
+);
 
 export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
     const [visibleMemberCount, setVisibleMemberCount] = useState(12);
@@ -90,33 +99,33 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
         <div className="min-w-0 space-y-4">
             <div className="grid grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
                 <StatTile
-                    label={tr('เฉลี่ยเก็บได้ต่อคน')}
+                    label={tr('funds.averageCollectedPerPerson')}
                     value={formatBaht(avgPaidPerMember)}
-                    subtext={tr('จากเป้าหมายเฉลี่ย {0}', { 0: formatBaht(topic.amountPerMember) })}
+                    subtext={tr('funds.ofAnAverageTargetOf', { 0: formatBaht(topic.amountPerMember) })}
                     icon={<BarChart3 className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
                     valueClassName="text-emerald-700 dark:text-emerald-400"
                     tone="emerald"
                     variant="kpi"
                 />
                 <StatTile
-                    label={tr('เฉลี่ยต่อรายการโอน')}
+                    label={tr('funds.averagePerTransfer')}
                     value={formatBaht(avgPerPayment)}
-                    subtext={tr('จากทั้งหมด {0} รายการ', { 0: topic.payments.length })}
+                    subtext={tr('funds.outOfTransfers', { 0: topic.payments.length })}
                     icon={<Banknote className="size-3.5 text-primary" />}
                     variant="kpi"
                 />
                 <StatTile
-                    label={tr('อัตราคนจ่ายครบ')}
+                    label={tr('funds.fullyPaidRate')}
                     value={`${completionRate}%`}
-                    subtext={tr('จ่ายครบ {0} จาก {1} คน', { 0: topic.paidCount, 1: topic.memberCount })}
+                    subtext={tr('funds.ofPeopleFullyPaid', { 0: topic.paidCount, 1: topic.memberCount })}
                     icon={<CheckCircle2 className="size-3.5 text-sky-700 dark:text-sky-400" />}
                     tone="sky"
                     variant="kpi"
                 />
                 <StatTile
-                    label={tr('จำนวนครั้งที่รับเงิน')}
+                    label={tr('funds.paymentsReceived')}
                     value={`${topic.payments.length} รายการ`}
-                    subtext={topic.payments.length > 0 ? tr('บันทึกในระบบแล้ว') : tr('ยังไม่มีรายการโอน')}
+                    subtext={topic.payments.length > 0 ? tr('funds.recordedInTheSystem') : tr('funds.noTransfersYet')}
                     icon={<Receipt className="size-3.5 text-amber-700 dark:text-amber-400" />}
                     variant="kpi"
                 />
@@ -129,12 +138,12 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                             <PieChartIcon className="size-4 text-primary" />
 
-                            {tr('สัดส่วนสถานะการจ่ายของสมาชิก')}
+                            {tr('funds.memberPaymentStatus')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {statusData.length === 0 ? (
-                            <EmptyState>{tr('ยังไม่มีสมาชิกในหัวข้อนี้')}</EmptyState>
+                            <EmptyState>{tr('funds.noMembersInThisTopicYet')}</EmptyState>
                         ) : (
                             <ChartContainer config={statusChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <PieChart>
@@ -157,12 +166,12 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                             <TrendingUp className="size-4 text-emerald-700 dark:text-emerald-400" />
 
-                            {tr('แนวโน้มยอดเงินสะสม & รับเข้ารายวัน')}
+                            {tr('funds.runningTotalDailyIncomeTrend')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         {timelineData.length === 0 ? (
-                            <EmptyState>{tr('ยังไม่มีประวัติการรับเงินเพื่อแสดงกราฟแนวโน้ม')}</EmptyState>
+                            <EmptyState>{tr('funds.noPaymentHistoryYetToShow')}</EmptyState>
                         ) : (
                             <ChartContainer config={timelineChartConfig()} className="aspect-auto h-56 w-full sm:h-64">
                                 <AreaChart data={timelineData} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
@@ -200,7 +209,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
                                 <BarChart3 className="size-4 text-sky-700 dark:text-sky-400" />
 
-                                {tr('ยอดชำระแยกตามสมาชิก')}
+                                {tr('funds.paymentsByMember')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -231,7 +240,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                             {remainingMemberCount > 0 && (
                                 <div className="mt-3 flex justify-center">
                                     <Button variant="outline" onClick={() => setVisibleMemberCount((count) => count + 12)}>
-                                        {tr('โหลดเพิ่มอีก')} {Math.min(12, remainingMemberCount)} {tr('คน')}
+                                        {tr('funds.loadMore')} {Math.min(12, remainingMemberCount)} {tr('common.people')}
                                     </Button>
                                 </div>
                             )}

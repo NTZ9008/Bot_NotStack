@@ -16,38 +16,38 @@ import { errorMessage } from '@/lib/api';
 
 const samples = byLang((): Record<string, LogEmbedContent> => ({
     messageUpdate: {
-        title: tr('📝 แก้ไขข้อความ'),
-        description: tr('@Mali แก้ไขข้อความใน #general'),
+        title: tr('logManager.messageEdited'),
+        description: tr('logManager.maliEditedAMessageInGeneral'),
         fields: [
-            { name: tr('👤 ผู้เขียน'), value: '@Mali' },
-            { name: tr('📺 ช่อง'), value: '#general' },
+            { name: tr('logManager.author'), value: '@Mali' },
+            { name: tr('logManager.channel'), value: '#general' },
             {
-                name: tr('ก่อนแก้ไข'),
+                name: tr('logManager.before'),
                 value: 'วันนี้นัดคุยกันตอน 18:00 น. ที่ห้อง Community นะ ทุกคนสามารถนำไอเดียและคำถามมาพูดคุยกันได้ เราจะทบทวนกิจกรรมที่ผ่านมาและวางแผนกิจกรรมครั้งถัดไปด้วยกัน หากใครไม่สะดวกเข้าร่วม สามารถฝากความคิดเห็นไว้ในห้องนี้ได้เลย ทีมงานจะรวบรวมข้อมูลไปพูดคุยให้ แล้วเจอกันนะ!',
                 inline: false,
             },
-            { name: tr('หลังแก้ไข'), value: 'ขอเลื่อนเป็น 19:00 น. นะ เจอกันที่ห้อง Community เหมือนเดิม', inline: false },
+            { name: tr('logManager.after'), value: 'ขอเลื่อนเป็น 19:00 น. นะ เจอกันที่ห้อง Community เหมือนเดิม', inline: false },
         ],
     },
     memberJoin: {
-        title: tr('📥 สมาชิกเข้าร่วม'),
-        description: tr('@Mali เข้าร่วมเซิร์ฟเวอร์'),
+        title: tr('logManager.memberJoined'),
+        description: tr('logManager.maliJoinedTheServer'),
         thumbnail: 'https://cdn.discordapp.com/embed/avatars/0.png',
         fields: [
-            { name: tr('👤 ผู้ใช้'), value: '@Mali' },
+            { name: tr('logManager.user'), value: '@Mali' },
             { name: '🆔 User ID', value: '123456789012345678' },
-            { name: tr('📅 สร้างบัญชีเมื่อ'), value: '12 มกราคม 2025 • 1 ปีที่แล้ว', inline: false },
-            { name: tr('👥 จำนวนสมาชิกตอนนี้'), value: '128 คน' },
+            { name: tr('logManager.accountCreated'), value: '12 มกราคม 2025 • 1 ปีที่แล้ว', inline: false },
+            { name: tr('logManager.memberCountNow'), value: '128 คน' },
         ],
     },
     memberBan: {
-        title: tr('🔨 แบนสมาชิก'),
-        description: tr('@Mali ถูกแบนออกจากเซิร์ฟเวอร์'),
+        title: tr('logManager.memberBanned'),
+        description: tr('logManager.maliWasBannedFromTheServer'),
         thumbnail: 'https://cdn.discordapp.com/embed/avatars/0.png',
         fields: [
-            { name: tr('👤 สมาชิก'), value: '@Mali' },
-            { name: tr('🛡️ ผู้ดำเนินการ'), value: '@Admin' },
-            { name: tr('📝 เหตุผล'), value: 'ส่งข้อความรบกวนสมาชิกซ้ำหลังจากได้รับคำเตือน', inline: false },
+            { name: tr('logManager.member'), value: '@Mali' },
+            { name: tr('logManager.moderator'), value: '@Admin' },
+            { name: tr('logManager.reason'), value: 'ส่งข้อความรบกวนสมาชิกซ้ำหลังจากได้รับคำเตือน', inline: false },
         ],
     },
 }));
@@ -79,38 +79,38 @@ export function AppearanceEditor({
             setPersisted(options.appearance);
             setDraft(options.appearance);
             onSaved(options.appearance);
-            toast.success(tr('บันทึกรูปแบบแล้ว'), { description: tr('ใช้กับ log ใหม่ทุกประเภทในเซิร์ฟเวอร์นี้') });
+            toast.success(tr('logManager.formatSaved'), { description: tr('logManager.appliesToEveryNewLogType') });
         },
-        onError: (error) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(error) }),
+        onError: (error) => toast.error(tr('common.saveFailed'), { description: errorMessage(error) }),
     });
     const dirty = JSON.stringify(draft) !== JSON.stringify(persisted);
     useUnsavedChangesGuard(dirty, {
-        title: tr('ทิ้งรูปแบบที่ยังไม่บันทึก?'),
-        description: tr('การแก้ไขรูปแบบ Log จะหายไปเมื่อออกจากหน้านี้'),
-        confirmText: tr('ทิ้งการแก้ไข'),
+        title: tr('logManager.discardUnsavedFormat'),
+        description: tr('logManager.logFormatChangesWillBeLost'),
+        confirmText: tr('common.discardChanges'),
         destructive: true,
     });
     const patch = (next: Partial<LogAppearance>) => setDraft((current) => ({ ...current, ...next }));
     const event = events.find((e) => e.key === sample);
     const preview = formatLogEmbed(sample, samples()[sample]!, draft, event?.color, '2026-10-05T12:00:00.000Z');
     const toggles = [
-        ['showFieldIcons', tr('ไอคอนหน้ารายละเอียด'), tr('เพิ่มสัญลักษณ์ช่วยแยกประเภทข้อมูล')],
-        ['showIds', tr('แสดง ID'), tr('แสดงช่อง ID สำหรับอ้างอิงเมื่อเหตุการณ์มีข้อมูลนี้')],
-        ['showThumbnail', tr('รูปโปรไฟล์'), tr('แสดงรูปเมื่อเหตุการณ์มีรูปประกอบ')],
-        ['showTimestamp', tr('เวลาที่เกิดเหตุการณ์'), tr('แสดงเวลาที่ท้าย embed')],
+        ['showFieldIcons', tr('logManager.fieldIcons'), tr('logManager.addSymbolsToTellDataTypes')],
+        ['showIds', tr('logManager.showIds'), tr('logManager.showIdFieldsForReferenceWhen')],
+        ['showThumbnail', tr('common.avatar'), tr('logManager.showAnImageWhenTheEvent')],
+        ['showTimestamp', tr('logManager.eventTime'), tr('logManager.showTheTimeAtTheEnd')],
     ] as const;
 
     return (
         <Card className="overflow-hidden">
             <CardHeader>
-                <CardTitle>{tr('ออกแบบข้อความ Log')}</CardTitle>
-                <CardDescription>{tr('ปรับรูปแบบให้เหมาะกับทีม แล้วดูตัวอย่างก่อนบันทึก • ใช้กับ log ใหม่ทุกประเภทในเซิร์ฟเวอร์นี้')}</CardDescription>
+                <CardTitle>{tr('logManager.designLogMessages')}</CardTitle>
+                <CardDescription>{tr('logManager.adjustTheFormatForYourTeam')}</CardDescription>
             </CardHeader>
             <CardContent className="grid min-w-0 grid-cols-1 gap-8 xl:grid-cols-2">
                 <div className="min-w-0 space-y-5">
                     <fieldset disabled={mutation.isPending} className="min-w-0 space-y-5 disabled:opacity-60">
                         <div className="space-y-2">
-                            <Label>{tr('การจัดวางรายละเอียด')}</Label>
+                            <Label>{tr('logManager.fieldLayout')}</Label>
                             <div className="grid grid-cols-2 gap-3">
                                 {(['compact', 'comfortable'] as const).map((layout) => (
                                     <button
@@ -121,11 +121,11 @@ export function AppearanceEditor({
                                         className={`rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring ${draft.layout === layout ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
                                     >
                                         <span className="flex items-center justify-between text-sm font-medium">
-                                            {layout === 'compact' ? tr('กระชับ') : tr('อ่านสบาย')}
+                                            {layout === 'compact' ? tr('logManager.compact') : tr('logManager.comfortable')}
                                             {draft.layout === layout && <Check className="size-4" />}
                                         </span>
                                         <span className="mt-1 block text-xs text-muted-foreground">
-                                            {layout === 'compact' ? tr('ข้อมูลสั้นวางคู่กัน ประหยัดพื้นที่') : tr('แยกข้อมูลทีละบรรทัด อ่านง่าย')}
+                                            {layout === 'compact' ? tr('logManager.shortFieldsSideBySideSaves') : tr('logManager.oneFieldPerLineEasyTo')}
                                         </span>
                                     </button>
                                 ))}
@@ -143,7 +143,7 @@ export function AppearanceEditor({
                             ))}
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="log-content-length">{tr('ความยาวรายละเอียดต่อช่อง')}</Label>
+                            <Label htmlFor="log-content-length">{tr('logManager.maxFieldLength')}</Label>
                             <Select
                                 value={String(draft.maxContentLength)}
                                 disabled={mutation.isPending}
@@ -153,21 +153,21 @@ export function AppearanceEditor({
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="250">{tr('สั้น · 250 ตัวอักษร')}</SelectItem>
-                                    <SelectItem value="500">{tr('ปานกลาง · 500 ตัวอักษร')}</SelectItem>
-                                    <SelectItem value="1024">{tr('ยาว · 1,024 ตัวอักษร')}</SelectItem>
+                                    <SelectItem value="250">{tr('logManager.short250Characters')}</SelectItem>
+                                    <SelectItem value="500">{tr('logManager.medium500Characters')}</SelectItem>
+                                    <SelectItem value="1024">{tr('logManager.long1024Characters')}</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <p className="text-xs text-muted-foreground">{tr('ข้อความที่ยาวเกินจะแสดง … การตั้งค่านี้เปลี่ยนเฉพาะ embed ใน Discord')}</p>
+                            <p className="text-xs text-muted-foreground">{tr('logManager.longerTextIsCutWithThis')}</p>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="log-footer">{tr('ข้อความท้าย embed')}</Label>
+                            <Label htmlFor="log-footer">{tr('common.embedFooter')}</Label>
                             <Input
                                 id="log-footer"
                                 maxLength={100}
                                 value={draft.footerText}
                                 onChange={(e) => patch({ footerText: e.target.value })}
-                                placeholder={tr('เว้นว่างเพื่อซ่อนข้อความท้าย')}
+                                placeholder={tr('logManager.leaveEmptyToHideTheFooter')}
                             />
                             <p className="text-right text-xs text-muted-foreground">{draft.footerText.length}/100</p>
                         </div>
@@ -175,34 +175,34 @@ export function AppearanceEditor({
                     <div className="flex flex-wrap items-center gap-2">
                         <Button disabled={!dirty || mutation.isPending} onClick={() => mutation.mutate(draft)}>
                             <Save className="size-4" />
-                            {mutation.isPending ? tr('กำลังบันทึก…') : tr('บันทึกรูปแบบ')}
+                            {mutation.isPending ? tr('logManager.saving') : tr('logManager.saveFormat')}
                         </Button>
                         <Button variant="ghost" disabled={mutation.isPending} onClick={() => setDraft({ ...DEFAULT_LOG_APPEARANCE })}>
                             <RotateCcw className="size-4" />
 
-                            {tr('คืนค่าเริ่มต้น')}
+                            {tr('common.restoreDefaults')}
                         </Button>
                         {dirty && (
                             <Button variant="ghost" disabled={mutation.isPending} onClick={() => setDraft({ ...persisted })}>
-                                {tr('ยกเลิกการแก้ไข')}
+                                {tr('common.cancelChanges')}
                             </Button>
                         )}
                     </div>
                     <p role="status" className="text-xs text-muted-foreground">
-                        {dirty ? tr('มีการแก้ไขที่ยังไม่ได้บันทึก') : tr('รูปแบบตรงกับค่าที่บันทึกไว้')}
+                        {dirty ? tr('logManager.youHaveUnsavedChanges') : tr('logManager.formatMatchesWhatsSaved')}
                     </p>
                 </div>
                 <div className="min-w-0 space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                        <Label htmlFor="log-preview-event">{tr('ตัวอย่างสด')}</Label>
+                        <Label htmlFor="log-preview-event">{tr('logManager.livePreview')}</Label>
                         <Select value={sample} onValueChange={setSample}>
                             <SelectTrigger id="log-preview-event" className="w-48">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="messageUpdate">{tr('แก้ไขข้อความ')}</SelectItem>
-                                <SelectItem value="memberJoin">{tr('สมาชิกเข้าร่วม')}</SelectItem>
-                                <SelectItem value="memberBan">{tr('แบนสมาชิก')}</SelectItem>
+                                <SelectItem value="messageUpdate">{tr('logManager.messageEdited2')}</SelectItem>
+                                <SelectItem value="memberJoin">{tr('logManager.memberJoined2')}</SelectItem>
+                                <SelectItem value="memberBan">{tr('logManager.memberBanned2')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -211,7 +211,7 @@ export function AppearanceEditor({
                             <span className="flex size-8 items-center justify-center rounded-full bg-indigo-500 font-bold text-white">N</span>
                             <span className="font-semibold text-white">NotStack</span>
                             <span className="rounded bg-indigo-500 px-1 text-[10px] text-white">APP</span>
-                            <span className="text-xs text-[#b5bac1]">{tr('วันนี้ 19:00')}</span>
+                            <span className="text-xs text-[#b5bac1]">{tr('logManager.today1900')}</span>
                         </div>
                         <div
                             className="dark relative min-w-0 rounded border-l-4 bg-[#2b2d31] p-4"
@@ -224,7 +224,7 @@ export function AppearanceEditor({
                                 </div>
                                 {preview.thumbnail && (
                                     <span
-                                        aria-label={tr('รูปโปรไฟล์ตัวอย่าง')}
+                                        aria-label={tr('logManager.sampleAvatar')}
                                         className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-indigo-400 text-lg font-semibold text-white"
                                     >
                                         M
@@ -241,14 +241,12 @@ export function AppearanceEditor({
                             </div>
                             {(preview.footer || preview.timestamp) && (
                                 <p className="mt-4 break-words text-[11px] text-[#b5bac1]">
-                                    {[preview.footer?.text, preview.timestamp ? tr('วันนี้ 19:00') : ''].filter(Boolean).join(' • ')}
+                                    {[preview.footer?.text, preview.timestamp ? tr('logManager.today1900') : ''].filter(Boolean).join(' • ')}
                                 </p>
                             )}
                         </div>
                     </div>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                        {tr('ข้อมูลสมมติ • ใช้สีที่ตั้งไว้ของเหตุการณ์นั้น ขนาดและการขึ้นบรรทัดจริงขึ้นอยู่กับหน้าจอ Discord รูปแบบจะเริ่มใช้หลังบันทึก')}
-                    </p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">{tr('logManager.sampleDataUsesEachEventsColor')}</p>
                 </div>
             </CardContent>
         </Card>

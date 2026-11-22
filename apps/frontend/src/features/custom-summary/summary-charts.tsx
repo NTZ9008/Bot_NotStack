@@ -10,29 +10,41 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { cn } from '@/lib/utils';
 import { formatThaiDuration } from './timezone';
 
-const TIMELINE_CONFIG = byLang(() => ({
-    messages: { label: tr('ข้อความที่ส่ง'), color: '#10b981' },
-    voiceMinutes: { label: tr('เวลาห้องเสียง (นาที)'), color: '#0ea5e9' },
-    prTotal: { label: 'GitHub PR', color: '#a855f7' },
-    devopsTotal: { label: tr('DevOps & สมาชิก'), color: '#f59e0b' },
-} satisfies ChartConfig));
+const TIMELINE_CONFIG = byLang(
+    () =>
+        ({
+            messages: { label: tr('common.messagesSent'), color: '#10b981' },
+            voiceMinutes: { label: tr('customSummary.voiceTimeMinutes'), color: '#0ea5e9' },
+            prTotal: { label: 'GitHub PR', color: '#a855f7' },
+            devopsTotal: { label: tr('customSummary.devopsMembers'), color: '#f59e0b' },
+        }) satisfies ChartConfig,
+);
 
-const VOICE_CONFIG = byLang(() => ({
-    totalMinutes: { label: tr('เวลาใช้งานรวม (นาที)'), color: '#0ea5e9' },
-} satisfies ChartConfig));
+const VOICE_CONFIG = byLang(
+    () =>
+        ({
+            totalMinutes: { label: tr('customSummary.totalUsageTimeMinutes'), color: '#0ea5e9' },
+        }) satisfies ChartConfig,
+);
 
-const PR_CONFIG = byLang(() => ({
-    sent: { label: tr('เปิด / อัปเดต PR'), color: 'var(--chart-1)' },
-    merged: { label: tr('Merge แล้ว'), color: '#a855f7' },
-    closed: { label: tr('ปิด PR (ไม่ Merge)'), color: '#f59e0b' },
-} satisfies ChartConfig));
+const PR_CONFIG = byLang(
+    () =>
+        ({
+            sent: { label: tr('customSummary.prOpenedUpdated'), color: 'var(--chart-1)' },
+            merged: { label: tr('customSummary.merged'), color: '#a855f7' },
+            closed: { label: tr('customSummary.prClosedNotMerged'), color: '#f59e0b' },
+        }) satisfies ChartConfig,
+);
 
-const DEVOPS_CONFIG = byLang(() => ({
-    grafanaAlerts: { label: 'Grafana Alert', color: '#0ea5e9' },
-    jiraCards: { label: 'Jira Card', color: '#f59e0b' },
-    memberJoin: { label: tr('เข้าเซิร์ฟเวอร์'), color: '#10b981' },
-    memberLeave: { label: tr('ออกเซิร์ฟเวอร์'), color: '#ef4444' },
-} satisfies ChartConfig));
+const DEVOPS_CONFIG = byLang(
+    () =>
+        ({
+            grafanaAlerts: { label: 'Grafana Alert', color: '#0ea5e9' },
+            jiraCards: { label: 'Jira Card', color: '#f59e0b' },
+            memberJoin: { label: tr('common.joinedServer'), color: '#10b981' },
+            memberLeave: { label: tr('common.leftServer'), color: '#ef4444' },
+        }) satisfies ChartConfig,
+);
 
 /** ชุดกราฟเปรียบเทียบกิจกรรมตามโมดูลที่เลือก */
 export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
@@ -77,12 +89,10 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
                             <TrendingUp className="size-4 text-highlight" />
-                            {tr('แนวโน้มกิจกรรมตามช่วงเวลา (')}
-                            {summary.range.interval === 'hour' ? tr('รายชั่วโมง') : tr('รายวัน')})
+                            {tr('customSummary.activityTrendOverTime')}
+                            {summary.range.interval === 'hour' ? tr('common.hourly') : tr('common.daily')})
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">
-                            {tr('เปรียบเทียบปริมาณข้อความ เวลาห้องเสียง GitHub PR และ DevOps ตามเวลาไทย Asia/Bangkok')}
-                        </CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.compareMessageVolumeVoiceTimeGithub')}</CardDescription>
                     </div>
                     <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
                         <Button
@@ -97,7 +107,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         >
                             <TrendingUp className="mr-1 size-3" />
 
-                            {tr('กราฟเส้น')}
+                            {tr('customSummary.lineChart')}
                         </Button>
                         <Button
                             type="button"
@@ -111,13 +121,13 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         >
                             <BarChart3 className="mr-1 size-3" />
 
-                            {tr('กราฟแท่ง')}
+                            {tr('customSummary.barChart')}
                         </Button>
                     </div>
                 </CardHeader>
                 <CardContent>
                     {timelineData.length === 0 ? (
-                        <EmptyState>{tr('ไม่มีจุดข้อมูลในช่วงเวลาที่เลือก')}</EmptyState>
+                        <EmptyState>{tr('customSummary.noDataPointsInTheSelected')}</EmptyState>
                     ) : (
                         <ChartContainer config={TIMELINE_CONFIG()} className="h-[280px] w-full">
                             {chartMode === 'area' ? (
@@ -209,15 +219,15 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 <CardTitle className="flex items-center gap-2 text-base text-foreground">
                                     <Volume2 className="size-4 text-sky-700 dark:text-sky-400" />
 
-                                    {tr('สัดส่วนเวลาใช้งานห้องเสียง')}
+                                    {tr('customSummary.voiceTimeShare')}
                                 </CardTitle>
                                 <CardDescription className="text-xs text-muted-foreground">
-                                    {tr('เวลาคุยรวม (นาที) จากการจับคู่ voiceJoin / voiceLeave / voiceSwitch แยกแต่ละห้อง')}
+                                    {tr('customSummary.totalTalkTimeMinutesFromMatching')}
                                 </CardDescription>
                             </CardHeader>
                             <CardContent>
                                 {voiceData.length === 0 ? (
-                                    <EmptyState>{tr('ไม่พบกิจกรรมห้องเสียงในช่วงเวลาที่เลือก')}</EmptyState>
+                                    <EmptyState>{tr('customSummary.noVoiceActivityInTheSelected')}</EmptyState>
                                 ) : (
                                     <ChartContainer config={VOICE_CONFIG()} className="h-[260px] w-full">
                                         <BarChart data={voiceData} layout="vertical" margin={{ left: 6, right: 16 }}>
@@ -239,12 +249,12 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                                             return (
                                                                 <div className="space-y-0.5 text-xs">
                                                                     <div className="font-semibold text-sky-700 dark:text-sky-400">
-                                                                        {payload?.durationText ?? tr('{0} นาที', { 0: value })}
+                                                                        {payload?.durationText ?? tr('common.min', { 0: value })}
                                                                     </div>
                                                                     {payload && (
                                                                         <div className="text-muted-foreground">
-                                                                            {tr('เข้า')} {payload.joins} {tr('• ออก')} {payload.leaves} {tr('• เฉลี่ย')}{' '}
-                                                                            {payload.avgSessionMinutes} {tr('น.')}
+                                                                            {tr('common.joins')} {payload.joins} {tr('customSummary.leaves')} {payload.leaves}{' '}
+                                                                            {tr('customSummary.avg')} {payload.avgSessionMinutes} {tr('common.timeSuffix')}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -268,10 +278,10 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                     <CardTitle className="flex items-center gap-2 text-base text-foreground">
                                         <GitPullRequest className="size-4 text-purple-700 dark:text-purple-400" />
 
-                                        {tr('ความถี่การเปิด / Merge / ปิด PR')}
+                                        {tr('customSummary.prOpenMergeCloseFrequency')}
                                     </CardTitle>
                                     <CardDescription className="text-xs text-muted-foreground">
-                                        {tr('แยกตาม Repository หรือห้องแจ้งเตือน Discord ที่เลือก')}
+                                        {tr('customSummary.byRepositoryOrSelectedDiscordAlert')}
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
@@ -287,7 +297,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                                 : 'text-muted-foreground hover:text-foreground',
                                         )}
                                     >
-                                        {tr('แยกตาม Repo')}
+                                        {tr('customSummary.byRepo')}
                                     </Button>
                                     <Button
                                         type="button"
@@ -301,13 +311,13 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                                 : 'text-muted-foreground hover:text-foreground',
                                         )}
                                     >
-                                        {tr('แยกตามห้อง')}
+                                        {tr('customSummary.byChannel')}
                                     </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
                                 {prData.length === 0 ? (
-                                    <EmptyState>{tr('ไม่พบการแจ้งเตือน GitHub PR ในช่วงเวลาที่เลือก')}</EmptyState>
+                                    <EmptyState>{tr('customSummary.noGithubPrAlertsInThe')}</EmptyState>
                                 ) : (
                                     <ChartContainer config={PR_CONFIG()} className="h-[260px] w-full">
                                         <BarChart data={prData} layout="vertical" margin={{ left: 6, right: 16 }}>
@@ -348,11 +358,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
                             <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400" />
 
-                            {tr('สถิติ DevOps & การเข้า-ออกเซิร์ฟเวอร์')}
+                            {tr('customSummary.devopsServerJoinLeaveStatistics')}
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">
-                            {tr('แนวโน้ม Grafana Alert, การ์ด Jira และการเข้า/ออกของสมาชิกเซิร์ฟเวอร์')}
-                        </CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.grafanaAlertJiraCardAndMember')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <ChartContainer config={DEVOPS_CONFIG()} className="h-[220px] w-full">

@@ -14,11 +14,7 @@ function RelationsPage() {
     const guildId = useGuildId();
     return (
         <>
-            <PageHeader
-                help="relations"
-                title={tr('กระดานความสัมพันธ์')}
-                description={tr('ดูว่าใครเกี่ยวข้องกับใคร จากประวัติห้องเสียง แชท และการลงมือของแอดมินในเซิร์ฟเวอร์')}
-            />
+            <PageHeader help="relations" title={tr('common.relationsBoard')} description={tr('relations.seeWhoIsConnectedToWhom')} />
             <RelationBoardView guildId={guildId} />
         </>
     );

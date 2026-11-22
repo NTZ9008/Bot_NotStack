@@ -31,7 +31,7 @@ export function MyRankCardPanel({ guildId }: { guildId: string }) {
             <Card>
                 <CardContent className="flex items-start gap-3 text-sm text-muted-foreground">
                     <Info className="mt-0.5 size-4 shrink-0" />
-                    {mine.data.reason ?? tr('ยังแต่งการ์ดไม่ได้')}
+                    {mine.data.reason ?? tr('levels.youCantCustomizeTheCardYet')}
                 </CardContent>
             </Card>
         );
@@ -50,12 +50,12 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
 
     const background: BackgroundChoice = draft.background ? draft.background.type : 'theme';
     const backgroundOptions: Partial<Record<BackgroundChoice, string>> = {
-        theme: tr('ของเซิร์ฟเวอร์'),
-        ...(rules.colors ? { color: tr('สีเดียว'), gradient: tr('ไล่สี') } : {}),
-        ...(rules.backgrounds && rules.backgroundIds.length ? { image: tr('รูป') } : {}),
+        theme: tr('levels.serverDefault'),
+        ...(rules.colors ? { color: tr('levels.solid'), gradient: tr('levels.gradient') } : {}),
+        ...(rules.backgrounds && rules.backgroundIds.length ? { image: tr('levels.image') } : {}),
     };
 
-    useUnsavedChangesGuard(dirty, { title: tr('ทิ้งการแก้ไขการ์ดที่ยังไม่บันทึก?'), destructive: true });
+    useUnsavedChangesGuard(dirty, { title: tr('levels.discardUnsavedCardChanges'), destructive: true });
 
     const apply = (data: MyRankCardResponse, message: string) => {
         setSaved(data);
@@ -65,13 +65,13 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
     };
     const save = useMutation({
         mutationFn: () => rankCardApi.saveMine(guildId, draft),
-        onSuccess: (data) => apply(data, tr('บันทึกการ์ดของคุณแล้ว')),
-        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
+        onSuccess: (data) => apply(data, tr('levels.yourCardIsSaved')),
+        onError: (err) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) }),
     });
     const reset = useMutation({
         mutationFn: () => rankCardApi.resetMine(guildId),
-        onSuccess: (data) => apply(data, tr('กลับไปใช้ธีมของเซิร์ฟเวอร์แล้ว')),
-        onError: (err) => toast.error(tr('รีเซ็ตไม่สำเร็จ'), { description: errorMessage(err) }),
+        onSuccess: (data) => apply(data, tr('levels.backToTheServerTheme')),
+        onError: (err) => toast.error(tr('levels.resetFailed'), { description: errorMessage(err) }),
     });
     const busy = save.isPending || reset.isPending;
 
@@ -92,24 +92,23 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
-                    {tr('การ์ดของคุณในเซิร์ฟเวอร์นี้ — แสดงเมื่อใช้ /rank และตอนประกาศเลเวลอัป (แต่งใน Discord ได้ด้วย /rankcard)')}
-                </p>
+                <p className="text-sm text-muted-foreground">{tr('levels.yourCardInThisServerShown')}</p>
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
                         disabled={busy || !Object.keys(saved.style).length}
                         onClick={async () => {
-                            if (await confirm({ title: tr('กลับไปใช้ธีมของเซิร์ฟเวอร์?'), description: tr('ค่าที่แต่งไว้ทั้งหมดจะถูกลบ') })) reset.mutate();
+                            if (await confirm({ title: tr('levels.useTheServerThemeAgain'), description: tr('levels.allYourCustomizationsWillBeRemoved') }))
+                                reset.mutate();
                         }}
                     >
                         <RotateCcw />
 
-                        {tr('ใช้ธีมของเซิร์ฟเวอร์')}
+                        {tr('levels.useServerTheme')}
                     </Button>
                     <Button disabled={!dirty || busy} onClick={() => save.mutate()}>
                         <Save />
-                        {save.isPending ? tr('กำลังบันทึก...') : tr('บันทึก')}
+                        {save.isPending ? tr('levels.saving') : tr('common.save')}
                     </Button>
                 </div>
             </div>
@@ -119,7 +118,7 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                     {rules.layout && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>{tr('แบบการ์ด')}</CardTitle>
+                                <CardTitle>{tr('levels.cardLayout')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <LayoutPicker
@@ -134,11 +133,11 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                     {rules.colors && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>{tr('สี')}</CardTitle>
-                                <CardDescription>{tr('ไม่ตั้ง = ใช้สีของธีมเซิร์ฟเวอร์')}</CardDescription>
+                                <CardTitle>{tr('common.colors')}</CardTitle>
+                                <CardDescription>{tr('levels.unsetUseTheServerThemeColor')}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <Field label={tr('สีหลัก')} hint={tr('หลอด XP / ตัวเลขเลเวล / ขอบรูปโปรไฟล์')}>
+                                <Field label={tr('levels.accentColor')} hint={tr('levels.xpBarLevelNumberAvatarRing')}>
                                     <div className="flex flex-wrap gap-1.5 pb-1">
                                         {meta.colorPresets.map((preset) => (
                                             <button
@@ -163,12 +162,12 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                                         />
                                         {draft.accentColor && (
                                             <Button type="button" variant="ghost" size="sm" onClick={() => unset('accentColor')}>
-                                                {tr('ใช้ของธีม')}
+                                                {tr('levels.useTheme')}
                                             </Button>
                                         )}
                                     </div>
                                 </Field>
-                                <Field label={tr('สีตัวอักษร')}>
+                                <Field label={tr('common.textColor')}>
                                     <div className="flex gap-2">
                                         <ColorField
                                             className="flex-1"
@@ -177,7 +176,7 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                                         />
                                         {draft.textColor && (
                                             <Button type="button" variant="ghost" size="sm" onClick={() => unset('textColor')}>
-                                                {tr('ใช้ของธีม')}
+                                                {tr('levels.useTheme')}
                                             </Button>
                                         )}
                                     </div>
@@ -189,20 +188,20 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                     {Object.keys(backgroundOptions).length > 1 && (
                         <Card>
                             <CardHeader>
-                                <CardTitle>{tr('พื้นหลัง')}</CardTitle>
+                                <CardTitle>{tr('common.background')}</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <Segmented value={background} options={backgroundOptions as Record<BackgroundChoice, string>} onChange={setBackground} />
                                 {draft.background && draft.background.type !== 'image' && (
                                     <div className="grid gap-4 sm:grid-cols-2">
-                                        <Field label={draft.background.type === 'gradient' ? tr('สีเริ่มต้น') : tr('สีพื้น')}>
+                                        <Field label={draft.background.type === 'gradient' ? tr('levels.startColor') : tr('common.backgroundColor')}>
                                             <ColorField
                                                 value={draft.background.color}
                                                 onChange={(color) => setDraft((old) => ({ ...old, background: { ...old.background!, color } }))}
                                             />
                                         </Field>
                                         {draft.background.type === 'gradient' && (
-                                            <Field label={tr('สีปลายทาง')}>
+                                            <Field label={tr('levels.endColor')}>
                                                 <ColorField
                                                     value={draft.background.color2}
                                                     onChange={(color2) => setDraft((old) => ({ ...old, background: { ...old.background!, color2 } }))}
@@ -247,7 +246,7 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
 
                     {!rules.layout && !rules.colors && Object.keys(backgroundOptions).length <= 1 && (
                         <Card>
-                            <CardContent className="text-sm text-muted-foreground">{tr('แอดมินยังไม่ได้เปิดให้แต่งส่วนใดของการ์ด')}</CardContent>
+                            <CardContent className="text-sm text-muted-foreground">{tr('levels.adminsHaventEnabledAnyCardCustomization')}</CardContent>
                         </Card>
                     )}
                 </fieldset>

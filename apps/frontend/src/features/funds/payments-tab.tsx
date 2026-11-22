@@ -44,11 +44,11 @@ export function PaymentsTab({
     }, [topic.members]);
 
     const remove = async (paymentId: number, label: string) => {
-        const ok = await confirm({ title: tr('ลบรายการรับเงิน?'), description: label, confirmText: tr('ลบรายการ'), destructive: true });
+        const ok = await confirm({ title: tr('funds.deleteThisPayment'), description: label, confirmText: tr('funds.delete'), destructive: true });
         if (!ok) return;
         try {
             await fundApi.removePayment(guildId, topic.id, paymentId);
-            toast.success(tr('ลบรายการแล้ว'));
+            toast.success(tr('funds.paymentDeleted'));
             void refresh();
         } catch (err) {
             onFundError(err);
@@ -81,25 +81,25 @@ export function PaymentsTab({
     const filteredTotal = useMemo(() => roundMoney(filteredPayments.reduce((acc, p) => acc + p.amount, 0)), [filteredPayments]);
     const activeMember = useMemo(() => (memberFilter !== null ? topic.members.find((m) => m.id === memberFilter) : undefined), [topic.members, memberFilter]);
 
-    if (topic.payments.length === 0) return <EmptyState>{tr('ยังไม่มีรายการรับเงินในหัวข้อนี้')}</EmptyState>;
+    if (topic.payments.length === 0) return <EmptyState>{tr('funds.noPaymentsInThisTopicYet')}</EmptyState>;
 
     return (
         <div className="min-w-0 space-y-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs text-muted-foreground">
-                        {tr('แสดง')} <span className="font-semibold text-foreground">{filteredPayments.length}</span> {tr('รายการ · ยอดรวม')}{' '}
+                        {tr('funds.showing')} <span className="font-semibold text-foreground">{filteredPayments.length}</span> {tr('funds.entriesTotal')}{' '}
                         <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(filteredTotal)}</span>
                     </p>
                     {activeMember && onMemberFilterChange && (
                         <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 text-primary">
                             <UserCheck className="size-3" />
-                            {tr('เฉพาะ:')} {activeMember.displayName}
+                            {tr('funds.only')} {activeMember.displayName}
                             <button
                                 type="button"
                                 onClick={() => onMemberFilterChange(null)}
                                 className="ml-0.5 rounded-full p-0.5 hover:bg-primary/20"
-                                aria-label={tr('ล้างตัวกรองสมาชิก')}
+                                aria-label={tr('funds.clearMemberFilter')}
                             >
                                 <X className="size-3" />
                             </button>
@@ -108,7 +108,7 @@ export function PaymentsTab({
                 </div>
 
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center">
-                    <SearchInput value={search} onChange={setSearch} placeholder={tr('ค้นหาชื่อคนจ่าย หรือหมายเหตุ...')} className="w-full sm:w-56" />
+                    <SearchInput value={search} onChange={setSearch} placeholder={tr('funds.searchPayerNameOrNote')} className="w-full sm:w-56" />
 
                     <div className="flex w-full items-center gap-2 sm:w-auto">
                         {onMemberFilterChange && topic.members.length > 1 && (
@@ -117,11 +117,11 @@ export function PaymentsTab({
                                 onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
                             >
                                 <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
-                                    <SelectValue placeholder={tr('สมาชิกทุกคน')} />
+                                    <SelectValue placeholder={tr('funds.allMembers')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-72">
                                     <SelectItem value="all">
-                                        {tr('สมาชิกทุกคน (')}
+                                        {tr('funds.allMembers2')}
                                         {topic.payments.length})
                                     </SelectItem>
                                     {topic.members.map((m) => (
@@ -139,9 +139,9 @@ export function PaymentsTab({
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="newest">{tr('ล่าสุดก่อน')}</SelectItem>
-                                <SelectItem value="oldest">{tr('เก่าสุดก่อน')}</SelectItem>
-                                <SelectItem value="amount_desc">{tr('ยอดมากสุด')}</SelectItem>
+                                <SelectItem value="newest">{tr('funds.newestFirst')}</SelectItem>
+                                <SelectItem value="oldest">{tr('funds.oldestFirst')}</SelectItem>
+                                <SelectItem value="amount_desc">{tr('funds.largestAmount')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -149,7 +149,7 @@ export function PaymentsTab({
             </div>
 
             {filteredPayments.length === 0 ? (
-                <EmptyState>{tr('ไม่พบรายการรับเงินที่ตรงกับเงื่อนไขการค้นหา')}</EmptyState>
+                <EmptyState>{tr('funds.noPaymentsMatchYourFilters')}</EmptyState>
             ) : (
                 <ul className="divide-y rounded-xl border">
                     {filteredPayments.map((p) => {
@@ -164,7 +164,7 @@ export function PaymentsTab({
                                     <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
                                 ) : (
                                     <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-700 dark:text-emerald-400 sm:mt-0">
-                                        {tr('฿')}
+                                        {tr('funds.currencySymbol')}
                                     </div>
                                 )}
 
@@ -184,9 +184,9 @@ export function PaymentsTab({
                                             >
                                                 <Calendar className="size-3 shrink-0" />
                                                 <span className="truncate">
-                                                    {tr('งวด')} {new Date(p.periodStart).toLocaleDateString(dateLocale())} –{' '}
+                                                    {tr('funds.period')} {new Date(p.periodStart).toLocaleDateString(dateLocale())} –{' '}
                                                     {new Date(p.periodEnd).toLocaleDateString(dateLocale())}
-                                                    {days > 0 && tr(' ({0} วัน)', { 0: days })}
+                                                    {days > 0 && tr('funds.days', { 0: days })}
                                                 </span>
                                             </Badge>
                                         )}
@@ -194,7 +194,7 @@ export function PaymentsTab({
                                     <p className="break-words text-xs text-muted-foreground sm:truncate">
                                         {formatDateTime(p.paidAt)}
                                         {p.note && <span className="text-foreground/80"> · “{p.note}”</span>}
-                                        {p.recordedBy && tr(' · บันทึกโดย {0}', { 0: p.recordedBy })}
+                                        {p.recordedBy && tr('funds.recordedBy', { 0: p.recordedBy })}
                                     </p>
                                 </div>
 
@@ -202,8 +202,8 @@ export function PaymentsTab({
                                     <Button
                                         size="icon-xs"
                                         variant="ghost"
-                                        aria-label={tr('แก้ไขรายการ')}
-                                        title={tr('แก้ไขรายการรับเงิน')}
+                                        aria-label={tr('funds.editEntry')}
+                                        title={tr('funds.editPayment')}
                                         disabled={topic.closed}
                                         onClick={() => onEditPayment(p)}
                                     >
@@ -212,8 +212,8 @@ export function PaymentsTab({
                                     <Button
                                         size="icon-xs"
                                         variant="ghost"
-                                        aria-label={tr('ลบรายการ')}
-                                        title={tr('ลบรายการรับเงิน')}
+                                        aria-label={tr('funds.delete')}
+                                        title={tr('funds.deletePayment')}
                                         disabled={topic.closed}
                                         onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}
                                     >

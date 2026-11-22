@@ -1,4 +1,4 @@
-import { tr, byLang } from '../../lib/i18n';
+import { tr, byLang, trText } from '../../lib/i18n';
 import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
@@ -26,13 +26,15 @@ export const Route = createFileRoute('/_app/account')({
     component: AccountPage,
 });
 
-const passwordFormSchema = byLang(() => z
-    .object({
-        currentPassword: z.string().min(1, tr('กรุณากรอกรหัสผ่านปัจจุบัน')),
-        newPassword: passwordFieldSchema,
-        confirm: z.string(),
-    })
-    .refine((value) => value.newPassword === value.confirm, { message: tr('รหัสผ่านใหม่ไม่ตรงกัน'), path: ['confirm'] }));
+const passwordFormSchema = byLang(() =>
+    z
+        .object({
+            currentPassword: z.string().min(1, tr('account.pleaseEnterYourCurrentPassword')),
+            newPassword: passwordFieldSchema,
+            confirm: z.string(),
+        })
+        .refine((value) => value.newPassword === value.confirm, { message: tr('account.theNewPasswordsDontMatch'), path: ['confirm'] }),
+);
 
 function PasswordForm() {
     const queryClient = useQueryClient();
@@ -44,17 +46,17 @@ function PasswordForm() {
                 await authApi.changePassword({ currentPassword: value.currentPassword, newPassword: value.newPassword });
                 formApi.reset();
                 await queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
-                toast.success(tr('เปลี่ยนรหัสผ่านแล้ว'), { description: tr('อุปกรณ์อื่นถูกออกจากระบบเรียบร้อย') });
+                toast.success(tr('account.passwordChanged'), { description: tr('account.otherDevicesHaveBeenLoggedOut') });
             } catch (err) {
-                toast.error(tr('เปลี่ยนรหัสผ่านไม่สำเร็จ'), { description: errorMessage(err) });
+                toast.error(tr('account.failedToChangePassword'), { description: errorMessage(err) });
             }
         },
     });
 
     const fields = [
-        { name: 'currentPassword', placeholder: tr('รหัสผ่านปัจจุบัน'), autoComplete: 'current-password' },
-        { name: 'newPassword', placeholder: tr('รหัสผ่านใหม่ (อย่างน้อย 8 ตัว)'), autoComplete: 'new-password' },
-        { name: 'confirm', placeholder: tr('ยืนยันรหัสผ่านใหม่'), autoComplete: 'new-password' },
+        { name: 'currentPassword', placeholder: tr('account.currentPassword'), autoComplete: 'current-password' },
+        { name: 'newPassword', placeholder: tr('account.newPasswordAtLeast8Characters'), autoComplete: 'new-password' },
+        { name: 'confirm', placeholder: tr('account.confirmNewPassword'), autoComplete: 'new-password' },
     ] as const;
 
     return (
@@ -84,11 +86,11 @@ function PasswordForm() {
             <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <KeyRound />} {tr('เปลี่ยนรหัสผ่าน')}
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <KeyRound />} {tr('account.changePassword')}
                     </Button>
                 )}
             </form.Subscribe>
-            <p className="text-xs text-muted-foreground">{tr('อุปกรณ์อื่นที่เข้าสู่ระบบค้างไว้จะถูกออกจากระบบทันที')}</p>
+            <p className="text-xs text-muted-foreground">{tr('account.otherDevicesStillLoggedInWill')}</p>
         </form>
     );
 }
@@ -104,10 +106,12 @@ function AccountPage() {
     useEffect(() => {
         if (!search.discord && !search.discord_error) return;
         if (search.discord === 'linked') {
-            toast.success(tr('เชื่อมต่อ Discord สำเร็จ'), { description: tr('ต่อไปเข้าสู่ระบบด้วย Discord ได้เลย') });
+            toast.success(tr('account.discordConnected'), { description: tr('account.youCanNowLogInWith') });
             void queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
         } else {
-            toast.error(tr('เชื่อมต่อ Discord ไม่สำเร็จ'), { description: tr(DISCORD_LINK_ERRORS[search.discord_error ?? '']) ?? tr('เกิดข้อผิดพลาด') });
+            toast.error(tr('account.failedToConnectDiscord'), {
+                description: trText(DISCORD_LINK_ERRORS[search.discord_error ?? '']) ?? tr('common.somethingWentWrong'),
+            });
         }
         void navigate({ to: '/account', search: {}, replace: true });
     }, [search.discord, search.discord_error, navigate, queryClient]);
@@ -115,17 +119,17 @@ function AccountPage() {
     const unlink = useMutation({
         mutationFn: authApi.unlinkDiscord,
         onSuccess: () => {
-            toast.success(tr('ยกเลิกการเชื่อมต่อ Discord แล้ว'));
+            toast.success(tr('account.discordDisconnected'));
             void queryClient.invalidateQueries({ queryKey: meQuery.queryKey });
         },
-        onError: (err) => toast.error(tr('ไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('common.failed'), { description: errorMessage(err) }),
     });
 
     const logoutAll = async () => {
         const ok = await confirm({
-            title: tr('ออกจากระบบทุกอุปกรณ์?'),
-            description: tr('ทุกเครื่องที่เข้าสู่ระบบบัญชีนี้อยู่ (รวมเครื่องนี้) จะต้องเข้าสู่ระบบใหม่'),
-            confirmText: tr('ออกจากระบบทั้งหมด'),
+            title: tr('account.logOutOfEveryDevice2'),
+            description: tr('account.everyDeviceLoggedInToThis'),
+            confirmText: tr('common.logOutEverywhere'),
             destructive: true,
         });
         if (!ok) return;
@@ -136,11 +140,11 @@ function AccountPage() {
 
     return (
         <>
-            <PageHeader help="account" title={tr('บัญชีของฉัน')} description={tr('ข้อมูลบัญชี การเชื่อมต่อ Discord และความปลอดภัย')} />
+            <PageHeader help="account" title={tr('common.myAccount')} description={tr('account.accountDetailsDiscordConnectionAndSecurity')} />
             <div className="grid gap-6 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('โปรไฟล์')}</CardTitle>
+                        <CardTitle>{tr('account.profile')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
@@ -152,10 +156,10 @@ function AccountPage() {
                                 </div>
                                 <p className="text-sm text-muted-foreground">username: {user.username ?? '—'}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {tr('สมัครเมื่อ')} {formatDateTime(user.createdAt)}
+                                    {tr('account.joined')} {formatDateTime(user.createdAt)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {tr('เข้าสู่ระบบล่าสุด')} {formatDateTime(user.lastLoginAt)}
+                                    {tr('account.lastLogin')} {formatDateTime(user.lastLoginAt)}
                                 </p>
                             </div>
                         </div>
@@ -166,11 +170,7 @@ function AccountPage() {
                     <CardHeader>
                         <CardTitle>Discord</CardTitle>
                         <CardDescription>
-                            {user.discordId
-                                ? tr('เชื่อมต่อกับ @{0} แล้ว — เข้าสู่ระบบด้วยปุ่ม Discord ได้', { 0: user.discordUsername })
-                                : tr(
-                                      'ผูกบัญชี Discord เพื่อจัดการเซิร์ฟเวอร์ที่คุณมีสิทธิ์ Manage Server และเข้าสู่ระบบด้วยปุ่ม Discord ได้โดยไม่ต้องพิมพ์รหัสผ่าน',
-                                  )}
+                            {user.discordId ? tr('account.connectedToYouCanLogIn', { 0: user.discordUsername }) : tr('account.linkYourDiscordAccountToManage')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -181,57 +181,47 @@ function AccountPage() {
                                     disabled={unlink.isPending}
                                     onClick={async () => {
                                         const ok = await confirm({
-                                            title: tr('ยกเลิกการเชื่อมต่อ Discord?'),
-                                            description: tr('หลังจากนี้ต้องเข้าสู่ระบบด้วย username/รหัสผ่านเท่านั้น'),
-                                            confirmText: tr('ยกเลิกการเชื่อมต่อ'),
-                                            cancelText: tr('ไม่ใช่ตอนนี้'),
+                                            title: tr('account.disconnectDiscord'),
+                                            description: tr('account.afterThisYouCanOnlyLog'),
+                                            confirmText: tr('account.disconnect'),
+                                            cancelText: tr('account.notNow'),
                                             destructive: true,
                                         });
                                         if (ok) unlink.mutate();
                                     }}
                                 >
-                                    <Unlink /> {tr('ยกเลิกการเชื่อมต่อ')}
+                                    <Unlink /> {tr('account.disconnect')}
                                 </Button>
                             ) : (
-                                <p className="text-sm text-muted-foreground">
-                                    {tr('บัญชีนี้ไม่มีรหัสผ่าน จึงยกเลิกการเชื่อมต่อไม่ได้ (จะไม่เหลือช่องทางเข้าสู่ระบบ)')}
-                                </p>
+                                <p className="text-sm text-muted-foreground">{tr('account.thisAccountHasNoPasswordSo')}</p>
                             )
                         ) : discordEnabled ? (
                             <Button asChild className="bg-[#5865F2] text-white hover:bg-[#4752C4]">
-                                <a href={apiUrl('/auth/discord/link')}>{tr('เชื่อมต่อบัญชี Discord')}</a>
+                                <a href={apiUrl('/auth/discord/link')}>{tr('common.connectDiscordAccount')}</a>
                             </Button>
                         ) : (
-                            <p className="text-sm text-muted-foreground">{tr('ผู้ดูแลระบบยังไม่ได้ตั้งค่า Discord OAuth')}</p>
+                            <p className="text-sm text-muted-foreground">{tr('common.theSystemAdminHasntSetUp')}</p>
                         )}
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('รหัสผ่าน')}</CardTitle>
+                        <CardTitle>{tr('account.password')}</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {user.hasPassword ? (
-                            <PasswordForm />
-                        ) : (
-                            <p className="text-sm text-muted-foreground">
-                                {tr('บัญชีนี้เข้าสู่ระบบด้วย Discord เท่านั้น — ถ้าต้องการใช้รหัสผ่าน ให้ผู้ดูแลระบบตั้ง username/รหัสผ่านให้ในหน้า Users')}
-                            </p>
-                        )}
+                        {user.hasPassword ? <PasswordForm /> : <p className="text-sm text-muted-foreground">{tr('account.thisAccountLogsInWithDiscord')}</p>}
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader>
                         <CardTitle>Sessions</CardTitle>
-                        <CardDescription>
-                            {tr('ลืมออกจากระบบที่เครื่องอื่น หรือสงสัยว่ามีคนแอบใช้บัญชี? ออกจากระบบทุกอุปกรณ์ได้ที่นี่ (รวมเครื่องนี้)')}
-                        </CardDescription>
+                        <CardDescription>{tr('account.forgotToLogOutOnAnother')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Button variant="destructive" onClick={() => void logoutAll()}>
-                            <LogOut /> {tr('ออกจากระบบทุกอุปกรณ์')}
+                            <LogOut /> {tr('account.logOutOfEveryDevice')}
                         </Button>
                     </CardContent>
                 </Card>

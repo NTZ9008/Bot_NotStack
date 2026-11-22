@@ -22,13 +22,17 @@ import { cn } from '@/lib/utils';
 import { RankPreview } from './rank-preview';
 
 export const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
-export const BACKGROUND_LABELS = byLang((): Record<RankBackgroundType, string> => ({ color: tr('สีเดียว'), gradient: tr('ไล่สี'), image: tr('รูปจากคลัง') }));
+export const BACKGROUND_LABELS = byLang((): Record<RankBackgroundType, string> => ({
+    color: tr('levels.solid'),
+    gradient: tr('levels.gradient'),
+    image: tr('levels.imageFromLibrary'),
+}));
 const SHOW_LABELS = byLang((): Record<keyof RankCardStyle['show'], string> => ({
-    rank: tr('อันดับ (RANK)'),
-    level: tr('เลเวล (LEVEL)'),
-    xpText: tr('ตัวเลข XP'),
+    rank: tr('levels.rankRank'),
+    level: tr('levels.levelLevel'),
+    xpText: tr('levels.xpNumbers'),
     username: '@username',
-    serverName: tr('ชื่อเซิร์ฟเวอร์'),
+    serverName: tr('levels.serverName'),
 }));
 
 // การ์ดเลือกแบบ (layout) — ใช้ทั้งหน้าธีมและหน้าการ์ดของฉัน
@@ -117,7 +121,7 @@ function ThemeEditor({
         });
     const patchMembers = (data: Partial<RankCardTheme['members']>) => setDraft((old) => ({ ...old, members: { ...old.members, ...data } }));
 
-    useUnsavedChangesGuard(dirty, { title: tr('ทิ้งการแก้ไขธีมการ์ดที่ยังไม่บันทึก?'), destructive: true });
+    useUnsavedChangesGuard(dirty, { title: tr('levels.discardUnsavedCardThemeChanges'), destructive: true });
 
     const save = useMutation({
         mutationFn: () => rankCardApi.saveTheme(guildId, draft),
@@ -126,9 +130,9 @@ function ThemeEditor({
             setDraft(data);
             client.setQueryData(rankThemeQuery(guildId).queryKey, data);
             void client.invalidateQueries({ queryKey: [...rankCardKey(guildId), 'me'] });
-            toast.success(tr('บันทึกธีมการ์ดแล้ว'), { description: tr('การ์ด /rank /leaderboard และเลเวลอัปจะใช้ธีมนี้ทันที') });
+            toast.success(tr('levels.cardThemeSaved'), { description: tr('levels.rankLeaderboardAndLevelUpCards') });
         },
-        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) }),
     });
 
     const toggleMemberBackground = (id: number) =>
@@ -141,9 +145,7 @@ function ThemeEditor({
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
-                    {tr('ธีมตั้งต้นของการ์ดทุกใบในเซิร์ฟเวอร์ — สมาชิกแต่งทับได้เท่าที่เปิดให้ในหัวข้อ "สิ่งที่สมาชิกแต่งเองได้"')}
-                </p>
+                <p className="text-sm text-muted-foreground">{tr('levels.theDefaultThemeForEveryCard')}</p>
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
@@ -151,8 +153,8 @@ function ThemeEditor({
                         onClick={async () => {
                             if (
                                 !(await confirm({
-                                    title: tr('กลับไปใช้ธีมเริ่มต้น?'),
-                                    description: tr('ค่าที่แก้ไว้ในหน้านี้จะถูกแทนด้วยค่าเริ่มต้น (ยังไม่บันทึกจนกว่าจะกดบันทึก)'),
+                                    title: tr('levels.resetToTheDefaultTheme'),
+                                    description: tr('levels.valuesEditedOnThisPageAre'),
                                 }))
                             )
                                 return;
@@ -161,11 +163,11 @@ function ThemeEditor({
                     >
                         <RotateCcw />
 
-                        {tr('ค่าเริ่มต้น')}
+                        {tr('levels.defaults')}
                     </Button>
                     <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
                         <Save />
-                        {save.isPending ? tr('กำลังบันทึก...') : tr('บันทึกธีม')}
+                        {save.isPending ? tr('levels.saving') : tr('levels.saveTheme')}
                     </Button>
                 </div>
             </div>
@@ -174,8 +176,8 @@ function ThemeEditor({
                 <fieldset disabled={save.isPending} className="min-w-0 space-y-5">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('แบบการ์ด /rank')}</CardTitle>
-                            <CardDescription>{tr('ตาราง /leaderboard และการ์ดเลเวลอัปใช้สี พื้นหลัง และฟอนต์เดียวกัน')}</CardDescription>
+                            <CardTitle>{tr('levels.rankCardLayout')}</CardTitle>
+                            <CardDescription>{tr('levels.theLeaderboardTableAndLevelUp')}</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <LayoutPicker meta={meta} value={style.layout} onChange={(layout) => patchStyle((s) => void (s.layout = layout))} />
@@ -184,7 +186,7 @@ function ThemeEditor({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('พื้นหลัง')}</CardTitle>
+                            <CardTitle>{tr('common.background')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <Segmented
@@ -196,11 +198,11 @@ function ThemeEditor({
                             />
                             {style.background.type !== 'image' && (
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field label={style.background.type === 'gradient' ? tr('สีเริ่มต้น') : tr('สีพื้น')}>
+                                    <Field label={style.background.type === 'gradient' ? tr('levels.startColor') : tr('common.backgroundColor')}>
                                         <ColorField value={style.background.color} onChange={(color) => patchStyle((s) => void (s.background.color = color))} />
                                     </Field>
                                     {style.background.type === 'gradient' && (
-                                        <Field label={tr('สีปลายทาง')}>
+                                        <Field label={tr('levels.endColor')}>
                                             <ColorField
                                                 value={style.background.color2}
                                                 onChange={(color) => patchStyle((s) => void (s.background.color2 = color))}
@@ -211,7 +213,7 @@ function ThemeEditor({
                             )}
                             {style.background.type === 'gradient' && (
                                 <RangeField
-                                    label={tr('ทิศทางการไล่สี')}
+                                    label={tr('levels.gradientDirection')}
                                     unit="°"
                                     min={0}
                                     max={359}
@@ -243,11 +245,9 @@ function ThemeEditor({
                                             })
                                         }
                                     />
-                                    <p className="text-xs text-muted-foreground">
-                                        {tr('คลังรูปใช้ร่วมกับการ์ดต้อนรับ (หน้า Welcome) · รูปจะถูกครอปให้เต็มการ์ด')}
-                                    </p>
+                                    <p className="text-xs text-muted-foreground">{tr('levels.theImageLibraryIsSharedWith')}</p>
                                     <RangeField
-                                        label={tr('เบลอรูป')}
+                                        label={tr('levels.blurImage')}
                                         min={0}
                                         max={20}
                                         value={style.background.blur}
@@ -256,7 +256,7 @@ function ThemeEditor({
                                 </>
                             )}
                             <RangeField
-                                label={tr('ความมืดทับพื้นหลัง (ช่วยให้อ่านตัวหนังสือออก)')}
+                                label={tr('levels.backgroundDarkeningHelpsTextStayReadable')}
                                 unit="%"
                                 min={0}
                                 max={90}
@@ -268,23 +268,23 @@ function ThemeEditor({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('สีและตัวอักษร')}</CardTitle>
+                            <CardTitle>{tr('levels.colorsText')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="grid gap-4 sm:grid-cols-2">
-                                <Field label={tr('สีหลัก')} hint={tr('หลอด XP / ตัวเลขเลเวล / ขอบรูปโปรไฟล์')}>
+                                <Field label={tr('levels.accentColor')} hint={tr('levels.xpBarLevelNumberAvatarRing')}>
                                     <ColorField value={style.accentColor} onChange={(c) => patchStyle((s) => void (s.accentColor = c))} />
                                 </Field>
-                                <Field label={tr('สีตัวอักษร')}>
+                                <Field label={tr('common.textColor')}>
                                     <ColorField value={style.textColor} onChange={(c) => patchStyle((s) => void (s.textColor = c))} />
                                 </Field>
-                                <Field label={tr('สีตัวอักษรรอง')} hint={tr('ป้าย RANK / LEVEL, @username, ตัวเลข XP')}>
+                                <Field label={tr('levels.secondaryTextColor')} hint={tr('levels.rankLevelLabelsUsernameXpNumbers')}>
                                     <ColorField value={style.subTextColor} onChange={(c) => patchStyle((s) => void (s.subTextColor = c))} />
                                 </Field>
-                                <Field label={tr('สีพื้นหลอด XP')}>
+                                <Field label={tr('levels.xpBarTrackColor')}>
                                     <ColorField value={style.trackColor} onChange={(c) => patchStyle((s) => void (s.trackColor = c))} />
                                 </Field>
-                                <Field label={tr('ฟอนต์')}>
+                                <Field label={tr('common.font')}>
                                     <select
                                         className={selectClass}
                                         value={style.font}
@@ -297,7 +297,7 @@ function ThemeEditor({
                                         ))}
                                     </select>
                                 </Field>
-                                <Field label={tr('รูปทรงรูปโปรไฟล์')}>
+                                <Field label={tr('levels.avatarShape')}>
                                     <Segmented
                                         value={style.avatarShape}
                                         options={SHAPE_LABELS()}
@@ -306,7 +306,7 @@ function ThemeEditor({
                                 </Field>
                             </div>
                             <RangeField
-                                label={tr('ความทึบของกรอบด้านหลังข้อมูล')}
+                                label={tr('levels.infoPanelOpacity')}
                                 unit="%"
                                 min={0}
                                 max={90}
@@ -318,7 +318,7 @@ function ThemeEditor({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('ข้อมูลที่แสดงบนการ์ด /rank')}</CardTitle>
+                            <CardTitle>{tr('levels.infoShownOnTheRankCard')}</CardTitle>
                         </CardHeader>
                         <CardContent className="grid gap-2 sm:grid-cols-2">
                             {(Object.keys(SHOW_LABELS()) as (keyof RankCardStyle['show'])[]).map((key) => (
@@ -334,25 +334,29 @@ function ThemeEditor({
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('สิ่งที่สมาชิกแต่งเองได้')}</CardTitle>
-                            <CardDescription>{tr('สมาชิกแต่งการ์ดของตัวเองได้จากหน้า Levels → การ์ดของฉัน หรือคำสั่ง /rankcard ใน Discord')}</CardDescription>
+                            <CardTitle>{tr('levels.whatMembersCanCustomize')}</CardTitle>
+                            <CardDescription>{tr('levels.membersCustomizeTheirOwnCardFrom')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <SwitchRow
-                                label={tr('ให้สมาชิกแต่งการ์ดของตัวเอง')}
+                                label={tr('levels.letMembersCustomizeTheirCard')}
                                 checked={draft.members.enabled}
                                 onChange={(enabled) => patchMembers({ enabled })}
                             />
                             <fieldset disabled={!draft.members.enabled} className="space-y-3 disabled:opacity-50">
                                 <div className="grid gap-2 sm:grid-cols-3">
-                                    <SwitchRow label={tr('เลือกแบบการ์ด')} checked={draft.members.layout} onChange={(layout) => patchMembers({ layout })} />
                                     <SwitchRow
-                                        label={tr('เปลี่ยนสี / พื้นหลังสี')}
+                                        label={tr('levels.chooseCardLayout')}
+                                        checked={draft.members.layout}
+                                        onChange={(layout) => patchMembers({ layout })}
+                                    />
+                                    <SwitchRow
+                                        label={tr('levels.changeColorsBackgroundColor')}
                                         checked={draft.members.colors}
                                         onChange={(colors) => patchMembers({ colors })}
                                     />
                                     <SwitchRow
-                                        label={tr('เลือกรูปพื้นหลัง')}
+                                        label={tr('levels.chooseBackgroundImage')}
                                         checked={draft.members.backgrounds}
                                         onChange={(backgrounds) => patchMembers({ backgrounds })}
                                     />
@@ -360,9 +364,9 @@ function ThemeEditor({
                                 {draft.members.backgrounds && (
                                     <div className="space-y-2">
                                         <p className="text-sm">
-                                            {tr('รูปที่สมาชิกเลือกได้ (')}
+                                            {tr('levels.imagesMembersCanPick')}
                                             {draft.members.backgroundIds.length}/{meta.limits.maxMemberBackgrounds}
-                                            {tr(') — คลิกเพื่อเลือก/เอาออก')}
+                                            {tr('levels.clickToSelectRemove')}
                                         </p>
                                         {assets.length ? (
                                             <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -394,9 +398,7 @@ function ThemeEditor({
                                                 })}
                                             </div>
                                         ) : (
-                                            <p className="text-xs text-muted-foreground">
-                                                {tr('ยังไม่มีรูปในคลัง — อัปโหลดได้จากหัวข้อพื้นหลัง (เลือก "รูปจากคลัง") หรือหน้า Welcome')}
-                                            </p>
+                                            <p className="text-xs text-muted-foreground">{tr('levels.noImagesInTheLibraryYet')}</p>
                                         )}
                                     </div>
                                 )}
@@ -414,9 +416,7 @@ function ThemeEditor({
                         kinds={['rank', 'leaderboard', 'levelup']}
                         onKind={setKind}
                     />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                        {tr('ตัวอย่างใช้รูปและ XP ของบัญชี Discord ที่คุณเชื่อมไว้ · ตาราง /leaderboard ใช้ข้อมูลจริงของเซิร์ฟเวอร์')}
-                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">{tr('levels.thePreviewUsesTheAvatarAnd')}</p>
                 </div>
             </div>
         </div>

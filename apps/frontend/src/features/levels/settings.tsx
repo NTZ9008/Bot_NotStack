@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, trText } from '../../lib/i18n';
 import {
     defaultXpRule,
     defaultXpSettings,
@@ -79,7 +79,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const patch = (data: Partial<typeof draft>) => setDraft((old) => ({ ...old, ...data }));
     const patchRule = (id: string, data: Partial<XpRule>) =>
         setDraft((old) => ({ ...old, rules: old.rules.map((r) => (r.id === id ? { ...r, ...data } : r)) }));
-    useUnsavedChangesGuard(dirty, { title: tr('ทิ้งการตั้งค่า XP ที่ยังไม่บันทึก?'), destructive: true });
+    useUnsavedChangesGuard(dirty, { title: tr('levels.discardUnsavedXpSettings'), destructive: true });
     const save = useMutation({
         mutationFn: () => xpApi.save(guildId, { revision: saved.revision, settings: xpSettingsSchema.parse(draft) }),
         onSuccess: (data) => {
@@ -88,22 +88,22 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
             setCommandText({});
             client.setQueryData(xpSettingsQuery(guildId).queryKey, data);
             void client.invalidateQueries({ queryKey: xpKey(guildId) });
-            toast.success(tr('บันทึกกฎ XP แล้ว'));
+            toast.success(tr('levels.xpRulesSaved'));
         },
-        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) }),
     });
-    const channelOptions = (channels.data ?? []).map((c) => ({ id: c.id, name: `${c.isCategory ? tr('หมวด') : '#'} ${c.name}` }));
+    const channelOptions = (channels.data ?? []).map((c) => ({ id: c.id, name: `${c.isCategory ? tr('levels.section') : '#'} ${c.name}` }));
     const voiceIds = (channels.data ?? []).filter((c) => c.isVoice).map((c) => c.id);
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('การเปลี่ยนสูตรเลเวลคง XP เดิมไว้ · เพดานรายวันรีเซ็ตเวลา 00:00 ไทย')}</p>
+                <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
                         disabled={save.isPending}
                         onClick={async () => {
-                            if (dirty && !(await confirm({ title: tr('ทิ้งการแก้ไขแล้วโหลดค่าล่าสุด?'), destructive: true }))) return;
+                            if (dirty && !(await confirm({ title: tr('levels.discardChangesAndReloadTheLatest'), destructive: true }))) return;
                             try {
                                 const latest = await client.fetchQuery({ ...xpSettingsQuery(guildId), staleTime: 0 });
                                 setSaved(latest);
@@ -114,11 +114,11 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                             }
                         }}
                     >
-                        {tr('โหลดใหม่')}
+                        {tr('levels.reload')}
                     </Button>
                     <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
                         <Save />
-                        {save.isPending ? tr('กำลังบันทึก...') : tr('บันทึกทั้งหมด')}
+                        {save.isPending ? tr('levels.saving') : tr('levels.saveAll')}
                     </Button>
                 </div>
             </div>
@@ -130,33 +130,33 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
             <fieldset disabled={save.isPending} className="space-y-5">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('ภาพรวมระบบ XP')}</CardTitle>
-                        <CardDescription>{tr('100% = อัตราปกติ · 150% = 1.5 เท่า · เพดาน 0 = ไม่จำกัด')}</CardDescription>
+                        <CardTitle>{tr('levels.xpSystemOverview')}</CardTitle>
+                        <CardDescription>{tr('levels.n100NormalRate15015')}</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <Toggle label={tr('เปิดรับ XP จากกิจกรรม')} checked={draft.enabled} onChange={(enabled) => patch({ enabled })} />
+                        <Toggle label={tr('levels.earnXpFromActivity')} checked={draft.enabled} onChange={(enabled) => patch({ enabled })} />
                         <div className="grid gap-4 sm:grid-cols-2">
                             <NumberField
-                                label={tr('ตัวคูณทั้งเซิร์ฟเวอร์ (%)')}
+                                label={tr('levels.serverWideMultiplier')}
                                 value={draft.multiplierPercent}
                                 max={1000}
                                 onChange={(multiplierPercent) => patch({ multiplierPercent })}
                             />
                             <NumberField
-                                label={tr('XP สูงสุดต่อคนต่อวัน (ทุกกฎรวมกัน)')}
+                                label={tr('levels.maxXpPerPersonPerDay')}
                                 value={draft.dailyCap}
                                 max={2000000000}
                                 onChange={(dailyCap) => patch({ dailyCap })}
                             />
                             <NumberField
-                                label={tr('ฐาน XP ของสูตรเลเวล')}
+                                label={tr('levels.levelFormulaBaseXp')}
                                 value={draft.curveBase}
                                 min={1}
                                 max={100000}
                                 onChange={(curveBase) => patch({ curveBase })}
                             />
                             <NumberField
-                                label={tr('เลขยกกำลังของสูตร')}
+                                label={tr('levels.formulaExponent')}
                                 value={draft.curveExponent}
                                 min={1}
                                 max={3}
@@ -164,7 +164,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                 onChange={(curveExponent) => patch({ curveExponent })}
                             />
                         </div>
-                        <p className="text-sm text-muted-foreground">{tr('XP สะสมที่ต้องมี = ปัดขึ้น(ฐาน × เลเวล^เลขยกกำลัง)')}</p>
+                        <p className="text-sm text-muted-foreground">{tr('levels.totalXpNeededCeilBaseLevel')}</p>
                         <div className="grid grid-cols-3 gap-2">
                             {[1, 5, 10].map((level) => (
                                 <div className="rounded-md bg-muted p-3 text-center" key={level}>
@@ -177,42 +177,46 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                 </Card>
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('เงื่อนไขการรับ XP')}</CardTitle>
-                        <CardDescription>{tr('บอทไม่ได้ XP · ห้องที่ยกเว้นรวมถึงเธรดภายในห้องนั้น')}</CardDescription>
+                        <CardTitle>{tr('levels.xpConditions')}</CardTitle>
+                        <CardDescription>{tr('levels.botsDontEarnXpExcludedChannels')}</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4 sm:grid-cols-2">
                         <NumberField
-                            label={tr('จำนวนตัวอักษรขั้นต่ำของข้อความ')}
+                            label={tr('levels.minimumMessageLength')}
                             value={draft.messageMinLength}
                             max={4000}
                             onChange={(messageMinLength) => patch({ messageMinLength })}
                         />
                         <NumberField
-                            label={tr('จำนวนคนขั้นต่ำในห้องเสียง (ไม่นับบอท)')}
+                            label={tr('levels.minimumPeopleInVoiceExcludingBots')}
                             value={draft.voiceMinMembers}
                             min={1}
                             max={99}
                             onChange={(voiceMinMembers) => patch({ voiceMinMembers })}
                         />
                         <Toggle
-                            label={tr('ไม่ให้ XP เมื่อปิดไมค์')}
+                            label={tr('levels.noXpWhileMuted')}
                             checked={draft.voiceIgnoreMuted}
                             onChange={(voiceIgnoreMuted) => patch({ voiceIgnoreMuted })}
                         />
                         <Toggle
-                            label={tr('ไม่ให้ XP เมื่อปิดหูฟัง')}
+                            label={tr('levels.noXpWhileDeafened')}
                             checked={draft.voiceIgnoreDeafened}
                             onChange={(voiceIgnoreDeafened) => patch({ voiceIgnoreDeafened })}
                         />
-                        <Toggle label={tr('ไม่ให้ XP ในห้อง AFK')} checked={draft.voiceIgnoreAfk} onChange={(voiceIgnoreAfk) => patch({ voiceIgnoreAfk })} />
+                        <Toggle
+                            label={tr('levels.noXpInTheAfkChannel')}
+                            checked={draft.voiceIgnoreAfk}
+                            onChange={(voiceIgnoreAfk) => patch({ voiceIgnoreAfk })}
+                        />
                         <IdChoices
-                            title={tr('ห้อง/หมวดที่ยกเว้น')}
+                            title={tr('levels.excludedChannelsCategories')}
                             options={channelOptions}
                             values={draft.excludedChannelIds}
                             onChange={(excludedChannelIds) => patch({ excludedChannelIds })}
                         />
                         <IdChoices
-                            title={tr('ยศที่ยกเว้น')}
+                            title={tr('common.excludedRoles')}
                             options={roles.data ?? []}
                             values={draft.excludedRoleIds}
                             onChange={(excludedRoleIds) => patch({ excludedRoleIds })}
@@ -221,14 +225,10 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                 </Card>
                 <div className="space-y-2">
                     <h2 className="text-lg font-semibold">
-                        {tr('กฎการรับ XP (')}
+                        {tr('levels.xpRules')}
                         {draft.rules.length}/50)
                     </h2>
-                    <p className="text-sm text-muted-foreground">
-                        {tr(
-                            'กฎที่ตรงเงื่อนไขจะให้ XP รวมกันตามลำดับด้านล่าง จนถึงเพดานรายวัน · ไม่เลือกห้อง/ยศ = ทั้งหมด · cooldown เริ่มนับทุกครั้งที่มีสิทธิ์สุ่ม แม้สุ่มไม่ได้ XP',
-                        )}
-                    </p>
+                    <p className="text-sm text-muted-foreground">{tr('levels.matchingRulesAddXpInThe')}</p>
                 </div>
                 {draft.rules.map((rule, index) => (
                     <Card key={rule.id}>
@@ -241,7 +241,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                     <Button
                                         variant="ghost"
                                         size="icon-sm"
-                                        aria-label={tr('คัดลอก {0}', { 0: rule.name })}
+                                        aria-label={tr('levels.copy2', { 0: rule.name })}
                                         disabled={draft.rules.length >= 50}
                                         onClick={() =>
                                             patch({
@@ -250,7 +250,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                                     {
                                                         ...structuredClone(rule),
                                                         id: crypto.randomUUID(),
-                                                        name: tr('{0} (สำเนา)', { 0: rule.name }).slice(0, 80),
+                                                        name: tr('levels.copy', { 0: rule.name }).slice(0, 80),
                                                     },
                                                 ],
                                             })
@@ -261,12 +261,12 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                     <Button
                                         variant="ghost"
                                         size="icon-sm"
-                                        aria-label={tr('ลบ {0}', { 0: rule.name })}
+                                        aria-label={tr('common.remove', { 0: rule.name })}
                                         onClick={async () => {
                                             if (
                                                 await confirm({
-                                                    title: tr('ลบกฎ {0}?', { 0: rule.name }),
-                                                    description: tr('XP เดิมของสมาชิกยังอยู่ กดบันทึกทั้งหมดเพื่อยืนยันการเปลี่ยนแปลง'),
+                                                    title: tr('levels.deleteRule', { 0: rule.name }),
+                                                    description: tr('levels.membersKeepTheirXpPressSave'),
                                                     destructive: true,
                                                 })
                                             )
@@ -279,14 +279,14 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <Toggle label={tr('เปิดใช้กฎนี้')} checked={rule.enabled} onChange={(enabled) => patchRule(rule.id, { enabled })} />
+                            <Toggle label={tr('levels.enableThisRule')} checked={rule.enabled} onChange={(enabled) => patchRule(rule.id, { enabled })} />
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <label className="grid gap-1.5 text-sm">
-                                    {tr('ชื่อกฎ')}
+                                    {tr('levels.ruleName')}
                                     <Input value={rule.name} maxLength={80} onChange={(e) => patchRule(rule.id, { name: e.target.value })} />
                                 </label>
                                 <label className="grid gap-1.5 text-sm">
-                                    {tr('กิจกรรม')}
+                                    {tr('levels.activity')}
                                     <select
                                         className={selectClass}
                                         value={rule.source}
@@ -294,74 +294,72 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                     >
                                         {XP_SOURCES.map((v) => (
                                             <option key={v} value={v}>
-                                                {tr(XP_SOURCE_LABELS[v])}
+                                                {trText(XP_SOURCE_LABELS[v])}
                                             </option>
                                         ))}
                                     </select>
                                 </label>
                                 <NumberField
-                                    label={tr('XP ต่ำสุดต่อครั้ง')}
+                                    label={tr('levels.minXpPerEvent')}
                                     value={rule.minXp}
                                     max={100000}
                                     onChange={(minXp) => patchRule(rule.id, { minXp })}
                                 />
                                 <NumberField
-                                    label={tr('XP สูงสุดต่อครั้ง')}
+                                    label={tr('levels.maxXpPerEvent')}
                                     value={rule.maxXp}
                                     max={100000}
                                     onChange={(maxXp) => patchRule(rule.id, { maxXp })}
                                 />
                                 <NumberField
-                                    label={tr('ตัวคูณกฎนี้ (%)')}
+                                    label={tr('levels.ruleMultiplier')}
                                     value={rule.multiplierPercent}
                                     max={1000}
                                     onChange={(multiplierPercent) => patchRule(rule.id, { multiplierPercent })}
                                 />
                                 <NumberField
-                                    label={tr('โอกาสได้รับ XP (%)')}
+                                    label={tr('levels.chanceToEarnXp')}
                                     value={rule.chancePercent}
                                     max={100}
                                     onChange={(chancePercent) => patchRule(rule.id, { chancePercent })}
                                 />
                                 <NumberField
-                                    label={tr('Cooldown (วินาที)')}
+                                    label={tr('levels.cooldownSeconds')}
                                     value={rule.cooldownSeconds}
                                     min={1}
                                     max={86400}
                                     onChange={(cooldownSeconds) => patchRule(rule.id, { cooldownSeconds })}
                                 />
                                 <NumberField
-                                    label={tr('เพดาน XP ของกฎต่อคนต่อวัน')}
+                                    label={tr('levels.ruleXpCapPerPersonPer')}
                                     value={rule.dailyCap}
                                     max={2000000000}
                                     onChange={(dailyCap) => patchRule(rule.id, { dailyCap })}
                                 />
                             </div>
                             <p className="rounded-md bg-primary/10 p-3 text-sm">
-                                {tr('เมื่อได้รับ:')}{' '}
+                                {tr('levels.whenEarned')}{' '}
                                 <strong>
                                     {Math.floor((((rule.minXp * rule.multiplierPercent) / 100) * draft.multiplierPercent) / 100).toLocaleString()}–
                                     {Math.floor((((rule.maxXp * rule.multiplierPercent) / 100) * draft.multiplierPercent) / 100).toLocaleString()} XP
                                 </strong>{' '}
-                                {tr('/ ครั้ง · โอกาส')} {rule.chancePercent}%{rule.source === 'voice' && tr(' · ตรวจห้องเสียงทุก 15 วินาที')}
+                                {tr('levels.eventChance')} {rule.chancePercent}%{rule.source === 'voice' && tr('levels.voiceCheckedEvery15Seconds')}
                             </p>
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <IdChoices
-                                    title={tr('ให้เฉพาะห้อง/หมวด')}
+                                    title={tr('levels.onlyInChannelsCategories')}
                                     options={channelOptions}
                                     voiceIds={voiceIds}
                                     emptyHint={
                                         rule.source === 'voice'
-                                            ? tr(
-                                                  'ไม่เลือกห้อง = ทุกห้องเสียง รวมถึงห้องที่สร้างใหม่ · ปุ่มเลือกทั้งหมดเลือกเฉพาะห้องเสียงและ Stage ที่มีตอนนี้',
-                                              )
-                                            : tr('ไม่เลือกห้อง = ทุกห้อง · ปุ่มเลือกห้องเสียงทั้งหมดรวม Stage และคงรายการอื่นที่เลือกไว้')
+                                            ? tr('levels.noChannelSelectedEveryVoiceChannel')
+                                            : tr('levels.noChannelSelectedAllChannelsSelect')
                                     }
                                     values={rule.channelIds}
                                     onChange={(channelIds) => patchRule(rule.id, { channelIds })}
                                 />
                                 <IdChoices
-                                    title={tr('ให้เฉพาะผู้มียศใดยศหนึ่ง')}
+                                    title={tr('levels.onlyForMembersWithAnyOf')}
                                     options={roles.data ?? []}
                                     values={rule.roleIds}
                                     onChange={(roleIds) => patchRule(rule.id, { roleIds })}
@@ -369,7 +367,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                             </div>
                             {rule.source === 'command' && (
                                 <label className="grid gap-1.5 text-sm">
-                                    {tr('ชื่อคำสั่ง คั่นด้วย comma (ว่าง = ทุกคำสั่งที่บอทรองรับ)')}
+                                    {tr('levels.commandNamesCommaSeparatedEmptyEvery')}
                                     <Input
                                         value={commandText[rule.id] ?? rule.commands.join(', ')}
                                         placeholder="ping, weather"
@@ -397,7 +395,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                         patch({ rules });
                                     }}
                                 >
-                                    {tr('เลื่อนขึ้น')}
+                                    {tr('common.moveUp')}
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -409,14 +407,14 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                         patch({ rules });
                                     }}
                                 >
-                                    {tr('เลื่อนลง')}
+                                    {tr('common.moveDown')}
                                 </Button>
                             </div>
                         </CardContent>
                     </Card>
                 ))}
                 {!draft.rules.length && (
-                    <p className="rounded-md border border-dashed p-6 text-center text-muted-foreground">{tr('ยังไม่มีกฎ สมาชิกจะไม่ได้ XP อัตโนมัติ')}</p>
+                    <p className="rounded-md border border-dashed p-6 text-center text-muted-foreground">{tr('levels.noRulesYetMembersWontEarn')}</p>
                 )}
                 <div className="flex flex-wrap gap-2">
                     {XP_SOURCES.map((source) => (
@@ -427,7 +425,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                             onClick={() => patch({ rules: [...draft.rules, { ...defaultXpRule(source, crypto.randomUUID()), enabled: true }] })}
                         >
                             <Plus />
-                            {tr('เพิ่มกฎ')} {tr(XP_SOURCE_LABELS[source])}
+                            {tr('levels.addRule')} {trText(XP_SOURCE_LABELS[source])}
                         </Button>
                     ))}
                     <Button
@@ -435,8 +433,8 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                         onClick={async () => {
                             if (
                                 await confirm({
-                                    title: tr('คืนการตั้งค่า XP เริ่มต้น?'),
-                                    description: tr('แทนที่กฎที่กำลังแก้ โดยคง XP ของสมาชิกไว้ และยังต้องกดบันทึกทั้งหมด'),
+                                    title: tr('levels.restoreDefaultXpSettings'),
+                                    description: tr('levels.replacesTheRulesYoureEditingKeeps'),
                                     destructive: true,
                                 })
                             ) {
@@ -445,14 +443,14 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                             }
                         }}
                     >
-                        {tr('คืนค่าเริ่มต้น')}
+                        {tr('common.restoreDefaults')}
                     </Button>
                 </div>
             </fieldset>
             <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
                 <Save />
 
-                {tr('บันทึกทั้งหมด')}
+                {tr('levels.saveAll')}
             </Button>
         </div>
     );

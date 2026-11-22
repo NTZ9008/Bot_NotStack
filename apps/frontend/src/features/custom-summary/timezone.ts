@@ -43,7 +43,7 @@ export function bangkokPresetInputs(hours: number, now = new Date()): { fromInpu
 export function formatBangkokDateTime(value: string | Date): string {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return tr('{0} น.', {
+    return tr('customSummary.timeOf', {
         0: new Intl.DateTimeFormat(dateLocale(), {
             timeZone: BANGKOK_TZ,
             day: '2-digit',
@@ -59,7 +59,7 @@ export function formatBangkokDateTime(value: string | Date): string {
 export function formatBangkokShortTime(value: string | Date): string {
     const date = value instanceof Date ? value : new Date(value);
     if (Number.isNaN(date.getTime())) return '-';
-    return tr('{0} น.', {
+    return tr('customSummary.timeOf', {
         0: new Intl.DateTimeFormat(dateLocale(), {
             timeZone: BANGKOK_TZ,
             day: '2-digit',
@@ -73,9 +73,9 @@ export function formatBangkokShortTime(value: string | Date): string {
 
 export function formatThaiDuration(totalSeconds: number): string {
     const safe = Math.max(0, Math.round(totalSeconds));
-    if (safe === 0) return tr('0 นาที');
+    if (safe === 0) return tr('common.n0Min');
     const hours = Math.floor(safe / 3600);
     const minutes = Math.floor((safe % 3600) / 60);
-    if (hours === 0) return tr('{0} นาที', { 0: minutes });
-    return tr('{0} ชม. {1} นาที', { 0: hours.toLocaleString('en-US'), 1: minutes });
+    if (hours === 0) return tr('common.min', { 0: minutes });
+    return tr('common.hrMin', { 0: hours.toLocaleString('en-US'), 1: minutes });
 }

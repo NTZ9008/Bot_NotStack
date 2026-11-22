@@ -27,9 +27,9 @@ export function useLogout(): () => Promise<void> {
     const t = useT();
     return async () => {
         const ok = await confirm({
-            title: t('ยืนยันการออกจากระบบ?'),
-            description: t('คุณต้องการออกจากระบบ Dashboard ใช่หรือไม่'),
-            confirmText: t('ออกจากระบบ'),
+            title: t('layout.logOut'),
+            description: t('layout.doYouWantToLogOut'),
+            confirmText: t('layout.logOut2'),
             destructive: true,
         });
         if (!ok) return;
@@ -65,19 +65,19 @@ export function ProfileMenu() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" side={isMobile ? 'bottom' : 'right'} className="w-56">
                         <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                            <span className="truncate">{t('ทางลัด')}</span>
+                            <span className="truncate">{t('layout.shortcuts')}</span>
                             <RoleBadge role={user.role} />
                         </DropdownMenuLabel>
                         <DropdownMenuItem asChild>
                             <Link to="/account" onClick={() => isMobile && setOpenMobile(false)}>
                                 <CircleUser />
-                                {t('บัญชีของฉัน')}
+                                {t('common.myAccount')}
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>
                             <LogOut />
-                            {t('ออกจากระบบ')}
+                            {t('layout.logOut2')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

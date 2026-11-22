@@ -77,11 +77,11 @@ function FundsPage() {
         <>
             <PageHeader
                 help="funds"
-                title={tr('เก็บเงินตามเป้า')}
-                description={tr('สร้างหัวข้อ ตั้งยอดคงที่หรือรายวัน จัดการสมาชิก บันทึกรับเงิน ดูสรุป และส่งรายงานเข้า Discord')}
+                title={tr('common.fundCollection')}
+                description={tr('funds.createTopicsSetAFixedOr')}
                 actions={
                     <Button onClick={openCreateBlank}>
-                        <Plus /> {tr('สร้างหัวข้อ')}
+                        <Plus /> {tr('funds.createTopic')}
                     </Button>
                 }
             />
@@ -98,20 +98,20 @@ function FundsPage() {
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
                         <aside className="min-w-0 space-y-3 rounded-xl border bg-card/50 p-3">
                             <div className="flex items-center justify-between gap-2 px-1">
-                                <h2 className="text-sm font-semibold">{tr('หัวข้อเก็บเงิน')}</h2>
+                                <h2 className="text-sm font-semibold">{tr('funds.fundTopics')}</h2>
                                 <span className="text-xs text-muted-foreground">
-                                    {tr('ทั้งหมด')} {topics.length}
+                                    {tr('common.total')} {topics.length}
                                 </span>
                             </div>
-                            {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder={tr('ค้นหาหัวข้อเก็บเงิน...')} />}
+                            {topics.length > 2 && <SearchInput value={topicSearch} onChange={setTopicSearch} placeholder={tr('funds.searchFundTopics')} />}
 
                             {closedCount > 0 && (
                                 <div className="grid grid-cols-3 gap-1 rounded-lg border bg-muted/30 p-1">
                                     {(
                                         [
-                                            ['all', tr('ทั้งหมด {0}', { 0: topics.length })],
-                                            ['open', tr('เปิดอยู่ {0}', { 0: openCount })],
-                                            ['closed', tr('ปิดแล้ว {0}', { 0: closedCount })],
+                                            ['all', tr('funds.all3', { 0: topics.length })],
+                                            ['open', tr('funds.open', { 0: openCount })],
+                                            ['closed', tr('funds.closed2', { 0: closedCount })],
                                         ] as const
                                     ).map(([val, label]) => (
                                         <Button
@@ -131,7 +131,7 @@ function FundsPage() {
                             <div className="space-y-2">
                                 {filteredTopics.length === 0 ? (
                                     <div className="rounded-xl border border-dashed py-6 text-center text-xs text-muted-foreground">
-                                        {tr('ไม่พบหัวข้อตามเงื่อนไขที่เลือก')}
+                                        {tr('funds.noTopicsMatchTheSelectedFilters')}
                                     </div>
                                 ) : (
                                     filteredTopics.map((topic) => (

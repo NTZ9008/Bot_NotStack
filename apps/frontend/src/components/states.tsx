@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/api';
 
-export function ErrorState({ error, title = tr('โหลดข้อมูลไม่สำเร็จ'), className }: { error: unknown; title?: string; className?: string }) {
+export function ErrorState({ error, title = tr('common.failedToLoadData'), className }: { error: unknown; title?: string; className?: string }) {
     return (
         <div className={cn('flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm', className)}>
             <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />

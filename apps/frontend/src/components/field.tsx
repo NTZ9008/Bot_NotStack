@@ -1,4 +1,4 @@
-import { tr } from '@/lib/i18n';
+import { trText } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,7 @@ export function Field({
             {label && <Label htmlFor={htmlFor}>{label}</Label>}
             {children}
             {error ? (
-                <p className="text-xs text-destructive">{typeof error === 'string' ? tr(error) : error}</p>
+                <p className="text-xs text-destructive">{typeof error === 'string' ? trText(error) : error}</p>
             ) : hint ? (
                 <p className="text-xs text-muted-foreground">{hint}</p>
             ) : null}

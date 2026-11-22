@@ -17,7 +17,7 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => pad(i));
 
 function formatLabel(mode: DateTimeMode, date: Date | undefined, time: string | undefined, lang: Lang): string {
     const day = date?.toLocaleDateString(lang === 'en' ? 'en-GB' : 'th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-    const unit = lang === 'en' ? '' : tr(' น.');
+    const unit = lang === 'en' ? '' : tr('common.timeSuffixSpaced');
     if (mode === 'date') return day ?? '';
     if (mode === 'time') return time ? `${time}${unit}` : '';
     return day ? `${day} ${time ?? '00:00'}${unit}` : '';
@@ -68,11 +68,11 @@ export function DateTimeInput({
                     variant="outline"
                     disabled={disabled}
                     // ชื่อสำหรับ screen reader ต้องมีข้อความที่เห็นบนปุ่มด้วย (หัวข้อ: ค่าที่เลือก)
-                    aria-label={ariaLabel ? `${ariaLabel}: ${label || placeholder || t('ยังไม่ได้เลือก')}` : undefined}
+                    aria-label={ariaLabel ? `${ariaLabel}: ${label || placeholder || t('common.notSet')}` : undefined}
                     className={cn('w-full justify-start gap-2 px-2.5 font-normal', !label && 'text-muted-foreground', className)}
                 >
                     <Icon className="text-muted-foreground" />
-                    <span className="truncate">{label || placeholder || t(mode === 'time' ? 'เลือกเวลา' : 'เลือกวันที่')}</span>
+                    <span className="truncate">{label || placeholder || t(mode === 'time' ? 'common.pickATime' : 'common.pickADate')}</span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-auto p-0">
@@ -92,7 +92,7 @@ export function DateTimeInput({
                     <div className={cn('flex items-center gap-2 p-3', mode === 'datetime' && 'border-t')}>
                         <Clock className="size-4 text-muted-foreground" />
                         <Select value={hh} onValueChange={(h) => setTime(h, mm)}>
-                            <SelectTrigger aria-label={t('ชั่วโมง')} className="w-20">
+                            <SelectTrigger aria-label={t('common.hour')} className="w-20">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
@@ -105,7 +105,7 @@ export function DateTimeInput({
                         </Select>
                         <span className="text-muted-foreground">:</span>
                         <Select value={mm} onValueChange={(m) => setTime(hh, m)}>
-                            <SelectTrigger aria-label={t('นาที')} className="w-20">
+                            <SelectTrigger aria-label={t('common.minute')} className="w-20">
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent className="max-h-60">
@@ -116,13 +116,13 @@ export function DateTimeInput({
                                 ))}
                             </SelectContent>
                         </Select>
-                        {lang === 'th' && <span className="text-sm text-muted-foreground">{tr('น.')}</span>}
+                        {lang === 'th' && <span className="text-sm text-muted-foreground">{tr('common.timeSuffix')}</span>}
                     </div>
                 )}
                 <div className="flex items-center justify-between gap-2 border-t p-2">
                     <div className="flex gap-1">
                         <Button type="button" variant="ghost" size="sm" onClick={now}>
-                            {t(mode === 'date' ? 'วันนี้' : 'ตอนนี้')}
+                            {t(mode === 'date' ? 'common.today' : 'common.now')}
                         </Button>
                         {clearable && value && (
                             <Button
@@ -134,13 +134,13 @@ export function DateTimeInput({
                                     setOpen(false);
                                 }}
                             >
-                                {t('ล้าง')}
+                                {t('common.clear')}
                             </Button>
                         )}
                     </div>
                     {mode !== 'date' && (
                         <Button type="button" size="sm" onClick={() => setOpen(false)}>
-                            {t('ตกลง')}
+                            {t('common.done')}
                         </Button>
                     )}
                 </div>

@@ -41,10 +41,10 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
 });
 
 const SECTIONS = byLang((): { value: Section; label: string }[] => [
-    { value: 'general', label: tr('ทั่วไป') },
-    { value: 'background', label: tr('พื้นหลัง') },
-    { value: 'avatar', label: tr('รูปโปรไฟล์') },
-    { value: 'texts', label: tr('ข้อความบนรูป') },
+    { value: 'general', label: tr('welcome.general') },
+    { value: 'background', label: tr('common.background') },
+    { value: 'avatar', label: tr('common.avatar') },
+    { value: 'texts', label: tr('welcome.textOnImage') },
 ]);
 
 const toDraft = (card: WelcomeCard): CardDraft => structuredClone({ ...pickDraft(card), id: card.id, enabled: card.enabled });
@@ -99,9 +99,9 @@ function WelcomePage() {
     }, [cards.data]);
 
     const discardDialog = {
-        title: tr('ทิ้งการแก้ไขที่ยังไม่บันทึก?'),
-        description: tr('การ์ด "{0}" มีการแก้ไขที่ยังไม่ได้กดบันทึก', { 0: draft?.name }),
-        confirmText: tr('ทิ้งการแก้ไข'),
+        title: tr('common.discardUnsavedChanges'),
+        description: tr('welcome.cardHasUnsavedChanges', { 0: draft?.name }),
+        confirmText: tr('common.discardChanges'),
         destructive: true,
     };
     const confirmDiscard = async () => !dirty || confirm(discardDialog);
@@ -116,17 +116,17 @@ function WelcomePage() {
 
     const save = async () => {
         if (!draft || !dirty) return;
-        if (!draft.name.trim()) return toast.error(tr('บันทึกไม่ได้'), { description: tr('กรุณาตั้งชื่อการ์ด') });
+        if (!draft.name.trim()) return toast.error(tr('welcome.cantSave'), { description: tr('welcome.pleaseGiveTheCardAName') });
         setBusy('save');
         try {
             const { card, warning } = await welcomeApi.updateCard(guildId, draft.id, pickDraft(draft));
             setCards((list) => list.map((c) => (c.id === card.id ? card : c)));
             // ใช้ค่าที่ server ตรวจแล้ว (อาจถูกบีบให้อยู่ในช่วงที่อนุญาต)
             load(card);
-            if (warning) toast.warning(tr('บันทึกแล้ว แต่ยังส่งการ์ดไม่ได้'), { description: warning });
-            else toast.success(tr('บันทึกการ์ดแล้ว'));
+            if (warning) toast.warning(tr('welcome.savedButTheCardCantBe'), { description: warning });
+            else toast.success(tr('welcome.cardSaved'));
         } catch (err) {
-            toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.saveFailed'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -136,7 +136,7 @@ function WelcomePage() {
 
     // เปิด/ปิดบันทึกทันที (ทั้งสวิตช์ในรายการและบนหัวตัวแก้ไข) — ไม่กระทบการแก้ไขอื่นที่ค้างอยู่
     const toggle = async (card: WelcomeCard, enabled: boolean) => {
-        if (enabled && !card.channelId) return toast.error(tr('ยังเปิดใช้งานไม่ได้'), { description: tr('เลือกห้องที่จะส่งแล้วกด "บันทึก" ก่อนเปิดใช้งาน') });
+        if (enabled && !card.channelId) return toast.error(tr('common.cantEnableYet'), { description: tr('common.pickAChannelAndPressSave') });
         try {
             const { card: updated, warning } = await welcomeApi.updateCard(guildId, card.id, { enabled });
             setCards((list) => list.map((c) => (c.id === updated.id ? { ...c, enabled: updated.enabled } : c)));
@@ -144,10 +144,10 @@ function WelcomePage() {
                 setSaved((s) => s && { ...s, enabled: updated.enabled });
                 setDraft((d) => d && { ...d, enabled: updated.enabled });
             }
-            if (warning) toast.warning(tr('เปิดใช้งานแล้ว แต่ยังส่งการ์ดไม่ได้'), { description: warning });
-            else toast.success(enabled ? tr('เปิดใช้งานการ์ดแล้ว') : tr('ปิดการ์ดแล้ว'));
+            if (warning) toast.warning(tr('welcome.enabledButTheCardCantBe'), { description: warning });
+            else toast.success(enabled ? tr('welcome.cardEnabled') : tr('welcome.cardDisabled'));
         } catch (err) {
-            toast.error(tr('เปลี่ยนสถานะไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.failedToChangeStatus'), { description: errorMessage(err) });
         }
     };
 
@@ -157,20 +157,20 @@ function WelcomePage() {
             const { card } = await welcomeApi.createCard(guildId, duplicateOf ? { duplicateOf } : {});
             setCards((list) => [...list, card]);
             load(card);
-            toast.success(duplicateOf ? tr('คัดลอกการ์ดแล้ว') : tr('สร้างการ์ดใหม่แล้ว'), {
-                description: tr('การ์ดใหม่ปิดอยู่ — ตั้งค่าเสร็จแล้วค่อยเปิดใช้งาน'),
+            toast.success(duplicateOf ? tr('welcome.cardCopied') : tr('welcome.newCardCreated'), {
+                description: tr('welcome.newCardsStartOffEnableIt'),
             });
         } catch (err) {
-            toast.error(tr('สร้างการ์ดไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('welcome.failedToCreateCard'), { description: errorMessage(err) });
         }
     };
 
     const remove = async () => {
         if (!draft) return;
         const ok = await confirm({
-            title: tr('ลบการ์ด "{0}"?', { 0: saved?.name }),
-            description: tr('ลบแล้วกู้คืนไม่ได้ (รูปในคลังรูปยังอยู่)'),
-            confirmText: tr('ลบการ์ด'),
+            title: tr('welcome.deleteCard2', { 0: saved?.name }),
+            description: tr('welcome.cantBeUndoneImagesInThe'),
+            confirmText: tr('welcome.deleteCard'),
             destructive: true,
         });
         if (!ok) return;
@@ -179,21 +179,21 @@ function WelcomePage() {
             const rest = (cards.data ?? []).filter((c) => c.id !== draft.id);
             setCards(() => rest);
             load(rest[0]);
-            toast.success(tr('ลบการ์ดแล้ว'));
+            toast.success(tr('welcome.cardDeleted'));
         } catch (err) {
-            toast.error(tr('ลบการ์ดไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('welcome.failedToDeleteCard'), { description: errorMessage(err) });
         }
     };
 
     const testSend = async () => {
         if (!draft) return;
-        if (!draft.channelId) return toast.error(tr('ยังส่งทดสอบไม่ได้'), { description: tr('กรุณาเลือกห้องที่จะส่งในหมวด "ทั่วไป" ก่อน') });
+        if (!draft.channelId) return toast.error(tr('common.cantSendATestYet'), { description: tr('welcome.pleasePickAChannelInGeneral') });
         const ok = await confirm({
-            title: tr('ส่งการ์ดทดสอบเข้า {0}?', { 0: channelLabel(channels, draft.channelId) }),
-            description: tr('ใช้ค่าที่กำลังแก้อยู่ตอนนี้ (แม้ยังไม่บันทึก) โดยใช้ {0} เป็นสมาชิกตัวอย่าง — สมาชิกในห้องนั้นจะเห็นข้อความนี้', {
+            title: tr('welcome.sendATestCardTo', { 0: channelLabel(channels, draft.channelId) }),
+            description: tr('welcome.usesTheValuesYoureEditingNow', {
                 0: vars?.user ?? 'บัญชีของคุณ',
             }),
-            confirmText: tr('ส่งทดสอบ'),
+            confirmText: tr('common.sendTest'),
         });
         if (!ok) return;
         setBusy('test');
@@ -205,9 +205,9 @@ function WelcomePage() {
                 backgroundId: draft.backgroundId,
                 userId: sample?.userId ?? null,
             });
-            toast.success(tr('ส่งทดสอบแล้ว'), { description: result.message });
+            toast.success(tr('common.testSent'), { description: result.message });
         } catch (err) {
-            toast.error(tr('ส่งทดสอบไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.failedToSendTest'), { description: errorMessage(err) });
         } finally {
             setBusy(null);
         }
@@ -230,7 +230,7 @@ function WelcomePage() {
 
     if (meta.isLoading || cards.isLoading || assets.isLoading) return <WelcomePageSkeleton />;
     if (meta.error || cards.error || assets.error)
-        return <ErrorState error={meta.error ?? cards.error ?? assets.error} title={tr('โหลดข้อมูล Welcome ไม่สำเร็จ')} />;
+        return <ErrorState error={meta.error ?? cards.error ?? assets.error} title={tr('welcome.failedToLoadWelcomeData')} />;
     const cardList = cards.data ?? [];
     const current = cardList.find((c) => c.id === draft?.id);
 
@@ -238,25 +238,23 @@ function WelcomePage() {
         <>
             <PageHeader
                 help="welcome"
-                title={tr('ต้อนรับสมาชิกใหม่')}
-                description={tr('การ์ดต้อนรับสมาชิกใหม่แบบรูปภาพ — ใส่รูปพื้นหลัง รูปโปรไฟล์ ชื่อ และข้อความ แล้วเลือกห้องที่จะส่ง')}
+                title={tr('common.welcomeNewMembers')}
+                description={tr('welcome.imageWelcomeCardsForNewMembers')}
                 actions={
                     <Button onClick={() => void create()}>
-                        <Plus /> {tr('สร้างการ์ดใหม่')}
+                        <Plus /> {tr('welcome.createNewCard')}
                     </Button>
                 }
             />
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{tr('การ์ดต้อนรับ')}</CardTitle>
-                    <CardDescription>
-                        {tr('เปิดได้หลายใบพร้อมกัน — สมาชิกใหม่ 1 คนจะได้ทุกใบที่เปิดอยู่ ส่งเข้าห้องของแต่ละใบ (ทำงานแยกจากข้อความ Welcome เดิม)')}
-                    </CardDescription>
+                    <CardTitle>{tr('welcome.welcomeCards')}</CardTitle>
+                    <CardDescription>{tr('welcome.severalCanBeOnAtOnce')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {cardList.length === 0 ? (
-                        <EmptyState>{tr('ยังไม่มีการ์ดต้อนรับ — กด "สร้างการ์ดใหม่" เพื่อเริ่มออกแบบ')}</EmptyState>
+                        <EmptyState>{tr('welcome.noWelcomeCardsYetPressCreate')}</EmptyState>
                     ) : (
                         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {cardList.map((card) => (
@@ -277,16 +275,16 @@ function WelcomePage() {
                                             {card.channelId ? (
                                                 <span className="text-muted-foreground">{channelLabel(allChannels, card.channelId)}</span>
                                             ) : (
-                                                <span className="text-amber-700 dark:text-amber-400">{tr('ยังไม่ได้เลือกห้อง')}</span>
+                                                <span className="text-amber-700 dark:text-amber-400">{tr('common.noChannelSelected')}</span>
                                             )}
                                         </p>
                                     </div>
-                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? tr('เปิดอยู่') : tr('ปิดอยู่')}</Badge>
+                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? tr('common.on') : tr('common.off')}</Badge>
                                     <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
                                         <Switch
                                             checked={card.enabled}
                                             onCheckedChange={(checked) => void toggle(card, checked)}
-                                            title={tr('เปิด/ปิดการ์ดนี้ (บันทึกทันที)')}
+                                            title={tr('welcome.turnThisCardOnOffSaved')}
                                         />
                                     </span>
                                 </div>
@@ -300,11 +298,11 @@ function WelcomePage() {
                 <Card>
                     <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
-                            <CardTitle className="truncate text-lg">{draft.name || tr('(ไม่มีชื่อ)')}</CardTitle>
-                            {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('มีการแก้ไขที่ยังไม่บันทึก')}</Badge>}
+                            <CardTitle className="truncate text-lg">{draft.name || tr('welcome.untitled')}</CardTitle>
+                            {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('common.youHaveUnsavedChanges')}</Badge>}
                         </div>
-                        <Label className="flex items-center gap-2" title={tr('เปิด/ปิดการ์ดนี้ (บันทึกทันที)')}>
-                            {tr('เปิดใช้งาน')}
+                        <Label className="flex items-center gap-2" title={tr('welcome.turnThisCardOnOffSaved')}>
+                            {tr('common.enabled')}
                             <Switch checked={draft.enabled} onCheckedChange={(checked) => void toggle(current, checked)} />
                         </Label>
                     </CardHeader>
@@ -334,7 +332,7 @@ function WelcomePage() {
                         </div>
 
                         <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
-                            <p className="text-sm text-muted-foreground">{tr('ตัวอย่างใน Discord — ลากรูปโปรไฟล์หรือจุดตัวเลขบนรูปเพื่อย้ายตำแหน่ง')}</p>
+                            <p className="text-sm text-muted-foreground">{tr('welcome.discordPreviewDragTheAvatarOr')}</p>
                             <WelcomePreview
                                 draft={draft}
                                 patch={patch}
@@ -345,20 +343,20 @@ function WelcomePage() {
                                 onVars={setVars}
                                 onFocusElement={focusElement}
                             />
-                            <Field label={tr('ดูตัวอย่างในนาม')} hint={tr('ค่าเริ่มต้นคือบัญชี Discord ของคุณ (หรือตัวบอท ถ้ายังไม่ได้เชื่อม Discord)')}>
+                            <Field label={tr('welcome.previewAs')} hint={tr('welcome.defaultsToYourDiscordAccountOr')}>
                                 <UserPicker
                                     value={sample}
                                     onSelect={setSample}
                                     onClear={() => setSample(null)}
-                                    placeholder={tr('พิมพ์ชื่อสมาชิกเพื่อดูตัวอย่างในนามคนนั้น...')}
+                                    placeholder={tr('welcome.typeAMemberNameToPreview')}
                                 />
                             </Field>
                             <div className="flex flex-wrap gap-2">
                                 <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('บันทึก')}
+                                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
                                 </Button>
                                 <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                                    <RotateCcw /> {tr('ยกเลิกการแก้ไข')}
+                                    <RotateCcw /> {tr('common.cancelChanges')}
                                 </Button>
                                 <Button
                                     variant="secondary"
@@ -366,15 +364,15 @@ function WelcomePage() {
                                     onClick={() => void testSend()}
                                     disabled={busy === 'test'}
                                 >
-                                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('ส่งทดสอบ')}
+                                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
                                 </Button>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <Button variant="outline" onClick={() => void create(draft.id)}>
-                                    <Copy /> {tr('คัดลอกการ์ดนี้')}
+                                    <Copy /> {tr('welcome.copyThisCard')}
                                 </Button>
                                 <Button variant="destructive" onClick={() => void remove()}>
-                                    <Trash2 /> {tr('ลบการ์ด')}
+                                    <Trash2 /> {tr('welcome.deleteCard')}
                                 </Button>
                             </div>
                         </div>

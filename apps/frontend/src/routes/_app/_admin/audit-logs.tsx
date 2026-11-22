@@ -18,11 +18,7 @@ export const Route = createFileRoute('/_app/_admin/audit-logs')({
 function SystemAuditPage() {
     return (
         <>
-            <PageHeader
-                help="systemAudit"
-                title={tr('ประวัติทั้งระบบ')}
-                description={tr('ทุกการกระทำบน Dashboard ทั้งระบบ — การเข้าสู่ระบบ จัดการผู้ใช้ และการตั้งค่าของทุกเซิร์ฟเวอร์')}
-            />
+            <PageHeader help="systemAudit" title={tr('common.systemHistory')} description={tr('auditLogs.everyDashboardActionSystemWideLogins')} />
             <Card>
                 <CardContent>
                     <DashboardAudit />

@@ -12,15 +12,15 @@ import { cn } from '@/lib/utils';
 
 const GROUP_META = byLang((): Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> => ({
     text: {
-        label: tr('ห้องแชทข้อความ'),
+        label: tr('customSummary.textChannels'),
         badgeClass: 'bg-highlight/15 text-highlight border-highlight/30',
     },
     voice: {
-        label: tr('ห้องเสียง'),
+        label: tr('common.voiceChannels'),
         badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
     },
     devops: {
-        label: tr('ห้องแจ้งเตือน DevOps'),
+        label: tr('customSummary.devopsAlertChannels'),
         badgeClass: 'bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30',
     },
 }));
@@ -88,12 +88,12 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
     const selectedChannels = useMemo(() => channels.filter((ch) => selectedSet.has(ch.id)), [channels, selectedSet]);
 
     const triggerSummary = loading
-        ? tr('กำลังโหลดรายชื่อห้อง...')
+        ? tr('customSummary.loadingChannels')
         : isAllMode
-          ? tr('ทั้งหมดในเซิร์ฟเวอร์ ({0} ห้อง)', { 0: channels.length })
+          ? tr('customSummary.wholeServerChannels', { 0: channels.length })
           : selectedIds.length === channels.length
-            ? tr('เลือกครบทุกห้อง ({0} ห้อง)', { 0: channels.length })
-            : tr('เลือกแล้ว {0} ห้อง', { 0: selectedIds.length });
+            ? tr('customSummary.allChannelsSelected', { 0: channels.length })
+            : tr('customSummary.channelsSelected', { 0: selectedIds.length });
 
     return (
         <div className="space-y-2">
@@ -119,7 +119,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                             <Input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
-                                placeholder={tr('ค้นหาชื่อห้อง, หมวดหมู่ หรือ tags (pr, grafana)...')}
+                                placeholder={tr('customSummary.searchChannelNameCategoryOrTags')}
                                 className="h-8 border-border bg-background pl-8 text-xs text-foreground placeholder:text-muted-foreground"
                             />
                         </div>
@@ -133,7 +133,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     onClick={() => onChange(allIds)}
                                 >
                                     <Check className="mr-1 size-3" />
-                                    {tr('เลือกทั้งหมด (')}
+                                    {tr('customSummary.selectAll')}
                                     {channels.length})
                                 </Button>
                                 <Button
@@ -143,12 +143,12 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     className="text-muted-foreground hover:bg-muted hover:text-foreground"
                                     onClick={() => onChange([])}
                                 >
-                                    {tr('ดูรวมทั้งเซิร์ฟเวอร์')}
+                                    {tr('customSummary.viewTheWholeServer')}
                                 </Button>
                             </div>
                             {selectedIds.length > 0 && (
                                 <span className="text-[11px] text-highlight">
-                                    {tr('เลือกเจาะจง')} {selectedIds.length} {tr('ห้อง')}
+                                    {tr('customSummary.pickSpecific')} {selectedIds.length} {tr('common.channel')}
                                 </span>
                             )}
                         </div>
@@ -156,7 +156,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
 
                     <ScrollArea className="h-72 p-2">
                         {grouped.length === 0 ? (
-                            <div className="py-10 text-center text-xs text-muted-foreground">{tr('ไม่พบห้องที่ตรงกับคำค้นหา')}</div>
+                            <div className="py-10 text-center text-xs text-muted-foreground">{tr('customSummary.noChannelsMatchYourSearch')}</div>
                         ) : (
                             <div className="space-y-3">
                                 {grouped.map(({ group, items }) => {
@@ -173,7 +173,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                     onClick={() => toggleGroup(items)}
                                                     className="text-[11px] font-medium text-highlight hover:text-highlight"
                                                 >
-                                                    {allGroupSelected ? tr('เอาออกทั้งกลุ่ม') : tr('เลือกทั้งกลุ่ม')}
+                                                    {allGroupSelected ? tr('customSummary.removeWholeGroup') : tr('customSummary.selectWholeGroup')}
                                                 </button>
                                             </div>
                                             <div className="space-y-0.5 pl-1">
@@ -206,7 +206,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                                 ))}
                                                                 {ch.historicalOnly && (
                                                                     <span className="rounded border border-border bg-muted/80 px-1.5 text-[10px] text-muted-foreground">
-                                                                        {tr('ประวัติเก่า')}
+                                                                        {tr('customSummary.oldHistory')}
                                                                     </span>
                                                                 )}
                                                             </span>
@@ -230,7 +230,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                             <span>#{ch.name}</span>
                             <button
                                 type="button"
-                                aria-label={tr('ลบ {0}', { 0: ch.name })}
+                                aria-label={tr('common.remove', { 0: ch.name })}
                                 onClick={() => toggleOne(ch.id)}
                                 className="rounded-full p-0.5 hover:bg-foreground/10"
                             >
@@ -240,7 +240,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                     ))}
                     {selectedChannels.length > 8 && (
                         <Badge variant="outline" className="border-border bg-background text-[11px] text-muted-foreground">
-                            +{selectedChannels.length - 8} {tr('ห้องเพิ่มเติม')}
+                            +{selectedChannels.length - 8} {tr('customSummary.additionalChannels')}
                         </Badge>
                     )}
                 </div>

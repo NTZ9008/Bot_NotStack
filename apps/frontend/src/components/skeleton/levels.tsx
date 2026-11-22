@@ -21,7 +21,7 @@ import {
 // ตารางอันดับ (อันดับ / สมาชิก / เลเวล / XP + หลอดความคืบหน้า)
 export function LeaderboardTableSkeleton({ rows = 8 }: { rows?: number }) {
     return (
-        <div className="overflow-hidden" role="status" aria-busy="true" aria-label={tr('กำลังโหลดอันดับ')}>
+        <div className="overflow-hidden" role="status" aria-busy="true" aria-label={tr('common.loadingLeaderboard')}>
             <div className="grid grid-cols-[4rem_minmax(0,2fr)_6rem_minmax(12rem,2fr)] items-center gap-4 border-b p-3">
                 <Bone className="h-3.5 w-10" />
                 <Bone className="h-3.5 w-14" />
@@ -71,7 +71,7 @@ function LeaderboardCardSkeleton() {
 
 export function LevelsPageSkeleton({ manage = true }: { manage?: boolean }) {
     return (
-        <SkeletonStack label={tr('กำลังโหลดอันดับและเลเวล')}>
+        <SkeletonStack label={tr('common.loadingRanksLevels')}>
             <PageHeaderSkeleton />
             <div>
                 <TabsBone count={manage ? 7 : 2} className="mb-4 h-auto flex-wrap" />
@@ -97,7 +97,7 @@ function PanelToolbarSkeleton() {
 // แผงแต่งการ์ด (การ์ดของฉัน / ธีมการ์ด / เลเวลอัป): ฟอร์มหลายการ์ดซ้าย + ตัวอย่างการ์ดขวา
 export function RankEditorSkeleton({ cards = 3 }: { cards?: number }) {
     return (
-        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('กำลังโหลดตัวแก้ไขการ์ด')}>
+        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('common.loadingCardEditor')}>
             <PanelToolbarSkeleton />
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <div className="min-w-0 space-y-5">
@@ -132,7 +132,7 @@ export function RankEditorSkeleton({ cards = 3 }: { cards?: number }) {
 // แผงกฎและอัตรา XP: ภาพรวม + เงื่อนไข + กฎกิจกรรม
 export function XpSettingsSkeleton() {
     return (
-        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('กำลังโหลดกฎ XP')}>
+        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('common.loadingXpRules')}>
             <PanelToolbarSkeleton />
             <CardSkeleton contentClassName="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -167,7 +167,7 @@ export function XpSettingsSkeleton() {
 // ตารางประวัติ XP
 export function XpHistoryTableSkeleton() {
     return (
-        <div className="overflow-hidden" role="status" aria-busy="true" aria-label={tr('กำลังโหลดประวัติ XP')}>
+        <div className="overflow-hidden" role="status" aria-busy="true" aria-label={tr('common.loadingXpHistory')}>
             {Array.from({ length: 9 }, (_, i) => (
                 <div key={i} className="grid grid-cols-6 items-center gap-4 border-b p-3">
                     {Array.from({ length: 6 }, (_, c) => (

@@ -1,4 +1,4 @@
-import { tr } from '../../lib/i18n';
+import { tr, trText } from '../../lib/i18n';
 import type { GuildChannel, LogSettingsResponse } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
 import { Search } from '@/components/icons';
@@ -33,17 +33,17 @@ export function EventsTab({ data, channels }: { data: LogSettingsResponse; chann
         mutationFn: (channelId: string) => logSettingsApi.applyAll(guildId, channelId),
         onSuccess: ({ events }) => {
             cache.patch((d) => ({ ...d, events }));
-            savedToast(tr('ตั้งห้องให้ทุกรายการแล้ว'));
+            savedToast(tr('logManager.channelSetForEveryEntry'));
         },
         onError: failedToast,
     });
 
     const applyToAll = async () => {
-        if (!bulkChannel) return toast.warning(tr('ยังไม่ได้เลือกห้อง'), { description: tr('กรุณาเลือกห้องปลายทางก่อน') });
+        if (!bulkChannel) return toast.warning(tr('common.noChannelSelected'), { description: tr('logManager.pleasePickATargetChannelFirst') });
         const ok = await confirm({
-            title: tr('ยืนยันการตั้งค่า'),
-            description: tr('ตั้งให้ log ทุกรายการส่งเข้าห้อง {0} ใช่ไหม? (ค่าห้องเดิมของทุกรายการจะถูกทับ)', { 0: channelLabel(channels, bulkChannel) }),
-            confirmText: tr('ตกลง'),
+            title: tr('logManager.confirmSettings'),
+            description: tr('logManager.sendEveryLogToEachEntrys', { 0: channelLabel(channels, bulkChannel) }),
+            confirmText: tr('common.done'),
         });
         if (ok) applyAll.mutate(bulkChannel);
     };
@@ -61,11 +61,11 @@ export function EventsTab({ data, channels }: { data: LogSettingsResponse; chann
         <>
             <Card>
                 <CardContent>
-                    <Field label={tr('ตั้งห้องเดียวกันให้ทุกรายการ')}>
+                    <Field label={tr('logManager.setTheSameChannelForAll')}>
                         <div className="flex flex-wrap gap-2 md:max-w-xl md:flex-nowrap">
                             <ChannelSelect channels={channels.filter((ch) => ch.sendable)} value={bulkChannel} onChange={setBulkChannel} />
                             <Button variant="secondary" onClick={() => void applyToAll()} disabled={applyAll.isPending}>
-                                {tr('ใช้ห้องนี้กับทุกรายการ')}
+                                {tr('logManager.useThisChannelForAll')}
                             </Button>
                         </div>
                     </Field>
@@ -76,29 +76,29 @@ export function EventsTab({ data, channels }: { data: LogSettingsResponse; chann
                 <div className="relative min-w-48 flex-1">
                     <Search className="absolute top-2 left-3 size-4 text-muted-foreground" />
                     <Input
-                        aria-label={tr('ค้นหาเหตุการณ์')}
+                        aria-label={tr('logManager.searchEvents')}
                         className="pl-9"
-                        placeholder={tr('ค้นหาเหตุการณ์ เช่น ข้อความ สมาชิก ห้องเสียง…')}
+                        placeholder={tr('logManager.searchEventsEGMessageMember')}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
                 <Select value={status} onValueChange={(value) => setStatus(value as StatusFilter)}>
-                    <SelectTrigger aria-label={tr('กรองสถานะ')} className="w-44">
+                    <SelectTrigger aria-label={tr('logManager.filterStatus')} className="w-44">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">{tr('ทุกสถานะ')}</SelectItem>
-                        <SelectItem value="enabled">{tr('เปิดใช้งาน')}</SelectItem>
-                        <SelectItem value="unconfigured">{tr('รอเลือกห้อง')}</SelectItem>
+                        <SelectItem value="all">{tr('logManager.allStatuses')}</SelectItem>
+                        <SelectItem value="enabled">{tr('common.enabled')}</SelectItem>
+                        <SelectItem value="unconfigured">{tr('logManager.waitingForAChannel')}</SelectItem>
                     </SelectContent>
                 </Select>
                 <span className="text-xs text-muted-foreground">
-                    {visibleEvents.length} {tr('รายการ • บันทึกอัตโนมัติ')}
+                    {visibleEvents.length} {tr('logManager.entriesSavedAutomatically')}
                 </span>
             </div>
             {visibleEvents.length === 0 && (
-                <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">{tr('ไม่พบเหตุการณ์ ลองเปลี่ยนคำค้นหาหรือตัวกรอง')}</p>
+                <p className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">{tr('logManager.noEventsFoundTryAnotherSearch')}</p>
             )}
 
             {groups.map((group) => {
@@ -106,7 +106,7 @@ export function EventsTab({ data, channels }: { data: LogSettingsResponse; chann
                 if (!events.length) return null;
                 return (
                     <section key={group} className="space-y-3">
-                        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{tr(group)}</h3>
+                        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">{trText(group)}</h3>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                             {events.map((event) => (
                                 <EventCard key={event.key} event={event} channels={channels} />

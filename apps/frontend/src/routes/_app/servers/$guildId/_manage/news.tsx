@@ -1,5 +1,5 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
-import { useT, tr } from '@/lib/i18n';
+import { useT, tr, trText } from '@/lib/i18n';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, Send } from '@/components/icons';
@@ -46,9 +46,9 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
     const pendingSelection = useRef<[number, number] | null>(null);
 
     useUnsavedChangesGuard(Object.values(form).some(Boolean), {
-        title: tr('ทิ้งประกาศที่ยังไม่ได้ส่ง?'),
-        description: tr('ประกาศสำหรับเซิร์ฟเวอร์ {0} ยังไม่ได้ส่ง หากออกจากหน้านี้หรือสลับเซิร์ฟเวอร์ ข้อความที่ร่างไว้จะถูกล้าง', { 0: guildName }),
-        confirmText: tr('ทิ้งข้อความ'),
+        title: tr('news.discardTheUnsentAnnouncement'),
+        description: tr('news.theAnnouncementForHasntBeenSent', { 0: guildName }),
+        confirmText: tr('news.discardMessage'),
         destructive: true,
     });
 
@@ -71,26 +71,26 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
     const mutation = useMutation({
         mutationFn: (input: Parameters<typeof sendNews>[1]) => sendNews(guildId, input),
         onSuccess: () => {
-            toast.success(tr('ส่งประกาศสำเร็จ!'), { description: tr('ประกาศของคุณถูกส่งเข้าดิสคอร์ดเรียบร้อยแล้ว') });
+            toast.success(tr('news.announcementSent'), { description: tr('news.yourAnnouncementHasBeenPostedTo') });
             setForm(EMPTY);
             setColor(NEWS_PRESETS[type].color);
         },
-        onError: (err) => toast.error(tr('ส่งประกาศไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('news.failedToSendAnnouncement'), { description: errorMessage(err) }),
     });
 
     const send = async () => {
         const title = form.title.trim();
         const content = form.content.trim();
-        if (!title || !content) return toast.warning(tr('ข้อมูลไม่ครบถ้วน'), { description: tr('กรุณากรอกหัวข้อและรายละเอียดข่าวสารให้ครบก่อนส่ง') });
+        if (!title || !content) return toast.warning(tr('common.missingInformation'), { description: tr('news.pleaseFillInTheTitleAnd') });
         if (content.length > NEWS_LIMITS.content) {
-            return toast.warning(tr('เนื้อหายาวเกินไป'), {
-                description: tr('Discord รับได้ไม่เกิน {0} ตัวอักษร (ตอนนี้ {1} ตัว)', { 0: NEWS_LIMITS.content, 1: content.length }),
+            return toast.warning(tr('news.contentTooLong'), {
+                description: tr('news.discordAcceptsUpToCharactersCurrently', { 0: NEWS_LIMITS.content, 1: content.length }),
             });
         }
         const ok = await confirm({
-            title: tr('ยืนยันการส่งประกาศ?'),
-            description: tr('ข้อความนี้จะถูกส่งไปยังห้องประกาศที่ตั้งค่าไว้ของเซิร์ฟเวอร์ {0} ทันที', { 0: guildName }),
-            confirmText: tr('ส่งเลย!'),
+            title: tr('news.sendThisAnnouncement'),
+            description: tr('news.thisMessageWillBeSentRight', { 0: guildName }),
+            confirmText: tr('news.sendIt'),
         });
         if (!ok) return;
         mutation.mutate({
@@ -109,22 +109,18 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
 
     return (
         <>
-            <PageHeader
-                help="news"
-                title={tr('ส่งประกาศ')}
-                description={t('ประกาศสำหรับเซิร์ฟเวอร์ {name} — จัดรูปแบบข้อความและดูตัวอย่างก่อนส่งจริง', { name: guildName })}
-            />
+            <PageHeader help="news" title={tr('common.announcements')} description={t('news.announcementsForNameFormatTheMessage', { name: guildName })} />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                            {tr('ก่อนส่งครั้งแรก เลือกห้องประกาศใน')}{' '}
+                            {tr('news.beforeTheFirstSendPickThe')}{' '}
                             <Link to="/servers/$guildId/config" params={{ guildId }} className="text-highlight underline underline-offset-4">
-                                {tr('ตั้งค่าบอท')}
+                                {tr('common.botSettings')}
                             </Link>
                         </p>
                         <div>
-                            <Field label={tr('ประเภทข่าวสาร')}>
+                            <Field label={tr('news.newsType')}>
                                 <Select
                                     value={type}
                                     onValueChange={(value) => {
@@ -139,7 +135,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                     <SelectContent>
                                         {(Object.keys(NEWS_PRESETS) as NewsType[]).map((key) => (
                                             <SelectItem key={key} value={key}>
-                                                {tr(NEWS_PRESETS[key].label)}
+                                                {trText(NEWS_PRESETS[key].label)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -147,24 +143,24 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             </Field>
                         </div>
                         <Field
-                            label={tr('หัวข้อประกาศ')}
+                            label={tr('news.announcementTitle')}
                             htmlFor="news-title"
-                            hint={tr('Discord แสดงหัวข้อเป็นข้อความธรรมดา จัดตัวหนา/เอียงไม่ได้ · {0}/{1}', { 0: form.title.length, 1: NEWS_LIMITS.title })}
+                            hint={tr('news.discordShowsTheTitleAsPlain', { 0: form.title.length, 1: NEWS_LIMITS.title })}
                         >
                             <Input
                                 id="news-title"
                                 maxLength={NEWS_LIMITS.title}
-                                placeholder={tr('ตัวอย่าง: แพตช์อัปเดตระบบใหม่...')}
+                                placeholder={tr('news.exampleNewSystemUpdatePatch')}
                                 value={form.title}
                                 onChange={set('title')}
                             />
                         </Field>
                         <Field
-                            label={tr('รายละเอียด')}
+                            label={tr('common.details')}
                             htmlFor="news-content"
                             hint={
                                 <span className={cn(form.content.length > NEWS_LIMITS.content && 'text-destructive')}>
-                                    {tr('รองรับ Markdown ของ Discord ·')} {form.content.length}/{NEWS_LIMITS.content}
+                                    {tr('news.supportsDiscordMarkdown')} {form.content.length}/{NEWS_LIMITS.content}
                                 </span>
                             }
                         >
@@ -175,7 +171,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                     ref={textarea}
                                     rows={11}
                                     className="rounded-t-none"
-                                    placeholder={tr('พิมพ์เนื้อหาข่าวสาร — ลากคลุมข้อความแล้วกดปุ่มด้านบนเพื่อจัดรูปแบบ')}
+                                    placeholder={tr('news.typeTheNewsContentSelectText')}
                                     value={form.content}
                                     onChange={set('content')}
                                     onKeyDown={(e) => {
@@ -190,14 +186,14 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                         </Field>
                         <details className="rounded-lg border">
                             <summary className="cursor-pointer rounded-lg p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
-                                {tr('ปรับแต่งเพิ่มเติม · สี รูปภาพ ข้อความท้าย')}
+                                {tr('news.moreOptionsColorImageFooter')}
                             </summary>
                             <div className="space-y-4 border-t p-3">
-                                <Field label={tr('สีแถบด้านซ้ายของ embed')}>
+                                <Field label={tr('common.embedLeftBarColor')}>
                                     <ColorField value={color} onChange={setColor} />
                                 </Field>
                                 <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field label={tr('ข้อความท้ายประกาศ')} htmlFor="news-footer">
+                                    <Field label={tr('news.footerText')} htmlFor="news-footer">
                                         <Input
                                             id="news-footer"
                                             maxLength={NEWS_LIMITS.footer}
@@ -207,13 +203,13 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                         />
                                     </Field>
                                     <Field
-                                        label={tr('ลิงก์รูปภาพประกอบ')}
+                                        label={tr('news.imageUrl')}
                                         htmlFor="news-image"
-                                        error={form.imageUrl.trim() && !imageOk ? tr('ลิงก์รูปภาพต้องขึ้นต้นด้วย http:// หรือ https://') : undefined}
+                                        error={form.imageUrl.trim() && !imageOk ? tr('news.theImageUrlMustStartWith') : undefined}
                                     >
                                         <Input
                                             id="news-image"
-                                            placeholder={tr('https://... (ไม่บังคับ)')}
+                                            placeholder={tr('news.httpsOptional')}
                                             spellCheck={false}
                                             value={form.imageUrl}
                                             onChange={set('imageUrl')}
@@ -223,14 +219,14 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             </div>
                         </details>
                         <Button className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400" onClick={() => void send()} disabled={mutation.isPending}>
-                            {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('ส่งประกาศเข้า Discord')}
+                            {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('news.postAnnouncementToDiscord')}
                         </Button>
                     </CardContent>
                 </Card>
 
                 {/* ตัวอย่างข้อความที่จะไปโผล่ใน Discord (อัปเดตสดขณะพิมพ์) */}
                 <div className="space-y-2 xl:sticky xl:top-20 xl:self-start">
-                    <p className="text-sm text-muted-foreground">{tr('ตัวอย่างที่จะเห็นใน Discord')}</p>
+                    <p className="text-sm text-muted-foreground">{tr('news.previewAsSeenInDiscord')}</p>
                     <DiscordMessage>
                         <div
                             className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3"
@@ -244,7 +240,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             {form.content.trim() ? (
                                 <div className="discord-md" dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(form.content) }} />
                             ) : (
-                                <p className="text-sm text-[#949ba4] italic">{tr('ยังไม่ได้พิมพ์เนื้อหา')}</p>
+                                <p className="text-sm text-[#949ba4] italic">{tr('news.noContentYet')}</p>
                             )}
                             {imageOk && <img src={form.imageUrl.trim()} alt="" className="mt-3 max-h-72 rounded" />}
                             <p className="mt-2 text-xs text-[#b5bac1]">{form.footer.trim() || NEWS_DEFAULT_FOOTER}</p>

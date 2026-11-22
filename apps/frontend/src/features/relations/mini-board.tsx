@@ -75,11 +75,11 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
             <div className="grid lg:grid-cols-[minmax(0,1fr)_20rem]">
                 <div className="relative h-[22rem] sm:h-[26rem]">
                     {board.isPending ? (
-                        <BoardMessage pulse>{tr('กำลังโหลดกระดาน…')}</BoardMessage>
+                        <BoardMessage pulse>{tr('relations.loadingBoard')}</BoardMessage>
                     ) : board.isError ? (
-                        <BoardMessage>{tr('โหลดกระดานความสัมพันธ์ไม่สำเร็จ')}</BoardMessage>
+                        <BoardMessage>{tr('relations.failedToLoadTheRelationsBoard')}</BoardMessage>
                     ) : top.people.length === 0 ? (
-                        <BoardMessage>{tr('ยังไม่มีความสัมพันธ์ใน 30 วันที่ผ่านมา — เปิด “บันทึกกิจกรรม” ในหน้าตั้งค่าบันทึกเหตุการณ์ก่อน')}</BoardMessage>
+                        <BoardMessage>{tr('relations.noRelationshipsInTheLast30')}</BoardMessage>
                     ) : (
                         <BoardCanvas
                             ref={canvas}
@@ -99,12 +99,12 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
                     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-[#05060a]/90 to-transparent p-4 pb-8">
                         <div>
                             <p className="flex items-center gap-2 text-sm font-semibold">
-                                <Waypoints className="size-4 text-indigo-700 dark:text-indigo-300" /> {tr('กระดานความสัมพันธ์')}
+                                <Waypoints className="size-4 text-indigo-700 dark:text-indigo-300" /> {tr('common.relationsBoard')}
                             </p>
                             <p className="mt-0.5 text-xs text-muted-foreground">
                                 {top.people.length > 0
-                                    ? tr('{0} คนที่ผูกกันมากที่สุด · 30 วันล่าสุด · ลากการ์ดได้', { 0: top.people.length.toLocaleString(dateLocale()) })
-                                    : tr('30 วันล่าสุด')}
+                                    ? tr('relations.mostConnectedPeopleLast30Days', { 0: top.people.length.toLocaleString(dateLocale()) })
+                                    : tr('common.last30Days')}
                             </p>
                         </div>
                         <Link
@@ -112,7 +112,7 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
                             params={{ guildId }}
                             className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-foreground transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/10"
                         >
-                            {tr('ดูกระดานเต็ม')} <ArrowUpRight className="size-3.5" />
+                            {tr('relations.openFullBoard')} <ArrowUpRight className="size-3.5" />
                         </Link>
                     </div>
                 </div>

@@ -20,8 +20,8 @@ import { cn } from '@/lib/utils';
 import { formatBangkokShortTime, formatThaiDuration } from './timezone';
 
 const KIND_BADGE = byLang((): Record<CustomSummaryChannelGroup, { label: string; className: string }> => ({
-    text: { label: tr('ข้อความ'), className: 'border-highlight/30 bg-highlight/15 text-highlight' },
-    voice: { label: tr('ห้องเสียง'), className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+    text: { label: tr('common.messages'), className: 'border-highlight/30 bg-highlight/15 text-highlight' },
+    voice: { label: tr('common.voiceChannels'), className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
     devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
 }));
 
@@ -42,7 +42,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
         () => [
             {
                 accessorKey: 'channelName',
-                header: tr('ชื่อห้อง'),
+                header: tr('customSummary.channel'),
                 cell: ({ row }) => (
                     <div className="min-w-0">
                         <div className="font-medium text-foreground">#{row.original.channelName}</div>
@@ -52,7 +52,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'kind',
-                header: tr('ประเภท'),
+                header: tr('common.type'),
                 cell: ({ row }) => {
                     const meta = KIND_BADGE()[row.original.kind];
                     return (
@@ -64,7 +64,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'messages',
-                header: tr('จำนวนข้อความ'),
+                header: tr('customSummary.messages'),
                 cell: ({ row }) => (
                     <span className={row.original.messages > 0 ? 'font-medium text-foreground tabular-nums' : 'text-muted-foreground'}>
                         {row.original.messages > 0 ? row.original.messages.toLocaleString('en-US') : '-'}
@@ -73,7 +73,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'voiceSeconds',
-                header: tr('เวลาคุยรวม'),
+                header: tr('customSummary.totalTalkTime'),
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
                         <span className="inline-flex items-center gap-1.5 font-medium text-sky-700 dark:text-sky-400">
@@ -105,7 +105,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             )}
                             {r.otherEvents > 0 && (
                                 <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
-                                    {tr('อื่นๆ')} {r.otherEvents}
+                                    {tr('customSummary.other')} {r.otherEvents}
                                 </span>
                             )}
                         </div>
@@ -120,13 +120,13 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
         () => [
             {
                 id: 'rank',
-                header: tr('อันดับ'),
+                header: tr('common.rank'),
                 enableSorting: false,
                 cell: ({ row }) => <RankBadge rank={row.index + 1} />,
             },
             {
                 accessorKey: 'userName',
-                header: tr('ผู้ใช้งาน / User ID'),
+                header: tr('customSummary.userUserId'),
                 cell: ({ row }) => (
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
@@ -143,13 +143,13 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'voiceSeconds',
-                header: tr('เวลาในห้องเสียงรวม'),
+                header: tr('customSummary.totalVoiceTime'),
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
                         <div>
                             <div className="font-medium text-sky-700 dark:text-sky-400">{formatThaiDuration(row.original.voiceSeconds)}</div>
                             <div className="text-[11px] text-muted-foreground">
-                                {row.original.voiceSessions} {tr('เซสชัน')}
+                                {row.original.voiceSessions} {tr('customSummary.sessions')}
                             </div>
                         </div>
                     ) : (
@@ -158,7 +158,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'messages',
-                header: tr('ข้อความที่ส่ง'),
+                header: tr('common.messagesSent'),
                 cell: ({ row }) => (
                     <span className={row.original.messages > 0 ? 'font-medium text-foreground tabular-nums' : 'text-muted-foreground'}>
                         {row.original.messages > 0 ? row.original.messages.toLocaleString('en-US') : '-'}
@@ -167,7 +167,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 id: 'prJira',
-                header: tr('กิจกรรม PR / Jira'),
+                header: tr('customSummary.prJiraActivity'),
                 accessorFn: (row) => row.prActivity + row.jiraTickets,
                 cell: ({ row }) => {
                     const { prActivity, jiraTickets } = row.original;
@@ -192,14 +192,14 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
         () => [
             {
                 accessorKey: 'createdAt',
-                header: tr('เวลา'),
+                header: tr('common.time'),
                 cell: ({ row }) => (
                     <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">{formatBangkokShortTime(row.original.createdAt)}</span>
                 ),
             },
             {
                 accessorKey: 'eventLabel',
-                header: tr('เหตุการณ์'),
+                header: tr('common.event'),
                 cell: ({ row }) => {
                     const badge = SOURCE_BADGE[row.original.source];
                     return (
@@ -214,17 +214,17 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 accessorKey: 'userName',
-                header: tr('ผู้กระทำ'),
+                header: tr('common.actor'),
                 cell: ({ row }) => <span className="text-xs text-foreground">{row.original.userName || row.original.userId || '-'}</span>,
             },
             {
                 accessorKey: 'channelName',
-                header: tr('ห้อง'),
+                header: tr('common.channel'),
                 cell: ({ row }) => <span className="text-xs text-muted-foreground">{row.original.channelName ? `#${row.original.channelName}` : '-'}</span>,
             },
             {
                 accessorKey: 'summary',
-                header: tr('รายละเอียด'),
+                header: tr('common.details'),
                 cell: ({ row }) => <span className="line-clamp-2 text-xs text-muted-foreground">{row.original.summary}</span>,
             },
         ],
@@ -240,32 +240,30 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
                             <FileSpreadsheet className="size-4 text-emerald-700 dark:text-emerald-400" />
 
-                            {tr('ตารางที่ 1: สรุปตามห้อง')}
+                            {tr('customSummary.table1SummaryByChannel')}
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">
-                            {tr('แสดงชื่อห้อง ประเภท จำนวนข้อความ เวลาคุยรวม และกิจกรรม DevOps ในขอบเขตที่เลือก')}
-                        </CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.channelNameTypeMessageCountTotal')}</CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
                         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={channelSearch}
                             onChange={(e) => setChannelSearch(e.target.value)}
-                            placeholder={tr('กรองชื่อห้องในตาราง...')}
+                            placeholder={tr('customSummary.filterChannelsInTheTable')}
                             className="h-8 border-border bg-background pl-8 text-xs text-foreground"
                         />
                     </div>
                 </CardHeader>
                 <CardContent>
                     {summary.channelBreakdown.length === 0 ? (
-                        <EmptyState>{tr('ไม่พบกิจกรรมแยกตามห้องในเงื่อนไขที่เลือก')}</EmptyState>
+                        <EmptyState>{tr('customSummary.noPerChannelActivityForThe')}</EmptyState>
                     ) : (
                         <DataTable
                             columns={channelColumns}
                             data={summary.channelBreakdown}
                             globalFilter={channelSearch}
                             className="border-border bg-background/40"
-                            empty={tr('ไม่พบห้องที่ตรงกับคำค้นหา')}
+                            empty={tr('customSummary.noChannelsMatchYourSearch')}
                         />
                     )}
                 </CardContent>
@@ -278,32 +276,30 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
                             <Trophy className="size-4 text-amber-700 dark:text-amber-400" />
 
-                            {tr('ตารางที่ 2: อันดับผู้ใช้งานสูงสุด')}
+                            {tr('customSummary.table2TopUsers')}
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">
-                            {tr('จัดอันดับตามเวลาในห้องเสียง จำนวนข้อความ และกิจกรรม GitHub PR / Jira ที่เชื่อมโยงกับผู้ใช้')}
-                        </CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.rankedByVoiceTimeMessageCount')}</CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
                         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
-                            placeholder={tr('ค้นหาชื่อผู้ใช้ หรือ User ID...')}
+                            placeholder={tr('customSummary.searchUsernameOrUserId')}
                             className="h-8 border-border bg-background pl-8 text-xs text-foreground"
                         />
                     </div>
                 </CardHeader>
                 <CardContent>
                     {summary.topContributors.length === 0 ? (
-                        <EmptyState>{tr('ไม่พบผู้ใช้งานที่มีกิจกรรมในขอบเขตที่เลือก')}</EmptyState>
+                        <EmptyState>{tr('customSummary.noUsersWithActivityInThe')}</EmptyState>
                     ) : (
                         <DataTable
                             columns={contributorColumns}
                             data={summary.topContributors}
                             globalFilter={userSearch}
                             className="border-border bg-background/40"
-                            empty={tr('ไม่พบผู้ใช้งานที่ตรงกับคำค้นหา')}
+                            empty={tr('customSummary.noUsersMatchYourSearch')}
                         />
                     )}
                 </CardContent>
@@ -315,12 +311,12 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
                             <ListTree className="size-4 text-highlight" />
-                            {tr('รายการ Log รายบรรทัด (')}
-                            {summary.detailedLogs.length} {tr('รายการล่าสุด)')}
+                            {tr('customSummary.lineByLineLog')}
+                            {summary.detailedLogs.length} {tr('customSummary.mostRecent')}
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">
-                            {tr('ใช้เป็นข้อมูลท้ายรายงานเมื่อส่งออก PDF แบบ Full Detailed Report')}
-                            {summary.detailedLogsTruncated && tr(' • แสดงสูงสุด 200 รายการล่าสุด')}
+                            {tr('customSummary.usedAsTheAppendixWhenExporting')}
+                            {summary.detailedLogsTruncated && tr('customSummary.showingUpToTheLatest200')}
                         </CardDescription>
                     </div>
                     <Button
@@ -334,13 +330,13 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             <>
                                 <ChevronUp className="mr-1.5 size-3.5" />
 
-                                {tr('ซ่อนตารางรายบรรทัด')}
+                                {tr('customSummary.hideLineByLineTable')}
                             </>
                         ) : (
                             <>
                                 <ChevronDown className="mr-1.5 size-3.5" />
 
-                                {tr('ดูตัวอย่าง Log รายบรรทัด')}
+                                {tr('customSummary.previewLineByLineLog')}
                             </>
                         )}
                     </Button>
@@ -348,7 +344,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 {showDetailedPreview && (
                     <CardContent>
                         {summary.detailedLogs.length === 0 ? (
-                            <EmptyState>{tr('ไม่มีรายการ Log รายบรรทัดในขอบเขตนี้')}</EmptyState>
+                            <EmptyState>{tr('customSummary.noLogEntriesInThisScope')}</EmptyState>
                         ) : (
                             <DataTable columns={logColumns} data={summary.detailedLogs} className="border-border bg-background/40" />
                         )}

@@ -56,32 +56,29 @@ function GeneralSection({ meta, draft, patch, channels }: FormProps & { channels
     const { limits } = meta;
     return (
         <div className="space-y-4">
-            <Field label={tr('ชื่อการ์ด')} htmlFor="wc-name" hint={tr('ใช้แยกการ์ดในหน้านี้เท่านั้น สมาชิกไม่เห็น')}>
+            <Field label={tr('welcome.cardName')} htmlFor="wc-name" hint={tr('welcome.onlyUsedToTellCardsApart')}>
                 <Input id="wc-name" maxLength={limits.maxNameLength} value={draft.name} onChange={(e) => patch((d) => void (d.name = e.target.value))} />
             </Field>
-            <Field
-                label={tr('ห้องที่จะส่ง')}
-                hint={channels.length ? tr('บอทต้องมีสิทธิ์ดูห้อง ส่งข้อความ และแนบไฟล์ในห้องนี้') : tr('บอทยังไม่ออนไลน์ จึงยังโหลดรายชื่อห้องไม่ได้')}
-            >
+            <Field label={tr('common.channelToPostIn')} hint={channels.length ? tr('welcome.theBotNeedsViewChannelSend') : tr('common.theBotIsntOnlineYetSo')}>
                 <ChannelSelect
                     channels={channels}
                     value={draft.channelId}
-                    noneLabel={tr('— เลือกห้องที่จะส่ง —')}
-                    placeholder={tr('— เลือกห้องที่จะส่ง —')}
+                    noneLabel={tr('common.pickAChannel')}
+                    placeholder={tr('common.pickAChannel')}
                     onChange={(channelId) => patch((d) => void (d.channelId = channelId))}
                 />
             </Field>
             <Field
-                label={tr('ข้อความที่ส่งคู่กับรูป')}
+                label={tr('welcome.messageSentWithTheImage')}
                 htmlFor="wc-content"
-                hint={tr('รองรับ Markdown ของ Discord · {mention} จะแท็กสมาชิกใหม่จริง · {0}/{1}', { 0: draft.content.length, 1: limits.maxContentLength })}
+                hint={tr('welcome.supportsDiscordMarkdownMentionPingsThe', { 0: draft.content.length, 1: limits.maxContentLength })}
             >
                 <Textarea
                     id="wc-content"
                     ref={contentRef}
                     rows={4}
                     maxLength={limits.maxContentLength}
-                    placeholder={tr('เว้นว่างไว้ = ส่งแค่รูป')}
+                    placeholder={tr('welcome.leaveEmptySendOnlyTheImage')}
                     value={draft.content}
                     onChange={(e) => patch((d) => void (d.content = e.target.value))}
                 />
@@ -95,7 +92,7 @@ function GeneralSection({ meta, draft, patch, channels }: FormProps & { channels
                 />
             </Field>
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-                <p className="mb-1 font-medium">{tr('ตัวแปรที่ใช้ได้')}</p>
+                <p className="mb-1 font-medium">{tr('welcome.availableVariables')}</p>
                 <ul className="space-y-0.5 text-muted-foreground">
                     {meta.placeholders.map((p) => (
                         <li key={p.key}>
@@ -136,7 +133,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
     };
 
     return (
-        <Field label={tr('ขนาดรูป (กว้าง × สูง พิกเซล)')} hint={tr('เปลี่ยนขนาดแล้วตำแหน่งรูปโปรไฟล์และข้อความจะถูกย่อ/ขยายตามให้เอง')}>
+        <Field label={tr('welcome.imageSizeWidthHeightPx')} hint={tr('welcome.changingTheSizeScalesTheAvatar')}>
             <Select
                 value={preset ? `${preset.w}x${preset.h}` : 'custom'}
                 onValueChange={(value) => {
@@ -154,13 +151,13 @@ function SizeField({ meta, draft, patch }: FormProps) {
                             {p.label}
                         </SelectItem>
                     ))}
-                    <SelectItem value="custom">{tr('กำหนดเอง')}</SelectItem>
+                    <SelectItem value="custom">{tr('common.custom')}</SelectItem>
                 </SelectContent>
             </Select>
             <div className="flex items-center gap-2">
                 <Input
                     type="number"
-                    aria-label={tr('ความกว้าง')}
+                    aria-label={tr('welcome.width')}
                     min={meta.limits.minWidth}
                     max={meta.limits.maxWidth}
                     value={size.w}
@@ -171,7 +168,7 @@ function SizeField({ meta, draft, patch }: FormProps) {
                 ×
                 <Input
                     type="number"
-                    aria-label={tr('ความสูง')}
+                    aria-label={tr('welcome.height')}
                     min={meta.limits.minHeight}
                     max={meta.limits.maxHeight}
                     value={size.h}
@@ -196,7 +193,7 @@ function BackgroundSection({
     return (
         <div className="space-y-5">
             <SizeField meta={meta} draft={draft} patch={patch} />
-            <Field label={tr('รูปพื้นหลัง')} hint={tr('รูปในคลังใช้ร่วมกันได้ทุกการ์ด — แนะนำรูปแนวนอนขนาดใกล้เคียงกับขนาดการ์ด')}>
+            <Field label={tr('welcome.backgroundImage')} hint={tr('welcome.libraryImagesCanBeSharedBy')}>
                 <AssetGallery
                     meta={meta}
                     assets={assets}
@@ -207,26 +204,26 @@ function BackgroundSection({
                     onDeleted={onAssetDeleted}
                 />
             </Field>
-            <Field label={tr('การวางรูป')}>
+            <Field label={tr('welcome.imageFit')}>
                 <Segmented value={bg.fit} options={FIT_LABELS()} onChange={(fit) => patch((d) => void (d.design.background.fit = fit))} />
             </Field>
             <RangeField
-                label={tr('ความเบลอของรูป')}
+                label={tr('welcome.imageBlur')}
                 value={bg.blur}
                 min={0}
                 max={30}
                 onChange={(blur) => patch((d) => void (d.design.background.blur = blur))}
             />
             <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={tr('สีพื้น')}>
+                <Field label={tr('common.backgroundColor')}>
                     <ColorField value={bg.color} onChange={(color) => patch((d) => void (d.design.background.color = color))} />
                 </Field>
-                <Field label={tr('สีทับรูป (ช่วยให้อ่านตัวหนังสือง่ายขึ้น)')}>
+                <Field label={tr('welcome.colorOverlayMakesTextEasierTo')}>
                     <ColorField value={bg.overlayColor} onChange={(color) => patch((d) => void (d.design.background.overlayColor = color))} />
                 </Field>
             </div>
             <RangeField
-                label={tr('ความเข้มของสีทับ')}
+                label={tr('welcome.overlayStrength')}
                 value={Math.round(bg.overlayOpacity * 100)}
                 min={0}
                 max={100}
@@ -246,19 +243,19 @@ function AvatarSection({ draft, patch }: FormProps) {
     const set = (mutate: (avatar: WelcomeDesign['avatar']) => void) => patch((d) => mutate(d.design.avatar));
     return (
         <div className="space-y-5">
-            <SwitchRow label={tr('แสดงรูปโปรไฟล์ของสมาชิก')} checked={av.visible} onChange={(visible) => set((a) => void (a.visible = visible))} />
-            <Field label={tr('รูปทรง')}>
+            <SwitchRow label={tr('welcome.showTheMembersAvatar')} checked={av.visible} onChange={(visible) => set((a) => void (a.visible = visible))} />
+            <Field label={tr('welcome.shape')}>
                 <Segmented value={av.shape} options={SHAPE_LABELS()} onChange={(shape) => set((a) => void (a.shape = shape))} />
             </Field>
             <RangeField
-                label={tr('ขนาด')}
+                label={tr('welcome.size')}
                 value={av.size}
                 min={16}
                 max={Math.min(design.width, design.height)}
                 onChange={(size) => set((a) => void (a.size = size))}
             />
             <RangeField
-                label={tr('ตำแหน่งแนวนอน (X)')}
+                label={tr('welcome.horizontalPositionX')}
                 value={av.x}
                 min={0}
                 max={design.width}
@@ -266,7 +263,7 @@ function AvatarSection({ draft, patch }: FormProps) {
                 extra={<CenterButton onClick={() => set((a) => void (a.x = Math.round(design.width / 2)))} />}
             />
             <RangeField
-                label={tr('ตำแหน่งแนวตั้ง (Y)')}
+                label={tr('welcome.verticalPositionY')}
                 value={av.y}
                 min={0}
                 max={design.height}
@@ -274,16 +271,16 @@ function AvatarSection({ draft, patch }: FormProps) {
                 extra={<CenterButton onClick={() => set((a) => void (a.y = Math.round(design.height / 2)))} />}
             />
             <RangeField
-                label={tr('ความหนาของขอบ')}
+                label={tr('welcome.borderWidth')}
                 value={av.borderWidth}
                 min={0}
                 max={40}
                 onChange={(borderWidth) => set((a) => void (a.borderWidth = borderWidth))}
             />
-            <Field label={tr('สีขอบ')}>
+            <Field label={tr('welcome.borderColor')}>
                 <ColorField value={av.borderColor} onChange={(color) => set((a) => void (a.borderColor = color))} />
             </Field>
-            <p className="text-xs text-muted-foreground">{tr('ลากรูปโปรไฟล์บนรูปตัวอย่างเพื่อย้ายตำแหน่งได้เลย')}</p>
+            <p className="text-xs text-muted-foreground">{tr('welcome.dragTheAvatarOnThePreview')}</p>
         </div>
     );
 }
@@ -315,16 +312,16 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                         <ChevronDown className={cn('ml-auto size-4 shrink-0 transition-transform', open && 'rotate-180')} />
                     </button>
                 </CollapsibleTrigger>
-                <Button size="icon-xs" variant="ghost" title={tr('เลื่อนขึ้น (วาดก่อน)')} disabled={index === 0} onClick={() => move(index - 1)}>
+                <Button size="icon-xs" variant="ghost" title={tr('welcome.moveUpDrawnFirst')} disabled={index === 0} onClick={() => move(index - 1)}>
                     <ChevronUp />
                 </Button>
-                <Button size="icon-xs" variant="ghost" title={tr('เลื่อนลง (วาดทับ)')} disabled={index === count - 1} onClick={() => move(index + 1)}>
+                <Button size="icon-xs" variant="ghost" title={tr('welcome.moveDownDrawnOnTop')} disabled={index === count - 1} onClick={() => move(index + 1)}>
                     <ChevronDown />
                 </Button>
                 <Button
                     size="icon-xs"
                     variant="ghost"
-                    title={tr('คัดลอก')}
+                    title={tr('common.copy')}
                     disabled={count >= meta.limits.maxTexts}
                     onClick={() =>
                         patch((d) => {
@@ -336,12 +333,12 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                 >
                     <Copy />
                 </Button>
-                <Button size="icon-xs" variant="ghost" title={tr('ลบข้อความนี้')} onClick={() => patch((d) => void d.design.texts.splice(index, 1))}>
+                <Button size="icon-xs" variant="ghost" title={tr('welcome.deleteThisText')} onClick={() => patch((d) => void d.design.texts.splice(index, 1))}>
                     <Trash2 className="text-destructive" />
                 </Button>
             </div>
             <CollapsibleContent className="space-y-4 border-t p-3">
-                <Field label={tr('ข้อความ')} hint={tr('ขึ้นบรรทัดใหม่ได้ · ข้อความที่ยาวเกิน "ความกว้างสูงสุด" จะถูกย่อลงเอง')}>
+                <Field label={tr('common.messages')} hint={tr('welcome.lineBreaksAllowedTextWiderThan')}>
                     <Textarea
                         ref={textRef}
                         rows={2}
@@ -359,7 +356,7 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                     />
                 </Field>
                 <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label={tr('ฟอนต์')}>
+                    <Field label={tr('common.font')}>
                         <Select value={layer.font} onValueChange={(font) => set((l) => void (l.font = font as WelcomeFontId))}>
                             <SelectTrigger className="w-full">
                                 <SelectValue />
@@ -373,7 +370,7 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                             </SelectContent>
                         </Select>
                     </Field>
-                    <Field label={tr('น้ำหนัก')}>
+                    <Field label={tr('welcome.weight')}>
                         <Select value={String(layer.weight)} onValueChange={(weight) => set((l) => void (l.weight = Number(weight) as WelcomeWeight))}>
                             <SelectTrigger className="w-full">
                                 <SelectValue />
@@ -388,47 +385,47 @@ function TextLayer({ meta, draft, patch, index, open, onToggle }: FormProps & { 
                         </Select>
                     </Field>
                 </div>
-                <RangeField label={tr('ขนาดตัวอักษร')} value={layer.size} min={8} max={200} onChange={(size) => set((l) => void (l.size = size))} />
-                <Field label={tr('สีตัวอักษร')}>
+                <RangeField label={tr('welcome.fontSize')} value={layer.size} min={8} max={200} onChange={(size) => set((l) => void (l.size = size))} />
+                <Field label={tr('common.textColor')}>
                     <ColorField value={layer.color} onChange={(color) => set((l) => void (l.color = color))} />
                 </Field>
-                <Field label={tr('จัดแนว (นับจากจุดตำแหน่ง X)')}>
+                <Field label={tr('welcome.alignmentFromTheXPosition')}>
                     <Segmented value={layer.align} options={ALIGN_LABELS()} onChange={(align) => set((l) => void (l.align = align))} />
                 </Field>
                 <RangeField
-                    label={tr('ตำแหน่งแนวนอน (X)')}
+                    label={tr('welcome.horizontalPositionX')}
                     value={layer.x}
                     min={0}
                     max={design.width}
                     onChange={(x) => set((l) => void (l.x = x))}
                     extra={<CenterButton onClick={() => set((l) => void (l.x = Math.round(design.width / 2)))} />}
                 />
-                <RangeField label={tr('ตำแหน่งแนวตั้ง (Y)')} value={layer.y} min={0} max={design.height} onChange={(y) => set((l) => void (l.y = y))} />
+                <RangeField label={tr('welcome.verticalPositionY')} value={layer.y} min={0} max={design.height} onChange={(y) => set((l) => void (l.y = y))} />
                 <RangeField
-                    label={tr('ความกว้างสูงสุด (0 = ไม่จำกัด)')}
+                    label={tr('welcome.maxWidth0Unlimited')}
                     value={layer.maxWidth}
                     min={0}
                     max={design.width}
                     onChange={(maxWidth) => set((l) => void (l.maxWidth = maxWidth))}
                 />
                 <RangeField
-                    label={tr('ระยะห่างตัวอักษร')}
+                    label={tr('welcome.letterSpacing')}
                     value={layer.letterSpacing}
                     min={0}
                     max={40}
                     onChange={(letterSpacing) => set((l) => void (l.letterSpacing = letterSpacing))}
                 />
                 <RangeField
-                    label={tr('ขอบตัวอักษร')}
+                    label={tr('welcome.textOutline')}
                     value={layer.strokeWidth}
                     min={0}
                     max={20}
                     onChange={(strokeWidth) => set((l) => void (l.strokeWidth = strokeWidth))}
                 />
-                <Field label={tr('สีขอบตัวอักษร')}>
+                <Field label={tr('welcome.outlineColor')}>
                     <ColorField value={layer.strokeColor} onChange={(color) => set((l) => void (l.strokeColor = color))} />
                 </Field>
-                <SwitchRow label={tr('เงาใต้ตัวอักษร')} checked={layer.shadow} onChange={(shadow) => set((l) => void (l.shadow = shadow))} />
+                <SwitchRow label={tr('welcome.textShadow')} checked={layer.shadow} onChange={(shadow) => set((l) => void (l.shadow = shadow))} />
             </CollapsibleContent>
         </Collapsible>
     );
@@ -438,8 +435,8 @@ function TextsSection({ meta, draft, patch, openText, setOpenText }: FormProps &
     const count = draft.design.texts.length;
     return (
         <div className="space-y-3">
-            <p className="text-xs text-muted-foreground">{tr('ชั้นที่อยู่ล่างสุดในรายการจะถูกวาดทับชั้นบน · ลากจุดตัวเลขบนรูปตัวอย่างเพื่อย้ายข้อความ')}</p>
-            {count === 0 && <p className="py-4 text-center text-sm text-muted-foreground">{tr('ยังไม่มีข้อความบนรูป')}</p>}
+            <p className="text-xs text-muted-foreground">{tr('welcome.layersLowerInTheListAre')}</p>
+            {count === 0 && <p className="py-4 text-center text-sm text-muted-foreground">{tr('welcome.noTextOnTheImageYet')}</p>}
             {draft.design.texts.map((_, index) => (
                 <TextLayer
                     key={index}
@@ -468,7 +465,7 @@ function TextsSection({ meta, draft, patch, openText, setOpenText }: FormProps &
                     setOpenText(count);
                 }}
             >
-                <Plus /> {tr('เพิ่มข้อความ (')}
+                <Plus /> {tr('welcome.addText')}
                 {count}/{meta.limits.maxTexts})
             </Button>
         </div>

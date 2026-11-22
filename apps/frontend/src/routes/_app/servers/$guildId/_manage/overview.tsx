@@ -34,7 +34,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/overview')(
 const Charts = lazy(() => import('@/features/overview/charts'));
 function ChartsSkeleton() {
     return (
-        <div className="grid gap-4 lg:grid-cols-2" aria-label={tr('กำลังโหลดกราฟ')}>
+        <div className="grid gap-4 lg:grid-cols-2" aria-label={tr('overview.loadingChart')}>
             {[0, 1, 2, 3].map((key) => (
                 <div key={key} className="h-80 rounded-xl border bg-muted/30" />
             ))}
@@ -43,11 +43,11 @@ function ChartsSkeleton() {
 }
 
 const PRESETS = byLang(() => [
-    { value: '24', label: tr('24 ชม.') },
-    { value: '168', label: tr('7 วัน') },
-    { value: '720', label: tr('30 วัน') },
-    { value: '2160', label: tr('90 วัน') },
-    { value: 'custom', label: tr('กำหนดเอง') },
+    { value: '24', label: tr('common.n24Hrs') },
+    { value: '168', label: tr('common.n7Days') },
+    { value: '720', label: tr('common.n30Days') },
+    { value: '2160', label: tr('common.n90Days') },
+    { value: 'custom', label: tr('common.custom') },
 ]);
 
 function rangeFromPreset(preset: string, custom: { from: string; to: string }): Pick<StatsParams, 'from' | 'to' | 'hours'> {
@@ -94,42 +94,42 @@ const userCell = (name: string, id: string, isBot = false) => (
 
 const topUserColumns = byLang((): ColumnDef<TopUser>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
-    { id: 'user', header: tr('ผู้ใช้'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId, u.isBot) },
-    { accessorKey: 'total', header: tr('เหตุการณ์'), cell: ({ row }) => <strong>{formatNumber(row.original.total)}</strong> },
-    { accessorKey: 'messages', header: tr('ข้อความ'), cell: ({ row }) => formatNumber(row.original.messages) },
-    { accessorKey: 'voiceJoins', header: tr('เข้าห้องเสียง'), cell: ({ row }) => formatNumber(row.original.voiceJoins) },
-    { accessorKey: 'commands', header: tr('คำสั่ง'), cell: ({ row }) => formatNumber(row.original.commands) },
-    { accessorKey: 'lastSeen', header: tr('ล่าสุด'), cell: ({ row }) => <span className="text-xs">{formatDateTime(row.original.lastSeen)}</span> },
+    { id: 'user', header: tr('common.user'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId, u.isBot) },
+    { accessorKey: 'total', header: tr('common.event'), cell: ({ row }) => <strong>{formatNumber(row.original.total)}</strong> },
+    { accessorKey: 'messages', header: tr('common.messages'), cell: ({ row }) => formatNumber(row.original.messages) },
+    { accessorKey: 'voiceJoins', header: tr('overview.voiceJoins'), cell: ({ row }) => formatNumber(row.original.voiceJoins) },
+    { accessorKey: 'commands', header: tr('common.command'), cell: ({ row }) => formatNumber(row.original.commands) },
+    { accessorKey: 'lastSeen', header: tr('common.recent'), cell: ({ row }) => <span className="text-xs">{formatDateTime(row.original.lastSeen)}</span> },
 ]);
 
 const voiceUserColumns = byLang((): ColumnDef<VoiceUser>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
-    { id: 'user', header: tr('ผู้ใช้'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId) },
-    { accessorKey: 'minutes', header: tr('เวลารวม'), cell: ({ row }) => formatMinutes(row.original.minutes) },
-    { accessorKey: 'sessions', header: tr('จำนวนครั้ง'), cell: ({ row }) => formatNumber(row.original.sessions) },
+    { id: 'user', header: tr('common.user'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId) },
+    { accessorKey: 'minutes', header: tr('overview.totalTime'), cell: ({ row }) => formatMinutes(row.original.minutes) },
+    { accessorKey: 'sessions', header: tr('common.count'), cell: ({ row }) => formatNumber(row.original.sessions) },
 ]);
 
 const voiceChannelColumns = byLang((): ColumnDef<VoiceChannelRow>[] => [
     { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
-    { id: 'channel', header: tr('ห้อง'), cell: ({ row: { original: c } }) => userCell(c.channelName, c.channelId) },
-    { accessorKey: 'joins', header: tr('คนเข้า (ครั้ง)'), cell: ({ row }) => formatNumber(row.original.joins) },
-    { accessorKey: 'members', header: tr('คนไม่ซ้ำ'), cell: ({ row }) => formatNumber(row.original.members) },
-    { accessorKey: 'minutes', header: tr('เวลารวม'), cell: ({ row }) => formatMinutes(row.original.minutes) },
+    { id: 'channel', header: tr('common.channel'), cell: ({ row: { original: c } }) => userCell(c.channelName, c.channelId) },
+    { accessorKey: 'joins', header: tr('overview.joinsTimes'), cell: ({ row }) => formatNumber(row.original.joins) },
+    { accessorKey: 'members', header: tr('overview.uniquePeople'), cell: ({ row }) => formatNumber(row.original.members) },
+    { accessorKey: 'minutes', header: tr('overview.totalTime'), cell: ({ row }) => formatMinutes(row.original.minutes) },
 ]);
 
 function Tables({ data }: { data: ActivityStats }) {
     // เวลาในห้องเสียงคิดจากช่วงที่เลือกเท่านั้น จึงเก็บแยกไว้ผูกกับตารางห้อง
     const minutesByChannel = new Map(data.voiceChannelMinutes.map((row) => [row.channelId, row.minutes]));
-    const empty = tr('ยังไม่มีข้อมูลในช่วงเวลานี้');
+    const empty = tr('overview.noDataInThisPeriodYet2');
     return (
         <div className="grid gap-4 lg:grid-cols-2">
             <Card className="lg:col-span-2">
                 <CardHeader>
-                    <CardTitle className="text-base">{tr('อันดับผู้ใช้ที่เคลื่อนไหวมากสุด')}</CardTitle>
+                    <CardTitle className="text-base">{tr('overview.mostActiveUsers2')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DataTable
-                        label={tr('อันดับผู้ใช้ที่เคลื่อนไหวมากสุด')}
+                        label={tr('overview.mostActiveUsers2')}
                         columns={topUserColumns()}
                         data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
                         empty={empty}
@@ -138,11 +138,11 @@ function Tables({ data }: { data: ActivityStats }) {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">{tr('เวลาอยู่ในห้องเสียงมากสุด')}</CardTitle>
+                    <CardTitle className="text-base">{tr('overview.mostTimeInVoice')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DataTable
-                        label={tr('เวลาอยู่ในห้องเสียงมากสุด')}
+                        label={tr('overview.mostTimeInVoice')}
                         columns={voiceUserColumns()}
                         data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
                         empty={empty}
@@ -151,11 +151,11 @@ function Tables({ data }: { data: ActivityStats }) {
             </Card>
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-base">{tr('ห้องเสียงที่ถูกใช้มากสุด')}</CardTitle>
+                    <CardTitle className="text-base">{tr('overview.mostUsedVoiceChannels')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <DataTable
-                        label={tr('ห้องเสียงที่ถูกใช้มากสุด')}
+                        label={tr('overview.mostUsedVoiceChannels')}
                         columns={voiceChannelColumns()}
                         data={data.topVoiceChannels.map((c, i) => ({ ...c, rank: i + 1, minutes: minutesByChannel.get(c.channelId) ?? 0 }))}
                         empty={empty}
@@ -198,32 +198,32 @@ function OverviewPage() {
     const net = summary ? summary.serverJoin - summary.serverLeave : 0;
     const tiles = summary
         ? [
-              { label: tr('เหตุการณ์ทั้งหมด'), value: formatNumber(summary.totalEvents) },
-              { label: tr('เข้าเซิร์ฟเวอร์'), value: formatNumber(summary.serverJoin), tone: 'ok' as const },
-              { label: tr('ออกเซิร์ฟเวอร์'), value: formatNumber(summary.serverLeave), tone: 'bad' as const },
-              { label: tr('สมาชิกเปลี่ยนแปลงสุทธิ'), value: `${net > 0 ? '+' : ''}${formatNumber(net)}`, tone: net >= 0 ? ('ok' as const) : ('bad' as const) },
-              { label: tr('เข้าห้องเสียง'), value: formatNumber(summary.voiceJoin), tone: 'info' as const },
-              { label: tr('เวลารวมในห้องเสียง'), value: formatMinutes(summary.voiceMinutes), tone: 'info' as const },
-              { label: tr('ข้อความที่ส่ง'), value: formatNumber(summary.messages) },
-              { label: tr('ผู้ใช้ที่เคลื่อนไหว'), value: formatNumber(summary.activeUsers) },
+              { label: tr('overview.allEvents'), value: formatNumber(summary.totalEvents) },
+              { label: tr('common.joinedServer'), value: formatNumber(summary.serverJoin), tone: 'ok' as const },
+              { label: tr('common.leftServer'), value: formatNumber(summary.serverLeave), tone: 'bad' as const },
+              {
+                  label: tr('overview.netMemberChange'),
+                  value: `${net > 0 ? '+' : ''}${formatNumber(net)}`,
+                  tone: net >= 0 ? ('ok' as const) : ('bad' as const),
+              },
+              { label: tr('overview.voiceJoins'), value: formatNumber(summary.voiceJoin), tone: 'info' as const },
+              { label: tr('common.totalVoiceTime'), value: formatMinutes(summary.voiceMinutes), tone: 'info' as const },
+              { label: tr('common.messagesSent'), value: formatNumber(summary.messages) },
+              { label: tr('overview.activeUsers'), value: formatNumber(summary.activeUsers) },
           ]
         : [];
 
     return (
         <>
-            <PageHeader
-                help="overview"
-                title={tr('ภาพรวมเซิร์ฟเวอร์')}
-                description={tr('ภาพรวมความเคลื่อนไหวในเซิร์ฟเวอร์ — เข้า/ออกเซิร์ฟเวอร์ เข้า/ออกห้องเสียง และใครเคลื่อนไหวมากที่สุด')}
-            />
+            <PageHeader help="overview" title={tr('common.serverOverview')} description={tr('overview.serverActivityAtAGlanceJoins')} />
             <GettingStarted />
             <Link to="/servers/$guildId/ai" params={{ guildId }} className="block">
                 <Card className="transition-colors hover:border-highlight/50 hover:bg-highlight/5">
                     <CardContent className="flex items-center gap-3 py-4">
                         <Bot className="size-5 text-highlight" />
                         <div>
-                            <div className="font-medium">{tr('ตั้งค่า AI Chat')}</div>
-                            <p className="text-sm text-muted-foreground">{tr('เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage')}</p>
+                            <div className="font-medium">{tr('common.aiChatSettings')}</div>
+                            <p className="text-sm text-muted-foreground">{tr('overview.connectTheServersGeminiApiKey')}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -256,29 +256,29 @@ function OverviewPage() {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="auto">{tr('ความละเอียด: อัตโนมัติ')}</SelectItem>
-                                    <SelectItem value="hour">{tr('รายชั่วโมง')}</SelectItem>
-                                    <SelectItem value="day">{tr('รายวัน')}</SelectItem>
+                                    <SelectItem value="auto">{tr('overview.resolutionAuto')}</SelectItem>
+                                    <SelectItem value="hour">{tr('common.hourly')}</SelectItem>
+                                    <SelectItem value="day">{tr('common.daily')}</SelectItem>
                                 </SelectContent>
                             </Select>
                             <Label className="flex items-center gap-2 rounded-lg border px-3 py-1.5">
-                                {tr('รวมบอท')}
+                                {tr('common.includeBots')}
                                 <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
                             </Label>
                             <Button variant="outline" onClick={refresh}>
                                 {/* reduced motion: slow the spin instead of stopping it, so activity stays visible */}
-                                <RefreshCw className={isFetching ? 'animate-spin motion-reduce:[animation-duration:6s]' : undefined} /> {tr('รีเฟรช')}
+                                <RefreshCw className={isFetching ? 'animate-spin motion-reduce:[animation-duration:6s]' : undefined} /> {tr('common.refresh')}
                             </Button>
                             {/* Always mounted so screen readers pick up the text change */}
                             <span role="status" className="sr-only">
-                                {isFetching ? tr('กำลังโหลดข้อมูล') : ''}
+                                {isFetching ? tr('common.loadingData') : ''}
                             </span>
                         </div>
                     </div>
                     {preset === 'custom' && (
                         <div className="flex flex-wrap items-center gap-2">
                             <Label className="gap-2">
-                                {tr('ตั้งแต่')}{' '}
+                                {tr('overview.from')}{' '}
                                 <DateTimeInput
                                     mode="datetime"
 
@@ -288,7 +288,7 @@ function OverviewPage() {
                                 />
                             </Label>
                             <Label className="gap-2">
-                                {tr('ถึง')}{' '}
+                                {tr('overview.to')}{' '}
                                 <DateTimeInput
                                     mode="datetime"
 
@@ -297,17 +297,15 @@ function OverviewPage() {
                                     onValueChange={(v) => setCustom((c) => ({ ...c, to: v }))}
                                 />
                             </Label>
-                            <Button onClick={() => setRange(rangeFromPreset('custom', custom))}>{tr('ดูข้อมูล')}</Button>
+                            <Button onClick={() => setRange(rangeFromPreset('custom', custom))}>{tr('overview.viewData')}</Button>
                         </div>
                     )}
                     <p className="text-sm text-muted-foreground">
                         {data
-                            ? `${formatDateTime(data.range.from)} — ${formatDateTime(data.range.to)} · ${data.range.interval === 'hour' ? tr('รายชั่วโมง') : tr('รายวัน')}${
-                                  data.summary.totalEvents === 0
-                                      ? tr(' — ยังไม่มีข้อมูลในช่วงนี้ (ระบบเริ่มเก็บสถิติตั้งแต่เปิดใช้งานเวอร์ชันนี้เป็นต้นไป)')
-                                      : ''
+                            ? `${formatDateTime(data.range.from)} — ${formatDateTime(data.range.to)} · ${data.range.interval === 'hour' ? tr('common.hourly') : tr('common.daily')}${
+                                  data.summary.totalEvents === 0 ? tr('overview.noDataInThisPeriodYet') : ''
                               }`
-                            : tr('กำลังโหลดข้อมูล...')}
+                            : tr('common.loadingData2')}
                     </p>
                 </CardContent>
             </Card>

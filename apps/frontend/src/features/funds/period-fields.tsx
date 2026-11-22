@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import { periodAmount, periodPresetRange, type PeriodPreset } from './utils';
 
 const PRESETS = byLang((): readonly { key: PeriodPreset; label: string }[] => [
-    { key: 'today', label: tr('วันนี้ (1 วัน)') },
-    { key: '7d', label: tr('7 วันล่าสุด') },
-    { key: '15d', label: tr('15 วันล่าสุด') },
-    { key: 'month', label: tr('เดือนนี้ทั้งเดือน') },
+    { key: 'today', label: tr('funds.today1Day') },
+    { key: '7d', label: tr('common.last7Days') },
+    { key: '15d', label: tr('funds.last15Days') },
+    { key: 'month', label: tr('funds.thisWholeMonth') },
 ]);
 
 // ช่องเลือก "ตั้งแต่วันที่ – ถึงวันที่" + ปุ่มลัดเลือกช่วงวัน + สรุปจำนวนวัน (และยอดตามอัตรารายวันถ้ามี)
@@ -42,7 +42,7 @@ export function PeriodFields({
     return (
         <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-1">
-                <span className="mr-1 text-[11px] text-muted-foreground">{tr('เลือกด่วน:')}</span>
+                <span className="mr-1 text-[11px] text-muted-foreground">{tr('funds.quickPick')}</span>
                 {PRESETS().map((p) => (
                     <Button key={p.key} type="button" size="xs" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => applyPreset(p.key)}>
                         {p.label}
@@ -50,16 +50,16 @@ export function PeriodFields({
                 ))}
                 {topicStartDate && (
                     <Button type="button" size="xs" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => applyPreset('since_start')}>
-                        {tr('ตั้งแต่เริ่มเก็บถึงวันนี้')}
+                        {tr('funds.fromStartDateToToday')}
                     </Button>
                 )}
             </div>
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <Field label={tr('ตั้งแต่วันที่')} htmlFor={`${idPrefix}-period-start`}>
+                <Field label={tr('funds.from')} htmlFor={`${idPrefix}-period-start`}>
                     <DateTimeInput mode="date" id={`${idPrefix}-period-start`} value={start} onValueChange={(v) => onChange(v, end)} />
                 </Field>
-                <Field label={tr('ถึงวันที่')} htmlFor={`${idPrefix}-period-end`}>
+                <Field label={tr('funds.to')} htmlFor={`${idPrefix}-period-end`}>
                     <DateTimeInput mode="date" id={`${idPrefix}-period-end`} value={end} onValueChange={(v) => onChange(start, v)} />
                 </Field>
             </div>
@@ -67,21 +67,21 @@ export function PeriodFields({
                 <p className="flex items-center gap-1 text-xs text-destructive">
                     <AlertCircle className="size-3.5 shrink-0" />
 
-                    {tr('วันที่เริ่มต้นต้องไม่หลังวันที่สิ้นสุด')}
+                    {tr('funds.theStartDateCantBeAfter2')}
                 </p>
             ) : (
                 days > 0 && (
                     <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Calendar className="size-3.5 text-primary" />
                         <span>
-                            {tr('รวม')}{' '}
+                            {tr('funds.total')}{' '}
                             <span className="font-semibold text-foreground">
-                                {days} {tr('วัน')}
+                                {days} {tr('common.days')}
                             </span>
                             {dailyRate && (
                                 <span>
                                     {' '}
-                                    {tr('(วันละ')} {formatBaht(dailyRate)} ={' '}
+                                    {tr('funds.perDay')} {formatBaht(dailyRate)} ={' '}
                                     <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                                         {formatBaht(days * dailyRate)}
                                         {amountSuffix}

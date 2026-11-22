@@ -28,7 +28,7 @@ export interface XpCommandRequest {
     reason?: string;
 }
 
-const DEFAULT_REASON = byLang(() => tr('ปรับผ่าน Command Palette'));
+const DEFAULT_REASON = byLang(() => tr('layout.adjustViaCommandPalette'));
 
 // ==========================================
 // ✅ ยืนยันก่อนแก้ XP จากช่อง ⌘K — เห็น XP ตอนนี้ → หลังแก้ แก้จำนวน / เหตุผลได้ก่อนกด
@@ -65,7 +65,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                     <DialogTitle>{describeXpCommand(action, value || 0)}</DialogTitle>
-                    <DialogDescription>{tr('ตรวจสอบก่อนบันทึก — การแก้ XP ถูกเก็บในประวัติ XP และประวัติการตั้งค่าพร้อมเหตุผล')}</DialogDescription>
+                    <DialogDescription>{tr('layout.reviewBeforeSavingXpChangesAre')}</DialogDescription>
                 </DialogHeader>
                 <form
                     className="space-y-4"
@@ -87,7 +87,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                             {current.isLoading ? (
                                 <Loader2 className="size-4 animate-spin text-muted-foreground" />
                             ) : current.isError ? (
-                                <span className="font-sans text-xs text-muted-foreground">{tr('ดู XP ตอนนี้ไม่ได้')}</span>
+                                <span className="font-sans text-xs text-muted-foreground">{tr('layout.cantLoadCurrentXp')}</span>
                             ) : (
                                 <>
                                     <span className="text-muted-foreground">{formatNumber(currentXp)}</span>
@@ -114,7 +114,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
 
                     {action !== 'reset' && (
                         <div className="space-y-1.5">
-                            <Label htmlFor="xp-command-amount">{tr('จำนวน XP')}</Label>
+                            <Label htmlFor="xp-command-amount">{tr('common.xpAmount')}</Label>
                             <Input
                                 id="xp-command-amount"
                                 inputMode="numeric"
@@ -126,7 +126,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         </div>
                     )}
                     <div className="space-y-1.5">
-                        <Label htmlFor="xp-command-reason">{tr('เหตุผล')}</Label>
+                        <Label htmlFor="xp-command-reason">{tr('common.reason')}</Label>
                         <Input
                             id="xp-command-reason"
                             value={reason}
@@ -138,7 +138,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
 
                     <DialogFooter>
                         <Button type="button" variant="ghost" onClick={onClose} disabled={mutation.isPending}>
-                            {tr('ยกเลิก')}
+                            {tr('common.cancel')}
                         </Button>
                         <Button
                             type="submit"
@@ -147,7 +147,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         >
                             {mutation.isPending && <Loader2 className="animate-spin" />}
 
-                            {tr('ยืนยัน')}
+                            {tr('common.confirm')}
                         </Button>
                     </DialogFooter>
                 </form>

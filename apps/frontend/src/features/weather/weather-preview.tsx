@@ -98,7 +98,7 @@ export function WeatherPreview({
     return (
         <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-                {tr('ตัวอย่างใน Discord — ใช้ข้อมูลอากาศจริงของสถานที่ที่เลือก')} {data && tr('(ข้อมูล ณ {0} น.)', { 0: timeLabel(data.fetchedAt) })}
+                {tr('weather.discordPreviewUsesRealWeatherData')} {data && tr('weather.dataAsOf', { 0: timeLabel(data.fetchedAt) })}
             </p>
             <DiscordMessage>
                 <div className={cn('space-y-1 transition-opacity', preview.isFetching && 'opacity-60')}>
@@ -108,11 +108,11 @@ export function WeatherPreview({
                     ))}
                     {!data && preview.isFetching && (
                         <p className="flex items-center gap-2 text-sm text-[#949ba4]">
-                            <Loader2 className="size-4 animate-spin" /> {tr('กำลังโหลดข้อมูลอากาศ...')}
+                            <Loader2 className="size-4 animate-spin" /> {tr('weather.loadingWeatherData')}
                         </p>
                     )}
                     {preview.error && (
-                        <p className="text-sm text-red-700 dark:text-red-400">{tr('สร้างตัวอย่างไม่สำเร็จ: {0}', { 0: errorMessage(preview.error) })}</p>
+                        <p className="text-sm text-red-700 dark:text-red-400">{tr('weather.failedToCreatePreview', { 0: errorMessage(preview.error) })}</p>
                     )}
                     {data?.warnings.length ? (
                         <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-300">

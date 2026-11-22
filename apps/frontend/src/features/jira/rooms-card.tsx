@@ -19,36 +19,34 @@ export function JiraRoomsCard({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{tr('3. ห้องและสิทธิ์')}</CardTitle>
-                <CardDescription>
-                    {tr('ห้องส่วนตัวที่สร้างขึ้นเห็นเฉพาะคนเปิด บอท และยศทีมงานที่เลือก (ผู้มีสิทธิ์ Administrator เห็นทุกห้องเสมอ)')}
-                </CardDescription>
+                <CardTitle>{tr('jira.n3ChannelsAndPermissions')}</CardTitle>
+                <CardDescription>{tr('jira.privateChannelsAreVisibleOnlyTo')}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
-                <Field label={tr('ห้องแผง')} hint={tr('ห้องที่มีปุ่ม “เปิด Jira card” ให้สมาชิกกด')}>
+                <Field label={tr('jira.panelChannel')} hint={tr('jira.channelWithTheOpenJiraCard')}>
                     <ChannelSelect channels={textChannels} value={draft.panelChannelId} onChange={(panelChannelId) => patch({ panelChannelId })} />
                 </Field>
-                <Field label={tr('ห้อง log')} hint={tr('แจ้งว่าใครเปิด card อะไร พร้อมลิงก์ (ไม่แท็กใคร)')}>
+                <Field label={tr('jira.logChannel')} hint={tr('jira.announcesWhoOpenedWhichCardWith')}>
                     <ChannelSelect
                         channels={textChannels}
                         value={draft.logChannelId}
                         onChange={(logChannelId) => patch({ logChannelId })}
-                        noneLabel={tr('— ไม่ส่ง log —')}
+                        noneLabel={tr('jira.noLog')}
                     />
                 </Field>
-                <Field label={tr('หมวดหมู่ของห้องส่วนตัว')} hint={tr('ห้องส่วนตัวจะถูกสร้างในหมวดหมู่นี้')}>
+                <Field label={tr('jira.privateChannelCategory')} hint={tr('jira.privateChannelsAreCreatedInThis')}>
                     <ChannelSelect
                         channels={categories}
                         showCategories
                         value={draft.categoryId}
                         onChange={(categoryId) => patch({ categoryId })}
-                        noneLabel={tr('— ไม่อยู่ในหมวดหมู่ —')}
+                        noneLabel={tr('jira.noCategory')}
                     />
                 </Field>
                 <Field
-                    label={tr('ปิดห้องอัตโนมัติหลังสร้าง card (วินาที)')}
+                    label={tr('jira.autoCloseChannelAfterCreatingA')}
                     htmlFor="jira-auto-close"
-                    hint={tr('0 = ไม่ปิดเอง (คนเปิด/ทีมงานกดปุ่มปิดห้องเอง) · สูงสุด {0} วินาที — ในห้องจะขึ้นเวลานับถอยหลังให้เห็น', {
+                    hint={tr('jira.n0NeverTheOpenerStaffClose', {
                         0: JIRA_LIMITS.maxAutoCloseSeconds,
                     })}
                 >
@@ -64,11 +62,11 @@ export function JiraRoomsCard({
                     />
                 </Field>
                 <IdChoices
-                    title={tr('ยศทีมงานที่เห็นทุกห้อง')}
+                    title={tr('jira.staffRolesThatSeeEveryChannel')}
                     options={roles}
                     values={draft.options.staffRoleIds}
                     onChange={(staffRoleIds) => patchOptions({ staffRoleIds: staffRoleIds.slice(0, JIRA_LIMITS.maxStaffRoles) })}
-                    emptyHint={tr('ไม่เลือก = เห็นเฉพาะคนเปิด (และผู้มีสิทธิ์ Administrator) — ทีมงานยังปิดห้องได้ถ้ามีสิทธิ์ Manage Channels')}
+                    emptyHint={tr('jira.noneOnlyTheOpenerAndAdministrators')}
                 />
             </CardContent>
         </Card>

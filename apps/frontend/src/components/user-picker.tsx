@@ -26,7 +26,7 @@ export function UserPicker({
     value,
     onSelect,
     onClear,
-    placeholder = tr('พิมพ์ชื่อหรือ username เพื่อค้นหา...'),
+    placeholder = tr('common.typeANameOrUsernameTo'),
     exclude = [],
     keepSelection = true,
     className,
@@ -50,7 +50,7 @@ export function UserPicker({
     if (SNOWFLAKE.test(query) && !results.some((member) => member.userId === query) && !exclude.includes(query)) {
         results.unshift({
             userId: query,
-            username: tr('ใช้ User ID: {0}', { 0: query }),
+            username: tr('common.useUserId', { 0: query }),
             tag: query,
             avatar: fallbackAvatar(query),
             nickname: null,
@@ -84,11 +84,11 @@ export function UserPicker({
                     <CommandList className="absolute top-full right-0 left-0 z-50 mt-1 max-h-72 rounded-lg border bg-popover p-1 shadow-lg">
                         {waiting && results.length === 0 ? (
                             <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                                <Loader2 className="size-4 animate-spin" /> {tr('กำลังค้นหา...')}
+                                <Loader2 className="size-4 animate-spin" /> {tr('common.searching')}
                             </div>
                         ) : (
                             <>
-                                <CommandEmpty>{isError ? tr('ค้นหาไม่สำเร็จ กรุณาลองใหม่') : tr('ไม่พบสมาชิกที่ตรงกับคำค้นนี้')}</CommandEmpty>
+                                <CommandEmpty>{isError ? tr('common.searchFailedPleaseTryAgain') : tr('common.noMembersMatchThisSearch')}</CommandEmpty>
                                 <CommandGroup>
                                     {results.map((member) => (
                                         <CommandItem
@@ -104,7 +104,7 @@ export function UserPicker({
                                                     {member.nickname && <span className="text-muted-foreground"> ({member.nickname})</span>}
                                                 </p>
                                                 <p className="truncate text-xs text-muted-foreground">
-                                                    {member.raw ? tr('ไม่ได้อยู่ในรายชื่อสมาชิก') : `@${member.tag}`}
+                                                    {member.raw ? tr('common.notInTheMemberList') : `@${member.tag}`}
                                                 </p>
                                             </div>
                                         </CommandItem>
@@ -124,7 +124,7 @@ export function UserPicker({
                         <p className="truncate font-mono text-xs text-muted-foreground">{value.userId}</p>
                     </div>
                     {onClear && (
-                        <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} aria-label={tr('ล้างที่เลือกไว้')}>
+                        <Button type="button" variant="ghost" size="icon-sm" onClick={onClear} aria-label={tr('common.clearSelection2')}>
                             <X />
                         </Button>
                     )}

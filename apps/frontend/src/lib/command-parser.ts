@@ -60,10 +60,10 @@ export function cleanTarget(raw: string): string {
 }
 
 export const XP_ACTION_LABEL = byLang((): Record<XpCommandAction, string> => ({
-    add: tr('ให้'),
-    subtract: tr('หัก'),
-    set: tr('ตั้ง'),
-    reset: tr('รีเซ็ต'),
+    add: tr('common.give'),
+    subtract: tr('common.take'),
+    set: tr('common.set'),
+    reset: tr('common.reset'),
 }));
 
 interface XpDraft {
@@ -163,19 +163,19 @@ export function commandGuide(input: string): CommandGuide | null {
 
     if (LOG_START_RE.test(text)) {
         return {
-            title: tr('ค้นหาในประวัติเซิร์ฟเวอร์'),
-            next: tr('พิมพ์คำที่จะค้น เช่น ชื่อสมาชิก ชื่อห้อง หรือ “ห้องเสียง”'),
+            title: tr('common.searchServerHistory'),
+            next: tr('common.typeASearchTermEG'),
             example: 'log boat',
-            steps: [{ label: tr('คำค้น') }],
+            steps: [{ label: tr('common.searchTerm') }],
         };
     }
 
     if (text === '@') {
         return {
-            title: tr('ค้นหาสมาชิก'),
-            next: tr('พิมพ์ชื่อหรือ username ต่อจาก @ แล้วเลือกสมาชิก เพื่อดูสิ่งที่ทำได้ (ให้ XP, ดูอันดับ, ดูกิจกรรม)'),
+            title: tr('common.findMember'),
+            next: tr('common.typeANameOrUsernameAfter'),
             example: '@boat',
-            steps: [{ label: tr('ชื่อสมาชิก') }],
+            steps: [{ label: tr('common.member') }],
         };
     }
 
@@ -186,30 +186,30 @@ export function commandGuide(input: string): CommandGuide | null {
     const action = draft.action;
     const needsAmount = action !== 'reset';
     const steps: CommandGuideStep[] = [
-        { label: tr('ทำอะไร'), value: action ? XP_ACTION_LABEL()[action] : undefined },
-        { label: tr('สมาชิก'), value: draft.target ? `@${draft.target}` : undefined },
-        ...(needsAmount ? [{ label: tr('จำนวน XP'), value: draft.amount ? draft.amount.value.toLocaleString(dateLocale()) : undefined }] : []),
-        { label: tr('เหตุผล'), value: draft.reason, optional: true },
+        { label: tr('common.action'), value: action ? XP_ACTION_LABEL()[action] : undefined },
+        { label: tr('common.members'), value: draft.target ? `@${draft.target}` : undefined },
+        ...(needsAmount ? [{ label: tr('common.xpAmount'), value: draft.amount ? draft.amount.value.toLocaleString(dateLocale()) : undefined }] : []),
+        { label: tr('common.reason'), value: draft.reason, optional: true },
     ];
 
     let next: string | null = null;
-    if (!action) next = tr('เริ่มด้วยคำสั่ง ให้ / หัก / ตั้ง / รีเซ็ต');
-    else if (!draft.target) next = tr('พิมพ์ชื่อสมาชิกหลัง @ (หรือวาง User ID)');
-    else if (needsAmount && !draft.amount) next = tr('พิมพ์จำนวน XP เช่น 500 หรือ 1.5k');
-    else if (!draft.reason) next = tr('ใส่เหตุผลได้ด้วยคำว่า “เพราะ…” (ไม่บังคับ) แล้วเลือกสมาชิกด้านล่าง');
+    if (!action) next = tr('common.startWithGiveTakeSetReset');
+    else if (!draft.target) next = tr('common.typeTheMemberNameAfterOr');
+    else if (needsAmount && !draft.amount) next = tr('common.typeAnXpAmountEG');
+    else if (!draft.reason) next = tr('common.addAReasonWithBecauseOptional');
 
-    const verb = action ? XP_ACTION_LABEL()[action] : tr('ให้');
+    const verb = action ? XP_ACTION_LABEL()[action] : tr('common.give');
     return {
-        title: action === 'reset' ? tr('รีเซ็ต XP ของสมาชิก') : tr('{0} XP สมาชิก', { 0: verb }),
+        title: action === 'reset' ? tr('common.resetMemberXp') : tr('common.memberXp', { 0: verb }),
         next,
-        example: action === 'reset' ? tr('รีเซ็ต xp @boat เพราะเริ่มฤดูกาลใหม่') : tr('{0} xp @boat 500 เพราะช่วยตอบคำถาม', { 0: verb }),
+        example: action === 'reset' ? tr('common.resetXpBoatBecauseANew') : tr('common.xpBoat500BecauseTheyAnswered', { 0: verb }),
         steps,
     };
 }
 
 // "ให้ 500 XP" / "รีเซ็ต XP"
 export function describeXpCommand(action: XpCommandAction, amount: number): string {
-    if (action === 'reset') return tr('รีเซ็ต XP');
+    if (action === 'reset') return tr('common.resetXp');
     return `${XP_ACTION_LABEL()[action]} ${amount.toLocaleString(dateLocale())} XP`;
 }
 

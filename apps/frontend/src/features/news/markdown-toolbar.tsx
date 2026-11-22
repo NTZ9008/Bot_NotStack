@@ -23,33 +23,33 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 export type MarkdownAction = 'bold' | 'italic' | 'underline' | 'strike' | 'h1' | 'h2' | 'h3' | 'quote' | 'list' | 'code' | 'codeblock' | 'spoiler' | 'link';
 
 const WRAP = byLang((): Partial<Record<MarkdownAction, [string, string, string]>> => ({
-    bold: ['**', '**', tr('ข้อความตัวหนา')],
-    italic: ['*', '*', tr('ข้อความตัวเอียง')],
-    underline: ['__', '__', tr('ข้อความขีดเส้นใต้')],
-    strike: ['~~', '~~', tr('ข้อความขีดฆ่า')],
+    bold: ['**', '**', tr('news.boldText')],
+    italic: ['*', '*', tr('news.italicText')],
+    underline: ['__', '__', tr('news.underlinedText')],
+    strike: ['~~', '~~', tr('news.strikethroughText')],
     code: ['`', '`', 'code'],
     codeblock: ['```\n', '\n```', 'code'],
-    spoiler: ['||', '||', tr('ข้อความที่ซ่อนไว้')],
+    spoiler: ['||', '||', tr('news.hiddenText')],
 }));
 
 const PREFIX: Partial<Record<MarkdownAction, string>> = { h1: '# ', h2: '## ', h3: '### ', quote: '> ', list: '- ' };
 
 const BUTTONS = byLang((): ({ action: MarkdownAction; icon: LucideIcon; title: string } | 'sep')[] => [
-    { action: 'bold', icon: Bold, title: tr('ตัวหนา (Ctrl+B) — **ข้อความ**') },
-    { action: 'italic', icon: Italic, title: tr('ตัวเอียง (Ctrl+I) — *ข้อความ*') },
-    { action: 'underline', icon: Underline, title: tr('ขีดเส้นใต้ (Ctrl+U) — __ข้อความ__') },
-    { action: 'strike', icon: Strikethrough, title: tr('ขีดฆ่า — ~~ข้อความ~~') },
+    { action: 'bold', icon: Bold, title: tr('news.boldCtrlBText') },
+    { action: 'italic', icon: Italic, title: tr('news.italicCtrlIText') },
+    { action: 'underline', icon: Underline, title: tr('news.underlineCtrlUText') },
+    { action: 'strike', icon: Strikethrough, title: tr('news.strikethroughText2') },
     'sep',
-    { action: 'h1', icon: Heading1, title: tr('หัวข้อใหญ่ — # ข้อความ') },
-    { action: 'h2', icon: Heading2, title: tr('หัวข้อกลาง — ## ข้อความ') },
-    { action: 'h3', icon: Heading3, title: tr('หัวข้อเล็ก — ### ข้อความ') },
+    { action: 'h1', icon: Heading1, title: tr('news.largeHeadingText') },
+    { action: 'h2', icon: Heading2, title: tr('news.mediumHeadingText') },
+    { action: 'h3', icon: Heading3, title: tr('news.smallHeadingText') },
     'sep',
-    { action: 'quote', icon: Quote, title: tr('อ้างอิง — > ข้อความ') },
-    { action: 'list', icon: List, title: tr('รายการ — - ข้อความ') },
-    { action: 'code', icon: Code, title: tr('โค้ดในบรรทัด — `ข้อความ`') },
-    { action: 'codeblock', icon: SquareCode, title: tr('บล็อกโค้ด — ```ข้อความ```') },
-    { action: 'spoiler', icon: Eye, title: tr('ซ่อนข้อความ — ||ข้อความ||') },
-    { action: 'link', icon: Link, title: tr('ลิงก์ — [ข้อความ](url)') },
+    { action: 'quote', icon: Quote, title: tr('news.quoteText') },
+    { action: 'list', icon: List, title: tr('news.listText') },
+    { action: 'code', icon: Code, title: tr('news.inlineCodeText') },
+    { action: 'codeblock', icon: SquareCode, title: tr('news.codeBlockText') },
+    { action: 'spoiler', icon: Eye, title: tr('news.spoilerText') },
+    { action: 'link', icon: Link, title: tr('news.linkTextUrl') },
 ]);
 
 /**
@@ -59,7 +59,7 @@ export function applyMarkdown(value: string, start: number, end: number, action:
     const selected = value.slice(start, end);
 
     if (action === 'link') {
-        const inserted = `[${selected || tr('ข้อความลิงก์')}](https://)`;
+        const inserted = `[${selected || tr('news.linkText')}](https://)`;
         const cursor = start + inserted.length - 1; // วางเคอร์เซอร์ไว้ท้าย https:// ให้พิมพ์ URL ต่อได้เลย
         return { value: value.slice(0, start) + inserted + value.slice(end), selection: [cursor, cursor] };
     }

@@ -41,13 +41,13 @@ export function ThemeSwitcher() {
     const t = useT();
     return (
         <Segmented<Theme>
-            label={t('ธีม')}
+            label={t('layout.theme')}
             value={theme}
             onChange={setTheme}
             options={[
-                { value: 'light', label: t('สว่าง'), icon: Sun },
-                { value: 'dark', label: t('มืด'), icon: Moon },
-                { value: 'classic', label: t('สีเดิม'), icon: Palette },
+                { value: 'light', label: t('common.light'), icon: Sun },
+                { value: 'dark', label: t('common.dark'), icon: Moon },
+                { value: 'classic', label: t('layout.classic'), icon: Palette },
             ]}
         />
     );
@@ -57,11 +57,11 @@ export function LanguageSwitcher() {
     const [lang, setLang] = useLang();
     return (
         <Segmented<Lang>
-            label={tr('ภาษา / Language')}
+            label={tr('layout.language')}
             value={lang}
             onChange={setLang}
             options={[
-                { value: 'th', label: tr('ไทย') },
+                { value: 'th', label: tr('layout.thaiLanguageName') },
                 { value: 'en', label: 'English' },
             ]}
         />

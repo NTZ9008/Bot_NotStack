@@ -1,5 +1,5 @@
 import { Info } from '@/components/icons';
-import { useT, tr } from '@/lib/i18n';
+import { useT, tr, trText } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { PageGuide } from '@/lib/page-guides';
@@ -9,18 +9,18 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" aria-label={`${t('วิธีใช้งาน')}: ${t(guide.title)}`}>
-                    <Info aria-hidden="true" /> {t('วิธีใช้งาน')}
+                <Button type="button" variant="outline" size="sm" aria-label={`${t('common.howToUse')}: ${trText(guide.title)}`}>
+                    <Info aria-hidden="true" /> {t('common.howToUse')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader className="pr-8">
                     <DialogTitle>
-                        {t('วิธีใช้งาน')}: {t(guide.title)}
+                        {t('common.howToUse')}: {trText(guide.title)}
                     </DialogTitle>
-                    <DialogDescription>{t(guide.summary)}</DialogDescription>
+                    <DialogDescription>{trText(guide.summary)}</DialogDescription>
                 </DialogHeader>
-                <ol className="space-y-4" aria-label={tr('ขั้นตอนการใช้งาน')}>
+                <ol className="space-y-4" aria-label={tr('common.steps')}>
                     {guide.steps.map((step, index) => (
                         <li key={step} className="flex items-start gap-3 leading-relaxed">
                             <span
@@ -34,13 +34,13 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
                     ))}
                 </ol>
                 <div className="space-y-1 rounded-lg border bg-muted/40 p-3">
-                    <p className="font-medium">{tr('การบันทึกและผลที่เกิดขึ้น')}</p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{t(guide.saving)}</p>
+                    <p className="font-medium">{tr('common.savingAndWhatHappens')}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{trText(guide.saving)}</p>
                 </div>
                 {guide.tip && <p className="text-sm leading-relaxed text-muted-foreground">{guide.tip}</p>}
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button type="button">{tr('เข้าใจแล้ว')}</Button>
+                        <Button type="button">{tr('common.gotIt')}</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>
