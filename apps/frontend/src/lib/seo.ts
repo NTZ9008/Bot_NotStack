@@ -4,7 +4,9 @@
 // ห้ามใช้ DOM ในไฟล์นี้: ถูก import จาก vite.config.ts ที่รันบน Node
 // ==========================================
 import { FEATURE_GROUPS } from '../features/landing/content';
-import { escapeHtml } from './discord-markdown';
+
+// ไม่ import escapeHtml จาก discord-markdown: จะลาก chunk นั้นมาโหลดในหน้าสาธารณะทุกหน้า
+const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 export const SITE_ORIGIN = 'https://bntdash.arlifzs.com';
 
