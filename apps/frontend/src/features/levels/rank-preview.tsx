@@ -6,8 +6,13 @@ import { DiscordMessage } from '@/components/discord-message';
 import { Segmented } from '@/features/welcome/form-controls';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { errorMessage, type ImagePreview } from '@/lib/api';
+import { byLang, tr } from '../../lib/i18n';
 
-export const PREVIEW_KIND_LABELS: Record<RankPreviewKind, string> = { rank: '/rank', leaderboard: '/leaderboard', levelup: 'เลเวลอัป' };
+export const PREVIEW_KIND_LABELS = byLang((): Record<RankPreviewKind, string> => ({
+    rank: '/rank',
+    leaderboard: '/leaderboard',
+    levelup: tr('levels.levelUp'),
+}));
 
 /**
  * ตัวอย่างการ์ดในกรอบข้อความแบบ Discord — รูปวาดที่ server ด้วยโค้ดเดียวกับตอนส่งจริง
@@ -41,7 +46,7 @@ export function RankPreview<T>({
         retry: false,
     });
     const imageUrl = useObjectUrl(preview.data?.image);
-    const options = Object.fromEntries(kinds.map((k) => [k, PREVIEW_KIND_LABELS[k]])) as Record<RankPreviewKind, string>;
+    const options = Object.fromEntries(kinds.map((k) => [k, PREVIEW_KIND_LABELS()[k]])) as Record<RankPreviewKind, string>;
 
     return (
         <div className="space-y-3">
@@ -50,10 +55,10 @@ export function RankPreview<T>({
                 {children}
                 <div className="relative mt-1 w-full max-w-xl overflow-hidden rounded-lg bg-black/30">
                     {preview.data ? (
-                        <img src={imageUrl} alt="ตัวอย่างการ์ด" className="block w-full" />
+                        <img src={imageUrl} alt={tr('levels.cardPreview')} className="block w-full" />
                     ) : (
                         <div className="flex aspect-[10/3] items-center justify-center p-4 text-center text-sm text-[#b5bac1]">
-                            {preview.error ? `สร้างรูปตัวอย่างไม่สำเร็จ: ${errorMessage(preview.error)}` : 'กำลังสร้างรูปตัวอย่าง...'}
+                            {preview.error ? tr('welcome.failedToRenderPreview', { 0: errorMessage(preview.error) }) : tr('levels.renderingPreview')}
                         </div>
                     )}
                     {preview.data && preview.error && (

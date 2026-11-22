@@ -124,7 +124,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                 />
                 <StatTile
                     label={tr('funds.paymentsReceived')}
-                    value={`${topic.payments.length} รายการ`}
+                    value={tr('funds.entriesCount', { 0: topic.payments.length })}
                     subtext={topic.payments.length > 0 ? tr('funds.recordedInTheSystem') : tr('funds.noTransfersYet')}
                     icon={<Receipt className="size-3.5 text-amber-700 dark:text-amber-400" />}
                     variant="kpi"

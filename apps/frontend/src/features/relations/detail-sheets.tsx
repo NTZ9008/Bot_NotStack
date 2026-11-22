@@ -251,7 +251,7 @@ function TimelineRow({ item }: { item: RelationTimelineItem }) {
         detail = item.channelName ? tr('relations.channel2', { 0: item.channelName }) : null;
     } else {
         title = item.label;
-        detail = tr('relations.actedOn', { 0: item.actorName ?? item.actorId, 1: item.targetName ?? 'อีกฝ่าย' });
+        detail = tr('relations.actedOn', { 0: item.actorName ?? item.actorId, 1: item.targetName ?? tr('relations.theOtherPerson') });
     }
     return (
         <li className="flex gap-3 rounded-lg border p-3">
@@ -318,8 +318,14 @@ export function LinkSheet({
                             </div>
                             <VoiceStat label={tr('relations.inVoiceTogether')} minutes={link.voiceMinutes} />
                             <div className="grid grid-cols-2 gap-2">
-                                <Stat label={tr('relations.talked')} value={`${link.chatExchanges.toLocaleString(dateLocale())} ครั้ง`} />
-                                <Stat label={tr('relations.adminActions')} value={`${link.modActions.toLocaleString(dateLocale())} ครั้ง`} />
+                                <Stat
+                                    label={tr('relations.talked')}
+                                    value={tr('relations.timesCount', { 0: link.chatExchanges.toLocaleString(dateLocale()) })}
+                                />
+                                <Stat
+                                    label={tr('relations.adminActions')}
+                                    value={tr('relations.timesCount', { 0: link.modActions.toLocaleString(dateLocale()) })}
+                                />
                             </div>
                             <p className="text-xs leading-relaxed text-muted-foreground">
                                 {tr('relations.talkedCountsWhenTwoPeopleMessage')} {RELATION_CHAT_WINDOW_MINUTES}{' '}

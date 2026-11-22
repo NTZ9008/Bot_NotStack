@@ -191,7 +191,7 @@ function WelcomePage() {
         const ok = await confirm({
             title: tr('welcome.sendATestCardTo', { 0: channelLabel(channels, draft.channelId) }),
             description: tr('welcome.usesTheValuesYoureEditingNow', {
-                0: vars?.user ?? 'บัญชีของคุณ',
+                0: vars?.user ?? tr('welcome.yourAccount'),
             }),
             confirmText: tr('common.sendTest'),
         });

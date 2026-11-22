@@ -17,9 +17,9 @@ const timeLabel = (value: string | number) => new Date(value).toLocaleTimeString
 function markdown(text: string, roles: GuildRole[], channels: GuildChannel[]): string {
     const mention = (label: string) => `<span class="dc-mention">${escapeHtml(label)}</span>`;
     return renderDiscordMarkdown(text)
-        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? 'ยศ'}`))
-        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? 'ห้อง'}`))
-        .replace(/&lt;@!?(\d+)&gt;/g, () => mention('@ผู้ใช้'));
+        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? tr('weather.unknownRole')}`))
+        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? tr('weather.unknownChannel')}`))
+        .replace(/&lt;@!?(\d+)&gt;/g, () => mention(tr('weather.someUser')));
 }
 
 // รูปที่อ้างเป็น attachment://ชื่อไฟล์ → data URL หรือ path ของ API จาก server
@@ -31,7 +31,7 @@ const resolveFile = (files: Record<string, string>, url: string | undefined) => 
 // embed 1 อันแบบที่ Discord แสดง (ช่องข้อมูลแถวละ 3 หรือ 2 เมื่อมีรูปมุมขวาบน)
 function EmbedView({ embed, files, roles, channels }: { embed: PreviewEmbed; files: Record<string, string>; roles: GuildRole[]; channels: GuildChannel[] }) {
     const image = resolveFile(files, embed.image?.url);
-    const footer = [embed.footer?.text, embed.timestamp ? `วันนี้ เวลา ${timeLabel(embed.timestamp)}` : ''].filter(Boolean).join(' • ');
+    const footer = [embed.footer?.text, embed.timestamp ? tr('weather.todayAt', { 0: timeLabel(embed.timestamp) }) : ''].filter(Boolean).join(' • ');
     return (
         <div
             className="dark max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4"

@@ -341,7 +341,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         />
                         <StatTile
                             label={tr('funds.memberStatus')}
-                            value={`${topic.paidCount} / ${topic.memberCount} คน`}
+                            value={tr('funds.paidOfMembers', { 0: topic.paidCount, 1: topic.memberCount })}
                             subtext={tr('funds.partialUnpaid', { 0: statusCounts.partial, 1: statusCounts.unpaid })}
                             icon={<Users className="size-3.5 text-sky-700 dark:text-sky-400" />}
                             tone="sky"

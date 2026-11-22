@@ -23,10 +23,10 @@ const samples = byLang((): Record<string, LogEmbedContent> => ({
             { name: tr('logManager.channel'), value: '#general' },
             {
                 name: tr('logManager.before'),
-                value: 'วันนี้นัดคุยกันตอน 18:00 น. ที่ห้อง Community นะ ทุกคนสามารถนำไอเดียและคำถามมาพูดคุยกันได้ เราจะทบทวนกิจกรรมที่ผ่านมาและวางแผนกิจกรรมครั้งถัดไปด้วยกัน หากใครไม่สะดวกเข้าร่วม สามารถฝากความคิดเห็นไว้ในห้องนี้ได้เลย ทีมงานจะรวบรวมข้อมูลไปพูดคุยให้ แล้วเจอกันนะ!',
+                value: tr('logManager.sampleBefore'),
                 inline: false,
             },
-            { name: tr('logManager.after'), value: 'ขอเลื่อนเป็น 19:00 น. นะ เจอกันที่ห้อง Community เหมือนเดิม', inline: false },
+            { name: tr('logManager.after'), value: tr('logManager.sampleAfter'), inline: false },
         ],
     },
     memberJoin: {
@@ -36,8 +36,8 @@ const samples = byLang((): Record<string, LogEmbedContent> => ({
         fields: [
             { name: tr('logManager.user'), value: '@Mali' },
             { name: '🆔 User ID', value: '123456789012345678' },
-            { name: tr('logManager.accountCreated'), value: '12 มกราคม 2025 • 1 ปีที่แล้ว', inline: false },
-            { name: tr('logManager.memberCountNow'), value: '128 คน' },
+            { name: tr('logManager.accountCreated'), value: tr('logManager.sampleAccountCreated'), inline: false },
+            { name: tr('logManager.memberCountNow'), value: tr('logManager.sampleMemberCount') },
         ],
     },
     memberBan: {
@@ -47,7 +47,7 @@ const samples = byLang((): Record<string, LogEmbedContent> => ({
         fields: [
             { name: tr('logManager.member'), value: '@Mali' },
             { name: tr('logManager.moderator'), value: '@Admin' },
-            { name: tr('logManager.reason'), value: 'ส่งข้อความรบกวนสมาชิกซ้ำหลังจากได้รับคำเตือน', inline: false },
+            { name: tr('logManager.reason'), value: tr('logManager.sampleReason'), inline: false },
         ],
     },
 }));
