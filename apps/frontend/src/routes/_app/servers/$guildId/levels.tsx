@@ -1,4 +1,5 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
+import { useT } from '@/lib/i18n';
 import { Award, History, IdCard, Palette, Settings, Trophy, Users } from '@/components/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -87,7 +88,9 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                         </Button>
                     )}
                 </form>
-                {query.data?.searchLimited && <p className="text-sm text-amber-500">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>}
+                {query.data?.searchLimited && (
+                    <p className="text-sm text-amber-700 dark:text-amber-400">พบชื่อที่ตรงกันอย่างน้อย 100 คน กรุณาพิมพ์ชื่อให้เฉพาะเจาะจงขึ้น</p>
+                )}
                 {query.isLoading ? (
                     <LeaderboardTableSkeleton />
                 ) : query.error ? (
@@ -167,6 +170,7 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
     );
 }
 function LevelsPage() {
+    const t = useT();
     const guild = useGuild();
     const { q } = Route.useSearch();
     const queryClient = useQueryClient();
@@ -200,7 +204,11 @@ function LevelsPage() {
     };
     return (
         <>
-            <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
+            <PageHeader
+                help="levels"
+                title="อันดับและเลเวล"
+                description={t('ระบบประสบการณ์ของ {name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP', { name: guild.name })}
+            />
             <Tabs defaultValue="leaderboard" key={guild.id}>
                 <TabsList variant="line" className="mb-4">
                     <TabsTrigger value="leaderboard">

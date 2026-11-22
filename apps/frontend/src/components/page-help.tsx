@@ -1,20 +1,24 @@
 import { Info } from '@/components/icons';
+import { useT } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import type { PageGuide } from '@/lib/page-guides';
 
 export function PageHelp({ guide }: { guide: PageGuide }) {
+    const t = useT();
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button type="button" variant="outline" size="sm" aria-label={`วิธีใช้งาน: ${guide.title}`}>
-                    <Info aria-hidden="true" /> วิธีใช้งาน
+                <Button type="button" variant="outline" size="sm" aria-label={`${t('วิธีใช้งาน')}: ${t(guide.title)}`}>
+                    <Info aria-hidden="true" /> {t('วิธีใช้งาน')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[85dvh] overflow-y-auto sm:max-w-lg">
                 <DialogHeader className="pr-8">
-                    <DialogTitle>วิธีใช้งาน: {guide.title}</DialogTitle>
-                    <DialogDescription>{guide.summary}</DialogDescription>
+                    <DialogTitle>
+                        {t('วิธีใช้งาน')}: {t(guide.title)}
+                    </DialogTitle>
+                    <DialogDescription>{t(guide.summary)}</DialogDescription>
                 </DialogHeader>
                 <ol className="space-y-4" aria-label="ขั้นตอนการใช้งาน">
                     {guide.steps.map((step, index) => (
@@ -31,7 +35,7 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
                 </ol>
                 <div className="space-y-1 rounded-lg border bg-muted/40 p-3">
                     <p className="font-medium">การบันทึกและผลที่เกิดขึ้น</p>
-                    <p className="text-sm leading-relaxed text-muted-foreground">{guide.saving}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{t(guide.saving)}</p>
                 </div>
                 {guide.tip && <p className="text-sm leading-relaxed text-muted-foreground">{guide.tip}</p>}
                 <DialogFooter>

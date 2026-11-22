@@ -165,7 +165,7 @@ function VoiceListenPage() {
                                     />
                                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{member.name}</span>
                                     {member.bot && <Badge variant="secondary">BOT</Badge>}
-                                    {member.speaking && <span className="text-xs text-green-600 dark:text-green-400">กำลังพูด</span>}
+                                    {member.speaking && <span className="text-xs text-green-700 dark:text-green-400">กำลังพูด</span>}
                                 </li>
                             ))}
                         </ul>

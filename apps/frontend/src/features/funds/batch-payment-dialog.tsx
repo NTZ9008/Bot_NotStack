@@ -1,4 +1,5 @@
 import { formatBaht, roundMoney, type FundTopicDetail } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
 import { Calendar, CheckCircle2, Loader2 } from '@/components/icons';
 import { useEffect, useMemo, useState } from 'react';
@@ -152,7 +153,7 @@ export function BatchPaymentDialog({
                             />
                         </Field>
                         <Field label="วันเวลาที่บันทึกรับเงิน" htmlFor="batch-paid-at">
-                            <Input id="batch-paid-at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+                            <DateTimeInput mode="datetime" id="batch-paid-at" value={paidAt} onValueChange={(v) => setPaidAt(v)} />
                         </Field>
                     </div>
 

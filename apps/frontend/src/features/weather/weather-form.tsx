@@ -1,4 +1,5 @@
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -101,17 +102,29 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
     const setDays = (days: number[]) => patch((d) => void (d.options.schedule.days = [...new Set(days)].sort((a, b) => a - b)));
     return (
         <div className="space-y-4">
-            <Field label="ห้องที่จะส่ง" hint={channels.length ? 'บอทต้องมีสิทธิ์ดูห้อง ส่งข้อความ ฝังลิงก์ และแนบไฟล์ (สำหรับรูปกราฟ/เรดาร์) ในห้องนี้' : 'บอทยังไม่ออนไลน์ จึงยังโหลดรายชื่อห้องไม่ได้'}>
-                <ChannelSelect channels={channels} value={draft.channelId} onChange={(channelId) => patch((d) => void (d.channelId = channelId))} placeholder="— เลือกห้องที่จะส่ง —" />
+            <Field
+                label="ห้องที่จะส่ง"
+                hint={
+                    channels.length
+                        ? 'บอทต้องมีสิทธิ์ดูห้อง ส่งข้อความ ฝังลิงก์ และแนบไฟล์ (สำหรับรูปกราฟ/เรดาร์) ในห้องนี้'
+                        : 'บอทยังไม่ออนไลน์ จึงยังโหลดรายชื่อห้องไม่ได้'
+                }
+            >
+                <ChannelSelect
+                    channels={channels}
+                    value={draft.channelId}
+                    onChange={(channelId) => patch((d) => void (d.channelId = channelId))}
+                    placeholder="— เลือกห้องที่จะส่ง —"
+                />
             </Field>
 
             <Field label="เวลาที่ส่ง" hint={`เวลาไทย (${meta.timezone})`}>
-                <Input
-                    type="time"
-                    step={60}
+                <DateTimeInput
+                    mode="time"
+
                     className="max-w-40"
                     value={schedule.time}
-                    onChange={(e) => /^\d{2}:\d{2}$/.test(e.target.value) && patch((d) => void (d.options.schedule.time = e.target.value))}
+                    onValueChange={(v) => /^\d{2}:\d{2}$/.test(v) && patch((d) => void (d.options.schedule.time = v))}
                 />
             </Field>
 
@@ -201,7 +214,12 @@ function LocationSection({ meta, draft, patch }: FormProps) {
 
     const pick = (place: WeatherPlace) => {
         patch((d) => {
-            d.options.location = { name: place.name, lat: Math.round(place.lat * 1e4) / 1e4, lon: Math.round(place.lon * 1e4) / 1e4, country: place.country || '' };
+            d.options.location = {
+                name: place.name,
+                lat: Math.round(place.lat * 1e4) / 1e4,
+                lon: Math.round(place.lon * 1e4) / 1e4,
+                country: place.country || '',
+            };
         });
         setPlaces(null);
         toast.success(`เลือก "${place.name}" แล้ว`, { description: 'อย่าลืมกดบันทึก' });
@@ -221,7 +239,11 @@ function LocationSection({ meta, draft, patch }: FormProps) {
             </div>
 
             <Field label="ชื่อที่แสดงในรายงาน" hint='ใช้แทนตัวแปร {location} — เปลี่ยนชื่อได้โดยไม่ต้องค้นหาใหม่ (เช่น "ม.มหิดล ศาลายา")'>
-                <Input maxLength={meta.limits.maxLocationNameLength} value={location.name} onChange={(e) => patch((d) => void (d.options.location.name = e.target.value))} />
+                <Input
+                    maxLength={meta.limits.maxLocationNameLength}
+                    value={location.name}
+                    onChange={(e) => patch((d) => void (d.options.location.name = e.target.value))}
+                />
             </Field>
 
             <Field label="เปลี่ยนสถานที่" hint="พิมพ์ชื่อภาษาไทยหรืออังกฤษ หรือคัดลอกพิกัดจาก Google Maps มาวางเพื่อความแม่นยำ">
@@ -232,7 +254,12 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                         void search();
                     }}
                 >
-                    <Input placeholder="เช่น ศาลายา, Bangkok หรือพิกัด 13.7946, 100.3234" autoComplete="off" value={query} onChange={(e) => setQuery(e.target.value)} />
+                    <Input
+                        placeholder="เช่น ศาลายา, Bangkok หรือพิกัด 13.7946, 100.3234"
+                        autoComplete="off"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                    />
                     <Button type="submit" disabled={searching || !query.trim()}>
                         {searching ? <Loader2 className="animate-spin" /> : <Search />} ค้นหา
                     </Button>
@@ -293,7 +320,10 @@ function FieldList({ meta, draft, patch }: FormProps) {
                 const index = selected.indexOf(field.key);
                 const on = index !== -1;
                 return (
-                    <div key={field.key} className={cn('flex items-center justify-between gap-2 rounded-lg border px-3 py-2', on ? 'border-primary/40' : 'opacity-70')}>
+                    <div
+                        key={field.key}
+                        className={cn('flex items-center justify-between gap-2 rounded-lg border px-3 py-2', on ? 'border-primary/40' : 'opacity-70')}
+                    >
                         <Label className="flex min-w-0 cursor-pointer items-start gap-2.5 font-normal">
                             <Checkbox className="mt-0.5" checked={on} onCheckedChange={(checked) => toggle(field.key, checked === true)} />
                             <span className="min-w-0">
@@ -306,7 +336,13 @@ function FieldList({ meta, draft, patch }: FormProps) {
                                 <Button size="icon-xs" variant="ghost" aria-label="เลื่อนขึ้น" disabled={index === 0} onClick={() => move(field.key, -1)}>
                                     <ArrowUp />
                                 </Button>
-                                <Button size="icon-xs" variant="ghost" aria-label="เลื่อนลง" disabled={index === selected.length - 1} onClick={() => move(field.key, 1)}>
+                                <Button
+                                    size="icon-xs"
+                                    variant="ghost"
+                                    aria-label="เลื่อนลง"
+                                    disabled={index === selected.length - 1}
+                                    onClick={() => move(field.key, 1)}
+                                >
                                     <ArrowDown />
                                 </Button>
                             </div>
@@ -325,8 +361,18 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
             <Field label="สีแถบด้านซ้ายของ embed">
                 <ColorField value={embed.color} onChange={(color) => patch((d) => void (d.options.embed.color = upper(color)))} className="max-w-60" />
             </Field>
-            <TemplateInput meta={meta} label="หัวข้อ" value={embed.title} max={meta.limits.maxTitleLength} onChange={(title) => patch((d) => void (d.options.embed.title = title))} />
-            <SwitchRow label="ทำหัวข้อเป็นลิงก์ไปหน้าเมืองบน OpenWeatherMap" checked={embed.link} onChange={(link) => patch((d) => void (d.options.embed.link = link))} />
+            <TemplateInput
+                meta={meta}
+                label="หัวข้อ"
+                value={embed.title}
+                max={meta.limits.maxTitleLength}
+                onChange={(title) => patch((d) => void (d.options.embed.title = title))}
+            />
+            <SwitchRow
+                label="ทำหัวข้อเป็นลิงก์ไปหน้าเมืองบน OpenWeatherMap"
+                checked={embed.link}
+                onChange={(link) => patch((d) => void (d.options.embed.link = link))}
+            />
             <TemplateInput
                 meta={meta}
                 label="รายละเอียด (ใต้หัวข้อ)"
@@ -336,13 +382,24 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
                 multiline
                 onChange={(description) => patch((d) => void (d.options.embed.description = description))}
             />
-            <Field label={`ช่องข้อมูล (${embed.fields.length}/${meta.fields.length})`} hint="Discord เรียงช่องข้อมูลแถวละ 3 ช่อง — เลือก 3, 6 หรือ 9 ช่องจะได้ตารางเต็มแถวพอดี">
+            <Field
+                label={`ช่องข้อมูล (${embed.fields.length}/${meta.fields.length})`}
+                hint="Discord เรียงช่องข้อมูลแถวละ 3 ช่อง — เลือก 3, 6 หรือ 9 ช่องจะได้ตารางเต็มแถวพอดี"
+            >
                 <FieldList meta={meta} draft={draft} patch={patch} />
             </Field>
             <Field label="ข้อความท้าย embed" hint="เช่น แหล่งข้อมูล หรือเครดิตผู้ทำบอท (Discord แสดงเป็นตัวหนังสือเล็ก ไม่รองรับ Markdown)">
-                <Input maxLength={meta.limits.maxFooterLength} value={embed.footer} onChange={(e) => patch((d) => void (d.options.embed.footer = e.target.value))} />
+                <Input
+                    maxLength={meta.limits.maxFooterLength}
+                    value={embed.footer}
+                    onChange={(e) => patch((d) => void (d.options.embed.footer = e.target.value))}
+                />
             </Field>
-            <SwitchRow label="แสดงวันเวลาที่ดึงข้อมูลท้าย embed" checked={embed.timestamp} onChange={(timestamp) => patch((d) => void (d.options.embed.timestamp = timestamp))} />
+            <SwitchRow
+                label="แสดงวันเวลาที่ดึงข้อมูลท้าย embed"
+                checked={embed.timestamp}
+                onChange={(timestamp) => patch((d) => void (d.options.embed.timestamp = timestamp))}
+            />
             <SwitchRow
                 label="รูปไอคอนสภาพอากาศมุมขวาบน"
                 hint="เมื่อเปิด Discord จะเรียงช่องข้อมูลแถวละ 2 ช่องแทน 3"
@@ -381,7 +438,11 @@ function ChartSection({ meta, draft, patch }: FormProps) {
                 <Field label="ช่วงเวลาที่แสดง">
                     <Segmented value={String(chart.hours)} options={hours} onChange={(value) => patch((d) => void (d.options.chart.hours = Number(value)))} />
                 </Field>
-                <SwitchRow label="แสดงแท่งโอกาสฝนตก" checked={chart.showRain} onChange={(showRain) => patch((d) => void (d.options.chart.showRain = showRain))} />
+                <SwitchRow
+                    label="แสดงแท่งโอกาสฝนตก"
+                    checked={chart.showRain}
+                    onChange={(showRain) => patch((d) => void (d.options.chart.showRain = showRain))}
+                />
                 <Field label="ธีมของกราฟ">
                     <Segmented value={chart.theme} options={THEME_LABELS} onChange={(theme) => patch((d) => void (d.options.chart.theme = theme))} />
                 </Field>
@@ -451,12 +512,7 @@ function RadarSection({ meta, draft, patch }: FormProps) {
     );
 }
 
-export function WeatherForm({
-    section,
-    channels,
-    roles,
-    ...props
-}: FormProps & { section: WeatherSection; channels: GuildChannel[]; roles: GuildRole[] }) {
+export function WeatherForm({ section, channels, roles, ...props }: FormProps & { section: WeatherSection; channels: GuildChannel[]; roles: GuildRole[] }) {
     switch (section) {
         case 'schedule':
             return <ScheduleSection {...props} channels={channels} roles={roles} />;

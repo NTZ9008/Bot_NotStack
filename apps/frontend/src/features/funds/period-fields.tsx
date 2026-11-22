@@ -1,8 +1,8 @@
 import { formatBaht } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { AlertCircle, Calendar } from '@/components/icons';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { periodAmount, periodPresetRange, type PeriodPreset } from './utils';
 
 const PRESETS: readonly { key: PeriodPreset; label: string }[] = [
@@ -56,10 +56,10 @@ export function PeriodFields({
 
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Field label="ตั้งแต่วันที่" htmlFor={`${idPrefix}-period-start`}>
-                    <Input id={`${idPrefix}-period-start`} type="date" value={start} onChange={(e) => onChange(e.target.value, end)} />
+                    <DateTimeInput mode="date" id={`${idPrefix}-period-start`} value={start} onValueChange={(v) => onChange(v, end)} />
                 </Field>
                 <Field label="ถึงวันที่" htmlFor={`${idPrefix}-period-end`}>
-                    <Input id={`${idPrefix}-period-end`} type="date" value={end} onChange={(e) => onChange(start, e.target.value)} />
+                    <DateTimeInput mode="date" id={`${idPrefix}-period-end`} value={end} onValueChange={(v) => onChange(start, v)} />
                 </Field>
             </div>
             {invalid ? (

@@ -1,4 +1,5 @@
 import type { CustomSummaryChannelOption, CustomSummaryModule } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
 import {
     Activity,
@@ -158,13 +159,7 @@ export function FilterBuilder({
                     </div>
                 </div>
 
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={onReset}
-                    className="text-muted-foreground hover:bg-muted/70 hover:text-foreground"
-                >
+                <Button type="button" size="sm" variant="ghost" onClick={onReset} className="text-muted-foreground hover:bg-muted/70 hover:text-foreground">
                     <RotateCcw className="mr-1.5 size-3.5" />
                     ล้างตัวกรอง
                 </Button>
@@ -205,21 +200,23 @@ export function FilterBuilder({
                     <div className="grid gap-3 sm:grid-cols-3 lg:col-span-7">
                         <div className="space-y-1.5">
                             <Label className="text-[11px] text-muted-foreground">วัน-เวลาเริ่มต้น</Label>
-                            <Input
-                                type="datetime-local"
+                            <DateTimeInput
+                                mode="datetime"
+
                                 aria-label="วัน-เวลาเริ่มต้น"
                                 value={draft.fromInput}
-                                onChange={(e) => onUpdate({ preset: 'custom', fromInput: e.target.value })}
+                                onValueChange={(v) => onUpdate({ preset: 'custom', fromInput: v })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
                             />
                         </div>
                         <div className="space-y-1.5">
                             <Label className="text-[11px] text-muted-foreground">วัน-เวลาสิ้นสุด</Label>
-                            <Input
-                                type="datetime-local"
+                            <DateTimeInput
+                                mode="datetime"
+
                                 aria-label="วัน-เวลาสิ้นสุด"
                                 value={draft.toInput}
-                                onChange={(e) => onUpdate({ preset: 'custom', toInput: e.target.value })}
+                                onValueChange={(v) => onUpdate({ preset: 'custom', toInput: v })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
                             />
                         </div>
@@ -346,10 +343,7 @@ export function FilterBuilder({
                             </Label>
                             <label className="flex h-9 cursor-pointer items-center justify-between rounded-lg border border-border bg-background px-3 text-xs text-foreground">
                                 <span>รวมบอท</span>
-                                <Switch
-                                    checked={draft.includeBots}
-                                    onCheckedChange={(checked) => onUpdate({ includeBots: Boolean(checked) })}
-                                />
+                                <Switch checked={draft.includeBots} onCheckedChange={(checked) => onUpdate({ includeBots: Boolean(checked) })} />
                             </label>
                         </div>
                     </div>

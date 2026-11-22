@@ -73,6 +73,7 @@
     <script>
       // ธีมสว่าง/มืด: ใส่ class ก่อนวาดหน้า จะได้ไม่กะพริบ (ค่าเริ่มต้นตามระบบ) — ต้องตรงกับ src/hooks/use-theme.ts
       try {
+        if (localStorage.getItem('lang') === 'en') document.documentElement.lang = 'en';
         var t = localStorage.getItem('theme');
         if (t === 'classic') document.documentElement.classList.add('dark', 'classic');
         else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');

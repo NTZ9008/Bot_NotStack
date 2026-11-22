@@ -1,4 +1,5 @@
 import { calculateDailyAmount, calculateDays, formatBaht, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from '@/components/icons';
 import { useEffect, useState } from 'react';
@@ -275,12 +276,13 @@ export function TopicDialog({
                                     </div>
                                 </Field>
                                 <Field label="วันที่เริ่มเก็บ" htmlFor="fund-start-date">
-                                    <Input
+                                    <DateTimeInput
+                                        mode="date"
                                         id="fund-start-date"
-                                        type="date"
+
                                         value={startDate}
-                                        onChange={(e) => {
-                                            setStartDate(e.target.value);
+                                        onValueChange={(v) => {
+                                            setStartDate(v);
                                             setManualAmount(false);
                                         }}
                                     />
@@ -289,12 +291,14 @@ export function TopicDialog({
                             <div className="grid gap-3 sm:grid-cols-2">
                                 <Field label="วันครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
                                     <div className="space-y-1.5">
-                                        <Input
+                                        <DateTimeInput
+                                            mode="date"
+                                            clearable
                                             id="fund-due"
-                                            type="date"
+
                                             value={dueDate}
-                                            onChange={(e) => {
-                                                setDueDate(e.target.value);
+                                            onValueChange={(v) => {
+                                                setDueDate(v);
                                                 setManualAmount(false);
                                             }}
                                         />
@@ -388,7 +392,7 @@ export function TopicDialog({
                             </Field>
                             <Field label="ครบกำหนด (ไม่บังคับ)" htmlFor="fund-due">
                                 <div className="space-y-1.5">
-                                    <Input id="fund-due" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                                    <DateTimeInput mode="date" clearable id="fund-due" value={dueDate} onValueChange={(v) => setDueDate(v)} />
                                     <div className="flex flex-wrap gap-1">
                                         <Button
                                             type="button"

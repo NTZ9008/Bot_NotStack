@@ -1,4 +1,5 @@
 import type { GuildSummary, MemberSearchResult } from '@notstack/shared';
+import { useT } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import {
@@ -118,7 +119,9 @@ function GuideCard({ guide }: { guide: CommandGuide }) {
                         key={step.label}
                         className={cn(
                             'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs',
-                            step.value ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : 'border-border text-muted-foreground',
+                            step.value
+                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                                : 'border-border text-muted-foreground',
                         )}
                     >
                         {step.value ? <Check className="size-3" /> : <Circle className="size-3" />}
@@ -155,6 +158,7 @@ const MEMBER_XP_ACTIONS: { action: XpCommandAction; label: string; icon: LucideI
 // ผลที่แสดงขึ้นกับสิทธิ์: หน้าที่เข้าไม่ได้และคำสั่งที่ต้องใช้สิทธิ์ manage จะไม่โผล่
 // ==========================================
 export function CommandPalette() {
+    const t = useT();
     const [open, setOpen] = useState(false);
     const [query, setQuery] = useState('');
     const [member, setMember] = useState<XpCommandTarget | null>(null);
@@ -466,7 +470,7 @@ export function CommandPalette() {
                       <CommandGroup heading="หน้า">
                           {rankedPages.map(({ item }) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={item.label} hint={PAGE_GUIDES[item.guide].summary} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
@@ -475,7 +479,7 @@ export function CommandPalette() {
                       <CommandGroup key={group.label} heading={group.label}>
                           {group.items.map((item) => (
                               <CommandItem key={item.to} value={`page-${item.to}`} onSelect={() => go(pageEntry(item))}>
-                                  <Row icon={item.icon} title={item.label} hint={PAGE_GUIDES[item.guide].summary} />
+                                  <Row icon={item.icon} title={t(item.label)} hint={t(PAGE_GUIDES[item.guide].summary)} />
                               </CommandItem>
                           ))}
                       </CommandGroup>
@@ -525,13 +529,9 @@ export function CommandPalette() {
 
     return (
         <>
-            <Button
-                variant="outline"
-                className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-60"
-                onClick={() => setOpen(true)}
-            >
+            <Button variant="outline" className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-60" onClick={() => setOpen(true)}>
                 <Search className="size-4" />
-                <span className="sr-only flex-1 text-left md:not-sr-only">ค้นหา หรือพิมพ์คำสั่ง...</span>
+                <span className="sr-only flex-1 truncate text-left md:not-sr-only">{t('ค้นหา หรือพิมพ์คำสั่ง...')}</span>
                 <kbd className="pointer-events-none hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] md:inline">
                     {isMac ? '⌘ K' : 'Ctrl K'}
                 </kbd>

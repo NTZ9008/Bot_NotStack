@@ -188,7 +188,10 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <Lock className="size-2.5" /> ปิด
                     </Badge>
                 ) : isCompleted ? (
-                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400">
+                    <Badge
+                        variant="outline"
+                        className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400"
+                    >
                         <CheckCircle2 className="size-2.5" /> ครบเป้า
                     </Badge>
                 ) : due?.tone === 'overdue' ? (
@@ -196,7 +199,10 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <AlertTriangle className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : due?.tone === 'soon' ? (
-                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-700 dark:text-amber-400">
+                    <Badge
+                        variant="outline"
+                        className="h-5 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-700 dark:text-amber-400"
+                    >
                         <Clock className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : null}
@@ -230,13 +236,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
 }
 
 // หน้าต้อนรับเมื่อยังไม่มีหัวข้อเก็บเงิน พร้อมเทมเพลตเริ่มใช้งานในคลิกเดียว
-export function FundsEmptyOnboarding({
-    onCreateBlank,
-    onSelectTemplate,
-}: {
-    onCreateBlank: () => void;
-    onSelectTemplate: (template: TopicTemplate) => void;
-}) {
+export function FundsEmptyOnboarding({ onCreateBlank, onSelectTemplate }: { onCreateBlank: () => void; onSelectTemplate: (template: TopicTemplate) => void }) {
     return (
         <Card className="border-dashed">
             <CardContent className="flex flex-col items-center px-4 py-8 text-center sm:px-6 sm:py-10">

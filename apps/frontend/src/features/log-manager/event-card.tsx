@@ -74,7 +74,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                     onChange={(e) => setColor(e.target.value)}
                 />
                 <span className="font-mono">{color.toUpperCase()}</span>
-                <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-600 dark:text-amber-400' : ''}`}>
+                <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-700 dark:text-amber-400' : ''}`}>
                     {mutation.isPending ? 'กำลังบันทึก…' : !event.enabled ? 'ปิดอยู่' : !event.channelId ? 'รอเลือกห้อง' : 'เปิดใช้งาน'}
                 </span>
             </div>

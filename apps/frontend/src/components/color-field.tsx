@@ -13,7 +13,7 @@ export function ColorField({ value, onChange, className, id }: { value: string; 
             <input
                 type="color"
                 aria-label="เลือกสี"
-                className="h-8 w-10 shrink-0 cursor-pointer rounded-md border border-input bg-transparent p-0.5"
+                className="h-9 w-11 shrink-0 cursor-pointer rounded-md border border-input bg-transparent p-1"
                 value={HEX_COLOR_RE.test(value) ? value : '#000000'}
                 onChange={(e) => onChange(e.target.value.toLowerCase())}
             />

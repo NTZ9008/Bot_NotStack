@@ -143,9 +143,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                             <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
                                         </linearGradient>
                                     </defs>
-                                    <CartesianGrid vertical={false} stroke="#1e2638" />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                    <YAxis tickLine={false} axisLine={false} width={38} allowDecimals={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                    <CartesianGrid vertical={false} stroke="var(--border)" />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
+                                    <YAxis tickLine={false} axisLine={false} width={38} allowDecimals={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                                     <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                     <ChartLegend content={<ChartLegendContent />} />
                                     {enabled.has('messages') && (
@@ -187,9 +187,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 </AreaChart>
                             ) : (
                                 <BarChart data={timelineData} margin={{ left: -12, right: 10, top: 8 }}>
-                                    <CartesianGrid vertical={false} stroke="#1e2638" />
-                                    <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                    <YAxis tickLine={false} axisLine={false} width={38} allowDecimals={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                    <CartesianGrid vertical={false} stroke="var(--border)" />
+                                    <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
+                                    <YAxis tickLine={false} axisLine={false} width={38} allowDecimals={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                                     <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                     <ChartLegend content={<ChartLegendContent />} />
                                     {enabled.has('messages') && <Bar dataKey="messages" fill="#10b981" radius={[4, 4, 0, 0]} />}
@@ -223,15 +223,15 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 ) : (
                                     <ChartContainer config={VOICE_CONFIG} className="h-[260px] w-full">
                                         <BarChart data={voiceData} layout="vertical" margin={{ left: 6, right: 16 }}>
-                                            <CartesianGrid horizontal={false} stroke="#1e2638" />
-                                            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                            <CartesianGrid horizontal={false} stroke="var(--border)" />
+                                            <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                                             <YAxis
                                                 type="category"
                                                 dataKey="label"
                                                 width={130}
                                                 tickLine={false}
                                                 axisLine={false}
-                                                tick={{ fill: '#cbd5e1', fontSize: 11 }}
+                                                tick={{ fill: 'var(--foreground)', fontSize: 11 }}
                                             />
                                             <ChartTooltip
                                                 content={
@@ -307,15 +307,15 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 ) : (
                                     <ChartContainer config={PR_CONFIG} className="h-[260px] w-full">
                                         <BarChart data={prData} layout="vertical" margin={{ left: 6, right: 16 }}>
-                                            <CartesianGrid horizontal={false} stroke="#1e2638" />
-                                            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                            <CartesianGrid horizontal={false} stroke="var(--border)" />
+                                            <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                                             <YAxis
                                                 type="category"
                                                 dataKey="label"
                                                 width={140}
                                                 tickLine={false}
                                                 axisLine={false}
-                                                tick={{ fill: '#cbd5e1', fontSize: 11 }}
+                                                tick={{ fill: 'var(--foreground)', fontSize: 11 }}
                                             />
                                             <ChartTooltip content={<ChartTooltipContent />} />
                                             <ChartLegend content={<ChartLegendContent />} />
@@ -346,9 +346,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                     <CardContent>
                         <ChartContainer config={DEVOPS_CONFIG} className="h-[220px] w-full">
                             <BarChart data={timelineData} margin={{ left: -12, right: 10 }}>
-                                <CartesianGrid vertical={false} stroke="#1e2638" />
-                                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                <YAxis tickLine={false} axisLine={false} width={36} allowDecimals={false} tick={{ fill: '#94a3b8', fontSize: 11 }} />
+                                <CartesianGrid vertical={false} stroke="var(--border)" />
+                                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={20} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
+                                <YAxis tickLine={false} axisLine={false} width={36} allowDecimals={false} tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }} />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <ChartLegend content={<ChartLegendContent />} />
                                 <Bar dataKey="grafanaAlerts" fill="#0ea5e9" radius={[3, 3, 0, 0]} />

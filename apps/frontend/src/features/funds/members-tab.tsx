@@ -209,7 +209,12 @@ export function MembersTab({
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button variant="outline" className="w-full shrink-0 sm:w-auto" disabled={!roleId || add.isPending} onClick={() => add.mutate({ roleId })}>
+                            <Button
+                                variant="outline"
+                                className="w-full shrink-0 sm:w-auto"
+                                disabled={!roleId || add.isPending}
+                                onClick={() => add.mutate({ roleId })}
+                            >
                                 {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} เพิ่มทั้งยศ
                             </Button>
                         </div>
@@ -307,9 +312,7 @@ export function MembersTab({
                                             />
                                             <span>เลือกทั้งหมดในรายการ ({filteredMembers.length} คน)</span>
                                         </label>
-                                        {validSelectedIds.length > 0 && (
-                                            <span className="font-semibold text-primary">เลือก {validSelectedIds.length} คน</span>
-                                        )}
+                                        {validSelectedIds.length > 0 && <span className="font-semibold text-primary">เลือก {validSelectedIds.length} คน</span>}
                                     </div>
                                 )}
 
@@ -426,117 +429,117 @@ export function MembersTab({
 
                             {/* มุมมองตารางสำหรับหน้าจอแท็บเล็ตและเดสก์ท็อป (md+) */}
                             <div className="hidden overflow-x-auto rounded-xl border md:block">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/40 text-xs text-muted-foreground">
-                                    <tr>
-                                        {!topic.closed && (
-                                            <th className="w-9 px-3 py-2.5 text-center">
-                                                <Checkbox
-                                                    checked={allFilteredSelected}
-                                                    onCheckedChange={toggleSelectAllFiltered}
-                                                    aria-label="เลือกทั้งหมดในรายการ"
-                                                />
-                                            </th>
-                                        )}
-                                        <th className="px-3 py-2.5 text-left font-medium">ชื่อสมาชิก</th>
-                                        <th className="px-3 py-2.5 text-left font-medium">ต้องจ่าย (กดแก้ได้)</th>
-                                        <th className="px-3 py-2.5 text-right font-medium">จ่ายแล้ว (กดแก้ได้)</th>
-                                        <th className="px-3 py-2.5 text-right font-medium">คงค้าง</th>
-                                        <th className="px-3 py-2.5 text-left font-medium">สถานะ</th>
-                                        <th className="px-3 py-2.5 text-right font-medium">จัดการ</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredMembers.map((m) => {
-                                        const isPayingThis = payingMemberId === m.id;
-                                        const isSelected = validSelectedIds.includes(m.id);
-                                        const payCount = paymentCountByMember.get(m.id) ?? 0;
+                                <table className="w-full text-sm">
+                                    <thead className="bg-muted/40 text-xs text-muted-foreground">
+                                        <tr>
+                                            {!topic.closed && (
+                                                <th className="w-9 px-3 py-2.5 text-center">
+                                                    <Checkbox
+                                                        checked={allFilteredSelected}
+                                                        onCheckedChange={toggleSelectAllFiltered}
+                                                        aria-label="เลือกทั้งหมดในรายการ"
+                                                    />
+                                                </th>
+                                            )}
+                                            <th className="px-3 py-2.5 text-left font-medium">ชื่อสมาชิก</th>
+                                            <th className="px-3 py-2.5 text-left font-medium">ต้องจ่าย (กดแก้ได้)</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">จ่ายแล้ว (กดแก้ได้)</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">คงค้าง</th>
+                                            <th className="px-3 py-2.5 text-left font-medium">สถานะ</th>
+                                            <th className="px-3 py-2.5 text-right font-medium">จัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredMembers.map((m) => {
+                                            const isPayingThis = payingMemberId === m.id;
+                                            const isSelected = validSelectedIds.includes(m.id);
+                                            const payCount = paymentCountByMember.get(m.id) ?? 0;
 
-                                        return (
-                                            <tr key={m.id} className={cn('border-t transition-colors hover:bg-muted/20', isSelected && 'bg-primary/5')}>
-                                                {!topic.closed && (
-                                                    <td className="px-3 py-2.5 text-center">
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            onCheckedChange={() => toggleMember(m.id)}
-                                                            aria-label={`เลือก ${m.displayName}`}
-                                                        />
-                                                    </td>
-                                                )}
-                                                <td className="px-3 py-2.5">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <img src={m.avatar} alt="" className="size-8 rounded-full object-cover ring-1 ring-border" />
-                                                        <div className="min-w-0">
-                                                            <p className="truncate font-medium">{m.displayName}</p>
-                                                            <div className="flex items-center gap-1.5">
-                                                                <p className="truncate font-mono text-[11px] text-muted-foreground">{m.userId}</p>
-                                                                {payCount > 0 && onViewHistory && (
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => onViewHistory(m.id)}
-                                                                        className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[10px] text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
-                                                                        title="ดูประวัติการโอนของคนนี้"
-                                                                    >
-                                                                        <History className="size-2.5" /> {payCount} ครั้ง
-                                                                    </button>
-                                                                )}
+                                            return (
+                                                <tr key={m.id} className={cn('border-t transition-colors hover:bg-muted/20', isSelected && 'bg-primary/5')}>
+                                                    {!topic.closed && (
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <Checkbox
+                                                                checked={isSelected}
+                                                                onCheckedChange={() => toggleMember(m.id)}
+                                                                aria-label={`เลือก ${m.displayName}`}
+                                                            />
+                                                        </td>
+                                                    )}
+                                                    <td className="px-3 py-2.5">
+                                                        <div className="flex items-center gap-2.5">
+                                                            <img src={m.avatar} alt="" className="size-8 rounded-full object-cover ring-1 ring-border" />
+                                                            <div className="min-w-0">
+                                                                <p className="truncate font-medium">{m.displayName}</p>
+                                                                <div className="flex items-center gap-1.5">
+                                                                    <p className="truncate font-mono text-[11px] text-muted-foreground">{m.userId}</p>
+                                                                    {payCount > 0 && onViewHistory && (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => onViewHistory(m.id)}
+                                                                            className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.2 text-[10px] text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                                                                            title="ดูประวัติการโอนของคนนี้"
+                                                                        >
+                                                                            <History className="size-2.5" /> {payCount} ครั้ง
+                                                                        </button>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-3 py-2.5">
-                                                    <TargetCell topic={topic} member={m} />
-                                                </td>
-                                                <td className="px-3 py-2.5 text-right">
-                                                    <PaidCell topic={topic} member={m} />
-                                                </td>
-                                                <td
-                                                    className={cn(
-                                                        'px-3 py-2.5 text-right tabular-nums',
-                                                        m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
-                                                    )}
-                                                >
-                                                    {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
-                                                </td>
-                                                <td className="px-3 py-2.5">
-                                                    <Badge variant="outline" className={STATUS_LABEL[m.status].className}>
-                                                        {STATUS_LABEL[m.status].text}
-                                                    </Badge>
-                                                </td>
-                                                <td className="px-3 py-2.5">
-                                                    <div className="flex justify-end gap-1">
-                                                        <Button size="xs" variant="outline" disabled={topic.closed} onClick={() => onPay(m)}>
-                                                            <Banknote /> รับเงิน
-                                                        </Button>
-                                                        {m.remaining > 0 && (
-                                                            <Button
-                                                                size="xs"
-                                                                variant="secondary"
-                                                                className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
-                                                                disabled={topic.closed || payFull.isPending}
-                                                                onClick={() => payFull.mutate(m)}
-                                                                title={`บันทึกรับยอดคงค้าง ${formatBaht(m.remaining)}`}
-                                                            >
-                                                                {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} จ่ายครบ
-                                                            </Button>
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        <TargetCell topic={topic} member={m} />
+                                                    </td>
+                                                    <td className="px-3 py-2.5 text-right">
+                                                        <PaidCell topic={topic} member={m} />
+                                                    </td>
+                                                    <td
+                                                        className={cn(
+                                                            'px-3 py-2.5 text-right tabular-nums',
+                                                            m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
                                                         )}
-                                                        <Button
-                                                            size="icon-xs"
-                                                            variant="ghost"
-                                                            aria-label="ลบคน"
-                                                            title="ลบออกจากหัวข้อ"
-                                                            disabled={topic.closed}
-                                                            onClick={() => void remove(m)}
-                                                        >
-                                                            <Trash2 className="text-destructive" />
-                                                        </Button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                                    >
+                                                        {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        <Badge variant="outline" className={STATUS_LABEL[m.status].className}>
+                                                            {STATUS_LABEL[m.status].text}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="px-3 py-2.5">
+                                                        <div className="flex justify-end gap-1">
+                                                            <Button size="xs" variant="outline" disabled={topic.closed} onClick={() => onPay(m)}>
+                                                                <Banknote /> รับเงิน
+                                                            </Button>
+                                                            {m.remaining > 0 && (
+                                                                <Button
+                                                                    size="xs"
+                                                                    variant="secondary"
+                                                                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                                    disabled={topic.closed || payFull.isPending}
+                                                                    onClick={() => payFull.mutate(m)}
+                                                                    title={`บันทึกรับยอดคงค้าง ${formatBaht(m.remaining)}`}
+                                                                >
+                                                                    {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} จ่ายครบ
+                                                                </Button>
+                                                            )}
+                                                            <Button
+                                                                size="icon-xs"
+                                                                variant="ghost"
+                                                                aria-label="ลบคน"
+                                                                title="ลบออกจากหัวข้อ"
+                                                                disabled={topic.closed}
+                                                                onClick={() => void remove(m)}
+                                                            >
+                                                                <Trash2 className="text-destructive" />
+                                                            </Button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </>
                     )}

@@ -154,7 +154,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                         : 'border-border bg-background hover:border-border',
                                 )}
                             >
-                                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-amber-600">
+                                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-300 bg-white text-amber-700">
                                     <Sun className="size-4" />
                                 </span>
                                 <div>

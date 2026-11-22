@@ -81,7 +81,7 @@ function LogManagerPage() {
                                 พร้อมส่ง {ready} / {data.events.length} ประเภท
                             </span>
                             {unconfigured > 0 && (
-                                <Badge variant="outline" className="text-amber-600 dark:text-amber-400">
+                                <Badge variant="outline" className="text-amber-700 dark:text-amber-400">
                                     รอเลือกห้อง {unconfigured} ประเภท
                                 </Badge>
                             )}

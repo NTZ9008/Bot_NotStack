@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useT } from '@/lib/i18n';
 import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { Check, ChevronsUpDown, LayoutGrid, Plus } from '@/components/icons';
 import { guildQuery, guildsQuery } from '@/api/guilds';
@@ -23,6 +24,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath });
     const navigate = useNavigate();
     const { isMobile, setOpenMobile } = useSidebar();
+    const t = useT();
 
     const go = (id: string) => {
         if (isMobile) setOpenMobile(false);
@@ -32,7 +34,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
 
     return (
         <div className="flex flex-col gap-1.5">
-            <p className="px-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">เซิร์ฟเวอร์</p>
+            <p className="px-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">{t('เซิร์ฟเวอร์')}</p>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <DropdownMenu>
@@ -40,24 +42,24 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                             <SidebarMenuButton
                                 size="lg"
                                 className="border border-input bg-background hover:bg-background data-[state=open]:border-ring group-data-[collapsible=icon]:border-0"
-                                tooltip="เลือกเซิร์ฟเวอร์"
+                                tooltip={t('เลือกเซิร์ฟเวอร์')}
                             >
                                 {current ? <GuildIcon guild={current} /> : <LayoutGrid className="mx-1.5 size-5! shrink-0 text-muted-foreground" />}
                                 <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                    <span className="truncate text-sm font-medium">{current?.name ?? 'เลือกเซิร์ฟเวอร์'}</span>
+                                    <span className="truncate text-sm font-medium">{current?.name ?? t('เลือกเซิร์ฟเวอร์')}</span>
                                     <span className="truncate text-xs text-muted-foreground">
                                         {current
                                             ? current.access === 'manage'
-                                                ? 'จัดการได้'
-                                                : 'ดูอันดับได้อย่างเดียว'
-                                            : `${list?.guilds.length ?? 0} เซิร์ฟเวอร์`}
+                                                ? t('จัดการได้')
+                                                : t('ดูอันดับได้อย่างเดียว')
+                                            : t('{count} เซิร์ฟเวอร์', { count: list?.guilds.length ?? 0 })}
                                     </span>
                                 </div>
                                 <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
                             </SidebarMenuButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-60" align="start" side={isMobile ? 'bottom' : 'right'}>
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">เซิร์ฟเวอร์</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">{t('เซิร์ฟเวอร์')}</DropdownMenuLabel>
                             {list?.guilds.map((guild) => (
                                 <DropdownMenuItem key={guild.id} onSelect={() => go(guild.id)} className="gap-2">
                                     <GuildIcon guild={guild} className="size-6 rounded-lg text-[10px]" />
@@ -65,7 +67,9 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                                     {guild.id === guildId && <Check className="ml-auto size-4" />}
                                 </DropdownMenuItem>
                             ))}
-                            {list && list.guilds.length === 0 && <p className="px-2 py-1.5 text-xs text-muted-foreground">ยังไม่มีเซิร์ฟเวอร์ที่เข้าถึงได้</p>}
+                            {list && list.guilds.length === 0 && (
+                                <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('ยังไม่มีเซิร์ฟเวอร์ที่เข้าถึงได้')}</p>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onSelect={() => {
@@ -73,12 +77,12 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                                     void navigate({ to: '/servers' });
                                 }}
                             >
-                                <LayoutGrid /> ดูเซิร์ฟเวอร์ทั้งหมด
+                                <LayoutGrid /> {t('ดูเซิร์ฟเวอร์ทั้งหมด')}
                             </DropdownMenuItem>
                             {list?.inviteUrl && (
                                 <DropdownMenuItem asChild>
                                     <a href={list.inviteUrl} target="_blank" rel="noopener noreferrer">
-                                        <Plus /> เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ
+                                        <Plus /> {t('เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ')}
                                     </a>
                                 </DropdownMenuItem>
                             )}
@@ -91,7 +95,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                 onClick={() => isMobile && setOpenMobile(false)}
                 className="px-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground group-data-[collapsible=icon]:hidden"
             >
-                ดูเซิร์ฟเวอร์ทั้งหมด
+                {t('ดูเซิร์ฟเวอร์ทั้งหมด')}
             </Link>
         </div>
     );

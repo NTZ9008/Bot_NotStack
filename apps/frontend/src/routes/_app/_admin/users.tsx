@@ -281,7 +281,7 @@ function UsersPage() {
             cell: ({ row: { original: u } }) => (
                 <div className="flex flex-col items-start gap-1">
                     {u.hasPassword && <Badge variant="outline">🔑 {u.username}</Badge>}
-                    {u.discordId && <Badge className="bg-[#5865F2]/20 text-[#c9cdfb]">Discord @{u.discordUsername}</Badge>}
+                    {u.discordId && <Badge className="bg-[#5865F2]/15 text-[#4752C4] dark:bg-[#5865F2]/20 dark:text-[#c9cdfb]">Discord @{u.discordUsername}</Badge>}
                 </div>
             ),
         },

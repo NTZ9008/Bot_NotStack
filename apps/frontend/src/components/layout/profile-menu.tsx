@@ -1,4 +1,5 @@
 import { replaceSession } from '@/lib/session';
+import { useT } from '@/lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { ChevronsUpDown, CircleUser, LogOut } from '@/components/icons';
@@ -23,11 +24,12 @@ export function useLogout(): () => Promise<void> {
     const confirm = useConfirm();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const t = useT();
     return async () => {
         const ok = await confirm({
-            title: 'ยืนยันการออกจากระบบ?',
-            description: 'คุณต้องการออกจากระบบ Dashboard ใช่หรือไม่',
-            confirmText: 'ออกจากระบบ',
+            title: t('ยืนยันการออกจากระบบ?'),
+            description: t('คุณต้องการออกจากระบบ Dashboard ใช่หรือไม่'),
+            confirmText: t('ออกจากระบบ'),
             destructive: true,
         });
         if (!ok) return;
@@ -42,6 +44,7 @@ export function ProfileMenu() {
     const { user } = useAuth();
     const logout = useLogout();
     const { isMobile, setOpenMobile } = useSidebar();
+    const t = useT();
 
     return (
         <SidebarMenu>
@@ -62,19 +65,19 @@ export function ProfileMenu() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" side={isMobile ? 'bottom' : 'right'} className="w-56">
                         <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                            <span className="truncate">ทางลัด</span>
+                            <span className="truncate">{t('ทางลัด')}</span>
                             <RoleBadge role={user.role} />
                         </DropdownMenuLabel>
                         <DropdownMenuItem asChild>
                             <Link to="/account" onClick={() => isMobile && setOpenMobile(false)}>
                                 <CircleUser />
-                                บัญชีของฉัน
+                                {t('บัญชีของฉัน')}
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>
                             <LogOut />
-                            ออกจากระบบ
+                            {t('ออกจากระบบ')}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

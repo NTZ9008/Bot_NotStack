@@ -26,10 +26,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
     const [showPreview, setShowPreview] = useState(false);
 
     const unpaidMembers = useMemo(() => topic.members.filter((m) => m.status !== 'paid'), [topic.members]);
-    const previewUrl = useMemo(
-        () => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt),
-        [guildId, topic.id, topic.updatedAt],
-    );
+    const previewUrl = useMemo(() => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt), [guildId, topic.id, topic.updatedAt]);
 
     const saveChannel = useMutation({
         mutationFn: (reportChannelId: string) => fundApi.update(guildId, topic.id, { reportChannelId }),
@@ -64,9 +61,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             />
                         </div>
                         {topic.reportChannelId && (
-                            <span className="hidden text-xs text-muted-foreground xl:inline">
-                                ส่งเข้า {channelLabel(textChannels, topic.reportChannelId)}
-                            </span>
+                            <span className="hidden text-xs text-muted-foreground xl:inline">ส่งเข้า {channelLabel(textChannels, topic.reportChannelId)}</span>
                         )}
                     </div>
 
@@ -116,12 +111,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                         )}
 
                         <div className="dark overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
-                            <img
-                                src={previewUrl}
-                                alt={`รายงานการเก็บเงิน: ${topic.name}`}
-                                className="h-auto w-full max-w-3xl object-contain"
-                                loading="lazy"
-                            />
+                            <img src={previewUrl} alt={`รายงานการเก็บเงิน: ${topic.name}`} className="h-auto w-full max-w-3xl object-contain" loading="lazy" />
                         </div>
                     </div>
                 )}

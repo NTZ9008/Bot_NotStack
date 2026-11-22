@@ -1,4 +1,5 @@
 import type { ActivityStats } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -16,7 +17,6 @@ import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -127,7 +127,12 @@ function Tables({ data }: { data: ActivityStats }) {
                     <CardTitle className="text-base">อันดับผู้ใช้ที่เคลื่อนไหวมากสุด</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <DataTable label="อันดับผู้ใช้ที่เคลื่อนไหวมากสุด" columns={topUserColumns} data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
+                    <DataTable
+                        label="อันดับผู้ใช้ที่เคลื่อนไหวมากสุด"
+                        columns={topUserColumns}
+                        data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
+                        empty={empty}
+                    />
                 </CardContent>
             </Card>
             <Card>
@@ -135,7 +140,12 @@ function Tables({ data }: { data: ActivityStats }) {
                     <CardTitle className="text-base">เวลาอยู่ในห้องเสียงมากสุด</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <DataTable label="เวลาอยู่ในห้องเสียงมากสุด" columns={voiceUserColumns} data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
+                    <DataTable
+                        label="เวลาอยู่ในห้องเสียงมากสุด"
+                        columns={voiceUserColumns}
+                        data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
+                        empty={empty}
+                    />
                 </CardContent>
             </Card>
             <Card>
@@ -210,7 +220,10 @@ function OverviewPage() {
                 <Card className="transition-colors hover:border-highlight/50 hover:bg-highlight/5">
                     <CardContent className="flex items-center gap-3 py-4">
                         <Bot className="size-5 text-highlight" />
-                        <div><div className="font-medium">ตั้งค่า AI Chat</div><p className="text-sm text-muted-foreground">เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage</p></div>
+                        <div>
+                            <div className="font-medium">ตั้งค่า AI Chat</div>
+                            <p className="text-sm text-muted-foreground">เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage</p>
+                        </div>
                     </CardContent>
                 </Card>
             </Link>
@@ -265,20 +278,22 @@ function OverviewPage() {
                         <div className="flex flex-wrap items-center gap-2">
                             <Label className="gap-2">
                                 ตั้งแต่{' '}
-                                <Input
-                                    type="datetime-local"
+                                <DateTimeInput
+                                    mode="datetime"
+
                                     className="w-56"
                                     value={custom.from}
-                                    onChange={(e) => setCustom((c) => ({ ...c, from: e.target.value }))}
+                                    onValueChange={(v) => setCustom((c) => ({ ...c, from: v }))}
                                 />
                             </Label>
                             <Label className="gap-2">
                                 ถึง{' '}
-                                <Input
-                                    type="datetime-local"
+                                <DateTimeInput
+                                    mode="datetime"
+
                                     className="w-56"
                                     value={custom.to}
-                                    onChange={(e) => setCustom((c) => ({ ...c, to: e.target.value }))}
+                                    onValueChange={(v) => setCustom((c) => ({ ...c, to: v }))}
                                 />
                             </Label>
                             <Button onClick={() => setRange(rangeFromPreset('custom', custom))}>ดูข้อมูล</Button>

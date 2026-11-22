@@ -1,4 +1,5 @@
 import { formatBaht, roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
+import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowRight, Calendar, CheckCircle2, Loader2 } from '@/components/icons';
 import { useEffect, useMemo, useState } from 'react';
@@ -281,13 +282,15 @@ export function PaymentDialog({
                                     <CheckCircle2 className="size-3" /> จ่ายครบตามเป้า!
                                 </Badge>
                             ) : (
-                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}</span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                                    คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}
+                                </span>
                             )}
                         </div>
                     )}
 
                     <Field label="วันเวลาที่รับเงิน" htmlFor="fund-pay-at">
-                        <Input id="fund-pay-at" type="datetime-local" value={paidAt} onChange={(e) => setPaidAt(e.target.value)} />
+                        <DateTimeInput mode="datetime" id="fund-pay-at" value={paidAt} onValueChange={(v) => setPaidAt(v)} />
                     </Field>
                     <Field label="หมายเหตุ (ไม่บังคับ)" htmlFor="fund-pay-note">
                         <Input id="fund-pay-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={200} placeholder="เช่น โอนผ่าน PromptPay" />

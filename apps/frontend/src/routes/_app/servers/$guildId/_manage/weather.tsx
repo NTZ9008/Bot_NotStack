@@ -235,7 +235,7 @@ function WeatherPage() {
                             <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
                                 <RotateCcw /> ยกเลิกการแก้ไข
                             </Button>
-                            <Button variant="secondary" className="text-amber-700 dark:text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
+                            <Button variant="secondary" className="text-amber-800 dark:text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
                                 {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} ส่งทดสอบ
                             </Button>
                         </div>

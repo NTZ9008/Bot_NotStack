@@ -209,7 +209,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                 <Plus />
                                 เพิ่มยศรางวัล
                             </Button>
-                            {draft.rewards.some((reward) => !reward.roleId) && <p className="text-xs text-amber-500">แถวที่ยังไม่เลือกยศจะถูกตัดทิ้งตอนบันทึก</p>}
+                            {draft.rewards.some((reward) => !reward.roleId) && <p className="text-xs text-amber-700 dark:text-amber-400">แถวที่ยังไม่เลือกยศจะถูกตัดทิ้งตอนบันทึก</p>}
                             <Field label="เมื่อได้ยศของเลเวลที่สูงขึ้น">
                                 <Segmented
                                     value={draft.stackRewards ? 'stack' : 'replace'}

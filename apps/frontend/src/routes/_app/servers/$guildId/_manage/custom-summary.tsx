@@ -1,4 +1,5 @@
 import { CUSTOM_SUMMARY_MODULES, type CustomSummaryRequestInput } from '@notstack/shared';
+import { useT } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Clock, Layers3, Sparkles } from '@/components/icons';
@@ -18,8 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/custom-summary')({
-    loader: ({ context, params }) =>
-        context.queryClient.ensureQueryData(customSummaryChannelsQuery(params.guildId)).catch(() => undefined),
+    loader: ({ context, params }) => context.queryClient.ensureQueryData(customSummaryChannelsQuery(params.guildId)).catch(() => undefined),
     component: CustomLogSummaryPage,
 });
 
@@ -71,6 +71,7 @@ function CustomSummaryLoadingSkeleton() {
 }
 
 function CustomLogSummaryPage() {
+    const t = useT();
     const guildId = useGuildId();
     const guild = useGuild();
     const { user } = useAuth();
@@ -167,7 +168,7 @@ function CustomLogSummaryPage() {
             <PageHeader
                 help="customSummary"
                 title="สร้างรายงานสรุป"
-                description={`สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ ${guild.name}`}
+                description={t('สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ {name}', { name: guild.name })}
             />
 
             <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">

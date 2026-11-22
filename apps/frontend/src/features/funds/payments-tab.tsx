@@ -151,7 +151,10 @@ export function PaymentsTab({
                         const days = p.periodStart && p.periodEnd ? calculateDays(p.periodStart, p.periodEnd) : 0;
                         const avatar = avatarByMemberId.get(p.memberId);
                         return (
-                            <li key={p.id} className="flex items-start gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-muted/20 sm:items-center sm:gap-3 sm:px-3.5">
+                            <li
+                                key={p.id}
+                                className="flex items-start gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-muted/20 sm:items-center sm:gap-3 sm:px-3.5"
+                            >
                                 {avatar ? (
                                     <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
                                 ) : (
@@ -170,10 +173,14 @@ export function PaymentsTab({
                                             +{formatBaht(p.amount)}
                                         </Badge>
                                         {p.periodStart && p.periodEnd && (
-                                            <Badge variant="outline" className="max-w-full gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary">
+                                            <Badge
+                                                variant="outline"
+                                                className="max-w-full gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary"
+                                            >
                                                 <Calendar className="size-3 shrink-0" />
                                                 <span className="truncate">
-                                                    งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} – {new Date(p.periodEnd).toLocaleDateString('th-TH')}
+                                                    งวด {new Date(p.periodStart).toLocaleDateString('th-TH')} –{' '}
+                                                    {new Date(p.periodEnd).toLocaleDateString('th-TH')}
                                                     {days > 0 && ` (${days} วัน)`}
                                                 </span>
                                             </Badge>

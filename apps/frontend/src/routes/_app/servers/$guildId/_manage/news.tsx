@@ -1,4 +1,5 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
+import { useT } from '@/lib/i18n';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, Send } from '@/components/icons';
@@ -36,6 +37,7 @@ function NewsPage() {
 }
 
 function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string }) {
+    const t = useT();
     const confirm = useConfirm();
     const [type, setType] = useState<NewsType>('general');
     const [color, setColor] = useState(NEWS_PRESETS.general.color);
@@ -99,12 +101,17 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
         });
     };
 
-    const set = (key: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
+    const set = (key: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+        setForm((f) => ({ ...f, [key]: e.target.value }));
     const imageOk = isHttpUrl(form.imageUrl.trim());
 
     return (
         <>
-            <PageHeader help="news" title="ส่งประกาศ" description={`ประกาศสำหรับเซิร์ฟเวอร์ ${guildName} — จัดรูปแบบข้อความและดูตัวอย่างก่อนส่งจริง`} />
+            <PageHeader
+                help="news"
+                title="ส่งประกาศ"
+                description={t('ประกาศสำหรับเซิร์ฟเวอร์ {name} — จัดรูปแบบข้อความและดูตัวอย่างก่อนส่งจริง', { name: guildName })}
+            />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
                     <CardContent className="space-y-4">
@@ -142,7 +149,13 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                             htmlFor="news-title"
                             hint={`Discord แสดงหัวข้อเป็นข้อความธรรมดา จัดตัวหนา/เอียงไม่ได้ · ${form.title.length}/${NEWS_LIMITS.title}`}
                         >
-                            <Input id="news-title" maxLength={NEWS_LIMITS.title} placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่..." value={form.title} onChange={set('title')} />
+                            <Input
+                                id="news-title"
+                                maxLength={NEWS_LIMITS.title}
+                                placeholder="ตัวอย่าง: แพตช์อัปเดตระบบใหม่..."
+                                value={form.title}
+                                onChange={set('title')}
+                            />
                         </Field>
                         <Field
                             label="รายละเอียด"
@@ -217,7 +230,10 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                 <div className="space-y-2 xl:sticky xl:top-20 xl:self-start">
                     <p className="text-sm text-muted-foreground">ตัวอย่างที่จะเห็นใน Discord</p>
                     <DiscordMessage>
-                        <div className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderLeftColor: HEX_COLOR_RE.test(color) ? color : NEWS_PRESETS[type].color }}>
+                        <div
+                            className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3"
+                            style={{ borderLeftColor: HEX_COLOR_RE.test(color) ? color : NEWS_PRESETS[type].color }}
+                        >
                             {form.title.trim() && (
                                 <p className="mb-1 font-semibold text-white">
                                     {NEWS_PRESETS[type].prefix} {form.title.trim()}

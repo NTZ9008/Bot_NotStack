@@ -206,9 +206,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                             size="xs"
                                             variant="outline"
                                             className="h-6 text-[11px]"
-                                            onClick={() => void copyText(accountDigits.replace(/[^\d]/g, ''), 'account', `เลขบัญชี/พร้อมเพย์ (${accountDigits})`)}
+                                            onClick={() =>
+                                                void copyText(accountDigits.replace(/[^\d]/g, ''), 'account', `เลขบัญชี/พร้อมเพย์ (${accountDigits})`)
+                                            }
                                         >
-                                            {copiedKey === 'account' ? <Check className="size-3 text-emerald-700 dark:text-emerald-400" /> : <Copy className="size-3" />}
+                                            {copiedKey === 'account' ? (
+                                                <Check className="size-3 text-emerald-700 dark:text-emerald-400" />
+                                            ) : (
+                                                <Copy className="size-3" />
+                                            )}
                                             คัดลอกเลข {accountDigits}
                                         </Button>
                                     )}
@@ -219,7 +225,11 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         className="h-6 text-[11px]"
                                         onClick={() => void copyText(topic.description, 'desc', 'รายละเอียดการโอน')}
                                     >
-                                        {copiedKey === 'desc' ? <Check className="size-3 text-emerald-700 dark:text-emerald-400" /> : <Copy className="size-3" />}
+                                        {copiedKey === 'desc' ? (
+                                            <Check className="size-3 text-emerald-700 dark:text-emerald-400" />
+                                        ) : (
+                                            <Copy className="size-3" />
+                                        )}
                                         คัดลอกข้อความ
                                     </Button>
                                 </div>
@@ -280,7 +290,11 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <StatTile
                             label="เป้าหมายรวม"
                             value={formatBaht(topic.target)}
-                            subtext={dailyRate ? `วันละ ${formatBaht(dailyRate)} · ${topic.memberCount} คน` : `คนละ ${formatBaht(topic.amountPerMember)} · ${topic.memberCount} คน`}
+                            subtext={
+                                dailyRate
+                                    ? `วันละ ${formatBaht(dailyRate)} · ${topic.memberCount} คน`
+                                    : `คนละ ${formatBaht(topic.amountPerMember)} · ${topic.memberCount} คน`
+                            }
                             icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
                             variant="summary"
                         />
@@ -296,11 +310,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <StatTile
                             label="คงค้างรวม"
                             value={formatBaht(remaining)}
-                            subtext={
-                                remaining > 0
-                                    ? `ค้างชำระ ${statusCounts.partial + statusCounts.unpaid} คน`
-                                    : 'ไม่มีค้างชำระ เก็บครบทุกคนแล้ว'
-                            }
+                            subtext={remaining > 0 ? `ค้างชำระ ${statusCounts.partial + statusCounts.unpaid} คน` : 'ไม่มีค้างชำระ เก็บครบทุกคนแล้ว'}
                             icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
                             valueClassName={remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
                             tone={remaining > 0 ? 'amber' : 'default'}
@@ -335,17 +345,34 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TopicTab)}>
                         <div className="mb-3 flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2">
                             <TabsList className="grid h-auto w-full grid-cols-3 sm:inline-flex sm:h-8 sm:w-fit">
-                                <TabsTrigger value="members" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger
+                                    value="members"
+                                    className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm"
+                                >
                                     <Users className="size-3.5 shrink-0" />
-                                    <span className="truncate"><span className="hidden sm:inline">รายชื่อ</span>สมาชิก</span>
-                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">{topic.memberCount}</Badge>
+                                    <span className="truncate">
+                                        <span className="hidden sm:inline">รายชื่อ</span>สมาชิก
+                                    </span>
+                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">
+                                        {topic.memberCount}
+                                    </Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="payments" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger
+                                    value="payments"
+                                    className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm"
+                                >
                                     <Receipt className="size-3.5 shrink-0" />
-                                    <span className="truncate">ประวัติ<span className="hidden sm:inline">รับเงิน</span></span>
-                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">{topic.payments.length}</Badge>
+                                    <span className="truncate">
+                                        ประวัติ<span className="hidden sm:inline">รับเงิน</span>
+                                    </span>
+                                    <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">
+                                        {topic.payments.length}
+                                    </Badge>
                                 </TabsTrigger>
-                                <TabsTrigger value="analytics" className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm">
+                                <TabsTrigger
+                                    value="analytics"
+                                    className="min-w-0 gap-1 overflow-hidden px-1.5 py-1.5 text-xs sm:gap-1.5 sm:px-2.5 sm:py-0.5 sm:text-sm"
+                                >
                                     <BarChart3 className="size-3.5 shrink-0" />
                                     <span className="truncate">
                                         <span className="hidden sm:inline">สรุปและ</span>กราฟ
