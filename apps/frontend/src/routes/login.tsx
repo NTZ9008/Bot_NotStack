@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { DiscordIcon } from '@/components/discord-icon';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { apiUrl, errorMessage } from '@/lib/api';
 import { SplashScreen } from '@/components/splash-screen';
 
@@ -38,6 +39,7 @@ function LoginPage() {
     const queryClient = useQueryClient();
     const { data: providers } = useQuery(providersQuery);
     const { data: info } = useQuery(appInfoQuery);
+    usePageMeta('/login');
 
     // ข้อความ error ที่ส่งกลับมาจาก Discord OAuth (/login?error=...)
     useEffect(() => {

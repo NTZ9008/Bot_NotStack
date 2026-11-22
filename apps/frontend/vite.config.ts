@@ -4,6 +4,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { tanstackRouter } from '@tanstack/router-plugin/vite';
 import react from '@vitejs/plugin-react';
 import { defaultClientConditions, defineConfig, loadEnv } from 'vite';
+import { PAGES, renderPageHtml } from './src/lib/seo';
 
 // ตอน dev หน้าเว็บรันที่ :5173 แล้วส่ง /api กับ /webhook ต่อไปที่ backend (:3035)
 // → cookie / การตรวจ Origin (กัน CSRF) ทำงานเหมือน production ที่ Cloudflare Worker ส่ง /api ต่อให้ backend
@@ -23,6 +24,23 @@ export default defineConfig(({ mode }) => {
             tanstackRouter({ target: 'react', autoCodeSplitting: true }),
             react(),
             tailwindcss(),
+            {
+                // หน้าสาธารณะได้ไฟล์ HTML ของตัวเอง (privacy.html → /privacy บน Cloudflare) ที่มี <head> และเนื้อหาของหน้านั้นจริง
+                // บอทค้นหาที่ไม่รัน JavaScript จะได้ไม่เห็นแค่ splash และ canonical ไม่ชี้ไปหน้าแรกทุกหน้า
+                name: 'seo-pages',
+                apply: 'build',
+                enforce: 'post', // ต้องรันหลัง vite:build-html ที่สร้าง index.html
+                generateBundle(_, bundle) {
+                    const index = bundle['index.html'];
+                    if (index?.type !== 'asset') return;
+                    const html = String(index.source);
+                    for (const path of Object.keys(PAGES) as (keyof typeof PAGES)[]) {
+                        const source = renderPageHtml(html, path);
+                        if (path === '/') index.source = source;
+                        else this.emitFile({ type: 'asset', fileName: `${path.slice(1)}.html`, source });
+                    }
+                },
+            },
             {
                 name: 'dashboard-performance',
                 transformIndexHtml() {

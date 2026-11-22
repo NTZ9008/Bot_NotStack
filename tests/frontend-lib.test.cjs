@@ -393,3 +393,16 @@ test('command palette guide walks through a partial XP command step by step', ()
     // ค้นหาหน้าธรรมดาไม่ขึ้นคำแนะนำ
     for (const text of ['', 'ตั้งค่า', 'ให้', 'voice', 'log boat']) assert.equal(commandGuide(text), null, text);
 });
+
+test('SEO prerender gives each public page its own head and crawlable body', () => {
+    const { renderPageHtml } = require('../apps/frontend/src/lib/seo.ts');
+    const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');
+    const privacy = renderPageHtml(html, '/privacy');
+    assert.match(privacy, /<link rel="canonical" href="https:\/\/bntdash\.arlifzs\.com\/privacy"/);
+    assert.match(privacy, /<meta property="og:url" content="https:\/\/bntdash\.arlifzs\.com\/privacy"/);
+    assert.match(privacy, /<title>นโยบายความเป็นส่วนตัว[^<]*<\/title>/);
+    assert.match(privacy, /<div id="root"><main class="seo-prerender"><h1>นโยบายความเป็นส่วนตัว<\/h1>/);
+    const home = renderPageHtml(html, '/');
+    assert.match(home, /<h2>กันคนป่วน — /);
+    assert.equal((home.match(/<h1>/g) ?? []).length, 1);
+});

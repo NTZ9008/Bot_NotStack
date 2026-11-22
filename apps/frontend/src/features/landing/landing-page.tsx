@@ -4,13 +4,13 @@ import { ArrowUpRight, Check, Menu, X } from 'lucide-react';
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { CommandSearch } from './command-search';
 import { LoyKrathong, LoyKrathongRaft, loyKrathongCrew } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
-import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { SystemStatus } from './system-status';
 import './landing.css';
@@ -716,12 +716,7 @@ export function LandingPage() {
     }, []);
     const featureNames = FEATURE_GROUPS.flatMap((group) => group.features.map((feature) => feature.title));
 
-    usePageMeta({
-        title: 'Bot_NotStack — บอท Discord ภาษาไทยพร้อมเว็บ Dashboard',
-        description:
-            'Bot_NotStack บอท Discord ภาษาไทยจากเซิร์ฟ NotStackOverflow กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล XP แจ้งอากาศ เช็ค PR/Jira ตั้งค่าผ่านเว็บ Dashboard ได้หมด',
-        path: '/',
-    });
+    usePageMeta('/');
 
     return (
         <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
