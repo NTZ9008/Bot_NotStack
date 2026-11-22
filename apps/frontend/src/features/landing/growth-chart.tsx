@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { formatNumber } from '@/lib/format';
 import { prefersReducedMotion, useInView } from './reveal';
+import { byLang, dateLocale, tr } from '../../lib/i18n';
 
 // ==========================================
 // 📈 กราฟการเติบโตของโปรเจกต์ — commit / PR สะสมรายสัปดาห์ จาก GET /api/growth (backend แคชข้อมูล GitHub 1 ชม.)
@@ -18,18 +19,18 @@ export const growthQuery = queryOptions({
 
 type Metric = 'commits' | 'prs';
 
-const SERIES: Record<Metric, { key: keyof GrowthPoint; label: string; color: string; fill?: boolean; dashed?: boolean }[]> = {
+const SERIES = byLang((): Record<Metric, { key: keyof GrowthPoint; label: string; color: string; fill?: boolean; dashed?: boolean }[]> => ({
     commits: [{ key: 'commits', label: 'Commit', color: '#818cf8', fill: true }],
     prs: [
-        { key: 'prs', label: 'PR ที่เปิด', color: '#38bdf8', fill: true },
-        { key: 'merged', label: 'PR ที่ merge แล้ว', color: '#c084fc', dashed: true },
+        { key: 'prs', label: tr('landing.seriesOpenedPrs'), color: '#38bdf8', fill: true },
+        { key: 'merged', label: tr('landing.seriesMergedPrs'), color: '#c084fc', dashed: true },
     ],
-};
+}));
 
 const W = 1000;
 const H = 280;
 
-const weekLabel = (week: string) => new Date(`${week}T00:00:00Z`).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const weekLabel = (week: string) => new Date(`${week}T00:00:00Z`).toLocaleDateString(dateLocale(), { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
 // ตัวเลขนับขึ้นเมื่อ active
 function CountUp({ value, active }: { value: number; active: boolean }) {
@@ -60,7 +61,7 @@ function Chart({ points, metric, active }: { points: GrowthPoint[]; metric: Metr
         let frame = requestAnimationFrame(() => (frame = requestAnimationFrame(() => setDrawn(true))));
         return () => cancelAnimationFrame(frame);
     }, [active]);
-    const series = SERIES[metric];
+    const series = SERIES()[metric];
     const max = Math.max(1, ...points.map((p) => Number(p[series[0].key])));
     const x = (i: number) => (points.length === 1 ? W / 2 : (i / (points.length - 1)) * W);
     const y = (v: number) => H - (v / max) * (H - 16);
@@ -81,7 +82,7 @@ function Chart({ points, metric, active }: { points: GrowthPoint[]; metric: Metr
         .filter((p, idx, all) => idx === 0 || p.month !== all[idx - 1].month)
         .map(({ i, month }) => ({
             left: (x(i) / W) * 100,
-            label: new Date(`${month}-01T00:00:00Z`).toLocaleDateString('th-TH', { month: 'short', timeZone: 'UTC' }),
+            label: new Date(`${month}-01T00:00:00Z`).toLocaleDateString(dateLocale(), { month: 'short', timeZone: 'UTC' }),
         }));
 
     const hovered = hover === null ? null : points[hover];
@@ -151,7 +152,7 @@ function Chart({ points, metric, active }: { points: GrowthPoint[]; metric: Metr
                             className="pointer-events-none absolute top-0 z-10 w-max rounded-md border bg-popover px-3 py-2 text-xs shadow-lg"
                             style={hover > points.length / 2 ? { right: `${100 - (x(hover) / W) * 100 + 1.5}%` } : { left: `${(x(hover) / W) * 100 + 1.5}%` }}
                         >
-                            <p className="mb-1 text-muted-foreground">สัปดาห์ของ {weekLabel(hovered.week)}</p>
+                            <p className="mb-1 text-muted-foreground">{tr('landing.weekOf', { 0: weekLabel(hovered.week) })}</p>
                             {series.map((s) => (
                                 <p key={s.label} className="flex items-center gap-2">
                                     <span className="size-2 rounded-full" style={{ background: s.color }} />
@@ -185,9 +186,7 @@ export function GrowthSection() {
             {isPending ? (
                 <div className="h-96 animate-pulse rounded-xl border bg-card/40" />
             ) : !stats || stats.points.length < 2 ? (
-                <p className="rounded-xl border px-5 py-10 text-center text-sm text-muted-foreground">
-                    ตอนนี้ยังดึงข้อมูลจาก GitHub ไม่ได้ ลองเข้ามาดูใหม่อีกที
-                </p>
+                <p className="rounded-xl border px-5 py-10 text-center text-sm text-muted-foreground">{tr('landing.growthUnavailable')}</p>
             ) : (
                 <GrowthBody stats={stats} active={active} />
             )}
@@ -199,13 +198,19 @@ function GrowthBody({ stats, active }: { stats: GrowthStats; active: boolean }) 
     const [metric, setMetric] = useState<Metric>('commits');
 
     const cards = [
-        { label: 'commit ทั้งหมด', value: stats.totals.commits, note: `+${formatNumber(stats.recent.commits)} ใน 30 วันล่าสุด` },
-        { label: 'pull request', value: stats.totals.prs, note: `+${formatNumber(stats.recent.prs)} ใน 30 วันล่าสุด` },
-        { label: 'merge แล้ว', value: stats.totals.merged, note: `${Math.round((stats.totals.merged / Math.max(1, stats.totals.prs)) * 100)}% ของ PR ทั้งหมด` },
+        { label: tr('landing.totalCommits'), value: stats.totals.commits, note: tr('landing.inLast30Days', { 0: formatNumber(stats.recent.commits) }) },
+        { label: 'pull request', value: stats.totals.prs, note: tr('landing.inLast30Days', { 0: formatNumber(stats.recent.prs) }) },
         {
-            label: 'ผู้ร่วมพัฒนา',
+            label: tr('landing.merged'),
+            value: stats.totals.merged,
+            note: tr('landing.percentOfPrs', { 0: Math.round((stats.totals.merged / Math.max(1, stats.totals.prs)) * 100) }),
+        },
+        {
+            label: tr('landing.contributors'),
             value: stats.totals.contributors,
-            note: `เริ่มโปรเจกต์ ${new Date(`${stats.points[0].week}T00:00:00Z`).toLocaleDateString('th-TH', { month: 'short', year: 'numeric', timeZone: 'UTC' })}`,
+            note: tr('landing.projectStarted', {
+                0: new Date(`${stats.points[0].week}T00:00:00Z`).toLocaleDateString(dateLocale(), { month: 'short', year: 'numeric', timeZone: 'UTC' }),
+            }),
         },
     ];
 
@@ -225,7 +230,7 @@ function GrowthBody({ stats, active }: { stats: GrowthStats; active: boolean }) 
 
             <div className="rounded-xl border p-4 sm:p-6">
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex gap-1 rounded-lg border p-1" role="group" aria-label="เลือกข้อมูลในกราฟ">
+                    <div className="flex gap-1 rounded-lg border p-1" role="group" aria-label={tr('landing.chooseChartData')}>
                         {(
                             [
                                 ['commits', 'Commit'],
@@ -244,9 +249,9 @@ function GrowthBody({ stats, active }: { stats: GrowthStats; active: boolean }) 
                         ))}
                     </div>
                     <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
-                        {SERIES[metric].map((s) => (
+                        {SERIES()[metric].map((s) => (
                             <span key={s.label} className="flex items-center gap-1.5">
-                                <span className="h-0.5 w-4 rounded" style={{ background: s.color }} /> {s.label} (สะสม)
+                                <span className="h-0.5 w-4 rounded" style={{ background: s.color }} /> {tr('landing.cumulative', { 0: s.label })}
                             </span>
                         ))}
                     </div>

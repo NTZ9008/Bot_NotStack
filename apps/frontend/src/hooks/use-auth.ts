@@ -6,6 +6,6 @@ import { meQuery } from '@/api/auth';
 // ผู้ใช้ที่ login อยู่ — ใช้ได้ในทุกหน้าภายใต้ layout _app (route guard โหลดไว้ให้แล้ว)
 export function useAuth(): { user: PublicUser; isAdmin: boolean; discordEnabled: boolean } {
     const { data } = useSuspenseQuery(meQuery);
-    if (!data) throw new Error(tr('ยังไม่ได้เข้าสู่ระบบ'));
+    if (!data) throw new Error(tr('common.notLoggedIn'));
     return { user: data.user, isAdmin: data.user.role === 'ADMIN', discordEnabled: data.discordEnabled };
 }

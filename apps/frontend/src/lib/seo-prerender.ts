@@ -5,39 +5,42 @@
 // ==========================================
 import type { Plugin } from 'vite';
 import { FEATURE_GROUPS } from '../features/landing/content';
+import { translate, type MessageKey } from './i18n';
 import { PAGES, SITE_ORIGIN, type PublicPath } from './seo';
 
 const escapeHtml = (text: string) => text.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
-const HOME_H1 = 'บอท Discord ที่ตั้งค่าบนเว็บ';
-const HOME_INTRO = 'บอทประจำเซิร์ฟ NotStackOverflow — กันคนป่วน เก็บเลเวล แจ้งอากาศ แจ้ง PR ตอนนี้เซิร์ฟคุณก็ใช้ได้';
+// HTML ล่วงหน้าเป็นภาษาไทยเสมอ (index.html lang="th")
+const th = (key: MessageKey) => escapeHtml(translate('th', key));
 
 const footerLinks = () =>
-    `<nav><a href="/">หน้าแรก</a> · <a href="/login">เข้าสู่ระบบ Dashboard</a> · <a href="/privacy">นโยบายความเป็นส่วนตัว</a> · <a href="/terms">ข้อกำหนดการใช้งาน</a></nav>`;
+    `<nav><a href="/">${th('layout.home')}</a> · <a href="/login">${th('seo.loginDashboard')}</a> · <a href="/privacy">${th('login.privacyPolicy')}</a> · <a href="/terms">${th('login.termsOfService')}</a></nav>`;
 
-const simpleBody = (heading: string, text: string) => () =>
-    `<main class="seo-prerender"><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(text)}</p>${footerLinks()}</main>`;
+const simpleBody = (heading: MessageKey, text: MessageKey) => () =>
+    `<main class="seo-prerender"><h1>${th(heading)}</h1><p>${th(text)}</p>${footerLinks()}</main>`;
 
 // HTML ล่วงหน้าใน #root — บอทที่ไม่รัน JavaScript ยังเห็นเนื้อหา; React แทนที่ทั้งหมดตอนโหลดเสร็จ (ใช้ตอน build เท่านั้น ไม่ติดไปกับ JS ของหน้าเว็บ)
 const BODIES: Record<PublicPath, () => string> = {
     '/': () =>
-        `<main class="seo-prerender"><h1>${escapeHtml(HOME_H1)}</h1><p>${escapeHtml(HOME_INTRO)}</p>` +
-        FEATURE_GROUPS.map(
-            (group) =>
-                `<section><h2>${escapeHtml(group.label)} — ${escapeHtml(group.intro)}</h2><ul>` +
-                group.features.map((f) => `<li><strong>${escapeHtml(f.title)}</strong>: ${escapeHtml(f.description)}</li>`).join('') +
-                `</ul></section>`,
-        ).join('') +
-        `<section><h2>เริ่มใช้ใน 3 ขั้นตอน</h2><ol><li>เชิญบอทเข้าเซิร์ฟ Discord</li><li>Login เข้า Dashboard ด้วยบัญชี Discord</li><li>เลือกห้อง แล้วเปิดสิ่งที่อยากใช้</li></ol></section>` +
+        `<main class="seo-prerender"><h1>${th('seo.homeH1')}</h1><p>${th('seo.homeIntro')}</p>` +
+        FEATURE_GROUPS()
+            .map(
+                (group) =>
+                    `<section><h2>${escapeHtml(group.label)} — ${escapeHtml(group.intro)}</h2><ul>` +
+                    group.features.map((f) => `<li><strong>${escapeHtml(f.title)}</strong>: ${escapeHtml(f.description)}</li>`).join('') +
+                    `</ul></section>`,
+            )
+            .join('') +
+        `<section><h2>${th('seo.stepsTitle')}</h2><ol><li>${th('seo.stepInvite')}</li><li>${th('seo.stepLogin')}</li><li>${th('landing.stepSetupText')}</li></ol></section>` +
         `${footerLinks()}</main>`,
-    '/privacy': simpleBody('นโยบายความเป็นส่วนตัว', 'ข้อมูลที่ Bot_NotStack จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน'),
-    '/terms': simpleBody('ข้อกำหนดการใช้งาน', 'ข้อกำหนดและเงื่อนไขการใช้งานบอท Discord Bot_NotStack และเว็บ Dashboard'),
-    '/login': simpleBody('เข้าสู่ระบบ Dashboard', 'Login ด้วยบัญชี Discord เพื่อตั้งค่าบอท Bot_NotStack ในเซิร์ฟเวอร์ของคุณ'),
+    '/privacy': simpleBody('seo.privacyH1', 'seo.privacyIntro'),
+    '/terms': simpleBody('seo.termsH1', 'seo.termsIntro'),
+    '/login': simpleBody('seo.loginDashboard', 'seo.loginIntro'),
 };
 
 /** เขียน title / description / canonical / Open Graph / Twitter ของหน้านั้นลงใน index.html ที่ build แล้ว พร้อมเนื้อหาล่วงหน้าใน #root */
 export function renderPageHtml(html: string, path: PublicPath): string {
-    const page = PAGES[path];
+    const page = { title: translate('th', PAGES[path].title), description: translate('th', PAGES[path].description) };
     const url = `${SITE_ORIGIN}${path}`;
     const meta: Record<string, string> = {
         description: page.description,

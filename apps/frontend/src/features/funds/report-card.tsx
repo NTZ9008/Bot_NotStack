@@ -13,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useGuildId } from '@/hooks/use-guild';
 import { onFundError, useFundRefresh } from './utils';
+import { tr } from '../../lib/i18n';
 
 // ==========================================
 // ส่งรายงานเข้า Discord (แถบกะทัดรัด + ดูตัวอย่างรูปการ์ด PNG ก่อนส่ง)
@@ -31,14 +32,14 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
     const saveChannel = useMutation({
         mutationFn: (reportChannelId: string) => fundApi.update(guildId, topic.id, { reportChannelId }),
         onSuccess: () => {
-            toast.success('บันทึกห้องรายงานแล้ว');
+            toast.success(tr('funds.reportChannelSaved'));
             void refresh();
         },
         onError: onFundError,
     });
     const send = useMutation({
         mutationFn: () => fundApi.sendReport(guildId, topic.id, { mentionUnpaid }),
-        onSuccess: (res) => toast.success(res.message ?? 'ส่งรูปการ์ดรายงานเข้า Discord แล้ว'),
+        onSuccess: (res) => toast.success(res.message ?? tr('funds.reportCardSentToDiscord')),
         onError: onFundError,
     });
 
@@ -49,40 +50,42 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
                         <div className="flex items-center gap-2 text-sm font-semibold">
                             <MessageSquareShare className="size-4 shrink-0 text-primary" />
-                            <span>ส่งรูปการ์ดรายงานเข้า Discord</span>
+                            <span>{tr('funds.sendReportCardToDiscord')}</span>
                         </div>
                         <div className="w-full min-w-0 sm:w-64">
                             <ChannelSelect
                                 channels={textChannels}
                                 value={topic.reportChannelId}
                                 onChange={(id) => saveChannel.mutate(id)}
-                                noneLabel="-- เลือกห้องส่งรายงาน --"
+                                noneLabel={tr('funds.pickReportChannel')}
                                 disabled={saveChannel.isPending}
                             />
                         </div>
                         {topic.reportChannelId && (
-                            <span className="hidden text-xs text-muted-foreground xl:inline">ส่งเข้า {channelLabel(textChannels, topic.reportChannelId)}</span>
+                            <span className="hidden text-xs text-muted-foreground xl:inline">
+                                {tr('funds.sendsTo', { 0: channelLabel(textChannels, topic.reportChannelId) })}
+                            </span>
                         )}
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
                         <Label className="flex cursor-pointer items-center gap-2 rounded-lg border bg-muted/20 px-2.5 py-1.5 text-xs font-normal hover:bg-muted/40">
                             <Checkbox checked={mentionUnpaid} onCheckedChange={(checked) => setMentionUnpaid(checked === true)} />
-                            <span>แท็กคนค้างชำระ</span>
+                            <span>{tr('funds.tagUnpaidMembers')}</span>
                             <Badge variant="outline" className="h-4 px-1 text-[10px] tabular-nums">
-                                {unpaidMembers.length} คน
+                                {tr('funds.peopleCount', { 0: unpaidMembers.length })}
                             </Badge>
                         </Label>
 
                         <div className="flex flex-1 items-center justify-end gap-2 sm:flex-initial">
                             <Button type="button" variant="ghost" size="sm" onClick={() => setShowPreview((v) => !v)}>
                                 {showPreview ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
-                                {showPreview ? 'ซ่อนตัวอย่างรูป' : 'ดูตัวอย่างรูปภาพ'}
+                                {showPreview ? tr('funds.hideImagePreview') : tr('funds.showImagePreview')}
                             </Button>
 
                             <Button size="sm" onClick={() => send.mutate()} disabled={send.isPending || !topic.reportChannelId}>
                                 {send.isPending ? <Loader2 className="animate-spin" /> : <Send />}
-                                {send.isPending ? 'กำลังส่ง...' : 'ส่งรายงาน'}
+                                {send.isPending ? tr('funds.sending') : tr('funds.sendReport')}
                             </Button>
                         </div>
                     </div>
@@ -92,26 +95,31 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                     <div className="dark rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
                             <span className="flex items-center gap-1.5">
-                                <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างการ์ดรายงาน · PNG
+                                <ImageIcon className="size-3.5 shrink-0" /> {tr('funds.reportCardPreviewPng')}
                             </span>
-                            {topic.reportChannelId && <span>ห้อง: {channelLabel(textChannels, topic.reportChannelId)}</span>}
+                            {topic.reportChannelId && <span>{tr('funds.channelIs', { 0: channelLabel(textChannels, topic.reportChannelId) })}</span>}
                         </div>
 
                         {mentionUnpaid && unpaidMembers.length > 0 && (
                             <p className="mb-2.5 flex flex-wrap items-center gap-1 rounded bg-[#5865f2]/15 px-2.5 py-1.5 text-[#c9cdfb]">
                                 <Bell className="size-3.5 shrink-0 text-[#dee0fc]" />
-                                <span>ยังจ่ายไม่ครบ:</span>
+                                <span>{tr('funds.notFullyPaid')}</span>
                                 {unpaidMembers.slice(0, 8).map((m) => (
                                     <span key={m.id} className="font-medium text-[#dee0fc]">
                                         @{m.displayName}
                                     </span>
                                 ))}
-                                {unpaidMembers.length > 8 && <span>และอีก {unpaidMembers.length - 8} คน</span>}
+                                {unpaidMembers.length > 8 && <span>{tr('funds.andMorePeople', { 0: unpaidMembers.length - 8 })}</span>}
                             </p>
                         )}
 
                         <div className="dark overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
-                            <img src={previewUrl} alt={`รายงานการเก็บเงิน: ${topic.name}`} className="h-auto w-full max-w-3xl object-contain" loading="lazy" />
+                            <img
+                                src={previewUrl}
+                                alt={tr('funds.fundReportAlt', { 0: topic.name })}
+                                className="h-auto w-full max-w-3xl object-contain"
+                                loading="lazy"
+                            />
                         </div>
                     </div>
                 )}

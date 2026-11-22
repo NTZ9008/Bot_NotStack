@@ -48,11 +48,7 @@ function AuditLogsPage() {
     const prioritize = usePreloadTasks(tasks);
     return (
         <>
-            <PageHeader
-                help="audit"
-                title={tr('ประวัติเซิร์ฟเวอร์')}
-                description={tr('ประวัติของเซิร์ฟเวอร์นี้ — ทั้งการตั้งค่าที่แก้ผ่าน Dashboard และเหตุการณ์ที่เกิดในเซิร์ฟเวอร์ Discord')}
-            />
+            <PageHeader help="audit" title={tr('common.serverHistory')} description={tr('auditLogs.thisServersHistorySettingsChangedIn')} />
             <Card>
                 <CardContent>
                     <Tabs
@@ -68,7 +64,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
                             >
-                                <LayoutDashboard /> {tr('การตั้งค่าบน Dashboard')}
+                                <LayoutDashboard /> {tr('auditLogs.dashboardSettings')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="discord"
@@ -76,7 +72,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:discord`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
                             >
-                                <BrandDiscord /> {tr('เหตุการณ์ในเซิร์ฟเวอร์ Discord')}
+                                <BrandDiscord /> {tr('auditLogs.discordServerEvents')}
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">

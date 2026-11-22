@@ -21,11 +21,14 @@ export function IdChoices({
     emptyHint?: string;
 }) {
     const [search, setSearch] = useState('');
-    const all = [...options, ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: tr('{0} (ไม่พบใน Discord)', { 0: id }) }))];
+    const all = [
+        ...options,
+        ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: tr('common.notFoundInDiscord', { 0: id }) })),
+    ];
     return (
         <details className="rounded-md border p-3">
             <summary className="cursor-pointer text-sm">
-                {title} {tr('· เลือก')} {values.length}
+                {title} {tr('common.select')} {values.length}
             </summary>
             <div className="my-2 flex flex-wrap gap-2">
                 {voiceIds && (
@@ -37,25 +40,25 @@ export function IdChoices({
                         onClick={() => {
                             const next = [...new Set([...values, ...voiceIds])];
                             if (next.length > 100) {
-                                toast.error(tr('เลือกได้สูงสุด 100 รายการ'), {
-                                    description: tr('หากต้องการให้กฎเสียงใช้ได้ทุกห้อง ให้ล้างการเลือกห้องของกฎนี้'),
+                                toast.error(tr('common.upTo100Items'), {
+                                    description: tr('common.toApplyTheVoiceRuleTo'),
                                 });
                                 return;
                             }
                             onChange(next);
                         }}
                     >
-                        {tr('เลือกห้องเสียงทั้งหมด')}
+                        {tr('common.selectAllVoiceChannels')}
                     </Button>
                 )}
                 <Button type="button" size="sm" variant="ghost" disabled={!values.length} onClick={() => onChange([])}>
-                    {tr('ล้างการเลือก')}
+                    {tr('common.clearSelection')}
                 </Button>
             </div>
             {emptyHint && <p className="mb-2 text-xs text-muted-foreground">{emptyHint}</p>}
             <Input
-                aria-label={tr('ค้นหา{0}', { 0: title })}
-                placeholder={tr('ค้นหาชื่อหรือ ID')}
+                aria-label={tr('common.search2', { 0: title })}
+                placeholder={tr('common.searchNameOrId')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="my-2"
@@ -74,7 +77,7 @@ export function IdChoices({
                             {o.name}
                         </label>
                     ))}
-                {!all.length && <p className="text-xs text-muted-foreground">{tr('ยังไม่มีรายการให้เลือก')}</p>}
+                {!all.length && <p className="text-xs text-muted-foreground">{tr('common.nothingToChooseYet')}</p>}
             </div>
         </details>
     );

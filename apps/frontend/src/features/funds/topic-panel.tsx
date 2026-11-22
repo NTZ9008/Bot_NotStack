@@ -67,7 +67,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
     const toggleClosed = useMutation({
         mutationFn: (closed: boolean) => fundApi.update(guildId, topicId, { closed }),
         onSuccess: (topic) => {
-            toast.success(topic.closed ? tr('ปิดการเก็บเงินแล้ว') : tr('เปิดการเก็บเงินอีกครั้ง'));
+            toast.success(topic.closed ? tr('funds.collectionClosed') : tr('funds.collectionReopened'));
             void refresh();
         },
         onError: onFundError,
@@ -96,10 +96,10 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
         try {
             await navigator.clipboard.writeText(text);
             setCopiedKey(key);
-            toast.success(tr('คัดลอก{0}แล้ว', { 0: label }));
+            toast.success(tr('common.copied', { 0: label }));
             setTimeout(() => setCopiedKey((prev) => (prev === key ? null : prev)), 2000);
         } catch {
-            toast.error(tr('ไม่สามารถคัดลอกข้อความได้'));
+            toast.error(tr('funds.couldntCopyTheText'));
         }
     };
 
@@ -108,12 +108,12 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
         try {
             // ส่งออกทันทีจากข้อมูลที่โหลดอยู่ในหน้าเว็บ (รวดเร็ว ไม่ติดปัญหา CORS/Session หมดอายุ)
             downloadFundCsv(topic);
-            toast.success(tr('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว'));
+            toast.success(tr('funds.csvDownloaded'));
         } catch {
             // Fallback เรียก API กรณีฉุกเฉิน
             try {
                 await fundApi.exportCsv(guildId, topicId);
-                toast.success(tr('ดาวน์โหลดไฟล์ CSV เรียบร้อยแล้ว'));
+                toast.success(tr('funds.csvDownloaded'));
             } catch (err) {
                 onFundError(err);
             }
@@ -124,15 +124,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
     const remove = async () => {
         const ok = await confirm({
-            title: tr('ลบหัวข้อเก็บเงิน?'),
-            description: tr('“{0}” พร้อมรายชื่อ {1} คนและรายการรับเงินทั้งหมดจะถูกลบถาวร', { 0: topic.name, 1: topic.memberCount }),
-            confirmText: tr('ลบหัวข้อ'),
+            title: tr('funds.deleteFundTopic2'),
+            description: tr('funds.withItsMembersAndAllPayments', { 0: topic.name, 1: topic.memberCount }),
+            confirmText: tr('funds.deleteTopic'),
             destructive: true,
         });
         if (!ok) return;
         try {
             await fundApi.remove(guildId, topic.id);
-            toast.success(tr('ลบหัวข้อแล้ว'));
+            toast.success(tr('funds.topicDeleted'));
             await refresh();
             onDeleted();
         } catch (err) {
@@ -156,11 +156,11 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             <span className="break-words sm:truncate">{topic.name}</span>
                             {topic.closed ? (
                                 <Badge variant="secondary">
-                                    <Lock /> {tr('ปิดแล้ว')}
+                                    <Lock /> {tr('funds.closed')}
                                 </Badge>
                             ) : isCompleted ? (
                                 <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
-                                    <CheckCircle2 /> {tr('เก็บครบตามเป้าแล้ว')}
+                                    <CheckCircle2 /> {tr('funds.targetReached')}
                                 </Badge>
                             ) : null}
                         </CardTitle>
@@ -170,14 +170,14 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                 <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 font-normal text-primary">
                                     <Calendar className="size-3 shrink-0" />
                                     <span className="truncate">
-                                        {tr('เก็บรายวัน วันละ')} {formatBaht(dailyRate)}
-                                        {topic.startDate && tr(' · เริ่ม {0}', { 0: new Date(topic.startDate).toLocaleDateString(dateLocale()) })}
+                                        {tr('funds.dailyCollectionPerDay')} {formatBaht(dailyRate)}
+                                        {topic.startDate && tr('funds.started', { 0: new Date(topic.startDate).toLocaleDateString(dateLocale()) })}
                                     </span>
                                 </Badge>
                             ) : (
                                 <Badge variant="outline" className="gap-1 font-normal">
                                     <Banknote className="size-3 shrink-0 text-muted-foreground" />
-                                    {tr('ยอดต่อคน')} {formatBaht(topic.amountPerMember)}
+                                    {tr('funds.perPerson3')} {formatBaht(topic.amountPerMember)}
                                 </Badge>
                             )}
 
@@ -212,7 +212,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                                 void copyText(
                                                     accountDigits.replace(/[^\d]/g, ''),
                                                     'account',
-                                                    tr('เลขบัญชี/พร้อมเพย์ ({0})', { 0: accountDigits }),
+                                                    tr('funds.accountPromptpay', { 0: accountDigits }),
                                                 )
                                             }
                                         >
@@ -221,7 +221,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                             ) : (
                                                 <Copy className="size-3" />
                                             )}
-                                            {tr('คัดลอกเลข')} {accountDigits}
+                                            {tr('funds.copyNumber')} {accountDigits}
                                         </Button>
                                     )}
                                     <Button
@@ -229,7 +229,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         size="xs"
                                         variant="ghost"
                                         className="h-6 text-[11px]"
-                                        onClick={() => void copyText(topic.description, 'desc', tr('รายละเอียดการโอน'))}
+                                        onClick={() => void copyText(topic.description, 'desc', tr('funds.transferDetails'))}
                                     >
                                         {copiedKey === 'desc' ? (
                                             <Check className="size-3 text-emerald-700 dark:text-emerald-400" />
@@ -237,7 +237,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                             <Copy className="size-3" />
                                         )}
 
-                                        {tr('คัดลอกข้อความ')}
+                                        {tr('funds.copyText')}
                                     </Button>
                                 </div>
                             </div>
@@ -251,10 +251,10 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             className="min-w-0 flex-1 sm:flex-initial"
                             onClick={() => void handleExport()}
                             disabled={exporting}
-                            title={tr('ดาวน์โหลดข้อมูลสรุป รายชื่อสมาชิก และประวัติการรับเงินเป็นไฟล์ CSV')}
+                            title={tr('funds.downloadTheSummaryMemberListAnd')}
                         >
                             {exporting ? <Loader2 className="animate-spin" /> : <Download />}
-                            {exporting ? tr('กำลังส่งออก...') : tr('ส่งออก CSV')}
+                            {exporting ? tr('funds.exporting') : tr('funds.exportCsv')}
                         </Button>
                         <Button
                             variant="outline"
@@ -263,18 +263,24 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             onClick={() => toggleClosed.mutate(!topic.closed)}
                             disabled={toggleClosed.isPending}
                         >
-                            {topic.closed ? <LockOpen /> : <Lock />} {topic.closed ? tr('เปิดอีกครั้ง') : tr('ปิดการเก็บ')}
+                            {topic.closed ? <LockOpen /> : <Lock />} {topic.closed ? tr('funds.reopen') : tr('funds.closeCollection')}
                         </Button>
                         <Button
                             variant="ghost"
                             size="icon-sm"
                             onClick={() => setEditOpen(true)}
-                            aria-label={tr('แก้ไขหัวข้อ')}
-                            title={tr('แก้ไขรายละเอียดหัวข้อ')}
+                            aria-label={tr('funds.editTopic')}
+                            title={tr('funds.editTopicDetails')}
                         >
                             <Pencil />
                         </Button>
-                        <Button variant="ghost" size="icon-sm" onClick={() => void remove()} aria-label={tr('ลบหัวข้อ')} title={tr('ลบหัวข้อเก็บเงิน')}>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => void remove()}
+                            aria-label={tr('funds.deleteTopic')}
+                            title={tr('funds.deleteFundTopic')}
+                        >
                             <Trash2 className="text-destructive" />
                         </Button>
                     </div>
@@ -285,7 +291,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                         <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 sm:flex-row sm:items-center">
                             <div className="flex items-start gap-2 sm:items-center">
                                 <Lock className="mt-0.5 size-4 shrink-0 sm:mt-0" />
-                                <span>{tr('หัวข้อนี้ปิดการเก็บเงินแล้ว — กด “เปิดอีกครั้ง” หากต้องการเพิ่ม/ลบคนหรือบันทึกรับเงินเพิ่ม')}</span>
+                                <span>{tr('funds.thisTopicIsClosedPressReopen')}</span>
                             </div>
                             <Button
                                 size="xs"
@@ -294,37 +300,39 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                 onClick={() => toggleClosed.mutate(false)}
                                 disabled={toggleClosed.isPending}
                             >
-                                <LockOpen className="size-3" /> {tr('เปิดอีกครั้ง')}
+                                <LockOpen className="size-3" /> {tr('funds.reopen')}
                             </Button>
                         </div>
                     )}
 
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">
                         <StatTile
-                            label={tr('เป้าหมายรวม')}
+                            label={tr('funds.totalTarget')}
                             value={formatBaht(topic.target)}
                             subtext={
                                 dailyRate
-                                    ? tr('วันละ {0} · {1} คน', { 0: formatBaht(dailyRate), 1: topic.memberCount })
-                                    : tr('คนละ {0} · {1} คน', { 0: formatBaht(topic.amountPerMember), 1: topic.memberCount })
+                                    ? tr('funds.perDayPeople', { 0: formatBaht(dailyRate), 1: topic.memberCount })
+                                    : tr('funds.eachPeople', { 0: formatBaht(topic.amountPerMember), 1: topic.memberCount })
                             }
                             icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
                             variant="summary"
                         />
                         <StatTile
-                            label={tr('เก็บได้แล้ว')}
+                            label={tr('funds.collected')}
                             value={formatBaht(topic.collected)}
-                            subtext={tr('เป้าหมาย {0}% · {1} รายการโอน', { 0: pct, 1: topic.payments.length })}
+                            subtext={tr('funds.ofTargetTransfers', { 0: pct, 1: topic.payments.length })}
                             icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
                             valueClassName="text-emerald-700 dark:text-emerald-400"
                             tone="emerald"
                             variant="summary"
                         />
                         <StatTile
-                            label={tr('คงค้างรวม')}
+                            label={tr('funds.totalOutstanding')}
                             value={formatBaht(remaining)}
                             subtext={
-                                remaining > 0 ? tr('ค้างชำระ {0} คน', { 0: statusCounts.partial + statusCounts.unpaid }) : tr('ไม่มีค้างชำระ เก็บครบทุกคนแล้ว')
+                                remaining > 0
+                                    ? tr('funds.peopleOweMoney', { 0: statusCounts.partial + statusCounts.unpaid })
+                                    : tr('funds.nothingOutstandingEveryoneHasPaid')
                             }
                             icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
                             valueClassName={remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
@@ -332,9 +340,9 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             variant="summary"
                         />
                         <StatTile
-                            label={tr('สถานะสมาชิก')}
-                            value={`${topic.paidCount} / ${topic.memberCount} คน`}
-                            subtext={tr('บางส่วน {0} · ยังไม่จ่าย {1}', { 0: statusCounts.partial, 1: statusCounts.unpaid })}
+                            label={tr('funds.memberStatus')}
+                            value={tr('funds.paidOfMembers', { 0: topic.paidCount, 1: topic.memberCount })}
+                            subtext={tr('funds.partialUnpaid', { 0: statusCounts.partial, 1: statusCounts.unpaid })}
                             icon={<Users className="size-3.5 text-sky-700 dark:text-sky-400" />}
                             tone="sky"
                             variant="summary"
@@ -343,7 +351,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                     <div className="space-y-1">
                         <div className="flex flex-wrap items-center justify-between gap-1 text-xs text-muted-foreground">
-                            <span>{tr('ความคืบหน้าการเก็บเงิน')}</span>
+                            <span>{tr('funds.collectionProgress')}</span>
                             <span className="font-semibold text-foreground tabular-nums">
                                 {formatBaht(topic.collected)} / {formatBaht(topic.target)} · {pct}%
                             </span>
@@ -366,8 +374,8 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                 >
                                     <Users className="size-3.5 shrink-0" />
                                     <span className="truncate">
-                                        <span className="hidden sm:inline">{tr('รายชื่อ')}</span>
-                                        {tr('สมาชิก')}
+                                        <span className="hidden sm:inline">{tr('funds.members')}</span>
+                                        {tr('common.members')}
                                     </span>
                                     <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">
                                         {topic.memberCount}
@@ -379,8 +387,8 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                 >
                                     <Receipt className="size-3.5 shrink-0" />
                                     <span className="truncate">
-                                        {tr('ประวัติ')}
-                                        <span className="hidden sm:inline">{tr('รับเงิน')}</span>
+                                        {tr('common.history')}
+                                        <span className="hidden sm:inline">{tr('funds.receive')}</span>
                                     </span>
                                     <Badge variant="secondary" className="h-4 shrink-0 px-1 text-[10px]">
                                         {topic.payments.length}
@@ -392,8 +400,8 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                 >
                                     <BarChart3 className="size-3.5 shrink-0" />
                                     <span className="truncate">
-                                        <span className="hidden sm:inline">{tr('สรุปและ')}</span>
-                                        {tr('กราฟ')}
+                                        <span className="hidden sm:inline">{tr('funds.summary')}</span>
+                                        {tr('common.charts')}
                                     </span>
                                 </TabsTrigger>
                             </TabsList>
@@ -407,9 +415,9 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         setBatchInitialIds(null);
                                         setBatchOpen(true);
                                     }}
-                                    title={tr('บันทึกรับเงินสำหรับห้วงเวลาเดียวกันให้กับหลายคนพร้อมกัน')}
+                                    title={tr('funds.recordPaymentsForTheSamePeriod')}
                                 >
-                                    <Calendar /> {tr('บันทึกรับเงินหลายคน')}
+                                    <Calendar /> {tr('funds.recordPaymentsForMany')}
                                 </Button>
                                 <Button
                                     size="sm"
@@ -421,7 +429,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         setPayOpen(true);
                                     }}
                                 >
-                                    <Banknote /> {tr('บันทึกการรับเงิน')}
+                                    <Banknote /> {tr('funds.recordPayment')}
                                 </Button>
                             </div>
                         </div>

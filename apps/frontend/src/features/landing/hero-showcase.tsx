@@ -1,22 +1,23 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { prefersReducedMotion } from './reveal';
+import { byLang, dateLocale, tr } from '../../lib/i18n';
 
 // ==========================================
 // 🌤️ ภาพบนสุดของหน้า landing — รายงานอากาศประจำวัน (หน้าตาตามค่าเริ่มต้นของระบบ Weather)
 // แล้วตามด้วยข้อความ + การ์ดต้อนรับสมาชิกใหม่ (ตามค่าเริ่มต้นของระบบ Welcome) ; ข้อมูลทั้งหมดเป็นตัวอย่าง
 // ==========================================
 
-const WEATHER_FIELDS: { label: string; value: string; detail?: string }[] = [
-    { label: '🌡️ อุณหภูมิ', value: '29.4°C' },
-    { label: '🥵 รู้สึกเหมือน', value: '34.1°C' },
-    { label: '🔺 สูงสุด / ต่ำสุด', value: '33° / 26°' },
-    { label: '☔ โอกาสฝนตก', value: '70%', detail: 'ฝนรวม ~4.2 มม.' },
-    { label: '💧 ความชื้น', value: '78%' },
-    { label: '💨 ลม', value: '11 กม./ชม.', detail: 'ทิศตะวันตกเฉียงใต้' },
-    { label: '😷 PM2.5', value: '18.5 µg/m³', detail: '🟢 ดี' },
-    { label: '🌅 ขึ้น / ตก', value: '06:09 / 17:55' },
-    { label: '☁️ เมฆปกคลุม', value: '64%' },
-];
+const WEATHER_FIELDS = byLang((): { label: string; value: string; detail?: string }[] => [
+    { label: tr('landing.wxTemperature'), value: '29.4°C' },
+    { label: tr('landing.wxFeelsLike'), value: '34.1°C' },
+    { label: tr('landing.wxHighLow'), value: '33° / 26°' },
+    { label: tr('landing.wxRainChance'), value: '70%', detail: tr('landing.wxRainTotal') },
+    { label: tr('landing.wxHumidity'), value: '78%' },
+    { label: tr('landing.wxWind'), value: tr('landing.wxWindSpeed'), detail: tr('landing.wxWindDirection') },
+    { label: '😷 PM2.5', value: '18.5 µg/m³', detail: tr('landing.wxAqiGood') },
+    { label: tr('landing.wxSunriseSunset'), value: '06:09 / 17:55' },
+    { label: tr('landing.wxCloudCover'), value: '64%' },
+]);
 
 // อุณหภูมิ / โอกาสฝน ทุก 3 ชม. (07:00 → 04:00) สำหรับกราฟพยากรณ์
 const FORECAST = [
@@ -127,25 +128,25 @@ function ForecastChart({ draw }: { draw: boolean }) {
 export function HeroShowcase({ botName, botAvatar }: { botName: string; botAvatar: string }) {
     // 1 ข้อความรายงานขึ้น → 2 ช่องข้อมูล → 3 กราฟ → 4 สมาชิกใหม่เข้าเซิร์ฟ → 5 การ์ดต้อนรับ
     const step = useTimeline([300, 700, 1300, 2600, 3100]);
-    const today = new Date().toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' });
+    const today = new Date().toLocaleDateString(dateLocale(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Bangkok' });
 
     return (
         <div className="relative w-full max-w-md pb-4">
             {/* รายงานอากาศประจำวัน */}
             <figure className="overflow-hidden rounded-lg border border-black/40 bg-[#313338] shadow-xl lg:-rotate-[0.6deg]">
-                <ChannelBar name="สภาพอากาศ" note="⏰ ส่งเองทุกวัน 07:00" />
+                <ChannelBar name={tr('landing.wxChannel')} note={tr('landing.wxSchedule')} />
                 <Show show={step >= 1} className="space-y-1.5 p-4">
-                    <BotHeader botName={botName} botAvatar={botAvatar} time="วันนี้ เวลา 07:00" />
+                    <BotHeader botName={botName} botAvatar={botAvatar} time={tr('landing.todayAt0700')} />
                     <div className="pl-[2.375rem] text-sm">
-                        <p className="text-slate-200">☀️ พยากรณ์อากาศวันนี้</p>
+                        <p className="text-slate-200">{tr('landing.wxTitle')}</p>
                         <div className="mt-1.5 rounded border-l-4 border-[#F59E0B] bg-[#2b2d31] p-3">
-                            <p className="font-semibold text-sky-300">รายงานสภาพอากาศ กรุงเทพมหานคร</p>
+                            <p className="font-semibold text-sky-300">{tr('landing.wxReportBangkok')}</p>
                             <p className="mt-0.5 text-xs text-slate-300">{today}</p>
                             <p className="text-xs text-slate-200">
-                                🌦️ <span className="font-semibold">ฝนเล็กน้อย</span>
+                                🌦️ <span className="font-semibold">{tr('landing.wxLightRain')}</span>
                             </p>
                             <dl className="mt-2.5 grid grid-cols-3 gap-x-2 gap-y-2 text-[11px] leading-tight">
-                                {WEATHER_FIELDS.map((field, index) => (
+                                {WEATHER_FIELDS().map((field, index) => (
                                     <Show key={field.label} show={step >= 2} delay={index * 60}>
                                         <dt className="font-semibold text-slate-100">{field.label}</dt>
                                         <dd className="mt-0.5 text-slate-300">{field.value}</dd>
@@ -154,7 +155,7 @@ export function HeroShowcase({ botName, botAvatar }: { botName: string; botAvata
                                 ))}
                             </dl>
                             <ForecastChart draw={step >= 3} />
-                            <p className="mt-2 text-[10px] text-slate-400">ข้อมูลจาก OpenWeatherMap • วันนี้ เวลา 07:00</p>
+                            <p className="mt-2 text-[10px] text-slate-400">{tr('landing.wxFooter')}</p>
                         </div>
                     </div>
                 </Show>
@@ -166,13 +167,13 @@ export function HeroShowcase({ botName, botAvatar }: { botName: string; botAvata
                     step >= 4 ? 'translate-none opacity-100' : 'translate-y-6 opacity-0'
                 }`}
             >
-                <ChannelBar name="ยินดีต้อนรับ" note="มีคนเข้าเซิร์ฟใหม่" />
+                <ChannelBar name={tr('landing.welcome')} note={tr('landing.welcomeTrigger')} />
                 <div className="space-y-1.5 p-4">
-                    <BotHeader botName={botName} botAvatar={botAvatar} time="วันนี้ เวลา 19:24" />
+                    <BotHeader botName={botName} botAvatar={botAvatar} time={tr('landing.todayAt1924')} />
                     <div className="pl-[2.375rem] text-sm">
                         <p className="text-slate-200">
-                            ยินดีต้อนรับ <span className="rounded bg-indigo-500/30 px-0.5 text-indigo-200">@มายด์</span> เข้าสู่{' '}
-                            <span className="font-semibold">NotStackOverflow</span> 🎉
+                            {tr('landing.welcome')} <span className="rounded bg-indigo-500/30 px-0.5 text-indigo-200">{tr('landing.sampleMention')}</span>{' '}
+                            {tr('landing.welcomeTo')} <span className="font-semibold">NotStackOverflow</span> 🎉
                         </p>
                         {/* การ์ดต้อนรับ 1024×450 ตามค่าเริ่มต้น: พื้นคราม + รูปโปรไฟล์วงกลมขอบขาว + WELCOME / ชื่อ / ลำดับสมาชิก */}
                         <div className="relative mt-2 aspect-[1024/450] overflow-hidden rounded-md bg-[#312e81]">
@@ -184,16 +185,16 @@ export function HeroShowcase({ botName, botAvatar }: { botName: string; botAvata
                                         step >= 5 ? 'scale-100' : 'scale-0'
                                     }`}
                                 >
-                                    ม
+                                    {tr('landing.sampleInitial')}
                                 </div>
                                 <Show show={step >= 5} delay={150}>
                                     <p className="mt-1.5 text-base leading-none font-black tracking-[0.2em] text-white sm:text-lg">WELCOME</p>
                                 </Show>
                                 <Show show={step >= 5} delay={250}>
-                                    <p className="mt-1 text-sm leading-none font-bold text-[#fde68a]">มายด์</p>
+                                    <p className="mt-1 text-sm leading-none font-bold text-[#fde68a]">{tr('landing.sampleName')}</p>
                                 </Show>
                                 <Show show={step >= 5} delay={350}>
-                                    <p className="mt-1 text-[10px] text-slate-200">สมาชิกคนที่ #128 ของ NotStackOverflow</p>
+                                    <p className="mt-1 text-[10px] text-slate-200">{tr('landing.welcomeMemberNo')}</p>
                                 </Show>
                             </div>
                         </div>

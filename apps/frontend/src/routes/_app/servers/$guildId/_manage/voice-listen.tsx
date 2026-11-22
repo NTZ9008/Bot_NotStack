@@ -30,10 +30,10 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/voice-liste
 });
 
 const STREAM_LABEL = byLang((): Record<VoiceStreamStatus, string> => ({
-    stopped: tr('ยังไม่ได้ฟัง'),
-    connecting: tr('กำลังเชื่อมต่อ...'),
-    live: tr('กำลังฟังสด'),
-    reconnecting: tr('หลุด — กำลังต่อใหม่...'),
+    stopped: tr('voiceListen.notListening'),
+    connecting: tr('common.connecting'),
+    live: tr('voiceListen.listeningLive'),
+    reconnecting: tr('voiceListen.disconnectedReconnecting'),
 }));
 
 function VoiceListenPage() {
@@ -45,12 +45,12 @@ function VoiceListenPage() {
     const stream = useVoiceStream(guildId);
 
     const refresh = () => queryClient.invalidateQueries({ queryKey: voiceListenQuery(guildId).queryKey });
-    const onError = (err: unknown) => toast.error(tr('ข้อผิดพลาด'), { description: errorMessage(err) });
+    const onError = (err: unknown) => toast.error(tr('common.error'), { description: errorMessage(err) });
     const join = useMutation({
         mutationFn: (id: string) => voiceListenApi.join(guildId, id),
         onSuccess: (next) => {
             queryClient.setQueryData(voiceListenQuery(guildId).queryKey, next);
-            toast.success(tr('บอทเข้าห้อง {0} แล้ว', { 0: next.channel?.name ?? '' }));
+            toast.success(tr('voiceListen.botJoined', { 0: next.channel?.name ?? '' }));
         },
         onError,
     });
@@ -58,7 +58,7 @@ function VoiceListenPage() {
         mutationFn: () => voiceListenApi.leave(guildId),
         onSuccess: () => {
             stream.stop();
-            toast.success(tr('บอทออกจากห้องเสียงแล้ว'));
+            toast.success(tr('voiceListen.botLeftTheVoiceChannel'));
             void refresh();
         },
         onError,
@@ -71,17 +71,17 @@ function VoiceListenPage() {
 
     return (
         <>
-            <PageHeader help="voiceListen" title={tr('ฟังห้องเสียง')} description={tr('ให้บอทเข้าห้องเสียงแล้วฟังเสียงในห้องสดๆ ผ่านหน้าเว็บ')} />
+            <PageHeader help="voiceListen" title={tr('common.voiceListen')} description={tr('voiceListen.haveTheBotJoinAVoice')} />
             <div className="grid gap-4 lg:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('ห้องเสียง')}</CardTitle>
+                        <CardTitle>{tr('common.voiceChannels')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Select value={selected} onValueChange={setChannelId}>
-                                <SelectTrigger className="w-full sm:flex-1" aria-label={tr('เลือกห้องเสียง')}>
-                                    <SelectValue placeholder={tr('เลือกห้องเสียง')} />
+                                <SelectTrigger className="w-full sm:flex-1" aria-label={tr('voiceListen.pickAVoiceChannel')}>
+                                    <SelectValue placeholder={tr('voiceListen.pickAVoiceChannel')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {(channels.data ?? []).map((channel) => (
@@ -93,22 +93,22 @@ function VoiceListenPage() {
                             </Select>
                             <Button disabled={!selected || join.isPending || (inRoom && selected === data?.channel?.id)} onClick={() => join.mutate(selected)}>
                                 <Headphones />
-                                {join.isPending ? tr('กำลังเข้าห้อง...') : inRoom ? tr('ย้ายไปห้องนี้') : tr('ให้บอทเข้าห้อง')}
+                                {join.isPending ? tr('voiceListen.joining') : inRoom ? tr('voiceListen.moveToThisChannel') : tr('voiceListen.haveTheBotJoin')}
                             </Button>
                         </div>
                         <div className="flex items-center justify-between gap-2 rounded-lg border bg-muted/30 px-3 py-2 text-sm">
                             <span className="truncate">
                                 {data?.state === 'connecting'
-                                    ? tr('กำลังเชื่อมต่อห้องเสียง...')
+                                    ? tr('voiceListen.connectingToVoice')
                                     : inRoom
-                                      ? tr('บอทอยู่ใน 🔊 {0}', { 0: data?.channel?.name })
-                                      : tr('บอทยังไม่ได้อยู่ในห้องเสียง')}
+                                      ? tr('voiceListen.botIsIn', { 0: data?.channel?.name })
+                                      : tr('voiceListen.theBotIsntInAVoice')}
                             </span>
                             {data?.state !== 'idle' && (
                                 <Button variant="outline" size="sm" disabled={leave.isPending} onClick={() => leave.mutate()}>
                                     <LogOut />
 
-                                    {tr('ให้บอทออก')}
+                                    {tr('voiceListen.makeTheBotLeave')}
                                 </Button>
                             )}
                         </div>
@@ -117,7 +117,7 @@ function VoiceListenPage() {
 
                 <Card>
                     <CardHeader className="flex-row items-center justify-between gap-2">
-                        <CardTitle>{tr('ฟังเสียง')}</CardTitle>
+                        <CardTitle>{tr('voiceListen.listen')}</CardTitle>
                         <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -125,19 +125,19 @@ function VoiceListenPage() {
                             <Button className="w-full" disabled={!inRoom} onClick={stream.start}>
                                 <Play />
 
-                                {tr('เริ่มฟัง')}
+                                {tr('voiceListen.startListening')}
                             </Button>
                         ) : (
                             <Button className="w-full" variant="outline" onClick={stream.stop}>
                                 <Square />
 
-                                {tr('หยุดฟัง')}
+                                {tr('voiceListen.stopListening')}
                             </Button>
                         )}
                         <div className="flex items-center gap-3">
                             <Volume2 className="size-4 shrink-0 text-muted-foreground" aria-hidden />
                             <Slider
-                                aria-label={tr('ระดับเสียง')}
+                                aria-label={tr('voiceListen.volume')}
                                 min={0}
                                 max={2}
                                 step={0.05}
@@ -147,7 +147,7 @@ function VoiceListenPage() {
                             <span className="w-12 text-right text-sm tabular-nums text-muted-foreground">{Math.round(stream.volume * 100)}%</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                            {tr('ผู้ฟังในหน้าเว็บตอนนี้:')} {data?.listeners ?? 0} {tr('คน')}
+                            {tr('voiceListen.listeningOnTheWebNow')} {data?.listeners ?? 0} {tr('common.people')}
                         </p>
                     </CardContent>
                 </Card>
@@ -155,11 +155,11 @@ function VoiceListenPage() {
 
             <Card className="mt-4">
                 <CardHeader>
-                    <CardTitle>{tr('คนในห้อง')}</CardTitle>
+                    <CardTitle>{tr('voiceListen.inTheChannel')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {!inRoom || !data?.members.length ? (
-                        <EmptyState>{inRoom ? tr('ไม่มีใครอยู่ในห้อง') : tr('ให้บอทเข้าห้องก่อนเพื่อดูว่าใครอยู่บ้าง')}</EmptyState>
+                        <EmptyState>{inRoom ? tr('voiceListen.noOneIsInTheChannel') : tr('voiceListen.haveTheBotJoinFirstTo')}</EmptyState>
                     ) : (
                         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                             {data.members.map((member) => (
@@ -171,7 +171,7 @@ function VoiceListenPage() {
                                     />
                                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{member.name}</span>
                                     {member.bot && <Badge variant="secondary">BOT</Badge>}
-                                    {member.speaking && <span className="text-xs text-green-700 dark:text-green-400">{tr('กำลังพูด')}</span>}
+                                    {member.speaking && <span className="text-xs text-green-700 dark:text-green-400">{tr('voiceListen.speaking')}</span>}
                                 </li>
                             ))}
                         </ul>

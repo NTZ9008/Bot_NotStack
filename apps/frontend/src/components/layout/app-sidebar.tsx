@@ -22,7 +22,7 @@ import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { GuildSwitcher } from './guild-switcher';
 import { ProfileMenu } from './profile-menu';
 import { LanguageSwitcher, ThemeSwitcher } from './theme-toggle';
-import { useT } from '@/lib/i18n';
+import { trText } from '@/lib/i18n';
 import { visibleNavGroups } from './nav-items';
 
 // ==========================================
@@ -37,7 +37,6 @@ export function AppSidebar() {
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath?.replace(/\/$/, '') });
     const { isMobile, setOpenMobile } = useSidebar();
     const bot = info?.bot ?? DEFAULT_BOT;
-    const t = useT();
     const access = guild?.access;
 
     const tasks = useMemo(
@@ -77,12 +76,12 @@ export function AppSidebar() {
             <SidebarContent>
                 {visibleNavGroups(isAdmin, guildId ? (guild ?? null) : null).map((group) => (
                     <SidebarGroup key={group.label}>
-                        <SidebarGroupLabel>{t(group.label)}</SidebarGroupLabel>
+                        <SidebarGroupLabel>{trText(group.label)}</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
                                 {group.items.map((item) => (
                                     <SidebarMenuItem key={item.to}>
-                                        <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={t(item.label)}>
+                                        <SidebarMenuButton asChild isActive={routePath === item.to} tooltip={trText(item.label)}>
                                             <Link
                                                 to={item.to}
                                                 params={item.guild ? { guildId } : {}}
@@ -93,7 +92,7 @@ export function AppSidebar() {
                                                 onClick={() => isMobile && setOpenMobile(false)}
                                             >
                                                 <item.icon />
-                                                <span>{t(item.label)}</span>
+                                                <span>{trText(item.label)}</span>
                                             </Link>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>

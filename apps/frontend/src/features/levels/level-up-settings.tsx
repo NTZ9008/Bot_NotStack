@@ -56,7 +56,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
     const patchReward = (index: number, data: Partial<LevelUpSettings['rewards'][number]>) =>
         setDraft((old) => ({ ...old, rewards: old.rewards.map((reward, i) => (i === index ? { ...reward, ...data } : reward)) }));
 
-    useUnsavedChangesGuard(dirty, { title: tr('ทิ้งการตั้งค่าเลเวลอัปที่ยังไม่บันทึก?'), destructive: true });
+    useUnsavedChangesGuard(dirty, { title: tr('levels.discardUnsavedLevelUpSettings'), destructive: true });
 
     const save = useMutation({
         mutationFn: () => rankCardApi.saveLevelUp(guildId, draft),
@@ -64,15 +64,15 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
             setSaved(data);
             setDraft(data.settings);
             client.setQueryData(levelUpQuery(guildId).queryKey, data);
-            if (data.warnings.length) toast.warning(tr('บันทึกแล้ว แต่มีคำเตือน'), { description: data.warnings[0] });
-            else toast.success(tr('บันทึกการตั้งค่าเลเวลอัปแล้ว'));
+            if (data.warnings.length) toast.warning(tr('levels.savedWithWarnings'), { description: data.warnings[0] });
+            else toast.success(tr('levels.levelUpSettingsSaved'));
         },
-        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) }),
     });
     const sync = useMutation({
         mutationFn: () => rankCardApi.syncRewards(guildId),
-        onSuccess: (data) => toast.success(tr('เริ่มปรับยศแล้ว'), { description: data.message }),
-        onError: (err) => toast.error(tr('ปรับยศไม่สำเร็จ'), { description: errorMessage(err) }),
+        onSuccess: (data) => toast.success(tr('levels.roleSyncStarted'), { description: data.message }),
+        onError: (err) => toast.error(tr('levels.roleSyncFailed'), { description: errorMessage(err) }),
     });
 
     // ตัวอย่างข้อความประกาศ — แทนค่าตัวแปรด้วยข้อมูลตัวอย่างฝั่งหน้าเว็บเลย
@@ -82,7 +82,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
         .map((reward) => roles.find((role) => role.id === reward.roleId)?.name)
         .filter(Boolean)
         .join(', ');
-    const sampleName = user.displayName || user.discordUsername || tr('สมาชิก');
+    const sampleName = user.displayName || user.discordUsername || tr('common.members');
     const message = fillLevelUpMessage(draft.message, {
         mention: '\u0000MENTION\u0000',
         user: sampleName,
@@ -97,12 +97,10 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
     return (
         <div className="space-y-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">
-                    {tr('ประกาศเมื่อเลเวลขึ้นจากการแชท / ห้องเสียง / ใช้คำสั่ง · ยศรางวัลปรับตามเลเวลเสมอ (รวมตอนแอดมินแก้ XP)')}
-                </p>
+                <p className="text-sm text-muted-foreground">{tr('levels.announceLevelUpsFromChatVoice')}</p>
                 <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
                     <Save />
-                    {save.isPending ? tr('กำลังบันทึก...') : tr('บันทึก')}
+                    {save.isPending ? tr('levels.saving') : tr('common.save')}
                 </Button>
             </div>
 
@@ -121,12 +119,12 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                 <fieldset disabled={save.isPending} className="min-w-0 space-y-5">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('ประกาศเลเวลอัป')}</CardTitle>
+                            <CardTitle>{tr('levels.levelUpAnnouncements')}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <SwitchRow label={tr('ประกาศเมื่อสมาชิกเลเวลขึ้น')} checked={draft.announce} onChange={(announce) => patch({ announce })} />
+                            <SwitchRow label={tr('levels.announceWhenMembersLevelUp')} checked={draft.announce} onChange={(announce) => patch({ announce })} />
                             <fieldset disabled={!draft.announce} className="space-y-4 disabled:opacity-50">
-                                <Field label={tr('ส่งที่')}>
+                                <Field label={tr('levels.sendTo')}>
                                     <Segmented
                                         value={draft.destination}
                                         options={meta.destinations}
@@ -135,24 +133,24 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                 </Field>
                                 {draft.destination !== 'dm' && (
                                     <Field
-                                        label={draft.destination === 'channel' ? tr('ห้องประกาศ') : tr('ห้องสำรอง')}
+                                        label={draft.destination === 'channel' ? tr('levels.announcementChannel') : tr('levels.fallbackChannel')}
                                         hint={
                                             draft.destination === 'channel'
-                                                ? tr('ทุกประกาศส่งเข้าห้องนี้')
-                                                : tr('ใช้เมื่อบอทส่งในห้องที่คุยอยู่ไม่ได้ (ไม่มีสิทธิ์ / เลเวลขึ้นจากห้องเสียง) — ไม่เลือก = ข้ามประกาศนั้น')
+                                                ? tr('levels.everyAnnouncementGoesToThisChannel')
+                                                : tr('levels.usedWhenTheBotCantPost')
                                         }
                                     >
                                         <ChannelSelect
                                             channels={channels}
                                             value={draft.channelId}
                                             onChange={(channelId) => patch({ channelId })}
-                                            noneLabel={tr('ไม่เลือก')}
+                                            noneLabel={tr('levels.none')}
                                         />
                                     </Field>
                                 )}
                                 <Field
-                                    label={tr('ข้อความ')}
-                                    hint={tr('{0}/{1} ตัวอักษร · เว้นว่าง = ส่งแค่การ์ด', { 0: draft.message.length, 1: meta.limits.maxMessageLength })}
+                                    label={tr('common.messages')}
+                                    hint={tr('levels.charactersEmptySendOnlyTheCard', { 0: draft.message.length, 1: meta.limits.maxMessageLength })}
                                 >
                                     <Textarea
                                         ref={messageRef}
@@ -170,24 +168,20 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                         }}
                                     />
                                 </Field>
-                                <SwitchRow
-                                    label={tr('แนบการ์ดเลเวลอัปเป็นรูป (ใช้ธีมการ์ดของสมาชิกคนนั้น)')}
-                                    checked={draft.showCard}
-                                    onChange={(showCard) => patch({ showCard })}
-                                />
+                                <SwitchRow label={tr('levels.attachTheLevelUpCardAs')} checked={draft.showCard} onChange={(showCard) => patch({ showCard })} />
                             </fieldset>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>{tr('ยศรางวัลตามเลเวล')}</CardTitle>
-                            <CardDescription>{tr('บอทจัดการเฉพาะยศในรายการนี้ — ยศต้องอยู่ต่ำกว่ายศของบอท และบอทต้องมีสิทธิ์ Manage Roles')}</CardDescription>
+                            <CardTitle>{tr('levels.rewardRolesByLevel')}</CardTitle>
+                            <CardDescription>{tr('levels.theBotOnlyManagesRolesIn')}</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {draft.rewards.map((reward, index) => (
                                 <div key={index} className="flex items-end gap-2">
-                                    <Field label={index === 0 ? tr('เลเวล') : undefined} className="w-24 shrink-0">
+                                    <Field label={index === 0 ? tr('levels.level') : undefined} className="w-24 shrink-0">
                                         <Input
                                             type="number"
                                             min={1}
@@ -196,9 +190,9 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                             onChange={(e) => patchReward(index, { level: e.target.valueAsNumber })}
                                         />
                                     </Field>
-                                    <Field label={index === 0 ? tr('ยศที่ได้') : undefined} className="min-w-0 flex-1">
+                                    <Field label={index === 0 ? tr('levels.roleGiven') : undefined} className="min-w-0 flex-1">
                                         <select className={selectClass} value={reward.roleId} onChange={(e) => patchReward(index, { roleId: e.target.value })}>
-                                            <option value="">{tr('— เลือกยศ —')}</option>
+                                            <option value="">{tr('levels.pickARole')}</option>
                                             {roles.map((role) => (
                                                 <option key={role.id} value={role.id} disabled={role.id !== reward.roleId && usedRoles.has(role.id)}>
                                                     {role.name}
@@ -210,7 +204,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        aria-label={tr('ลบยศรางวัลนี้')}
+                                        aria-label={tr('levels.removeThisRewardRole')}
                                         onClick={() => setDraft((old) => ({ ...old, rewards: old.rewards.filter((_, i) => i !== index) }))}
                                     >
                                         <Trash2 />
@@ -227,41 +221,37 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                             >
                                 <Plus />
 
-                                {tr('เพิ่มยศรางวัล')}
+                                {tr('levels.addRewardRole')}
                             </Button>
                             {draft.rewards.some((reward) => !reward.roleId) && (
-                                <p className="text-xs text-amber-700 dark:text-amber-400">{tr('แถวที่ยังไม่เลือกยศจะถูกตัดทิ้งตอนบันทึก')}</p>
+                                <p className="text-xs text-amber-700 dark:text-amber-400">{tr('levels.rowsWithoutARoleAreDropped')}</p>
                             )}
-                            <Field label={tr('เมื่อได้ยศของเลเวลที่สูงขึ้น')}>
+                            <Field label={tr('levels.whenReachingAHigherLevelsRole')}>
                                 <Segmented
                                     value={draft.stackRewards ? 'stack' : 'replace'}
-                                    options={{ stack: tr('เก็บยศเดิมไว้ด้วย'), replace: tr('เหลือแค่ยศสูงสุด') }}
+                                    options={{ stack: tr('levels.keepPreviousRolesToo'), replace: tr('levels.keepOnlyTheHighestRole') }}
                                     onChange={(value) => patch({ stackRewards: value === 'stack' })}
                                 />
                             </Field>
                             <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                                <p className="flex-1 text-sm text-muted-foreground">
-                                    {tr('สมาชิกที่เลเวลถึงอยู่แล้วก่อนตั้งยศรางวัล จะได้ยศตอนเลเวลขึ้นครั้งถัดไป หรือกดปุ่มนี้เพื่อให้ทุกคนตอนนี้เลย')}
-                                </p>
+                                <p className="flex-1 text-sm text-muted-foreground">{tr('levels.membersWhoAlreadyReachedALevel')}</p>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     disabled={dirty || sync.isPending || !saved.settings.rewards.length}
-                                    title={dirty ? tr('บันทึกการตั้งค่าก่อน') : undefined}
+                                    title={dirty ? tr('levels.saveSettingsFirst') : undefined}
                                     onClick={async () => {
                                         const ok = await confirm({
-                                            title: tr('ปรับยศรางวัลให้สมาชิกที่มี XP ทุกคน?'),
-                                            description: tr(
-                                                'บอทจะเพิ่ม/ถอนยศในรายการรางวัลให้ตรงกับเลเวลปัจจุบันของทุกคน (ทำงานเบื้องหลัง อาจใช้เวลาหลายนาทีถ้าสมาชิกเยอะ)',
-                                            ),
-                                            confirmText: tr('เริ่มปรับยศ'),
+                                            title: tr('levels.syncRewardRolesForEveryMember'),
+                                            description: tr('levels.theBotAddsRemovesRewardRoles'),
+                                            confirmText: tr('levels.startSync'),
                                         });
                                         if (ok) sync.mutate();
                                     }}
                                 >
                                     <RefreshCw className={sync.isPending ? 'animate-spin' : undefined} />
 
-                                    {tr('ใช้กับสมาชิกเดิม')}
+                                    {tr('levels.applyToExistingMembers')}
                                 </Button>
                             </div>
                         </CardContent>
@@ -287,13 +277,11 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                             {message ? (
                                 <div className="discord-md" dangerouslySetInnerHTML={{ __html: messageHtml }} />
                             ) : (
-                                <p className="text-sm text-[#949ba4]">{tr('(ไม่มีข้อความและไม่แนบการ์ด — จะไม่ส่งอะไร)')}</p>
+                                <p className="text-sm text-[#949ba4]">{tr('levels.noMessageAndNoCardNothing')}</p>
                             )}
                         </DiscordMessage>
                     )}
-                    <p className="mt-2 text-xs text-muted-foreground">
-                        {tr('ตัวอย่างใช้ธีมของเซิร์ฟเวอร์ — ตอนส่งจริงการ์ดใช้แบบที่สมาชิกคนนั้นแต่งไว้ · ตัวอย่างแสดงยศรางวัลของเลเวลแรกในรายการ')}
-                    </p>
+                    <p className="mt-2 text-xs text-muted-foreground">{tr('levels.thePreviewUsesTheServerTheme')}</p>
                 </div>
             </div>
         </div>

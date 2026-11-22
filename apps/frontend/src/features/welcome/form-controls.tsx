@@ -95,7 +95,7 @@ export function SwitchRow({ label, checked, onChange }: { label: string; checked
 export function CenterButton({ onClick }: { onClick: () => void }) {
     return (
         <Button type="button" size="xs" variant="ghost" className="h-5 px-1.5 text-xs text-highlight" onClick={onClick}>
-            {tr('กึ่งกลาง')}
+            {tr('welcome.center')}
         </Button>
     );
 }

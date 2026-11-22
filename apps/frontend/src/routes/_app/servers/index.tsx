@@ -37,16 +37,16 @@ function GuildCard({ guild }: { guild: GuildSummary }) {
                 <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                     {guild.memberCount > 0 && (
                         <span className="inline-flex items-center gap-1">
-                            <Users className="size-3" /> {formatNumber(guild.memberCount)} {tr('คน')}
+                            <Users className="size-3" /> {formatNumber(guild.memberCount)} {tr('common.people')}
                         </span>
                     )}
-                    {guild.isHome && <Badge variant="secondary">{tr('เซิร์ฟเวอร์หลัก')}</Badge>}
+                    {guild.isHome && <Badge variant="secondary">{tr('servers.homeServer')}</Badge>}
                     {guild.access === 'manage' ? (
                         <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                            <ShieldCheck /> {tr('จัดการได้')}
+                            <ShieldCheck /> {tr('common.canManage')}
                         </Badge>
                     ) : (
-                        <Badge variant="outline">{tr('ดูอันดับได้อย่างเดียว')}</Badge>
+                        <Badge variant="outline">{tr('common.viewRankingsOnly')}</Badge>
                     )}
                 </div>
             </div>
@@ -67,11 +67,11 @@ function ServersPage() {
         <>
             <PageHeader
                 help="servers"
-                title={tr('เซิร์ฟเวอร์ของคุณ')}
-                description={tr('เลือกเซิร์ฟเวอร์ที่จะตั้งค่าบอท — แสดงเฉพาะเซิร์ฟเวอร์ของคุณที่บอทอยู่ (เป็นเจ้าของเซิร์ฟเวอร์หรือมีสิทธิ์ Manage Server)')}
+                title={tr('servers.yourServers')}
+                description={tr('servers.pickAServerToConfigureOnly')}
                 actions={
                     <Button variant="outline" onClick={() => void refetch()} disabled={isFetching}>
-                        <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> {tr('รีเฟรช')}
+                        <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> {tr('common.refresh')}
                     </Button>
                 }
             />
@@ -79,25 +79,25 @@ function ServersPage() {
             {denied && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                    <p>{tr('คุณไม่มีสิทธิ์ในเซิร์ฟเวอร์นั้น หรือบอทไม่ได้อยู่ในเซิร์ฟเวอร์นั้นแล้ว')}</p>
+                    <p>{tr('servers.youDontHaveAccessToThat')}</p>
                 </div>
             )}
 
             {data?.needsDiscordLink && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>{tr('เชื่อมต่อบัญชี Discord ก่อน')}</CardTitle>
-                        <CardDescription>{tr('ระบบใช้บัญชี Discord ของคุณตรวจว่าคุณอยู่เซิร์ฟเวอร์ไหน และมีสิทธิ์ Manage Server หรือไม่')}</CardDescription>
+                        <CardTitle>{tr('servers.connectYourDiscordAccountFirst')}</CardTitle>
+                        <CardDescription>{tr('servers.yourDiscordAccountIsUsedTo')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {discordEnabled ? (
                             <Button asChild className="bg-[#5865F2] text-white hover:bg-[#4752C4]">
                                 <a href={apiUrl('/auth/discord/link')}>
-                                    <DiscordIcon /> {tr('เชื่อมต่อบัญชี Discord')}
+                                    <DiscordIcon /> {tr('common.connectDiscordAccount')}
                                 </a>
                             </Button>
                         ) : (
-                            <p className="text-sm text-muted-foreground">{tr('ผู้ดูแลระบบยังไม่ได้ตั้งค่า Discord OAuth')}</p>
+                            <p className="text-sm text-muted-foreground">{tr('common.theSystemAdminHasntSetUp')}</p>
                         )}
                     </CardContent>
                 </Card>
@@ -106,7 +106,7 @@ function ServersPage() {
             {data && !data.botOnline && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
                     <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                    <p>{tr('บอทยังไม่ออนไลน์ — รายชื่อเซิร์ฟเวอร์อาจไม่ครบ และเชิญบอทเพิ่มยังไม่ได้ตอนนี้')}</p>
+                    <p>{tr('servers.theBotIsntOnlineYetThe')}</p>
                 </div>
             )}
 
@@ -126,18 +126,18 @@ function ServersPage() {
                             <Plus className="size-6" />
                         </div>
                         <div className="min-w-0 flex-1 space-y-1">
-                            <p className="font-semibold">{tr('เพิ่มบอทเข้าเซิร์ฟเวอร์ของคุณ')}</p>
-                            <p className="text-xs text-muted-foreground">{tr('เชิญบอทแล้วกลับมาหน้านี้ เซิร์ฟเวอร์จะขึ้นในรายการเอง')}</p>
+                            <p className="font-semibold">{tr('servers.addTheBotToYourServer')}</p>
+                            <p className="text-xs text-muted-foreground">{tr('servers.inviteTheBotAndComeBack')}</p>
                         </div>
                         {data?.inviteUrl ? (
                             <Button asChild className="bg-[#5865F2] text-white hover:bg-[#4752C4]">
                                 <a href={data.inviteUrl} target="_blank" rel="noopener noreferrer">
-                                    <DiscordIcon /> {tr('เชิญบอท')}
+                                    <DiscordIcon /> {tr('servers.inviteBot')}
                                 </a>
                             </Button>
                         ) : (
-                            <Button disabled title={tr('บอทยังไม่ออนไลน์')}>
-                                <DiscordIcon /> {tr('เชิญบอท')}
+                            <Button disabled title={tr('servers.botIsntOnlineYet')}>
+                                <DiscordIcon /> {tr('servers.inviteBot')}
                             </Button>
                         )}
                     </div>
@@ -145,9 +145,7 @@ function ServersPage() {
             )}
 
             {data && data.guilds.length === 0 && !data.needsDiscordLink && (
-                <p className="text-center text-sm text-muted-foreground">
-                    {tr('ยังไม่มีเซิร์ฟเวอร์ที่คุณเข้าถึงได้ — เชิญบอทเข้าเซิร์ฟเวอร์ของคุณเพื่อเริ่มใช้งาน')}
-                </p>
+                <p className="text-center text-sm text-muted-foreground">{tr('servers.noServersYouCanAccessYet')}</p>
             )}
 
             {/* กิจกรรมสดของทุกเซิร์ฟเวอร์ที่จัดการได้ (สิทธิ์ดูอย่างเดียวไม่เห็นกิจกรรม เหมือนหน้า Activity Log) */}

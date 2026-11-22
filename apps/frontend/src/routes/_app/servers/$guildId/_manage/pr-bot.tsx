@@ -45,7 +45,7 @@ function useSavePrBot(successMessage: string) {
             queryClient.setQueryData(prBotQuery(guildId).queryKey, data);
             toast.success(successMessage);
         },
-        onError: (err) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) }),
     });
 }
 
@@ -86,7 +86,12 @@ function MapEditor({
                     <div key={index} className="flex gap-2">
                         <Input placeholder={keyPlaceholder} value={row.key} onChange={(e) => update(index, { key: e.target.value })} />
                         <Input placeholder={valuePlaceholder} value={row.value} onChange={(e) => update(index, { value: e.target.value })} />
-                        <Button variant="ghost" size="icon" aria-label={tr('ลบแถว')} onClick={() => setRows((prev) => prev.filter((_, i) => i !== index))}>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={tr('prBot.removeRow')}
+                            onClick={() => setRows((prev) => prev.filter((_, i) => i !== index))}
+                        >
                             <X />
                         </Button>
                     </div>
@@ -108,19 +113,19 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
     const guildId = useGuildId();
     const { data: channels = [] } = useQuery(guildChannelsQuery(guildId));
     const [defaultChannel, setDefaultChannel] = useState(settings.defaultChannelId);
-    const saveDefault = useSavePrBot(tr('บันทึกห้อง Default แล้ว'));
-    const saveOrgs = useSavePrBot(tr('บันทึก Organization Mapping แล้ว'));
-    const saveMentions = useSavePrBot(tr('บันทึก Mention Mapping แล้ว'));
+    const saveDefault = useSavePrBot(tr('prBot.defaultChannelSaved'));
+    const saveOrgs = useSavePrBot(tr('prBot.organizationMappingSaved'));
+    const saveMentions = useSavePrBot(tr('prBot.mentionMappingSaved'));
 
     return (
         <>
             <Card>
                 <CardHeader>
-                    <CardTitle>{tr('ห้องเริ่มต้น')}</CardTitle>
-                    <CardDescription>{tr('ใช้กับ organization/repo ที่ไม่ได้ระบุไว้ด้านล่าง')}</CardDescription>
+                    <CardTitle>{tr('common.defaultChannel')}</CardTitle>
+                    <CardDescription>{tr('prBot.usedForOrganizationsReposNotListed')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Field hint={tr('เลือก "ไม่ส่ง" = ปิดการแจ้งเตือนของ organization ที่ไม่ได้ระบุห้องไว้')}>
+                    <Field hint={tr('prBot.pickDontSendTurnOffAlerts')}>
                         <form
                             className="flex gap-2"
                             onSubmit={(e) => {
@@ -132,10 +137,10 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                                 channels={channels.filter((channel) => channel.sendable)}
                                 value={defaultChannel}
                                 onChange={setDefaultChannel}
-                                noneLabel={tr('— ไม่ส่ง —')}
+                                noneLabel={tr('common.dontSend')}
                             />
                             <Button type="submit" disabled={saveDefault.isPending}>
-                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('บันทึก')}
+                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
                             </Button>
                         </form>
                     </Field>
@@ -143,27 +148,25 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
             </Card>
 
             <MapEditor
-                title={tr('📂 ห้องแยกตาม Organization')}
-                description={tr('PR จาก organization ไหน ให้ไปลงห้องไหน — เพิ่ม/ลบได้ตามต้องการ')}
+                title={tr('prBot.channelsByOrganization')}
+                description={tr('prBot.whichChannelEachOrganizationsPrsGo')}
                 initial={settings.orgChannels}
-                keyPlaceholder={tr('เช่น MUDST-2026-Pegasus')}
+                keyPlaceholder={tr('prBot.eGMudst2026Pegasus')}
                 valuePlaceholder="Channel ID"
-                addLabel={tr('เพิ่ม Organization')}
-                saveLabel={tr('บันทึก Organization Mapping')}
+                addLabel={tr('prBot.addOrganization')}
+                saveLabel={tr('prBot.saveOrganizationMapping')}
                 onSave={(orgChannels) => saveOrgs.mutate({ orgChannels })}
                 saving={saveOrgs.isPending}
             />
 
             <MapEditor
-                title={tr('📣 Mention แยกตาม Repo')}
-                description={tr(
-                    'PR เปิดจาก repo ไหน (พิมพ์แบบ owner/repo) ให้ mention role อะไร — พิมพ์ชื่อ role ให้ตรงเป๊ะ หรือใส่ mention tag เช่น <@&1234567890> ก็ได้ — repo ที่ไม่ได้ระบุจะไม่ mention',
-                )}
+                title={tr('prBot.mentionsByRepo')}
+                description={tr('prBot.whichRoleToMentionWhenA')}
                 initial={settings.repoMentions}
-                keyPlaceholder={tr('เช่น MUDST-2026-Pegasus/pegasus-tcg-api')}
-                valuePlaceholder={tr('Role name หรือ <@&ROLE_ID>')}
-                addLabel={tr('เพิ่ม Repo')}
-                saveLabel={tr('บันทึก Mention Mapping')}
+                keyPlaceholder={tr('prBot.eGMudst2026PegasusPegasus')}
+                valuePlaceholder={tr('prBot.roleNameOrRoleId')}
+                addLabel={tr('prBot.addRepo')}
+                saveLabel={tr('prBot.saveMentionMapping')}
                 onSave={(repoMentions) => saveMentions.mutate({ repoMentions })}
                 saving={saveMentions.isPending}
             />
@@ -174,9 +177,9 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
 async function copy(text: string, label: string) {
     try {
         await navigator.clipboard.writeText(text);
-        toast.success(tr('คัดลอก{0}แล้ว', { 0: label }));
+        toast.success(tr('common.copied', { 0: label }));
     } catch {
-        toast.error(tr('คัดลอกไม่สำเร็จ — เลือกข้อความแล้วคัดลอกเอง'));
+        toast.error(tr('prBot.copyFailedSelectTheTextAnd'));
     }
 }
 
@@ -192,9 +195,9 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
         onSuccess: ({ webhookSecret }) => {
             queryClient.setQueryData(prBotQuery(guild.id).queryKey, { ...settings, webhookSecret });
             setReveal(true);
-            toast.success(tr('สร้าง secret ใหม่แล้ว'), { description: tr('อย่าลืมแก้ช่อง Secret ใน GitHub ให้ตรงกัน') });
+            toast.success(tr('prBot.newSecretCreated'), { description: tr('prBot.rememberToUpdateTheSecretField') });
         },
-        onError: (err) => toast.error(tr('สร้าง secret ใหม่ไม่สำเร็จ'), { description: errorMessage(err) }),
+        onError: (err) => toast.error(tr('prBot.failedToCreateANewSecret'), { description: errorMessage(err) }),
     });
 
     return (
@@ -202,10 +205,9 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
             <CardHeader>
                 <CardTitle>GitHub Webhook</CardTitle>
                 <CardDescription>
-                    {tr('ที่ GitHub: Settings → Webhooks → Add webhook — Content type')} <code>application/json</code>
-                    {tr(', เลือก “Let me select individual events” แล้วติ๊ก')} <b>Pull requests</b>, <b>Pull request reviews</b>,{' '}
-                    <b>Pull request review comments</b>, <b>Issue comments</b>, <b>Check runs</b> {tr('และ')} <b>Statuses</b>{' '}
-                    {tr('— ข้อความใน Discord จะอัปเดตเองเมื่อมีคน approve / ขอแก้ / comment และเมื่อ check ผ่านหรือไม่ผ่าน')}
+                    {tr('prBot.inGithubSettingsWebhooksAddWebhook')} <code>application/json</code>
+                    {tr('prBot.chooseLetMeSelectIndividualEvents')} <b>Pull requests</b>, <b>Pull request reviews</b>, <b>Pull request review comments</b>,{' '}
+                    <b>Issue comments</b>, <b>Check runs</b> {tr('common.and')} <b>Statuses</b> {tr('prBot.theDiscordMessageUpdatesItselfWhen')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4">
@@ -213,11 +215,11 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                     <div className="flex gap-2">
                         <Input readOnly className="font-mono text-xs" value={url} onFocus={(e) => e.target.select()} />
                         <Button variant="outline" onClick={() => void copy(url, ' URL')}>
-                            <Copy /> {tr('คัดลอก')}
+                            <Copy /> {tr('common.copy')}
                         </Button>
                     </div>
                 </Field>
-                <Field label="Secret" hint={tr('ใครรู้ secret นี้ส่งแจ้งเตือนปลอมเข้าเซิร์ฟเวอร์นี้ได้ — ถ้าหลุดให้กดสร้างใหม่แล้วแก้ใน GitHub')}>
+                <Field label="Secret" hint={tr('prBot.anyoneWithThisSecretCanSend')}>
                     <div className="flex flex-wrap gap-2">
                         <Input
                             readOnly
@@ -229,35 +231,34 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                         <Button
                             variant="outline"
                             size="icon"
-                            aria-label={reveal ? tr('ซ่อน secret') : tr('แสดง secret')}
+                            aria-label={reveal ? tr('prBot.hideSecret') : tr('prBot.showSecret')}
                             onClick={() => setReveal((value) => !value)}
                         >
                             {reveal ? <EyeOff /> : <Eye />}
                         </Button>
                         <Button variant="outline" onClick={() => void copy(settings.webhookSecret, ' secret')}>
-                            <Copy /> {tr('คัดลอก')}
+                            <Copy /> {tr('common.copy')}
                         </Button>
                         <Button
                             variant="outline"
                             disabled={rotate.isPending}
                             onClick={async () => {
                                 const ok = await confirm({
-                                    title: tr('สร้าง secret ใหม่?'),
-                                    description: tr('secret เดิมจะใช้ไม่ได้ทันที — webhook ที่ตั้งไว้ใน GitHub จะส่งไม่ผ่านจนกว่าจะแก้เป็น secret ใหม่'),
-                                    confirmText: tr('สร้างใหม่'),
+                                    title: tr('prBot.createANewSecret'),
+                                    description: tr('prBot.theOldSecretStopsWorkingImmediately'),
+                                    confirmText: tr('common.createNew'),
                                     destructive: true,
                                 });
                                 if (ok) rotate.mutate();
                             }}
                         >
-                            {rotate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} {tr('สร้างใหม่')}
+                            {rotate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} {tr('common.createNew')}
                         </Button>
                     </div>
                 </Field>
                 {guild.isHome && (
                     <p className="text-xs text-muted-foreground">
-                        {tr('เซิร์ฟเวอร์หลัก: webhook เดิม')} <code>/webhook/github</code>{' '}
-                        {tr('(ใช้ GITHUB_WEBHOOK_SECRET ใน .env ของเซิร์ฟเวอร์) ยังใช้ได้ตามเดิม')}
+                        {tr('prBot.homeServerTheOldWebhook')} <code>/webhook/github</code> {tr('prBot.usingGithubWebhookSecretInThe')}
                     </p>
                 )}
             </CardContent>
@@ -270,11 +271,7 @@ function PrBotPage() {
     const { data, isLoading, error } = useQuery(prBotQuery(guildId));
     return (
         <>
-            <PageHeader
-                help="prBot"
-                title={tr('แจ้งเตือน GitHub PR')}
-                description={tr('ตั้งค่าห้องแจ้งเตือน Pull Request แยกตาม organization และ mention role แยกตาม repo')}
-            />
+            <PageHeader help="prBot" title={tr('common.githubPrAlerts')} description={tr('prBot.setThePullRequestAlertChannel')} />
             {isLoading ? (
                 <PrBotBodySkeleton />
             ) : error ? (

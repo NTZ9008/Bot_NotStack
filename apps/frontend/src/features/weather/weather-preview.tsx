@@ -17,9 +17,9 @@ const timeLabel = (value: string | number) => new Date(value).toLocaleTimeString
 function markdown(text: string, roles: GuildRole[], channels: GuildChannel[]): string {
     const mention = (label: string) => `<span class="dc-mention">${escapeHtml(label)}</span>`;
     return renderDiscordMarkdown(text)
-        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? 'ยศ'}`))
-        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? 'ห้อง'}`))
-        .replace(/&lt;@!?(\d+)&gt;/g, () => mention('@ผู้ใช้'));
+        .replace(/&lt;@&amp;(\d+)&gt;/g, (_, id: string) => mention(`@${roles.find((r) => r.id === id)?.name ?? tr('weather.unknownRole')}`))
+        .replace(/&lt;#(\d+)&gt;/g, (_, id: string) => mention(`#${channels.find((ch) => ch.id === id)?.name ?? tr('weather.unknownChannel')}`))
+        .replace(/&lt;@!?(\d+)&gt;/g, () => mention(tr('weather.someUser')));
 }
 
 // รูปที่อ้างเป็น attachment://ชื่อไฟล์ → data URL หรือ path ของ API จาก server
@@ -31,7 +31,7 @@ const resolveFile = (files: Record<string, string>, url: string | undefined) => 
 // embed 1 อันแบบที่ Discord แสดง (ช่องข้อมูลแถวละ 3 หรือ 2 เมื่อมีรูปมุมขวาบน)
 function EmbedView({ embed, files, roles, channels }: { embed: PreviewEmbed; files: Record<string, string>; roles: GuildRole[]; channels: GuildChannel[] }) {
     const image = resolveFile(files, embed.image?.url);
-    const footer = [embed.footer?.text, embed.timestamp ? `วันนี้ เวลา ${timeLabel(embed.timestamp)}` : ''].filter(Boolean).join(' • ');
+    const footer = [embed.footer?.text, embed.timestamp ? tr('weather.todayAt', { 0: timeLabel(embed.timestamp) }) : ''].filter(Boolean).join(' • ');
     return (
         <div
             className="dark max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4"
@@ -98,7 +98,7 @@ export function WeatherPreview({
     return (
         <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-                {tr('ตัวอย่างใน Discord — ใช้ข้อมูลอากาศจริงของสถานที่ที่เลือก')} {data && tr('(ข้อมูล ณ {0} น.)', { 0: timeLabel(data.fetchedAt) })}
+                {tr('weather.discordPreviewUsesRealWeatherData')} {data && tr('weather.dataAsOf', { 0: timeLabel(data.fetchedAt) })}
             </p>
             <DiscordMessage>
                 <div className={cn('space-y-1 transition-opacity', preview.isFetching && 'opacity-60')}>
@@ -108,11 +108,11 @@ export function WeatherPreview({
                     ))}
                     {!data && preview.isFetching && (
                         <p className="flex items-center gap-2 text-sm text-[#949ba4]">
-                            <Loader2 className="size-4 animate-spin" /> {tr('กำลังโหลดข้อมูลอากาศ...')}
+                            <Loader2 className="size-4 animate-spin" /> {tr('weather.loadingWeatherData')}
                         </p>
                     )}
                     {preview.error && (
-                        <p className="text-sm text-red-700 dark:text-red-400">{tr('สร้างตัวอย่างไม่สำเร็จ: {0}', { 0: errorMessage(preview.error) })}</p>
+                        <p className="text-sm text-red-700 dark:text-red-400">{tr('weather.failedToCreatePreview', { 0: errorMessage(preview.error) })}</p>
                     )}
                     {data?.warnings.length ? (
                         <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-300">

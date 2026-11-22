@@ -1,4 +1,4 @@
-import { tr, byLang } from '../../lib/i18n';
+import { tr, byLang, trText } from '../../lib/i18n';
 import { AUDIT_GROUP_LABELS, auditLabel, type ActivityItem, type AuditLogItem } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -86,7 +86,7 @@ function LoadMore({ hasNextPage, isFetchingNextPage, fetchNextPage }: { hasNextP
     return (
         <div className="flex justify-center">
             <Button variant="outline" onClick={fetchNextPage} disabled={isFetchingNextPage}>
-                {isFetchingNextPage && <Loader2 className="animate-spin" />} {tr('โหลดเพิ่ม')}
+                {isFetchingNextPage && <Loader2 className="animate-spin" />} {tr('common.loadMore')}
             </Button>
         </div>
     );
@@ -108,24 +108,24 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
     const columns: ColumnDef<AuditLogItem>[] = [
         {
             accessorKey: 'createdAt',
-            header: tr('เวลา'),
+            header: tr('common.time'),
             cell: ({ row }) => <span className="text-xs whitespace-nowrap">{formatDateTime(row.original.createdAt)}</span>,
         },
         {
             accessorKey: 'actorName',
-            header: tr('ผู้กระทำ'),
-            cell: ({ row }) => row.original.actorName ?? <span className="text-muted-foreground">{tr('ไม่ทราบ')}</span>,
+            header: tr('common.actor'),
+            cell: ({ row }) => row.original.actorName ?? <span className="text-muted-foreground">{tr('audit.unknown')}</span>,
         },
         {
             accessorKey: 'action',
             header: 'Action',
             cell: ({ row }) => (
-                <ActionBadge tone={GROUP_TONE[row.original.action.split('.')[0]!]} label={tr(auditLabel(row.original.action))} code={row.original.action} />
+                <ActionBadge tone={GROUP_TONE[row.original.action.split('.')[0]!]} label={trText(auditLabel(row.original.action))} code={row.original.action} />
             ),
         },
         {
             id: 'target',
-            header: tr('เป้าหมาย'),
+            header: tr('audit.target'),
             cell: ({ row: { original: item } }) => (
                 <span className="text-xs">{item.targetId ? `${item.targetType ? `${item.targetType}: ` : ''}${item.targetId}` : '—'}</span>
             ),
@@ -133,12 +133,12 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
         { accessorKey: 'ip', header: 'IP', cell: ({ row }) => <span className="font-mono text-xs">{row.original.ip ?? '—'}</span> },
         {
             accessorKey: 'success',
-            header: tr('ผลลัพธ์'),
+            header: tr('audit.result'),
             cell: ({ row }) =>
                 row.original.success ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('สำเร็จ')}</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('audit.success')}</Badge>
                 ) : (
-                    <Badge variant="destructive">{tr('ไม่สำเร็จ')}</Badge>
+                    <Badge variant="destructive">{tr('common.failed')}</Badge>
                 ),
         },
         {
@@ -146,7 +146,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             header: '',
             cell: ({ row }) => (
                 <Button size="xs" variant="outline" onClick={() => setDetail(row.original)}>
-                    {tr('ดู')}
+                    {tr('audit.view')}
                 </Button>
             ),
         },
@@ -154,7 +154,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
 
     return (
         <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">{tr('การเข้าสู่ระบบและทุกการเปลี่ยนแปลงที่ทำผ่าน Dashboard (เก็บย้อนหลัง 180 วัน)')}</p>
+            <p className="text-sm text-muted-foreground">{tr('audit.loginsAndEveryChangeMadeThrough')}</p>
             <form
                 className="flex flex-wrap gap-2"
                 onSubmit={(e) => {
@@ -167,20 +167,20 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-80">
-                        <SelectItem value={ALL}>{tr('ทุก action')}</SelectItem>
+                        <SelectItem value={ALL}>{tr('audit.allActions')}</SelectItem>
                         <SelectGroup>
-                            <SelectLabel>{tr('ทั้งหมวด')}</SelectLabel>
+                            <SelectLabel>{tr('audit.wholeCategory')}</SelectLabel>
                             {groups.map((group) => (
                                 <SelectItem key={group} value={`${group}.`}>
-                                    {tr(AUDIT_GROUP_LABELS[group]) ?? group} {tr('(ทั้งหมด)')}
+                                    {trText(AUDIT_GROUP_LABELS[group]) ?? group} {tr('audit.all')}
                                 </SelectItem>
                             ))}
                         </SelectGroup>
                         <SelectGroup>
-                            <SelectLabel>{tr('แยก action')}</SelectLabel>
+                            <SelectLabel>{tr('audit.byAction')}</SelectLabel>
                             {actions.map((action) => (
                                 <SelectItem key={action} value={action}>
-                                    {tr(auditLabel(action))} — {action}
+                                    {trText(auditLabel(action))} — {action}
                                 </SelectItem>
                             ))}
                         </SelectGroup>
@@ -191,19 +191,19 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value={ALL}>{tr('ทุกผลลัพธ์')}</SelectItem>
-                        <SelectItem value="true">{tr('สำเร็จ')}</SelectItem>
-                        <SelectItem value="false">{tr('ไม่สำเร็จ / ถูกปฏิเสธ')}</SelectItem>
+                        <SelectItem value={ALL}>{tr('audit.allResults')}</SelectItem>
+                        <SelectItem value="true">{tr('audit.success')}</SelectItem>
+                        <SelectItem value="false">{tr('audit.failedDenied')}</SelectItem>
                     </SelectContent>
                 </Select>
                 <Input
                     className="w-64"
-                    placeholder={tr('ค้นหาผู้กระทำ / เป้าหมาย / IP')}
+                    placeholder={tr('audit.searchActorTargetIp')}
                     value={draft.q ?? ''}
                     onChange={(e) => setDraft((d) => ({ ...d, q: e.target.value }))}
                 />
                 <Button type="submit">
-                    <Search /> {tr('ค้นหา')}
+                    <Search /> {tr('common.search')}
                 </Button>
             </form>
 
@@ -212,18 +212,18 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
-                <DataTable columns={columns} data={items} empty={tr('ไม่พบรายการ')} />
+                <DataTable columns={columns} data={items} empty={tr('audit.noEntriesFound')} />
             )}
             <LoadMore hasNextPage={logs.hasNextPage} isFetchingNextPage={logs.isFetchingNextPage} fetchNextPage={() => void logs.fetchNextPage()} />
 
             <DetailDialog
-                title={detail ? tr(auditLabel(detail.action)) : null}
+                title={detail ? trText(auditLabel(detail.action)) : null}
                 onClose={() => setDetail(null)}
                 rows={
                     detail
                         ? [
-                              [tr('เวลา'), formatDateTime(detail.createdAt)],
-                              [tr('ผู้กระทำ'), `${detail.actorName ?? tr('ไม่ทราบ')}${detail.actorId ? ` (#${detail.actorId})` : ''}`],
+                              [tr('common.time'), formatDateTime(detail.createdAt)],
+                              [tr('common.actor'), `${detail.actorName ?? tr('audit.unknown')}${detail.actorId ? ` (#${detail.actorId})` : ''}`],
                               ['Action', <code key="a">{detail.action}</code>],
                               ['IP', detail.ip ?? '—'],
                               ['User-Agent', detail.userAgent ?? '—'],
@@ -240,11 +240,11 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
 // เหตุการณ์ในเซิร์ฟเวอร์ Discord (ตาราง activity_events)
 // ==========================================
 const RANGES = byLang(() => [
-    { hours: 24, label: tr('24 ชั่วโมงล่าสุด') },
-    { hours: 168, label: tr('7 วันล่าสุด') },
-    { hours: 720, label: tr('30 วันล่าสุด') },
-    { hours: 2160, label: tr('90 วันล่าสุด') },
-    { hours: 8760, label: tr('1 ปีล่าสุด') },
+    { hours: 24, label: tr('audit.last24Hours') },
+    { hours: 168, label: tr('common.last7Days') },
+    { hours: 720, label: tr('common.last30Days') },
+    { hours: 2160, label: tr('common.last90Days') },
+    { hours: 8760, label: tr('audit.lastYear') },
 ]);
 
 // เหตุการณ์ในเซิร์ฟเวอร์ Discord (Activity Log ของเซิร์ฟเวอร์นั้น)
@@ -262,17 +262,17 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
     const columns: ColumnDef<ActivityItem>[] = [
         {
             accessorKey: 'createdAt',
-            header: tr('เวลา'),
+            header: tr('common.time'),
             cell: ({ row }) => <span className="text-xs whitespace-nowrap">{formatDateTime(row.original.createdAt)}</span>,
         },
         {
             accessorKey: 'label',
-            header: tr('เหตุการณ์'),
+            header: tr('common.event'),
             cell: ({ row }) => <ActionBadge tone={ACTIVITY_TONE[row.original.group]} label={row.original.label} code={row.original.eventKey} />,
         },
         {
             id: 'user',
-            header: tr('ผู้ใช้'),
+            header: tr('common.user'),
             cell: ({ row: { original: item } }) => (
                 <div>
                     <p className="flex items-center gap-1.5">
@@ -285,17 +285,21 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
         },
         {
             accessorKey: 'channelName',
-            header: tr('ห้อง'),
+            header: tr('common.channel'),
             cell: ({ row }) => <span className="text-xs">{row.original.channelName ? `#${row.original.channelName}` : '—'}</span>,
         },
-        { accessorKey: 'executorName', header: tr('ผู้ลงมือ'), cell: ({ row }) => <span className="text-xs">{row.original.executorName ?? '—'}</span> },
-        { accessorKey: 'summary', header: tr('รายละเอียด'), cell: ({ row }) => <span className="line-clamp-2 text-xs">{row.original.summary ?? '—'}</span> },
+        { accessorKey: 'executorName', header: tr('audit.executor'), cell: ({ row }) => <span className="text-xs">{row.original.executorName ?? '—'}</span> },
+        {
+            accessorKey: 'summary',
+            header: tr('common.details'),
+            cell: ({ row }) => <span className="line-clamp-2 text-xs">{row.original.summary ?? '—'}</span>,
+        },
         {
             id: 'view',
             header: '',
             cell: ({ row }) => (
                 <Button size="xs" variant="outline" onClick={() => setDetail(row.original)}>
-                    {tr('ดู')}
+                    {tr('audit.view')}
                 </Button>
             ),
         },
@@ -303,12 +307,12 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
 
     const metaText = meta.data
         ? [
-              meta.data.enabled ? tr('กำลังบันทึกอยู่') : tr('⚠️ ปิดการบันทึกอยู่ (เปิดได้ที่แท็บ Log Management)'),
-              meta.data.since ? tr('เริ่มเก็บตั้งแต่ {0}', { 0: formatDateTime(meta.data.since) }) : tr('ยังไม่มีข้อมูล'),
-              tr('ทั้งหมด {0} รายการ', { 0: formatNumber(meta.data.total) }),
-              tr('เก็บย้อนหลัง {0} วัน', { 0: meta.data.retentionDays }),
+              meta.data.enabled ? tr('audit.recording') : tr('audit.recordingIsOffTurnItOn'),
+              meta.data.since ? tr('audit.collectingSince', { 0: formatDateTime(meta.data.since) }) : tr('audit.noDataYet'),
+              tr('audit.entriesInTotal', { 0: formatNumber(meta.data.total) }),
+              tr('audit.keptForDays', { 0: meta.data.retentionDays }),
           ].join(' · ')
-        : tr('กำลังโหลดข้อมูล...');
+        : tr('common.loadingData2');
 
     const { fields = [], ...restMetadata } = detail?.metadata ?? {};
 
@@ -327,7 +331,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-80">
-                        <SelectItem value={ALL}>{tr('ทุกเหตุการณ์')}</SelectItem>
+                        <SelectItem value={ALL}>{tr('audit.allEvents')}</SelectItem>
                         {[...eventGroups.entries()].map(([group, types]) => (
                             <SelectGroup key={group}>
                                 <SelectLabel>{group}</SelectLabel>
@@ -352,13 +356,13 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                         ))}
                     </SelectContent>
                 </Select>
-                <Input className="w-64" placeholder={tr('ค้นหาชื่อ / ห้อง / รายละเอียด / User ID')} value={q} onChange={(e) => setQ(e.target.value)} />
+                <Input className="w-64" placeholder={tr('audit.searchNameChannelDetailsUserId')} value={q} onChange={(e) => setQ(e.target.value)} />
                 <Label className="flex items-center gap-2 rounded-lg border px-3 py-1.5">
-                    {tr('รวมบอท')}
+                    {tr('common.includeBots')}
                     <Switch checked={filters.includeBots} onCheckedChange={(includeBots) => setFilters((f) => ({ ...f, includeBots }))} />
                 </Label>
                 <Button type="submit">
-                    <Search /> {tr('ค้นหา')}
+                    <Search /> {tr('common.search')}
                 </Button>
             </form>
 
@@ -367,7 +371,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
-                <DataTable columns={columns} data={items} empty={tr('ไม่พบเหตุการณ์ในช่วงเวลานี้')} />
+                <DataTable columns={columns} data={items} empty={tr('audit.noEventsInThisPeriod')} />
             )}
             <LoadMore hasNextPage={logs.hasNextPage} isFetchingNextPage={logs.isFetchingNextPage} fetchNextPage={() => void logs.fetchNextPage()} />
 
@@ -377,12 +381,12 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                 rows={
                     detail
                         ? [
-                              [tr('เวลา'), formatDateTime(detail.createdAt)],
-                              [tr('เหตุการณ์'), <code key="e">{detail.eventKey}</code>],
-                              [tr('ผู้ใช้'), `${detail.userName ?? '—'}${detail.userId ? ` (${detail.userId})` : ''}`],
-                              [tr('ห้อง'), detail.channelName ? `#${detail.channelName}` : '—'],
-                              [tr('ผู้ลงมือ'), detail.executorName ?? '—'],
-                              [tr('รายละเอียด'), detail.summary ?? '—'],
+                              [tr('common.time'), formatDateTime(detail.createdAt)],
+                              [tr('common.event'), <code key="e">{detail.eventKey}</code>],
+                              [tr('common.user'), `${detail.userName ?? '—'}${detail.userId ? ` (${detail.userId})` : ''}`],
+                              [tr('common.channel'), detail.channelName ? `#${detail.channelName}` : '—'],
+                              [tr('audit.executor'), detail.executorName ?? '—'],
+                              [tr('common.details'), detail.summary ?? '—'],
                               ...fields.map((f): [string, ReactNode] => [f.name, f.value]),
                           ]
                         : []

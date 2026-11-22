@@ -8,245 +8,168 @@ export interface PageGuide {
 }
 
 // Shared vocabulary for page help, navigation, search and feature shortcuts.
-export const PAGE_GUIDES = byLang(() => ({
-    servers: {
-        title: tr('เซิร์ฟเวอร์ทั้งหมด'),
-        summary: tr('เลือกเซิร์ฟเวอร์ที่ต้องการใช้งานก่อนเริ่มตั้งค่าบอท'),
-        steps: [
-            tr('เชื่อมต่อบัญชี Discord หากระบบแจ้งให้เชื่อมต่อ'),
-            tr('เลือกเซิร์ฟเวอร์ที่มีป้าย “จัดการได้” เพื่อเริ่มตั้งค่า หรือเลือกเซิร์ฟเวอร์เพื่อดูอันดับสมาชิก'),
-            tr('ถ้ายังไม่พบเซิร์ฟเวอร์ ให้เชิญบอทแล้วกดรีเฟรช'),
-        ],
-        saving: tr('การเลือกเซิร์ฟเวอร์ยังไม่เปลี่ยนการตั้งค่าบอท'),
-        tip: tr(
-            'เจ้าของเซิร์ฟเวอร์ (role OWNER) จะเห็นและตั้งค่าได้เฉพาะเซิร์ฟเวอร์ของตัวเอง (เป็น Server Owner หรือมีสิทธิ์ Manage Server) ไม่เห็นเซิร์ฟเวอร์ของคนอื่น',
-        ),
-    },
-    overview: {
-        title: tr('ภาพรวมเซิร์ฟเวอร์'),
-        summary: tr('เริ่มตั้งค่าบอทและดูความเคลื่อนไหวของสมาชิก'),
-        steps: [
-            tr('เริ่มที่ “ตั้งค่าบอท” เพื่อเลือกห้องและเปิดความสามารถที่ต้องการ'),
-            tr('เลือกฟีเจอร์จากทางลัดหรือเมนูด้านซ้าย แต่ละหน้ามีปุ่มวิธีใช้งาน'),
-            tr('เลือกช่วงเวลาเพื่อดูสถิติ ถ้าเลือกกำหนดเอง ให้ระบุเวลาแล้วกด “ดูข้อมูล”'),
-        ],
-        saving: tr('การเปลี่ยนช่วงเวลาและตัวกรองมีผลเฉพาะข้อมูลที่แสดง'),
-        tip: tr('ถ้ากราฟไม่มีข้อมูล ลองขยายช่วงเวลาและตรวจการบันทึก Activity ในหน้า “ตั้งค่าบันทึกเหตุการณ์” แท็บตัวกรอง'),
-    },
-    config: {
-        title: tr('ตั้งค่าบอท'),
-        summary: tr('เลือกห้องปลายทางและเปิดความสามารถของบอท'),
-        steps: [
-            tr('เลือกห้องที่บอทจะส่งข้อความในหมวด “ห้อง”'),
-            tr('เปิดเฉพาะความสามารถในแชทที่ต้องการใช้งาน'),
-            tr('รอข้อความ “บันทึกแล้ว” ก่อนเปลี่ยนค่าถัดไป'),
-        ],
-        saving: tr('บันทึกทันทีเมื่อเลือกห้องหรือเปิด/ปิดสวิตช์ ไม่ต้องกดปุ่มบันทึก'),
-        tip: tr('เลือก “ไม่ส่ง” เพื่อหยุดส่งข้อความไปยังห้องนั้น บอทต้องมีสิทธิ์ส่งข้อความในห้องที่เลือก'),
-    },
-    news: {
-        title: tr('ส่งประกาศ'),
-        summary: tr('เขียนข่าวและดูตัวอย่างก่อนส่งเข้า Discord'),
-        steps: [
-            tr('เลือก “ห้องประกาศข่าวสาร” ในหน้า “ตั้งค่าบอท” ก่อน'),
-            tr('เลือกประเภทข่าว กรอกหัวข้อและรายละเอียด แล้วตรวจตัวอย่าง'),
-            tr('กด “ส่งประกาศเข้า Discord” และยืนยันเพื่อส่งจริง'),
-        ],
-        saving: tr('ส่งข้อความจริงหลังยืนยัน แบบร่างในหน้านี้ไม่ได้บันทึกอัตโนมัติ'),
-        tip: tr('สี ข้อความท้าย และรูปภาพเป็นตัวเลือกเสริม เริ่มจากหัวข้อกับรายละเอียดได้เลย'),
-    },
-    welcome: {
-        title: tr('ต้อนรับสมาชิกใหม่'),
-        summary: tr('สร้างข้อความและการ์ดต้อนรับเมื่อสมาชิกเข้าเซิร์ฟเวอร์'),
-        steps: [
-            tr('สร้างหรือเลือกการ์ดต้อนรับ แล้วเลือกห้องปลายทาง'),
-            tr('แก้ข้อความและรูปแบบ ดูตัวอย่างแล้วกด “บันทึก”'),
-            tr('เปิดใช้งานการ์ด และใช้ปุ่มทดสอบเมื่อต้องการตรวจข้อความใน Discord'),
-        ],
-        saving: tr('การแก้การ์ดต้องกดบันทึก ส่วนสวิตช์เปิด/ปิดบันทึกทันที'),
-        tip: tr('การทดสอบส่งข้อความจริงเข้าห้องที่เลือก สมาชิกในห้องจะเห็นข้อความนั้น'),
-    },
-    weather: {
-        title: tr('รายงานสภาพอากาศ'),
-        summary: tr('ตั้งเวลาส่งรายงานอากาศ พร้อมพยากรณ์และเรดาร์ฝน'),
-        steps: [
-            tr('ตั้งห้องและเวลาส่งในแท็บ “เวลา & ห้อง” แล้วเลือกสถานที่'),
-            tr('ตรวจตัวอย่างและกด “บันทึก” ก่อนเปิดใช้งาน'),
-            tr('ปรับข้อความ กราฟ หรือเรดาร์เพิ่มเติมได้ในแท็บที่เกี่ยวข้อง'),
-        ],
-        saving: tr('การตั้งค่าต้องกดบันทึก ส่วนสวิตช์เปิด/ปิดบันทึกทันทีและใช้ค่าที่บันทึกไว้'),
-        tip: tr('ปุ่มทดสอบส่งรายงานจริงเข้า Discord หากระบบแจ้งว่ายังไม่มี API key ให้ผู้ดูแลระบบตั้งค่าก่อน'),
-    },
-    roomAccess: {
-        title: tr('ให้สิทธิ์เข้าห้อง'),
-        summary: tr('ให้หรือถอนสิทธิ์มองเห็นห้องพิเศษแบบถาวรหรือจำกัดเวลา'),
-        steps: [
-            tr('เพิ่มห้องที่ต้องการใช้ในรายการ “ห้องที่ใช้ระบบตั๋ว”'),
-            tr('เลือกผู้ใช้ ห้อง และรูปแบบการดำเนินการ'),
-            tr('ระบุระยะเวลาหากต้องการสิทธิ์ชั่วคราว แล้วตรวจข้อมูลก่อนดำเนินการ'),
-        ],
-        saving: tr('ปุ่มดำเนินการเปลี่ยนสิทธิ์จริงใน Discord ตรวจรายชื่อผู้ได้รับสิทธิ์ด้านล่างได้'),
-        tip: tr('สิทธิ์แบบจำกัดเวลาจะถูกถอนอัตโนมัติเมื่อหมดเวลา'),
-    },
-    voiceGuard: {
-        title: tr('ดูแลห้องเสียง'),
-        summary: tr('กำหนดว่าใครเข้าได้ หรือห้ามใครเข้าห้องเสียง'),
-        steps: [
-            tr('เลือก “อนุญาตเฉพาะ” (Whitelist) หรือ “ห้ามเข้า” (Blacklist)'),
-            tr('เลือกห้องเสียงแล้วกดเพิ่มห้อง จากนั้นเพิ่มสมาชิกในรายการ'),
-            tr('ตรวจสวิตช์ของห้องและเลือกว่าจะส่งข้อความส่วนตัว (DM) เมื่อเตะผู้ใช้ออกหรือไม่'),
-        ],
-        saving: tr('เพิ่ม/ลบสมาชิกและเปลี่ยนสวิตช์มีผลทันที ไม่ต้องกดบันทึก'),
-        tip: tr(
-            'ห้องที่เพิ่มจะเปิดใช้งานทันที Whitelist ที่ยังไม่มีสมาชิกจะไม่อนุญาตคนเข้า ส่วน Blacklist จะห้ามคนในรายการ หากเปิดทั้งสองโหมดต้องผ่านทั้งสองกฎ',
-        ),
-    },
-    voiceListen: {
-        title: tr('ฟังห้องเสียง'),
-        summary: tr('ให้บอทเข้าห้องเสียงแล้วฟังเสียงในห้องสดๆ ผ่านหน้าเว็บนี้'),
-        steps: [
-            tr('เลือกห้องเสียงแล้วกด “ให้บอทเข้าห้อง”'),
-            tr('กด “เริ่มฟัง” แล้วปรับระดับเสียงได้ตามต้องการ'),
-            tr('กด “ให้บอทออก” เมื่อฟังเสร็จ ถ้าไม่มีใครอยู่ในห้องนาน 1 นาที บอทจะออกเอง'),
-        ],
-        saving: tr('ปุ่มทุกปุ่มมีผลทันที ไม่ต้องกดบันทึก'),
-        tip: tr('บอทต้องมีสิทธิ์ View Channel และ Connect ในห้องนั้น เสียงในหน้าเว็บช้ากว่าใน Discord ประมาณครึ่งวินาที'),
-    },
-    logManager: {
-        title: tr('ตั้งค่าบันทึกเหตุการณ์'),
-        summary: tr('เลือกเหตุการณ์และห้องรับแจ้งเตือน พร้อมปรับรูปแบบข้อความ'),
-        steps: [
-            tr('เริ่มที่แท็บ “เหตุการณ์และห้อง” เลือกห้องรับแจ้งเตือนและเปิดเหตุการณ์ที่ต้องการ'),
-            tr('เปิดสวิตช์ “ระบบ Log ทั้งหมด” เพื่อให้ส่งแจ้งเตือน'),
-            tr('ปรับรูปแบบข้อความหรือยกเว้นห้อง/สมาชิกในแท็บรูปแบบข้อความและตัวกรอง'),
-        ],
-        saving: tr('เหตุการณ์ ห้อง และตัวกรองบันทึกทันที ส่วนรูปแบบข้อความต้องกดบันทึก'),
-        tip: tr('การส่ง Log เข้า Discord กับการเก็บ Activity ทำงานแยกกัน ตรวจการเก็บ Activity ที่แท็บตัวกรอง'),
-    },
-    prBot: {
-        title: tr('แจ้งเตือน GitHub PR'),
-        summary: tr('ส่งความเคลื่อนไหวของ Pull Request เข้าห้อง Discord'),
-        steps: [
-            tr('เลือกห้องเริ่มต้นแล้วกดบันทึก'),
-            tr('ตั้ง GitHub Webhook ตามข้อมูลในหน้านี้ โดยใช้ Payload URL และ Secret ของเซิร์ฟเวอร์นี้'),
-            tr('หากต้องการ แยกห้องตาม Organization หรือระบุยศที่จะ mention ตาม Repo แล้วบันทึกแต่ละส่วน'),
-        ],
-        saving: tr('แต่ละส่วนมีปุ่มบันทึกของตัวเอง ต้องบันทึกทุกส่วนที่แก้'),
-        tip: tr('Secret ใช้ตรวจสอบข้อความจาก GitHub อย่าแชร์ให้ผู้อื่น ถ้าสร้าง Secret ใหม่ต้องแก้ใน GitHub ด้วย'),
-    },
-    grafanaAlerts: {
-        title: tr('แจ้งเตือน Grafana Alert'),
-        summary: tr('รับ Alertmanager แล้วส่งสถานะ Firing และ Resolved ไปยัง Discord'),
-        steps: [
-            tr('เลือกห้องเริ่มต้นสำหรับแจ้งเตือน หรือเพิ่ม mapping ตาม label env/severity แล้วบันทึก'),
-            tr('คัดลอก Payload URL และ Secret ไปตั้งใน Grafana Alerting → Contact points → Webhook พร้อม Authorization: Bearer <Secret>'),
-            tr('กดส่ง Test Alert เพื่อตรวจห้องปลายทางและการเชื่อมต่อ'),
-        ],
-        saving: tr('บันทึกห้องเริ่มต้นและ label mapping แยกตามเซิร์ฟเวอร์'),
-        tip: tr('เมื่อสร้าง Secret ใหม่ ให้อัปเดต Authorization header ที่ Grafana ทันที เพราะ Secret เดิมจะใช้ไม่ได้'),
-    },
-    jira: {
-        title: tr('เปิด Jira card'),
-        summary: tr('ให้สมาชิกเปิด card ใน Jira จาก Discord ผ่านห้องส่วนตัวแบบระบบ ticket'),
-        steps: [
-            tr('กรอก Jira site URL, อีเมล, API token และ project key แล้วกด “ทดสอบการเชื่อมต่อ”'),
-            tr('ติ๊กประเภท card ที่ให้เลือก ตั้งจำนวนรูปที่แนบได้ เลือกห้องแผง ห้อง log หมวดหมู่ และยศทีมงาน แล้วกดบันทึก'),
-            tr('กด “ส่งแผงเข้าห้อง” แล้วเปิดสวิตช์เปิดใช้งาน — สมาชิกกดปุ่มในห้องแผงเพื่อเริ่มเปิด card'),
-        ],
-        saving: tr('แก้ค่าแล้วกดบันทึก (Ctrl/⌘ + S) · สวิตช์เปิด/ปิดบันทึกทันที · ส่งแผงใช้ค่าที่บันทึกแล้ว'),
-        tip: tr('API token ถูกเข้ารหัสเก็บไว้และไม่แสดงกลับมาอีก — card จะถูกสร้างในนามบัญชี Atlassian ที่ใช้เชื่อมต่อ'),
-    },
-    funds: {
-        title: tr('เก็บเงินตามเป้า'),
-        summary: tr('สร้างหัวข้อเก็บเงิน ตั้งยอดต่อคน เพิ่ม/ลบคน บันทึกรับเงิน และส่งรายงานเข้า Discord'),
-        steps: [
-            tr('กด “สร้างหัวข้อ” ตั้งชื่อเรื่อง ยอดเก็บต่อคน วันครบกำหนด และห้องส่งรายงาน'),
-            tr('เพิ่มสมาชิกที่ต้องจ่ายด้วย UserPicker หรือดึงทุกคนจากยศ (สามารถตั้งยอดเฉพาะคนได้)'),
-            tr('เมื่อได้รับเงิน ให้กด “รับเงิน” หรือ “จ่ายครบ” เพื่อบันทึกประวัติ'),
-            tr('กด “ส่งรายงาน” เพื่อส่งสรุปความคืบหน้าและรายชื่อเข้าห้อง Discord ที่กำหนด'),
-        ],
-        saving: tr('การสร้าง/แก้ไขหัวข้อและบันทึกรับเงินมีผลทันที รายงานจะถูกส่งเข้าห้องเมื่อกดส่ง'),
-        tip: tr('สามารถเลือกแท็กคนที่ยังจ่ายไม่ครบในรายงานได้ เพื่อแจ้งเตือนสมาชิกใน Discord'),
-    },
-    levels: {
-        title: tr('อันดับและเลเวล'),
-        summary: tr('ดูอันดับ XP และปรับแต่งการ์ดของคุณ'),
-        steps: [
-            tr('ค้นหาชื่อสมาชิกหรือกด “อันดับของฉัน” เพื่อดู XP และเลเวล'),
-            tr('เปิดแท็บ “การ์ดของฉัน” เพื่อปรับรูปแบบการ์ดส่วนตัว'),
-            tr('ผู้ที่จัดการเซิร์ฟเวอร์ได้จะเห็นแท็บเพิ่มสำหรับกฎ XP ยศรางวัล ธีมการ์ด จัดการสมาชิก และประวัติ'),
-        ],
-        saving: tr('การตั้งค่าแต่ละแท็บมีปุ่มบันทึกของตัวเอง ตรวจและบันทึกก่อนออกจากแท็บ'),
-        tip: tr('XP คือคะแนนประสบการณ์จากกิจกรรม เลเวลคำนวณจากกฎของเซิร์ฟเวอร์'),
-    },
-    relations: {
-        title: tr('กระดานความสัมพันธ์'),
-        summary: tr('ดูว่าสมาชิกคนไหนเกี่ยวข้องกัน และเปิดประวัติของแต่ละคนหรือแต่ละเส้นได้'),
-        steps: [
-            tr('ลากพื้นกระดานเพื่อเลื่อน ใช้ล้อเมาส์หรือปุ่มด้านขวาเพื่อซูม และลากการ์ดไปวางตรงไหนก็ได้'),
-            tr('กดรูปคนเพื่อดูประวัติทั้งหมด หรือกดเส้นเพื่อดูว่าสองคนนั้นเกี่ยวข้องกันอย่างไร'),
-            tr('เลือกช่วงเวลาหรือกรองเส้น ถ้ากระดานแน่นเกินไปให้เลือก “เฉพาะเส้นสี”'),
-        ],
-        saving: tr('หน้านี้ใช้ดูข้อมูล ตำแหน่งการ์ดที่ลากจะจำไว้ในเบราว์เซอร์นี้เท่านั้น'),
-        tip: tr('คนที่มีกากบาทคือคนที่ออกจากเซิร์ฟเวอร์แล้ว ข้อมูลมาจาก Activity Log จึงเห็นย้อนหลังได้เท่าที่ระบบเก็บไว้'),
-    },
-    audit: {
-        title: tr('ประวัติเซิร์ฟเวอร์'),
-        summary: tr('ตรวจว่าใครเปลี่ยนการตั้งค่าและเกิดอะไรขึ้นใน Discord'),
-        steps: [
-            tr('เลือกแท็บการตั้งค่าบน Dashboard หรือเหตุการณ์ในเซิร์ฟเวอร์ Discord'),
-            tr('ใช้ตัวกรองเพื่อหารายการที่ต้องการ'),
-            tr('เปิดรายละเอียดรายการเพื่อตรวจข้อมูลเพิ่มเติม'),
-        ],
-        saving: tr('หน้านี้ใช้ดูประวัติ การกรองไม่เปลี่ยนข้อมูลต้นฉบับ'),
-    },
-    customSummary: {
-        title: tr('สร้างรายงานสรุป'),
-        summary: tr('สร้างรายงานสรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps ตามเงื่อนไขพร้อมส่งออก PDF ภาษาไทย'),
-        steps: [
-            tr('เลือกช่วงเวลาตามโซน Asia/Bangkok ห้องที่ต้องการ และโมดูลกิจกรรม'),
-            tr('กรองผู้ใช้หรือเปิด/ปิดการรวมบอท แล้วกด "ประมวลผลสรุป"'),
-            tr('กด "Export เป็น PDF" เพื่อตั้งค่าธีม รายละเอียด และดาวน์โหลดเอกสาร A4'),
-        ],
-        saving: tr('การประมวลผลและส่งออกรายงานไม่เปลี่ยนแปลงข้อมูลต้นฉบับ โดยระบบจะบันทึกเฉพาะประวัติการส่งออก PDF'),
-    },
-    account: {
-        title: tr('บัญชีของฉัน'),
-        summary: tr('จัดการบัญชี การเชื่อมต่อ Discord และความปลอดภัย'),
-        steps: [
-            tr('ตรวจข้อมูลบัญชีและบัญชี Discord ที่เชื่อมอยู่'),
-            tr('เชื่อมต่อ Discord เพื่อเข้าถึงเซิร์ฟเวอร์ของคุณ'),
-            tr('ใช้ส่วนความปลอดภัยเมื่อต้องการเปลี่ยนรหัสผ่านหรือออกจากระบบทุกอุปกรณ์'),
-        ],
-        saving: tr('แต่ละการดำเนินการมีปุ่มแยกกัน อ่านข้อความยืนยันก่อนดำเนินการ'),
-    },
-    users: {
-        title: tr('จัดการผู้ใช้'),
-        summary: tr('จัดการบัญชีและสิทธิ์เข้าใช้ Dashboard'),
-        steps: [
-            tr('ค้นหาผู้ใช้ที่ต้องการ หรือกรอกข้อมูลเพื่อเพิ่มบัญชีใหม่'),
-            tr('ตรวจบัญชีเป้าหมายก่อนเปลี่ยน role ปิดบัญชี หรือรีเซ็ตรหัสผ่าน'),
-            tr('อ่านและยืนยันการดำเนินการตามที่ระบบแจ้ง'),
-        ],
-        saving: tr('การเปลี่ยนสิทธิ์และสถานะบัญชีมีผลเมื่อดำเนินการสำเร็จ'),
-        tip: tr('ADMIN จัดการได้ทุกเซิร์ฟเวอร์และระบบ · OWNER จัดการได้เฉพาะเซิร์ฟเวอร์ของตัวเอง · USER ดูได้เฉพาะหน้า Levels ของเซิร์ฟเวอร์ตัวเอง'),
-    },
-    systemAudit: {
-        title: tr('ประวัติทั้งระบบ'),
-        summary: tr('ตรวจการเข้าสู่ระบบและการเปลี่ยนแปลงจากทุกเซิร์ฟเวอร์'),
-        steps: [
-            tr('เลือกตัวกรองเพื่อระบุเหตุการณ์ที่ต้องการตรวจ'),
-            tr('ตรวจผู้ดำเนินการ เวลา และรายละเอียดของรายการ'),
-            tr('ใช้หน้าประวัติเซิร์ฟเวอร์หากต้องการดูเฉพาะเซิร์ฟเวอร์เดียว'),
-        ],
-        saving: tr('หน้านี้ใช้ดูประวัติ การกรองไม่เปลี่ยนข้อมูลต้นฉบับ'),
-    },
-    logs: {
-        title: tr('ไฟล์บันทึกของบอท'),
-        summary: tr('เปิดไฟล์บันทึกเพื่อตรวจการทำงานของบอท'),
-        steps: [tr('เลือกไฟล์บันทึกที่ต้องการจากรายการ'), tr('อ่านรายการเหตุการณ์และเวลาที่เกิด'), tr('กดรีเฟรชเพื่อโหลดข้อมูลล่าสุด')],
-        saving: tr('หน้านี้อ่านข้อมูลจากไฟล์ ไม่มีการแก้ไขไฟล์บันทึก'),
-    },
-} satisfies Record<string, PageGuide>));
+export const PAGE_GUIDES = byLang(
+    () =>
+        ({
+            servers: {
+                title: tr('common.allServers'),
+                summary: tr('common.pickAServerBeforeSettingUp'),
+                steps: [tr('common.connectYourDiscordAccountIfPrompted'), tr('common.pickAServerLabeledCanManage'), tr('common.ifYourServerIsntListedInvite')],
+                saving: tr('common.selectingAServerDoesNotChange'),
+                tip: tr('common.serverOwnersRoleOwnerSeeAnd'),
+            },
+            overview: {
+                title: tr('common.serverOverview'),
+                summary: tr('common.startSettingUpTheBotAnd'),
+                steps: [tr('common.startWithBotSettingsToPick'), tr('common.pickAFeatureFromTheShortcuts'), tr('common.pickATimeRangeToSee')],
+                saving: tr('common.changingTheTimeRangeAndFilters'),
+                tip: tr('common.ifTheChartsAreEmptyTry'),
+            },
+            config: {
+                title: tr('common.botSettings'),
+                summary: tr('common.pickTargetChannelsAndTurnOn'),
+                steps: [tr('common.pickTheChannelsTheBotPosts'), tr('common.turnOnOnlyTheChatFeatures'), tr('common.waitForSavedBeforeChangingThe')],
+                saving: tr('common.savedAsSoonAsYouPick'),
+                tip: tr('common.pickDontSendToStopPosting'),
+            },
+            news: {
+                title: tr('common.announcements'),
+                summary: tr('common.writeNewsAndPreviewItBefore'),
+                steps: [tr('common.firstPickTheNewsChannelOn'), tr('common.pickANewsTypeFillIn'), tr('common.pressPostAnnouncementToDiscordAnd')],
+                saving: tr('common.messagesAreSentForRealAfter'),
+                tip: tr('common.colorFooterAndImageAreOptional'),
+            },
+            welcome: {
+                title: tr('common.welcomeNewMembers'),
+                summary: tr('common.createWelcomeMessagesAndCardsFor'),
+                steps: [tr('common.createOrPickAWelcomeCard'), tr('common.editTheTextAndStyleCheck'), tr('common.enableTheCardAndUseThe')],
+                saving: tr('common.cardEditsNeedSaveTheOn'),
+                tip: tr('common.testingSendsARealMessageTo'),
+            },
+            weather: {
+                title: tr('common.weatherReport'),
+                summary: tr('common.scheduleWeatherReportsWithForecastAnd'),
+                steps: [tr('common.setTheChannelAndSendTime'), tr('common.checkThePreviewAndPressSave'), tr('common.fineTuneTheMessageChartOr')],
+                saving: tr('common.settingsNeedSaveTheOnOff'),
+                tip: tr('common.theTestButtonSendsAReal'),
+            },
+            roomAccess: {
+                title: tr('common.roomAccess'),
+                summary: tr('common.grantOrRevokeAccessToSpecial'),
+                steps: [tr('common.addTheChannelsYouWantTo'), tr('common.pickTheUserChannelAndAction'), tr('common.setADurationForTemporaryAccess')],
+                saving: tr('common.actionButtonsChangeRealDiscordPermissions'),
+                tip: tr('common.temporaryAccessIsRevokedAutomaticallyWhen'),
+            },
+            voiceGuard: {
+                title: tr('common.voiceGuard'),
+                summary: tr('common.decideWhoMayOrMayNot'),
+                steps: [tr('common.pickAllowOnlyWhitelistOrBlock'), tr('common.pickAVoiceChannelAndPress2'), tr('common.checkEachChannelsSwitchAndChoose')],
+                saving: tr('common.addingRemovingMembersAndSwitchesApply'),
+                tip: tr('common.addedChannelsTakeEffectImmediatelyA'),
+            },
+            voiceListen: {
+                title: tr('common.voiceListen'),
+                summary: tr('common.haveTheBotJoinAVoice'),
+                steps: [tr('common.pickAVoiceChannelAndPress'), tr('common.pressStartListeningAndAdjustThe'), tr('common.pressMakeTheBotLeaveWhen')],
+                saving: tr('common.everyButtonTakesEffectImmediatelyNo'),
+                tip: tr('common.theBotNeedsViewChannelAnd'),
+            },
+            logManager: {
+                title: tr('common.eventLogSettings'),
+                summary: tr('common.pickEventsAndAlertChannelsAnd'),
+                steps: [tr('common.startInTheEventsChannelsTab'), tr('common.turnOnTheWholeLogSystem'), tr('common.adjustTheMessageFormatOrExclude')],
+                saving: tr('common.eventsChannelsAndFiltersSaveImmediately'),
+                tip: tr('common.postingLogsToDiscordAndStoring'),
+            },
+            prBot: {
+                title: tr('common.githubPrAlerts'),
+                summary: tr('common.postPullRequestActivityToA'),
+                steps: [
+                    tr('common.pickADefaultChannelAndPress'),
+                    tr('common.setUpTheGithubWebhookUsing'),
+                    tr('common.optionallyRouteOrganizationsToSeparateChannels'),
+                ],
+                saving: tr('common.eachSectionHasItsOwnSave'),
+                tip: tr('common.theSecretVerifiesMessagesFromGithub'),
+            },
+            grafanaAlerts: {
+                title: tr('common.grafanaAlerts'),
+                summary: tr('common.receiveAlertmanagerAndPostFiringResolved'),
+                steps: [tr('common.pickADefaultAlertChannelOr'), tr('common.copyThePayloadUrlAndSecret'), tr('common.sendATestAlertToCheck')],
+                saving: tr('common.theDefaultChannelAndLabelMapping'),
+                tip: tr('common.afterCreatingANewSecretUpdate'),
+            },
+            jira: {
+                title: tr('common.jiraCards'),
+                summary: tr('common.letMembersOpenJiraCardsFrom'),
+                steps: [tr('common.enterTheJiraSiteUrlEmail'), tr('common.tickTheCardTypesToOffer'), tr('common.pressSendPanelToChannelAnd')],
+                saving: tr('common.editThenSaveCtrlSThe'),
+                tip: tr('common.theApiTokenIsStoredEncrypted'),
+            },
+            funds: {
+                title: tr('common.fundCollection'),
+                summary: tr('common.createFundTopicsSetPerPerson'),
+                steps: [
+                    tr('common.pressCreateTopicAndSetA'),
+                    tr('common.addTheMembersWhoNeedTo'),
+                    tr('common.whenMoneyArrivesPressReceiveOr'),
+                    tr('common.pressSendReportToPostA'),
+                ],
+                saving: tr('common.creatingEditingTopicsAndRecordingPayments'),
+                tip: tr('common.youCanChooseToTagPeople'),
+            },
+            levels: {
+                title: tr('common.ranksLevels'),
+                summary: tr('common.seeTheXpLeaderboardAndCustomize'),
+                steps: [tr('common.searchForAMemberOrPress'), tr('common.openTheMyCardTabTo'), tr('common.peopleWhoCanManageTheServer')],
+                saving: tr('common.eachTabHasItsOwnSave'),
+                tip: tr('common.xpIsExperienceEarnedFromActivity'),
+            },
+            relations: {
+                title: tr('common.relationsBoard'),
+                summary: tr('common.seeWhichMembersAreConnectedAnd'),
+                steps: [tr('common.dragTheBoardToPanUse'), tr('common.clickAPersonToSeeTheir'), tr('common.pickATimeRangeOrFilter')],
+                saving: tr('common.viewOnlyDraggedCardPositionsAre'),
+                tip: tr('common.peopleWithACrossHaveLeft'),
+            },
+            audit: {
+                title: tr('common.serverHistory'),
+                summary: tr('common.seeWhoChangedSettingsAndWhat'),
+                steps: [tr('common.pickTheDashboardSettingsTabOr'), tr('common.useTheFiltersToFindWhat'), tr('common.openAnEntrysDetailsToCheck')],
+                saving: tr('common.viewOnlyFilteringNeverChangesThe'),
+            },
+            customSummary: {
+                title: tr('common.summaryReport'),
+                summary: tr('common.buildVoiceMessageGithubPrAnd'),
+                steps: [tr('common.pickATimeRangeInAsia'), tr('common.filterUsersOrToggleIncludeBots'), tr('common.pressExportAsPdfToSet')],
+                saving: tr('common.processingAndExportingNeverChangeThe'),
+            },
+            account: {
+                title: tr('common.myAccount'),
+                summary: tr('common.manageYourAccountDiscordConnectionAnd'),
+                steps: [tr('common.checkYourAccountDetailsAndThe'), tr('common.connectDiscordToAccessYourServers'), tr('common.useTheSecuritySectionToChange')],
+                saving: tr('common.eachActionHasItsOwnButton'),
+            },
+            users: {
+                title: tr('common.users'),
+                summary: tr('common.manageDashboardAccountsAndAccess'),
+                steps: [tr('common.searchForAUserOrFill'), tr('common.checkTheTargetAccountBeforeChanging'), tr('common.readAndConfirmTheActionAs')],
+                saving: tr('common.roleAndAccountStatusChangesApply'),
+                tip: tr('common.adminManagesEveryServerAndThe'),
+            },
+            systemAudit: {
+                title: tr('common.systemHistory'),
+                summary: tr('common.reviewLoginsAndChangesAcrossAll'),
+                steps: [tr('common.pickFiltersToNarrowDownThe'), tr('common.checkTheActorTimeAndDetails'), tr('common.useServerHistoryToLookAt')],
+                saving: tr('common.viewOnlyFilteringNeverChangesThe'),
+            },
+            logs: {
+                title: tr('common.botLogFiles'),
+                summary: tr('common.openLogFilesToCheckWhat'),
+                steps: [tr('common.pickALogFileFromThe'), tr('common.readTheEventsAndWhenThey'), tr('common.pressRefreshToLoadTheLatest')],
+                saving: tr('common.thisPageOnlyReadsLogFiles'),
+            },
+        }) satisfies Record<string, PageGuide>,
+);
 
 export type PageGuideKey = keyof ReturnType<typeof PAGE_GUIDES>;

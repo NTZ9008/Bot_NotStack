@@ -75,7 +75,7 @@ function CustomLogSummaryPage() {
     const guildId = useGuildId();
     const guild = useGuild();
     const { user } = useAuth();
-    const adminName = user.displayName || user.username || tr('ผู้ดูแลระบบ');
+    const adminName = user.displayName || user.username || tr('customSummary.systemAdmin');
 
     const initial = useMemo(() => createDefaultDraft(), []);
     const [draft, setDraft] = useState<CustomSummaryDraftFilter>(initial.draft);
@@ -90,9 +90,9 @@ function CustomLogSummaryPage() {
     const validationError = useMemo(() => {
         const fromDate = fromBangkokInput(draft.fromInput);
         const toDate = fromBangkokInput(draft.toInput);
-        if (!fromDate || !toDate) return tr('กรุณาระบุวัน-เวลาเริ่มต้นและสิ้นสุดให้ครบถ้วน');
-        if (fromDate.getTime() > toDate.getTime()) return tr('วันเวลาเริ่มต้นต้องไม่มากกว่าวันเวลาสิ้นสุด');
-        if (draft.modules.length === 0) return tr('กรุณาเลือกประเภทกิจกรรมอย่างน้อย 1 รายการ');
+        if (!fromDate || !toDate) return tr('customSummary.pleaseFillInBothTheStart');
+        if (fromDate.getTime() > toDate.getTime()) return tr('customSummary.theStartCantBeAfterThe');
+        if (draft.modules.length === 0) return tr('customSummary.pleasePickAtLeast1Activity');
         return null;
     }, [draft.fromInput, draft.toInput, draft.modules.length]);
 
@@ -167,8 +167,8 @@ function CustomLogSummaryPage() {
         <>
             <PageHeader
                 help="customSummary"
-                title={tr('สร้างรายงานสรุป')}
-                description={t('สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ {name}', { name: guild.name })}
+                title={tr('common.summaryReport')}
+                description={t('customSummary.customVoiceMessageGithubPrAnd', { name: guild.name })}
             />
 
             <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
@@ -188,7 +188,7 @@ function CustomLogSummaryPage() {
                 />
 
                 {error ? (
-                    <ErrorState error={error} title={tr('ประมวลผลสรุปล็อกไม่สำเร็จ')} />
+                    <ErrorState error={error} title={tr('customSummary.failedToRunTheLogSummary')} />
                 ) : isLoading || !summary ? (
                     <CustomSummaryLoadingSkeleton />
                 ) : (
@@ -205,14 +205,14 @@ function CustomLogSummaryPage() {
                                 <Badge variant="outline" className="border-border bg-background text-[11px] text-highlight">
                                     <Layers3 className="mr-1 size-3" />
                                     {summary.filters.selectedChannels.length === 0
-                                        ? tr('ทุกห้อง ({0} ห้อง)', { 0: summary.availableChannels.length })
-                                        : tr('{0} ห้องที่เลือก', { 0: summary.filters.selectedChannels.length })}
+                                        ? tr('customSummary.allChannels2', { 0: summary.availableChannels.length })
+                                        : tr('customSummary.selectedChannels', { 0: summary.filters.selectedChannels.length })}
                                 </Badge>
                             </div>
                             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 <Clock className="size-3.5" />
                                 <span>
-                                    {tr('ประมวลผลล่าสุด:')} {formatBangkokDateTime(summary.generatedAt)}
+                                    {tr('customSummary.lastRun')} {formatBangkokDateTime(summary.generatedAt)}
                                 </span>
                             </div>
                         </div>
@@ -229,7 +229,7 @@ function CustomLogSummaryPage() {
                             summary={summary}
                             queryPayload={{
                                 ...appliedQuery.payload,
-                                title: tr('รายงานสรุปกิจกรรมเซิร์ฟเวอร์ {0}', { 0: summary.guild.name }),
+                                title: tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name }),
                                 theme: 'dark',
                                 detailMode: 'executive',
                             }}

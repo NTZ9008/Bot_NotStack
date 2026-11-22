@@ -7,8 +7,8 @@ import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 
 // ทุกอย่างในหน้า Log Manager บันทึกอัตโนมัติ — แจ้งผลสั้นๆ
-export const savedToast = (title = tr('บันทึกแล้ว')) => toast.success(title, { duration: 1600 });
-export const failedToast = (err: unknown) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(err) });
+export const savedToast = (title = tr('common.saved')) => toast.success(title, { duration: 1600 });
+export const failedToast = (err: unknown) => toast.error(tr('common.saveFailed'), { description: errorMessage(err) });
 
 // แก้ cache ของการตั้งค่าตามผลที่ API ตอบ (ไม่ต้องโหลดใหม่ทั้งหน้า) / โหลดใหม่เมื่อบันทึกไม่สำเร็จ
 export function useSettingsCache() {

@@ -60,7 +60,7 @@ export const fundApi = {
         }
         if (!res.ok) {
             const errData = (await res.json().catch(() => ({}))) as { message?: string };
-            throw new Error(errData.message || tr('ดาวน์โหลด CSV ไม่สำเร็จ'));
+            throw new Error(errData.message || tr('common.failedToDownloadCsv'));
         }
         const blob = await res.blob();
         const blobUrl = URL.createObjectURL(blob);

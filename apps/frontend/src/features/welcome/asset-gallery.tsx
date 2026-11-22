@@ -49,16 +49,17 @@ export function AssetGallery({
 
     const upload = async (file: File) => {
         if (!(WELCOME_UPLOAD_TYPES as readonly string[]).includes(file.type))
-            return toast.error(tr('อัปโหลดไม่ได้'), { description: tr('รองรับเฉพาะไฟล์ PNG, JPG, WEBP และ GIF') });
-        if (file.size > maxBytes) return toast.error(tr('ไฟล์ใหญ่เกินไป'), { description: tr('ขนาดไฟล์ต้องไม่เกิน {0}', { 0: formatBytes(maxBytes) }) });
+            return toast.error(tr('welcome.cantUpload'), { description: tr('welcome.onlyPngJpgWebpAndGif') });
+        if (file.size > maxBytes)
+            return toast.error(tr('welcome.fileTooLarge'), { description: tr('welcome.theFileMustBeNoLarger', { 0: formatBytes(maxBytes) }) });
         setUploading(true);
         try {
             const { asset } = await welcomeApi.uploadAsset(guildId, file);
             queryClient.setQueryData<WelcomeAsset[]>(welcomeAssetsQuery(guildId).queryKey, (list = []) => [asset, ...list]);
             onSelect(asset.id);
-            toast.success(tr('อัปโหลดรูปแล้ว'), { description: tr('เลือกเป็นพื้นหลังให้แล้ว — อย่าลืมกดบันทึก') });
+            toast.success(tr('welcome.imageUploaded'), { description: tr('welcome.setAsTheBackgroundDontForget') });
         } catch (err) {
-            toast.error(tr('อัปโหลดรูปไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('welcome.imageUploadFailed'), { description: errorMessage(err) });
         } finally {
             setUploading(false);
         }
@@ -71,18 +72,16 @@ export function AssetGallery({
             queryClient.setQueryData<WelcomeAsset[]>(welcomeAssetsQuery(guildId).queryKey, (list = []) => list.map((a) => (a.id === asset.id ? asset : a)));
             setRenaming(null);
         } catch (err) {
-            toast.error(tr('เปลี่ยนชื่อรูปไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('welcome.failedToRenameImage'), { description: errorMessage(err) });
         }
     };
 
     const remove = async (asset: WelcomeAsset) => {
         const usedBy = usage(asset.id);
         const ok = await confirm({
-            title: tr('ลบรูป "{0}" ออกจากคลัง?', { 0: asset.name }),
-            description: usedBy
-                ? tr('มีการ์ด {0} ใบใช้รูปนี้อยู่ — การ์ดเหล่านั้นจะกลับไปใช้สีพื้นแทน (ลบแล้วกู้คืนไม่ได้)', { 0: usedBy })
-                : tr('ลบแล้วกู้คืนไม่ได้'),
-            confirmText: tr('ลบรูป'),
+            title: tr('welcome.removeFromTheLibrary', { 0: asset.name }),
+            description: usedBy ? tr('welcome.cardsUseThisImageTheyllFall', { 0: usedBy }) : tr('welcome.cantBeUndoneOnceDeleted'),
+            confirmText: tr('welcome.deleteImage'),
             destructive: true,
         });
         if (!ok) return;
@@ -93,9 +92,9 @@ export function AssetGallery({
                 list.map((card) => (card.backgroundId === asset.id ? { ...card, backgroundId: null } : card)),
             );
             onDeleted(asset.id);
-            toast.success(tr('ลบรูปแล้ว'));
+            toast.success(tr('welcome.imageDeleted'));
         } catch (err) {
-            toast.error(tr('ลบรูปไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('welcome.failedToDeleteImage'), { description: errorMessage(err) });
         }
     };
 
@@ -110,8 +109,8 @@ export function AssetGallery({
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 <button type="button" className={tileClass(selectedId === null)} onClick={() => onSelect(null)}>
                     <span className="block aspect-video w-full" style={{ background: backgroundColor }} />
-                    <span className="px-2 pt-1.5 text-xs font-medium">{tr('ไม่ใช้รูป')}</span>
-                    <span className="px-2 pb-1.5 text-[11px] text-muted-foreground">{tr('ใช้สีพื้นอย่างเดียว')}</span>
+                    <span className="px-2 pt-1.5 text-xs font-medium">{tr('welcome.noImage')}</span>
+                    <span className="px-2 pb-1.5 text-[11px] text-muted-foreground">{tr('welcome.solidColorOnly')}</span>
                 </button>
 
                 {assets.map((asset) => {
@@ -123,14 +122,14 @@ export function AssetGallery({
                                 <span className="block truncate px-2 pt-1.5 text-xs font-medium">{asset.name}</span>
                                 <span className="block truncate px-2 pb-1.5 text-[11px] text-muted-foreground">
                                     {asset.width}×{asset.height} · {formatBytes(asset.size)}
-                                    {usedBy ? tr(' · ใช้ {0} การ์ด', { 0: usedBy }) : ''}
+                                    {usedBy ? tr('welcome.usedByCards', { 0: usedBy }) : ''}
                                 </span>
                             </button>
                             <div className="absolute top-1 right-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
                                 <Button
                                     size="icon-xs"
                                     variant="secondary"
-                                    title={tr('เปลี่ยนชื่อ')}
+                                    title={tr('welcome.rename')}
                                     onClick={() => {
                                         setRenaming(asset);
                                         setNewName(asset.name);
@@ -138,7 +137,7 @@ export function AssetGallery({
                                 >
                                     <Pencil />
                                 </Button>
-                                <Button size="icon-xs" variant="destructive" title={tr('ลบออกจากคลัง')} onClick={() => void remove(asset)}>
+                                <Button size="icon-xs" variant="destructive" title={tr('welcome.removeFromLibrary')} onClick={() => void remove(asset)}>
                                     <Trash2 />
                                 </Button>
                             </div>
@@ -153,9 +152,9 @@ export function AssetGallery({
                     disabled={uploading}
                 >
                     {uploading ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
-                    <span className="text-xs font-medium">{tr('อัปโหลดรูป')}</span>
+                    <span className="text-xs font-medium">{tr('welcome.uploadImage')}</span>
                     <span className="text-[11px] text-muted-foreground">
-                        {tr('PNG · JPG · WEBP · GIF ไม่เกิน')} {formatBytes(maxBytes)}
+                        {tr('welcome.pngJpgWebpGifUpTo')} {formatBytes(maxBytes)}
                     </span>
                 </button>
                 <input
@@ -174,7 +173,7 @@ export function AssetGallery({
             <Dialog open={renaming !== null} onOpenChange={(open) => !open && setRenaming(null)}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{tr('เปลี่ยนชื่อรูป')}</DialogTitle>
+                        <DialogTitle>{tr('welcome.renameImage')}</DialogTitle>
                     </DialogHeader>
                     <form
                         className="space-y-4"
@@ -186,10 +185,10 @@ export function AssetGallery({
                         <Input autoFocus maxLength={meta.limits.maxNameLength} value={newName} onChange={(e) => setNewName(e.target.value)} />
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setRenaming(null)}>
-                                {tr('ยกเลิก')}
+                                {tr('common.cancel')}
                             </Button>
                             <Button type="submit" disabled={!newName.trim()}>
-                                {tr('บันทึก')}
+                                {tr('common.save')}
                             </Button>
                         </DialogFooter>
                     </form>

@@ -50,7 +50,7 @@ export interface NavGroup {
 // หน้าของเซิร์ฟเวอร์ที่กำลังเลือก
 const GUILD_GROUPS = byLang((): NavGroup[] => [
     {
-        label: tr('ภาพรวม'),
+        label: tr('layout.overview'),
         items: [
             {
                 to: '/servers/$guildId/overview',
@@ -63,7 +63,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
         ],
     },
     {
-        label: tr('ตั้งค่าพื้นฐาน'),
+        label: tr('layout.basics'),
         items: [
             {
                 to: '/servers/$guildId/config',
@@ -75,7 +75,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
             },
             {
                 to: '/servers/$guildId/ai',
-                label: tr('ตั้งค่า AI Chat'),
+                label: tr('common.aiChatSettings'),
                 guide: 'config',
                 icon: Bot,
                 guild: 'manage',
@@ -84,7 +84,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
         ],
     },
     {
-        label: tr('สื่อสารกับสมาชิก'),
+        label: tr('layout.membersMessages'),
         items: [
             {
                 to: '/servers/$guildId/news',
@@ -113,7 +113,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
         ],
     },
     {
-        label: tr('ดูแลเซิร์ฟเวอร์'),
+        label: tr('layout.moderation'),
         items: [
             {
                 to: '/servers/$guildId/room-access',
@@ -182,7 +182,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
         ],
     },
     {
-        label: tr('ข้อมูล & ประวัติ'),
+        label: tr('layout.dataHistory'),
         items: [
             {
                 to: '/servers/$guildId/levels',
@@ -223,7 +223,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
 // หน้าส่วนกลาง (ไม่ผูกกับเซิร์ฟเวอร์)
 const GLOBAL_GROUPS = byLang((): NavGroup[] => [
     {
-        label: tr('ระบบ'),
+        label: tr('layout.system'),
         items: [
             {
                 to: '/servers',
@@ -248,7 +248,14 @@ const GLOBAL_GROUPS = byLang((): NavGroup[] => [
                 adminOnly: true,
                 keywords: 'system audit ประวัติทั้งระบบ login เข้าสู่ระบบ',
             },
-            { to: '/logs', label: PAGE_GUIDES().logs.title, guide: 'logs', icon: ScrollText, adminOnly: true, keywords: 'logs ไฟล์ log ประวัติ system log แชท' },
+            {
+                to: '/logs',
+                label: PAGE_GUIDES().logs.title,
+                guide: 'logs',
+                icon: ScrollText,
+                adminOnly: true,
+                keywords: 'logs ไฟล์ log ประวัติ system log แชท',
+            },
             {
                 to: '/account',
                 label: PAGE_GUIDES().account.title,

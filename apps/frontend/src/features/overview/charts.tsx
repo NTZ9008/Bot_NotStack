@@ -8,15 +8,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 // สีของกราฟโดนัท — วนใช้ซ้ำเมื่อชนิดเหตุการณ์มีมากกว่าจำนวนสี
 const PALETTE = ['var(--chart-1)', '#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#a78bfa', '#14b8a6', '#fb923c', '#64748b'];
 
-const serverConfig = byLang(() => ({
-    serverJoin: { label: tr('เข้าเซิร์ฟเวอร์'), color: '#10b981' },
-    serverLeave: { label: tr('ออกเซิร์ฟเวอร์'), color: '#ef4444' },
-} satisfies ChartConfig));
-const voiceConfig = byLang(() => ({
-    voiceJoin: { label: tr('เข้าห้องเสียง'), color: '#38bdf8' },
-    voiceLeave: { label: tr('ออกห้องเสียง'), color: '#f59e0b' },
-} satisfies ChartConfig));
-const usersConfig = byLang(() => ({ total: { label: tr('จำนวนเหตุการณ์'), color: 'var(--chart-1)' } } satisfies ChartConfig));
+const serverConfig = byLang(
+    () =>
+        ({
+            serverJoin: { label: tr('common.joinedServer'), color: '#10b981' },
+            serverLeave: { label: tr('common.leftServer'), color: '#ef4444' },
+        }) satisfies ChartConfig,
+);
+const voiceConfig = byLang(
+    () =>
+        ({
+            voiceJoin: { label: tr('overview.voiceJoins'), color: '#38bdf8' },
+            voiceLeave: { label: tr('overview.voiceLeaves'), color: '#f59e0b' },
+        }) satisfies ChartConfig,
+);
+const usersConfig = byLang(() => ({ total: { label: tr('overview.events'), color: 'var(--chart-1)' } }) satisfies ChartConfig);
 
 // label จาก API เป็น 'YYYY-MM-DD HH:00' (ตามโซนเวลา) — ย่อให้อ่านง่ายบนแกน X
 function shortLabel(bucket: string, interval: string): string {
@@ -77,9 +83,9 @@ export default function Charts({ data }: { data: ActivityStats }) {
 
     return (
         <div className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title={tr('การเข้า / ออกเซิร์ฟเวอร์')}>{area(serverConfig(), ['serverJoin', 'serverLeave'])}</ChartCard>
-            <ChartCard title={tr('การเข้า / ออกห้องเสียง')}>{area(voiceConfig(), ['voiceJoin', 'voiceLeave'])}</ChartCard>
-            <ChartCard title={tr('ผู้ใช้ที่เคลื่อนไหวมากที่สุด')}>
+            <ChartCard title={tr('overview.serverJoinsLeaves')}>{area(serverConfig(), ['serverJoin', 'serverLeave'])}</ChartCard>
+            <ChartCard title={tr('overview.voiceJoinsLeaves')}>{area(voiceConfig(), ['voiceJoin', 'voiceLeave'])}</ChartCard>
+            <ChartCard title={tr('overview.mostActiveUsers')}>
                 <ChartContainer config={usersConfig()} className="aspect-auto h-64 w-full">
                     <BarChart data={topUsers} layout="vertical" margin={{ left: 8, right: 16 }}>
                         <CartesianGrid horizontal={false} />
@@ -97,7 +103,7 @@ export default function Charts({ data }: { data: ActivityStats }) {
                     </BarChart>
                 </ChartContainer>
             </ChartCard>
-            <ChartCard title={tr('สัดส่วนเหตุการณ์ทั้งหมด')}>
+            <ChartCard title={tr('overview.shareOfAllEvents')}>
                 <ChartContainer config={breakdownConfig} className="aspect-auto h-64 w-full">
                     <PieChart>
                         <ChartTooltip content={<ChartTooltipContent nameKey="eventKey" hideLabel />} />

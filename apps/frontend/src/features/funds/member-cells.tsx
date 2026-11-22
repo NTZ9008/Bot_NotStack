@@ -100,10 +100,10 @@ function InlineAmountEditor({
                 autoFocus
             />
             <Button type="submit" size="xs" disabled={pending}>
-                {tr('บันทึก')}
+                {tr('common.save')}
             </Button>
             {extraActions}
-            <Button type="button" size="icon-xs" variant="ghost" onClick={() => onEditingChange(false)} aria-label={tr('ยกเลิก')}>
+            <Button type="button" size="icon-xs" variant="ghost" onClick={() => onEditingChange(false)} aria-label={tr('common.cancel')}>
                 <X />
             </Button>
         </form>
@@ -112,7 +112,7 @@ function InlineAmountEditor({
 
 const CustomTargetBadge = () => (
     <Badge variant="outline" className="px-1 text-[10px] border-primary/30 text-primary">
-        {tr('เฉพาะคน')}
+        {tr('funds.custom')}
     </Badge>
 );
 
@@ -121,7 +121,7 @@ const CustomTargetBadge = () => (
 // ==========================================
 export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: FundMemberView }) {
     const [editing, setEditing] = useState(false);
-    const update = useMemberUpdate(topic, member, tr('บันทึกยอดที่ต้องจ่ายแล้ว'), () => setEditing(false));
+    const update = useMemberUpdate(topic, member, tr('funds.amountDueSaved'), () => setEditing(false));
 
     if (topic.closed) {
         return (
@@ -134,7 +134,7 @@ export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: 
     return (
         <InlineAmountEditor
             value={member.target}
-            title={tr('กดเพื่อตั้งยอดต้องจ่ายเฉพาะคนนี้')}
+            title={tr('funds.clickToSetACustomAmount')}
             editing={editing}
             onEditingChange={setEditing}
             pending={update.isPending}
@@ -146,9 +146,9 @@ export function TargetCell({ topic, member }: { topic: FundTopicDetail; member: 
                         size="xs"
                         variant="ghost"
                         onClick={() => update.mutate({ targetAmount: null })}
-                        title={tr('กลับไปใช้ยอดต่อคน ({0})', { 0: formatBaht(topic.amountPerMember) })}
+                        title={tr('funds.backToThePerPersonAmount', { 0: formatBaht(topic.amountPerMember) })}
                     >
-                        {tr('ใช้ยอดกลาง')}
+                        {tr('funds.useDefaultAmount')}
                     </Button>
                 )
             }
@@ -175,7 +175,7 @@ export function PaidCell({
     showProgress?: boolean;
 }) {
     const [editing, setEditing] = useState(false);
-    const update = useMemberUpdate(topic, member, tr('แก้ไขยอดที่จ่ายแล้วเรียบร้อย'), () => setEditing(false));
+    const update = useMemberUpdate(topic, member, tr('funds.paidAmountUpdated'), () => setEditing(false));
     const pct = percent(member.paid, member.target);
 
     if (topic.closed) {
@@ -195,7 +195,7 @@ export function PaidCell({
         <div className={cn('inline-flex flex-col gap-1', align === 'right' ? 'items-end' : 'items-start')}>
             <InlineAmountEditor
                 value={member.paid}
-                title={tr('กดเพื่อแก้ไขยอดที่จ่ายแล้วของคนนี้โดยตรง')}
+                title={tr('funds.clickToEditThisPersonsPaid')}
                 editing={editing}
                 onEditingChange={setEditing}
                 align={align}

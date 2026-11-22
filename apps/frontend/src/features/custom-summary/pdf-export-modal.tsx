@@ -22,7 +22,7 @@ export interface PdfExportModalProps {
 
 /** Modal ตั้งค่าและดาวน์โหลดรายงาน PDF ขนาด A4 (รองรับภาษาไทย 100%) */
 export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary, queryPayload }: PdfExportModalProps) {
-    const defaultTitle = tr('รายงานสรุปกิจกรรมเซิร์ฟเวอร์ {0}', { 0: summary.guild.name });
+    const defaultTitle = tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name });
     const [title, setTitle] = useState(defaultTitle);
     const [theme, setTheme] = useState<CustomSummaryPdfTheme>('dark');
     const [detailMode, setDetailMode] = useState<CustomSummaryDetailMode>('executive');
@@ -43,7 +43,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
         if (!queryPayload || exporting) return;
         const cleanTitle = title.trim();
         if (!cleanTitle) {
-            setError(tr('กรุณากรอกชื่อหัวข้อรายงาน'));
+            setError(tr('customSummary.pleaseEnterAReportTitle'));
             return;
         }
 
@@ -71,7 +71,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
             setTimeout(() => URL.revokeObjectURL(downloadUrl), 4000);
 
             const kb = Math.max(1, Math.round(blob.size / 1024));
-            setLastExportInfo(tr('สร้างไฟล์ PDF สำเร็จ ({0} KB) — ดาวน์โหลดแล้ว', { 0: kb.toLocaleString('en-US') }));
+            setLastExportInfo(tr('customSummary.pdfCreatedKbDownloaded', { 0: kb.toLocaleString('en-US') }));
         } catch (err) {
             setError(errorMessage(err));
         } finally {
@@ -88,32 +88,30 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                     <DialogTitle className="flex items-center gap-2 text-lg text-foreground">
                         <FileText className="size-5 text-highlight" />
 
-                        {tr('ตั้งค่าการส่งออกรายงาน PDF')}
+                        {tr('customSummary.pdfReportExportSettings')}
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-muted-foreground">
-                        {tr('สร้างไฟล์ PDF ขนาด A4 รองรับภาษาไทย 100% สระและวรรณยุกต์จัดวางอัตโนมัติ')}
-                    </DialogDescription>
+                    <DialogDescription className="text-xs text-muted-foreground">{tr('customSummary.createsAnA4PdfWithFull')}</DialogDescription>
                 </DialogHeader>
 
                 <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                     {/* 1. ชื่อหัวข้อรายงาน */}
                     <div className="space-y-1.5">
                         <Label htmlFor="pdf-report-title" className="text-xs font-medium text-muted-foreground">
-                            {tr('ชื่อหัวข้อรายงาน')}
+                            {tr('customSummary.reportTitle')}
                         </Label>
                         <Input
                             id="pdf-report-title"
                             value={title}
                             maxLength={160}
                             onChange={(e) => setTitle(e.target.value)}
-                            placeholder={tr('เช่น รายงานสรุปกิจกรรมเซิร์ฟเวอร์ NotStackOverflow ประจำเดือน...')}
+                            placeholder={tr('customSummary.eGMonthlyNotstackoverflowServerActivity')}
                             className="h-9 border-border bg-background text-sm text-foreground"
                         />
                     </div>
 
                     {/* 2. เลือกโทนสี PDF */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">{tr('โทนสีเอกสาร PDF')}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{tr('customSummary.pdfColorScheme')}</Label>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <button
                                 type="button"
@@ -128,9 +126,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 </span>
                                 <div>
                                     <div className="text-xs font-semibold text-foreground">Dark Theme</div>
-                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                        {tr('พื้นหลังกรมท่า #0b0e17 เหมาะสำหรับเปิดดูบนหน้าจอและนำเสนอ')}
-                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('customSummary.navyBackground0b0e17BestForViewing')}</p>
                                 </div>
                             </button>
 
@@ -147,9 +143,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 </span>
                                 <div>
                                     <div className="text-xs font-semibold text-foreground">Print-Friendly Light Theme</div>
-                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                        {tr('พื้นขาว #ffffff ประหยัดหมึก เหมาะสำหรับพิมพ์ส่งเอกสารทางการ')}
-                                    </p>
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('customSummary.whiteBackgroundFfffffSavesInkBest')}</p>
                                 </div>
                             </button>
                         </div>
@@ -157,7 +151,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
 
                     {/* 3. ซ่อน/แสดง Log รายบรรทัด */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-medium text-muted-foreground">{tr('รูปแบบรายละเอียดรายงาน')}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{tr('customSummary.reportDetailLevel')}</Label>
                         <div className="grid gap-3 sm:grid-cols-2">
                             <button
                                 type="button"
@@ -168,7 +162,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 )}
                             >
                                 <div className="text-xs font-semibold text-foreground">Executive Summary</div>
-                                <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('สรุป KPI, กราฟเปรียบเทียบ และตารางแยกตามห้อง/ผู้ใช้งาน')}</p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('customSummary.kpiSummaryComparisonChartsAndTables')}</p>
                             </button>
 
                             <button
@@ -181,8 +175,8 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                             >
                                 <div className="text-xs font-semibold text-foreground">Full Detailed Report</div>
                                 <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                    {tr('รวมทุกส่วนข้างต้น + ตารางรายการ Log รายบรรทัดท้ายรายงาน (')}
-                                    {summary.detailedLogs.length} {tr('รายการ)')}
+                                    {tr('customSummary.everythingAboveALineByLine')}
+                                    {summary.detailedLogs.length} {tr('customSummary.entries2')}
                                 </p>
                             </button>
                         </div>
@@ -190,14 +184,12 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
 
                     {/* ตัวเลือกความเป็นส่วนตัวในไฟล์ PDF */}
                     <label
-                        aria-label={tr('ซ่อน Discord User ID และ Server ID ในเอกสาร PDF')}
+                        aria-label={tr('customSummary.hideDiscordUserIdsAndServer')}
                         className="flex cursor-pointer items-center justify-between rounded-xl border border-border bg-background px-3.5 py-2.5 text-xs"
                     >
                         <div>
-                            <div className="font-medium text-foreground">{tr('ซ่อน Discord User ID และ Server ID ในเอกสาร PDF')}</div>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                {tr('เปิดใช้งานเมื่อต้องการส่งต่อรายงานออกนอกองค์กร (ค่าเริ่มต้น: แสดง ID)')}
-                            </p>
+                            <div className="font-medium text-foreground">{tr('customSummary.hideDiscordUserIdsAndServer')}</div>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('customSummary.turnOnWhenSharingTheReport')}</p>
                         </div>
                         <input type="checkbox" checked={maskIds} onChange={(e) => setMaskIds(e.target.checked)} className="size-4 accent-highlight" />
                     </label>
@@ -211,29 +203,29 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                     >
                         <div className="flex items-center justify-between border-b pb-2 text-[11px] opacity-80">
                             <span className="font-semibold text-highlight">Bot_NotStack V4.2.0 • {summary.guild.name}</span>
-                            <span>{tr('ขนาด A4 • แบ่งหน้าอัตโนมัติ')}</span>
+                            <span>{tr('customSummary.a4AutomaticPageBreaks')}</span>
                         </div>
                         <div className="mt-2 font-semibold">{title.trim() || defaultTitle}</div>
                         <div className="mt-1 grid gap-1 text-[11px] opacity-75 sm:grid-cols-2">
                             <span>
-                                {tr('ช่วงข้อมูล:')} {formatBangkokDateTime(summary.range.from)} - {formatBangkokDateTime(summary.range.to)}
+                                {tr('customSummary.dataRange')} {formatBangkokDateTime(summary.range.from)} - {formatBangkokDateTime(summary.range.to)}
                             </span>
                             <span>
-                                {tr('Admin ผู้ดึงรายงาน:')} {adminName}
+                                {tr('customSummary.exportedByAdmin')} {adminName}
                             </span>
                             <span>
-                                {tr('ห้องที่กรอง:')}{' '}
+                                {tr('customSummary.filteredChannels')}{' '}
                                 {summary.filters.selectedChannels.length === 0
-                                    ? tr('ทั้งหมด ({0} ห้อง)', { 0: summary.availableChannels.length })
-                                    : tr('{0} ห้อง', { 0: summary.filters.selectedChannels.length })}
+                                    ? tr('customSummary.allChannels', { 0: summary.availableChannels.length })
+                                    : tr('customSummary.channels', { 0: summary.filters.selectedChannels.length })}
                             </span>
                             <span>
-                                {tr('โหมด:')} {detailMode === 'detailed' ? 'Full Detailed Report' : 'Executive Summary'}
+                                {tr('customSummary.mode')} {detailMode === 'detailed' ? 'Full Detailed Report' : 'Executive Summary'}
                             </span>
                         </div>
                         <div className="mt-2.5 flex items-center justify-between border-t pt-2 text-[10px] opacity-65">
                             <span>Generated by Bot_NotStack Dashboard</span>
-                            <span>{tr('หน้า 1 จาก Y')}</span>
+                            <span>{tr('customSummary.page1OfY')}</span>
                         </div>
                     </div>
 
@@ -253,7 +245,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         onClick={() => onOpenChange(false)}
                         className="text-muted-foreground hover:bg-muted hover:text-foreground"
                     >
-                        {tr('ปิดหน้าต่าง')}
+                        {tr('customSummary.close')}
                     </Button>
                     <Button
                         type="button"
@@ -262,7 +254,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         className="bg-primary text-primary-foreground hover:bg-primary/80"
                     >
                         {exporting ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />}
-                        {exporting ? tr('กำลังสร้างไฟล์ PDF...') : tr('ดาวน์โหลด PDF')}
+                        {exporting ? tr('customSummary.creatingPdf') : tr('customSummary.downloadPdf')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

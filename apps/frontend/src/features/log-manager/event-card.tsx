@@ -51,7 +51,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                     {event.label}
                 </span>
                 <Switch
-                    aria-label={tr('เปิด log {0}', { 0: event.label })}
+                    aria-label={tr('logManager.enableLog', { 0: event.label })}
                     disabled={mutation.isPending}
                     checked={event.enabled}
                     onCheckedChange={(enabled) => mutation.mutate({ enabled })}
@@ -61,14 +61,14 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 channels={channels.filter((ch) => ch.sendable)}
                 disabled={mutation.isPending}
                 value={event.channelId}
-                noneLabel={tr('ยังไม่เลือกห้อง')}
-                placeholder={tr('เลือกห้องปลายทาง')}
+                noneLabel={tr('logManager.noChannelSelected')}
+                placeholder={tr('logManager.pickATargetChannel')}
                 onChange={(channelId) => mutation.mutate({ channelId })}
             />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                {tr('สี')}
+                {tr('common.colors')}
                 <ColorPicker
-                    aria-label={tr('สีของ {0}', { 0: event.label })}
+                    aria-label={tr('logManager.colorOf', { 0: event.label })}
                     disabled={mutation.isPending}
                     className="h-6 w-10 p-0.5"
                     value={color}
@@ -76,7 +76,13 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 />
                 <span className="font-mono">{color.toUpperCase()}</span>
                 <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-700 dark:text-amber-400' : ''}`}>
-                    {mutation.isPending ? tr('กำลังบันทึก…') : !event.enabled ? tr('ปิดอยู่') : !event.channelId ? tr('รอเลือกห้อง') : tr('เปิดใช้งาน')}
+                    {mutation.isPending
+                        ? tr('logManager.saving')
+                        : !event.enabled
+                          ? tr('common.off')
+                          : !event.channelId
+                            ? tr('logManager.waitingForAChannel')
+                            : tr('common.enabled')}
                 </span>
             </div>
         </div>

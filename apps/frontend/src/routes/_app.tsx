@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useT } from '@/lib/i18n';
+import { useT, trText } from '@/lib/i18n';
 import { createFileRoute, Outlet, redirect, useParams, useRouterState } from '@tanstack/react-router';
 import { guildQuery } from '@/api/guilds';
 import { meQuery } from '@/api/auth';
@@ -37,7 +37,7 @@ function AppLayout() {
             <AppSidebar />
             <SidebarInset className="min-w-0 bg-transparent">
                 <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 bg-background/80 px-3 backdrop-blur md:px-4">
-                    {isNavigating && <div role="progressbar" aria-label={t('กำลังเปิดหน้า')} className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
+                    {isNavigating && <div role="progressbar" aria-label={t('app.openingPage')} className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
                     <SidebarTrigger />
                     <div className="ml-auto flex items-center gap-2">
                         <CommandPalette />
@@ -50,7 +50,7 @@ function AppLayout() {
                             /
                         </span>
                         <span aria-current="page" className="truncate font-medium">
-                            {current ? t(current.label) : 'Dashboard'}
+                            {current ? trText(current.label) : 'Dashboard'}
                         </span>
                     </nav>
                     <Outlet />

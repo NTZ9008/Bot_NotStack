@@ -34,7 +34,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
 
     return (
         <div className="flex flex-col gap-1.5">
-            <p className="px-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">{t('เซิร์ฟเวอร์')}</p>
+            <p className="px-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">{t('layout.server')}</p>
             <SidebarMenu>
                 <SidebarMenuItem>
                     <DropdownMenu>
@@ -42,24 +42,24 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                             <SidebarMenuButton
                                 size="lg"
                                 className="border border-input bg-background hover:bg-background data-[state=open]:border-ring group-data-[collapsible=icon]:border-0"
-                                tooltip={t('เลือกเซิร์ฟเวอร์')}
+                                tooltip={t('layout.selectAServer')}
                             >
                                 {current ? <GuildIcon guild={current} /> : <LayoutGrid className="mx-1.5 size-5! shrink-0 text-muted-foreground" />}
                                 <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                    <span className="truncate text-sm font-medium">{current?.name ?? t('เลือกเซิร์ฟเวอร์')}</span>
+                                    <span className="truncate text-sm font-medium">{current?.name ?? t('layout.selectAServer')}</span>
                                     <span className="truncate text-xs text-muted-foreground">
                                         {current
                                             ? current.access === 'manage'
-                                                ? t('จัดการได้')
-                                                : t('ดูอันดับได้อย่างเดียว')
-                                            : t('{count} เซิร์ฟเวอร์', { count: list?.guilds.length ?? 0 })}
+                                                ? t('common.canManage')
+                                                : t('common.viewRankingsOnly')
+                                            : t('layout.countServers', { count: list?.guilds.length ?? 0 })}
                                     </span>
                                 </div>
                                 <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
                             </SidebarMenuButton>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-60" align="start" side={isMobile ? 'bottom' : 'right'}>
-                            <DropdownMenuLabel className="text-xs text-muted-foreground">{t('เซิร์ฟเวอร์')}</DropdownMenuLabel>
+                            <DropdownMenuLabel className="text-xs text-muted-foreground">{t('layout.server')}</DropdownMenuLabel>
                             {list?.guilds.map((guild) => (
                                 <DropdownMenuItem key={guild.id} onSelect={() => go(guild.id)} className="gap-2">
                                     <GuildIcon guild={guild} className="size-6 rounded-lg text-[10px]" />
@@ -68,7 +68,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                                 </DropdownMenuItem>
                             ))}
                             {list && list.guilds.length === 0 && (
-                                <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('ยังไม่มีเซิร์ฟเวอร์ที่เข้าถึงได้')}</p>
+                                <p className="px-2 py-1.5 text-xs text-muted-foreground">{t('layout.noServersAvailableYet')}</p>
                             )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -77,12 +77,12 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                                     void navigate({ to: '/servers' });
                                 }}
                             >
-                                <LayoutGrid /> {t('ดูเซิร์ฟเวอร์ทั้งหมด')}
+                                <LayoutGrid /> {t('layout.viewAllServers')}
                             </DropdownMenuItem>
                             {list?.inviteUrl && (
                                 <DropdownMenuItem asChild>
                                     <a href={list.inviteUrl} target="_blank" rel="noopener noreferrer">
-                                        <Plus /> {t('เชิญบอทเข้าเซิร์ฟเวอร์ของคุณ')}
+                                        <Plus /> {t('layout.inviteTheBotToYourServer')}
                                     </a>
                                 </DropdownMenuItem>
                             )}
@@ -95,7 +95,7 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                 onClick={() => isMobile && setOpenMobile(false)}
                 className="px-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground group-data-[collapsible=icon]:hidden"
             >
-                {t('ดูเซิร์ฟเวอร์ทั้งหมด')}
+                {t('layout.viewAllServers')}
             </Link>
         </div>
     );

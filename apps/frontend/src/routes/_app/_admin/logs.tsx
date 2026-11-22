@@ -30,20 +30,16 @@ function LogsPage() {
 
     return (
         <>
-            <PageHeader
-                help="logs"
-                title={tr('ไฟล์บันทึกของบอท')}
-                description={tr('ดูประวัติการทำงานและแจ้งเตือนต่างๆ ของบอท (ข้อความแชท / เข้า-ออกห้องเสียง)')}
-            />
+            <PageHeader help="logs" title={tr('common.botLogFiles')} description={tr('logs.botActivityAndNotificationsChatMessages')} />
             <Card>
                 <CardContent className="space-y-4">
                     <div className="flex items-end gap-2">
-                        <Field label={tr('เลือกไฟล์บันทึก')} className="w-full max-w-sm">
+                        <Field label={tr('logs.pickALogFile')} className="w-full max-w-sm">
                             <Select value={file} onValueChange={setFile} disabled={!files.data?.length}>
                                 <SelectTrigger className="w-full">
                                     <SelectValue
                                         placeholder={
-                                            files.isLoading ? tr('กำลังโหลดไฟล์...') : files.data?.length ? tr('เลือกไฟล์บันทึก') : tr('ยังไม่มีไฟล์บันทึก')
+                                            files.isLoading ? tr('logs.loadingFile') : files.data?.length ? tr('logs.pickALogFile') : tr('logs.noLogFilesYet')
                                         }
                                     />
                                 </SelectTrigger>
@@ -56,7 +52,12 @@ function LogsPage() {
                                 </SelectContent>
                             </Select>
                         </Field>
-                        <Button variant="outline" size="icon" aria-label={tr('รีเฟรช')} onClick={() => void (file ? content.refetch() : files.refetch())}>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label={tr('common.refresh')}
+                            onClick={() => void (file ? content.refetch() : files.refetch())}
+                        >
                             <RefreshCw className={content.isFetching || files.isFetching ? 'animate-spin' : undefined} />
                         </Button>
                     </div>
@@ -66,13 +67,13 @@ function LogsPage() {
                         className="h-[60vh] overflow-auto rounded-lg border bg-muted p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
                     >
                         {!file ? (
-                            <span className="text-muted-foreground">{tr('เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา')}</span>
+                            <span className="text-muted-foreground">{tr('logs.pickALogFileAboveTo')}</span>
                         ) : content.isLoading ? (
                             <LogContentSkeleton />
                         ) : content.error ? (
-                            <span className="text-destructive">{tr('โหลดเนื้อหาไฟล์บันทึกไม่สำเร็จ')}</span>
+                            <span className="text-destructive">{tr('logs.failedToLoadLogFileContent')}</span>
                         ) : (
-                            content.data || tr('(ไฟล์ว่าง)')
+                            content.data || tr('logs.emptyFile')
                         )}
                     </pre>
                 </CardContent>

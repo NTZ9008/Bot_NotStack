@@ -27,7 +27,12 @@ function Chips({ items, empty, onRemove }: { items: { id: string; label: string 
             {items.map((item) => (
                 <Badge key={item.id} variant="secondary" className="gap-1 pr-1">
                     {item.label}
-                    <button type="button" className="rounded-sm opacity-70 hover:opacity-100" onClick={() => onRemove(item.id)} aria-label={tr('เอาออก')}>
+                    <button
+                        type="button"
+                        className="rounded-sm opacity-70 hover:opacity-100"
+                        onClick={() => onRemove(item.id)}
+                        aria-label={tr('common.remove2')}
+                    >
                         <X className="size-3" />
                     </button>
                 </Badge>
@@ -56,7 +61,7 @@ export function IgnorePanel({
         mutationFn: (input: UpdateLogOptionsInput) => logSettingsApi.updateOptions(guildId, input),
         onSuccess: (result) => {
             cache.patch((data) => ({ ...data, options: result.options, ignoredUserNames: result.ignoredUserNames }));
-            savedToast(tr('บันทึกตัวกรองแล้ว'));
+            savedToast(tr('logManager.filtersSaved'));
         },
         onError: (err) => {
             failedToast(err);
@@ -66,7 +71,7 @@ export function IgnorePanel({
 
     const addTo = (key: 'ignoredChannels' | 'ignoredRoles' | 'ignoredUsers', id: string) => {
         if (!id) return;
-        if (options[key].includes(id)) return toast.info(tr('มีอยู่ในรายการแล้ว'));
+        if (options[key].includes(id)) return toast.info(tr('logManager.alreadyInTheList'));
         mutation.mutate({ [key]: [...options[key], id] });
     };
     const removeFrom = (key: 'ignoredChannels' | 'ignoredRoles' | 'ignoredUsers', id: string) =>
@@ -75,34 +80,34 @@ export function IgnorePanel({
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{tr('ตัวกรอง — ไม่ต้องบันทึก log')}</CardTitle>
-                <CardDescription>{tr('ยกเว้นห้อง คน หรือยศ ที่ไม่อยากให้ขึ้น log — เลือกหมวดหมู่เท่ากับยกเว้นทุกห้องในหมวดนั้น')}</CardDescription>
+                <CardTitle>{tr('logManager.filtersDontLog')}</CardTitle>
+                <CardDescription>{tr('logManager.excludeChannelsPeopleOrRolesYou')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="grid gap-2 md:grid-cols-2">
                     <Label className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2 font-normal">
-                        {tr('ไม่ต้องบันทึกการกระทำของบอท')}
+                        {tr('logManager.dontLogBotActions')}
                         <Switch checked={options.ignoreBots} onCheckedChange={(ignoreBots) => mutation.mutate({ ignoreBots })} />
                     </Label>
                     <Label className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2 font-normal">
-                        {tr('บันทึกทุกเหตุการณ์ลงฐานข้อมูล (ใช้ทำกราฟหน้า Overview และตาราง Activity Log)')}
+                        {tr('logManager.storeEveryEventInTheDatabase')}
                         <Switch checked={options.activityRecording} onCheckedChange={(activityRecording) => mutation.mutate({ activityRecording })} />
                     </Label>
                 </div>
                 <div className="grid gap-6 lg:grid-cols-3">
-                    <Field label={tr('ห้อง / หมวดหมู่ที่ยกเว้น')}>
+                    <Field label={tr('logManager.excludedChannelsCategories')}>
                         <div className="flex gap-2">
                             <ChannelSelect
                                 channels={channels}
                                 showCategories
                                 value={channelToAdd}
                                 onChange={setChannelToAdd}
-                                placeholder={tr('เลือกห้องหรือหมวดหมู่ ..')}
+                                placeholder={tr('logManager.pickAChannelOrCategory')}
                             />
                             <Button
                                 variant="outline"
                                 size="icon"
-                                aria-label={tr('เพิ่ม')}
+                                aria-label={tr('common.add')}
                                 onClick={() => {
                                     addTo('ignoredChannels', channelToAdd);
                                     setChannelToAdd('');
@@ -113,15 +118,15 @@ export function IgnorePanel({
                         </div>
                         <Chips
                             items={options.ignoredChannels.map((id) => ({ id, label: channelLabel(channels, id) ?? id }))}
-                            empty={tr('ยังไม่ได้ยกเว้นอะไร')}
+                            empty={tr('logManager.nothingExcludedYet')}
                             onRemove={(id) => removeFrom('ignoredChannels', id)}
                         />
                     </Field>
-                    <Field label={tr('ยศที่ยกเว้น')}>
+                    <Field label={tr('common.excludedRoles')}>
                         <div className="flex gap-2">
                             <Select value={roleToAdd} onValueChange={setRoleToAdd}>
                                 <SelectTrigger className="w-full">
-                                    <SelectValue placeholder={tr('เลือกยศ ..')} />
+                                    <SelectValue placeholder={tr('logManager.pickARole')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-80">
                                     {roles.map((role) => (
@@ -134,7 +139,7 @@ export function IgnorePanel({
                             <Button
                                 variant="outline"
                                 size="icon"
-                                aria-label={tr('เพิ่ม')}
+                                aria-label={tr('common.add')}
                                 onClick={() => {
                                     addTo('ignoredRoles', roleToAdd);
                                     setRoleToAdd('');
@@ -145,20 +150,20 @@ export function IgnorePanel({
                         </div>
                         <Chips
                             items={options.ignoredRoles.map((id) => ({ id, label: `@${roles.find((r) => r.id === id)?.name ?? `ID: ${id}`}` }))}
-                            empty={tr('ยังไม่ได้ยกเว้นอะไร')}
+                            empty={tr('logManager.nothingExcludedYet')}
                             onRemove={(id) => removeFrom('ignoredRoles', id)}
                         />
                     </Field>
-                    <Field label={tr('สมาชิกที่ยกเว้น')}>
+                    <Field label={tr('logManager.excludedMembers')}>
                         <UserPicker
                             keepSelection={false}
-                            placeholder={tr('พิมพ์ชื่อสมาชิกที่ไม่ต้องการให้ขึ้น log...')}
+                            placeholder={tr('logManager.typeTheNameOfAMember')}
                             exclude={options.ignoredUsers}
                             onSelect={(user) => addTo('ignoredUsers', user.userId)}
                         />
                         <Chips
                             items={options.ignoredUsers.map((id) => ({ id, label: userNames[id] && userNames[id] !== id ? `@${userNames[id]}` : `ID: ${id}` }))}
-                            empty={tr('ยังไม่ได้ยกเว้นอะไร')}
+                            empty={tr('logManager.nothingExcludedYet')}
                             onRemove={(id) => removeFrom('ignoredUsers', id)}
                         />
                     </Field>

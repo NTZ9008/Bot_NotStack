@@ -10,9 +10,30 @@ type Hsv = { h: number; s: number; v: number };
 
 // สีที่ใช้บ่อยใน embed ของ Discord (สด / เข้ม / เทา)
 const PRESETS = [
-    '#5865F2', '#3498DB', '#1ABC9C', '#57F287', '#FEE75C', '#E67E22', '#ED4245', '#EB459E',
-    '#454FBF', '#206694', '#11806A', '#1F8B4C', '#C27C0E', '#A84300', '#992D22', '#AD1457',
-    '#FFFFFF', '#DBDEE1', '#99AAB5', '#71368A', '#4E5058', '#2B2D31', '#1E1F22', '#000000',
+    '#5865F2',
+    '#3498DB',
+    '#1ABC9C',
+    '#57F287',
+    '#FEE75C',
+    '#E67E22',
+    '#ED4245',
+    '#EB459E',
+    '#454FBF',
+    '#206694',
+    '#11806A',
+    '#1F8B4C',
+    '#C27C0E',
+    '#A84300',
+    '#992D22',
+    '#AD1457',
+    '#FFFFFF',
+    '#DBDEE1',
+    '#99AAB5',
+    '#71368A',
+    '#4E5058',
+    '#2B2D31',
+    '#1E1F22',
+    '#000000',
 ];
 
 const clamp = (n: number) => Math.min(1, Math.max(0, n));
@@ -31,7 +52,16 @@ export function hsvToHex({ h, s, v }: Hsv): string {
         const k = (n + h / 60) % 6;
         return v - v * s * Math.max(0, Math.min(k, 4 - k, 1));
     };
-    return '#' + [f(5), f(3), f(1)].map((c) => Math.round(c * 255).toString(16).padStart(2, '0')).join('');
+    return (
+        '#' +
+        [f(5), f(3), f(1)]
+            .map((c) =>
+                Math.round(c * 255)
+                    .toString(16)
+                    .padStart(2, '0'),
+            )
+            .join('')
+    );
 }
 
 // ช่องพิมพ์ #RRGGBB — แก้ได้อิสระระหว่างพิมพ์ ส่งค่าออกเมื่อครบรูปแบบ
@@ -41,7 +71,7 @@ function HexInput({ value, onChange, id, className }: { value: string; onChange:
     return (
         <Input
             id={id}
-            aria-label={id ? undefined : tr('รหัสสี')}
+            aria-label={id ? undefined : tr('common.hexColor')}
             className={cn('font-mono uppercase', className)}
             maxLength={7}
             spellCheck={false}
@@ -65,7 +95,7 @@ function SaturationArea({ hsv, onChange }: { hsv: Hsv; onChange: (hsv: Hsv) => v
         <div
             role="slider"
             tabIndex={0}
-            aria-label={tr('ความอิ่มสีและความสว่าง')}
+            aria-label={tr('common.saturationAndBrightness')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(hsv.s * 100)}
@@ -125,7 +155,7 @@ export function ColorPicker({
                 <button
                     type="button"
                     disabled={disabled}
-                    aria-label={ariaLabel ?? tr('เลือกสี')}
+                    aria-label={ariaLabel ?? tr('common.pickAColor')}
                     className={cn(
                         'h-9 w-11 shrink-0 rounded-lg border border-input p-1 transition-colors outline-none hover:bg-accent focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50',
                         className,
@@ -137,7 +167,7 @@ export function ColorPicker({
             <PopoverContent align="start" className="w-64 gap-3 p-3">
                 <SaturationArea hsv={hsv} onChange={set} />
                 <Slider
-                    aria-label={tr('เฉดสี')}
+                    aria-label={tr('common.hue')}
                     min={0}
                     max={359}
                     value={[Math.round(hsv.h)]}

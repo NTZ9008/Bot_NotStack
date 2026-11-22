@@ -53,9 +53,9 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
                         {options?.description && <AlertDialogDescription>{options.description}</AlertDialogDescription>}
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => close(false)}>{options?.cancelText ?? tr('ยกเลิก')}</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => close(false)}>{options?.cancelText ?? tr('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction variant={options?.destructive ? 'destructive' : 'default'} onClick={() => close(true)}>
-                            {options?.confirmText ?? tr('ยืนยัน')}
+                            {options?.confirmText ?? tr('common.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -66,6 +66,6 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 
 export function useConfirm(): ConfirmFn {
     const confirm = useContext(ConfirmContext);
-    if (!confirm) throw new Error(tr('useConfirm ต้องอยู่ภายใต้ <ConfirmProvider>'));
+    if (!confirm) throw new Error(tr('common.useconfirmMustBeUsedInsideConfirmprovider'));
     return confirm;
 }

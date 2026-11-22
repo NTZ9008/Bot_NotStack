@@ -31,7 +31,7 @@ import {
 // ตัวเลข 8 กล่อง + กราฟ 4 ใบ + ตาราง 3 ใบ (ส่วนที่รอข้อมูลสถิติ)
 export function OverviewStatsSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดสถิติ')}>
+        <SkeletonStack label={tr('common.loadingStatistics')}>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
                 {Array.from({ length: 8 }, (_, i) => (
                     <StatTileSkeleton key={i} />
@@ -104,7 +104,7 @@ function OverviewFilterSkeleton() {
 
 export function OverviewPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดภาพรวม')}>
+        <SkeletonStack label={tr('common.loadingOverview')}>
             <PageHeaderSkeleton />
             <GettingStartedSkeleton />
             <OverviewFilterSkeleton />
@@ -117,7 +117,7 @@ export function OverviewPageSkeleton() {
 // จำนวนแถวตามรายการตั้งค่าจริงในแต่ละกลุ่ม (ห้อง = dropdown, ความสามารถ = สวิตช์)
 export function ConfigBodySkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า')}>
+        <SkeletonStack label={tr('common.loadingSettings')}>
             {CONFIG_GROUPS.map((group) => (
                 <CardSkeleton key={group} contentClassName="grid gap-4">
                     {CONFIG_KEYS.filter((field) => field.group === group).map((field) =>
@@ -141,7 +141,7 @@ export function ConfigBodySkeleton() {
 
 export function ConfigPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า')}>
+        <SkeletonStack label={tr('common.loadingSettings')}>
             <PageHeaderSkeleton />
             <ConfigBodySkeleton />
         </SkeletonStack>
@@ -151,7 +151,7 @@ export function ConfigPageSkeleton() {
 // ---------- ส่งประกาศ ----------
 export function NewsPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดหน้าประกาศ')}>
+        <SkeletonStack label={tr('common.loadingAnnouncements')}>
             <PageHeaderSkeleton />
             <div className="grid gap-6 xl:grid-cols-2">
                 <Card>
@@ -191,7 +191,7 @@ export const RoomAccessTableSkeleton = () => <TableSkeleton columns={5} rows={4}
 
 export function RoomAccessPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดสิทธิ์เข้าห้อง')}>
+        <SkeletonStack label={tr('common.loadingRoomAccess')}>
             <PageHeaderSkeleton />
             <CardSkeleton contentClassName="space-y-3">
                 <div className="flex flex-wrap gap-2">
@@ -223,7 +223,7 @@ export function RoomAccessPageSkeleton() {
 // การ์ดของแต่ละห้อง (สวิตช์ + ช่องเพิ่มสมาชิก + รายชื่อ)
 export function VoiceGuardCardsSkeleton() {
     return (
-        <div className="grid gap-4 md:grid-cols-2" role="status" aria-busy="true" aria-label={tr('กำลังโหลดห้องเสียง')}>
+        <div className="grid gap-4 md:grid-cols-2" role="status" aria-busy="true" aria-label={tr('common.loadingVoiceChannels')}>
             {Array.from({ length: 2 }, (_, i) => (
                 <Card key={i}>
                     <CardHeader className="flex-row items-center justify-between gap-2">
@@ -257,7 +257,7 @@ export function VoiceGuardCardsSkeleton() {
 
 export function VoiceGuardPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดห้องเสียง')}>
+        <SkeletonStack label={tr('common.loadingVoiceChannels')}>
             <PageHeaderSkeleton actions={<ToggleGroupBone count={2} />} />
             <NoticeBone />
             <Card>
@@ -283,7 +283,7 @@ export function AuditTableSkeleton() {
 
 export function AuditPanelSkeleton() {
     return (
-        <div className="space-y-4" role="status" aria-busy="true" aria-label={tr('กำลังโหลดประวัติ')}>
+        <div className="space-y-4" role="status" aria-busy="true" aria-label={tr('common.loadingHistory')}>
             <div className="flex flex-wrap items-center gap-2">
                 <InputBone className="w-64" />
                 <InputBone className="w-44" />
@@ -297,7 +297,7 @@ export function AuditPanelSkeleton() {
 
 export function AuditLogsPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดประวัติ')}>
+        <SkeletonStack label={tr('common.loadingHistory')}>
             <PageHeaderSkeleton />
             <Card>
                 <CardContent>
@@ -313,7 +313,7 @@ export function AuditLogsPageSkeleton() {
 // การ์ดสถิติ (ตัวเลือกช่วงเวลา + ตัวเลข 4 กล่อง + กราฟ)
 export function PrStatsBodySkeleton() {
     return (
-        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('กำลังโหลดสถิติ PR')}>
+        <div className="space-y-5" role="status" aria-busy="true" aria-label={tr('common.loadingPrStatistics')}>
             <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                 {Array.from({ length: 4 }, (_, i) => (
                     <div key={i} className="rounded-xl border p-4">
@@ -363,7 +363,7 @@ function MapEditorSkeleton({ rows }: { rows: number }) {
 
 export function PrBotBodySkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า PR')}>
+        <SkeletonStack label={tr('common.loadingPrSettings')}>
             <PrStatsCardSkeleton />
             <CardSkeleton contentClassName="grid gap-4">
                 <FieldBone>
@@ -397,7 +397,7 @@ export function PrBotBodySkeleton() {
 
 export function PrBotPageSkeleton() {
     return (
-        <SkeletonStack label={tr('กำลังโหลดการตั้งค่า PR')}>
+        <SkeletonStack label={tr('common.loadingPrSettings')}>
             <PageHeaderSkeleton />
             <PrBotBodySkeleton />
         </SkeletonStack>

@@ -49,11 +49,11 @@ function CreateUserForm() {
         onSubmit: async ({ value, formApi }) => {
             try {
                 await usersApi.create(value);
-                toast.success(tr('เพิ่มผู้ใช้ {0} แล้ว', { 0: value.username }));
+                toast.success(tr('users.userAdded', { 0: value.username }));
                 formApi.reset();
                 await queryClient.invalidateQueries({ queryKey: usersQuery.queryKey });
             } catch (err) {
-                toast.error(tr('เพิ่มผู้ใช้ไม่สำเร็จ'), { description: errorMessage(err) });
+                toast.error(tr('users.failedToAddUser'), { description: errorMessage(err) });
             }
         },
     });
@@ -81,7 +81,7 @@ function CreateUserForm() {
             <form.Field name="displayName">
                 {(field) => (
                     <Input
-                        placeholder={tr('ชื่อที่แสดง (ไม่บังคับ)')}
+                        placeholder={tr('users.displayNameOptional')}
                         autoComplete="off"
                         value={field.state.value}
                         onChange={(e) => field.handleChange(e.target.value)}
@@ -93,7 +93,7 @@ function CreateUserForm() {
                     <Field error={field.state.meta.errors[0]?.message}>
                         <Input
                             type="password"
-                            placeholder={tr('รหัสผ่าน (อย่างน้อย 8 ตัว)')}
+                            placeholder={tr('users.passwordAtLeast8Characters')}
                             autoComplete="new-password"
                             value={field.state.value}
                             onChange={(e) => field.handleChange(e.target.value)}
@@ -118,7 +118,7 @@ function CreateUserForm() {
             <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <UserPlus />} {tr('เพิ่มผู้ใช้')}
+                        {isSubmitting ? <Loader2 className="animate-spin" /> : <UserPlus />} {tr('users.addUser')}
                     </Button>
                 )}
             </form.Subscribe>
@@ -152,9 +152,9 @@ function SetPasswordDialog({ user, onClose, onSave }: { user: AdminUser | null; 
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        {tr('ตั้งรหัสผ่านให้')} {user?.displayName}
+                        {tr('users.setPasswordFor')} {user?.displayName}
                     </DialogTitle>
-                    <DialogDescription>{tr('ผู้ใช้จะถูกออกจากระบบทุกเครื่อง แล้วต้องเข้าสู่ระบบใหม่ด้วยรหัสผ่านนี้')}</DialogDescription>
+                    <DialogDescription>{tr('users.theUserWillBeLoggedOut')}</DialogDescription>
                 </DialogHeader>
                 <form
                     className="space-y-3"
@@ -164,14 +164,14 @@ function SetPasswordDialog({ user, onClose, onSave }: { user: AdminUser | null; 
                     }}
                 >
                     {needsUsername && (
-                        <Field label="username" hint={tr('บัญชีนี้มาจาก Discord — ต้องกำหนด username สำหรับเข้าสู่ระบบด้วยรหัสผ่านด้วย')}>
+                        <Field label="username" hint={tr('users.thisAccountComesFromDiscordYou')}>
                             <Input placeholder="username (a-z 0-9 _ . -)" autoComplete="off" value={username} onChange={(e) => setUsername(e.target.value)} />
                         </Field>
                     )}
-                    <Field label={tr('รหัสผ่านใหม่')}>
+                    <Field label={tr('users.newPassword')}>
                         <Input
                             type="password"
-                            placeholder={tr('อย่างน้อย 8 ตัว')}
+                            placeholder={tr('users.atLeast8Characters')}
                             autoComplete="new-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -179,10 +179,10 @@ function SetPasswordDialog({ user, onClose, onSave }: { user: AdminUser | null; 
                     </Field>
                     <DialogFooter>
                         <Button type="button" variant="outline" onClick={onClose}>
-                            {tr('ยกเลิก')}
+                            {tr('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={saving || !password}>
-                            {saving && <Loader2 className="animate-spin" />} {tr('บันทึก')}
+                            {saving && <Loader2 className="animate-spin" />} {tr('common.save')}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -218,41 +218,41 @@ function UsersPage() {
 
     const changeRole = async (user: AdminUser, role: UserRole) => {
         const ok = await confirm({
-            title: tr('เปลี่ยน role เป็น {0}?', { 0: role }),
+            title: tr('users.changeRoleTo', { 0: role }),
             description:
                 role === 'ADMIN'
-                    ? tr('{0} จะเข้าถึงทุกเมนู รวมถึงจัดการผู้ใช้และตั้งค่าบอทได้ทุกเซิร์ฟเวอร์', { 0: user.displayName })
+                    ? tr('users.willAccessEveryMenuIncludingUser', { 0: user.displayName })
                     : role === 'OWNER'
-                      ? tr('{0} จะเห็นและจัดการตั้งค่าบอทได้เฉพาะเซิร์ฟเวอร์ของตัวเอง (ไม่เห็นเซิร์ฟเวอร์ของคนอื่น)', { 0: user.displayName })
-                      : tr('{0} จะเห็นเฉพาะเซิร์ฟเวอร์ของตัวเอง แต่ดูได้เฉพาะหน้า Levels ไม่มีสิทธิ์แก้ไขการตั้งค่าบอท', { 0: user.displayName }),
-            confirmText: tr('เปลี่ยน role'),
+                      ? tr('users.willSeeAndConfigureBotSettings', { 0: user.displayName })
+                      : tr('users.willSeeOnlyTheirOwnServers', { 0: user.displayName }),
+            confirmText: tr('users.changeRole'),
             destructive: role === 'ADMIN',
         });
-        if (ok) await run(() => update.mutateAsync({ id: user.id, input: { role } }), tr('เปลี่ยน role แล้ว'), tr('เปลี่ยน role ไม่สำเร็จ')).catch(() => {});
+        if (ok) await run(() => update.mutateAsync({ id: user.id, input: { role } }), tr('users.roleChanged'), tr('users.failedToChangeRole')).catch(() => {});
     };
 
     const toggleActive = async (user: AdminUser, isActive: boolean) => {
         if (!isActive) {
             const ok = await confirm({
-                title: tr('ปิดใช้งานบัญชีนี้?'),
-                description: tr('{0} จะถูกออกจากระบบทันที และเข้าสู่ระบบไม่ได้จนกว่าจะเปิดใหม่', { 0: user.displayName }),
-                confirmText: tr('ปิดใช้งาน'),
+                title: tr('users.disableThisAccount'),
+                description: tr('users.willBeLoggedOutImmediatelyAnd', { 0: user.displayName }),
+                confirmText: tr('common.disable'),
                 destructive: true,
             });
             if (!ok) return;
         }
         await run(
             () => update.mutateAsync({ id: user.id, input: { isActive } }),
-            isActive ? tr('เปิดใช้งานบัญชีแล้ว') : tr('ปิดใช้งานบัญชีแล้ว'),
-            tr('ไม่สำเร็จ'),
+            isActive ? tr('users.accountEnabled') : tr('users.accountDisabled'),
+            tr('common.failed'),
         ).catch(() => {});
     };
 
     const revokeSessions = async (user: AdminUser) => {
         const ok = await confirm({
-            title: tr('บังคับออกจากระบบทุกเครื่อง?'),
-            description: user.isSelf ? tr('รวมเครื่องนี้ด้วย — คุณจะต้องเข้าสู่ระบบใหม่') : tr('{0} จะถูกออกจากระบบทุกอุปกรณ์ทันที', { 0: user.displayName }),
-            confirmText: tr('ออกจากระบบทั้งหมด'),
+            title: tr('users.forceLogoutEverywhere'),
+            description: user.isSelf ? tr('users.includingThisDeviceYoullNeedTo') : tr('users.willBeLoggedOutOfEvery', { 0: user.displayName }),
+            confirmText: tr('common.logOutEverywhere'),
             destructive: true,
         });
         if (!ok) return;
@@ -263,21 +263,21 @@ function UsersPage() {
                 void navigate({ to: '/login' });
                 return;
             }
-            toast.success(tr('ออกจากระบบแล้ว {0} session', { 0: result.revoked }));
+            toast.success(tr('users.loggedOutSessions', { 0: result.revoked }));
             void refresh();
         } catch (err) {
-            toast.error(tr('ไม่สำเร็จ'), { description: errorMessage(err) });
+            toast.error(tr('common.failed'), { description: errorMessage(err) });
         }
     };
 
     const remove = async (user: AdminUser) => {
         const ok = await confirm({
-            title: tr('ลบผู้ใช้ {0}?', { 0: user.displayName }),
-            description: tr('ลบถาวร กู้คืนไม่ได้ (ประวัติใน Audit Logs ยังอยู่) — ถ้าแค่ไม่อยากให้เข้าระบบ แนะนำให้ปิดใช้งานแทน'),
-            confirmText: tr('ลบผู้ใช้'),
+            title: tr('users.deleteUser2', { 0: user.displayName }),
+            description: tr('users.permanentAndCantBeUndoneAudit'),
+            confirmText: tr('users.deleteUser'),
             destructive: true,
         });
-        if (ok) await run(() => usersApi.remove(user.id), tr('ลบผู้ใช้แล้ว'), tr('ลบผู้ใช้ไม่สำเร็จ')).catch(() => {});
+        if (ok) await run(() => usersApi.remove(user.id), tr('users.userDeleted'), tr('users.failedToDeleteUser')).catch(() => {});
     };
 
     const columns: ColumnDef<AdminUser>[] = [
@@ -290,10 +290,10 @@ function UsersPage() {
                     <div className="min-w-0">
                         <p className="flex items-center gap-1.5 font-medium">
                             {u.displayName}
-                            {u.isSelf && <Badge variant="secondary">{tr('คุณ')}</Badge>}
+                            {u.isSelf && <Badge variant="secondary">{tr('users.you')}</Badge>}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                            #{u.id} {tr('· สมัคร')} {formatDateTime(u.createdAt)}
+                            #{u.id} {tr('users.joined')} {formatDateTime(u.createdAt)}
                         </p>
                     </div>
                 </div>
@@ -301,7 +301,7 @@ function UsersPage() {
         },
         {
             id: 'methods',
-            header: tr('ช่องทาง Login'),
+            header: tr('users.loginMethods'),
             cell: ({ row: { original: u } }) => (
                 <div className="flex flex-col items-start gap-1">
                     {u.hasPassword && <Badge variant="outline">🔑 {u.username}</Badge>}
@@ -316,7 +316,7 @@ function UsersPage() {
             header: 'Role',
             cell: ({ row: { original: u } }) => (
                 <Select value={u.role} disabled={u.isSelf} onValueChange={(role) => void changeRole(u, role as UserRole)}>
-                    <SelectTrigger size="sm" className="w-28" title={u.isSelf ? tr('เปลี่ยน role ของตัวเองไม่ได้') : undefined}>
+                    <SelectTrigger size="sm" className="w-28" title={u.isSelf ? tr('users.youCantChangeYourOwnRole') : undefined}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -329,17 +329,17 @@ function UsersPage() {
         },
         {
             accessorKey: 'isActive',
-            header: tr('สถานะ'),
+            header: tr('common.status'),
             cell: ({ row: { original: u } }) => (
                 <div className="flex items-center gap-2">
                     <Switch checked={u.isActive} disabled={u.isSelf} onCheckedChange={(checked) => void toggleActive(u, checked)} />
                     {u.lockedUntil && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Badge variant="destructive">{tr('ล็อกชั่วคราว')}</Badge>
+                                <Badge variant="destructive">{tr('users.temporarilyLocked')}</Badge>
                             </TooltipTrigger>
                             <TooltipContent>
-                                {tr('ล็อกถึง')} {formatDateTime(u.lockedUntil)}
+                                {tr('users.lockedUntil')} {formatDateTime(u.lockedUntil)}
                             </TooltipContent>
                         </Tooltip>
                     )}
@@ -349,36 +349,38 @@ function UsersPage() {
         { accessorKey: 'activeSessions', header: 'Sessions' },
         {
             accessorKey: 'lastLoginAt',
-            header: tr('Login ล่าสุด'),
+            header: tr('users.lastLogin'),
             cell: ({ row }) => <span className="text-xs">{formatDateTime(row.original.lastLoginAt)}</span>,
         },
         {
             id: 'actions',
-            header: tr('จัดการ'),
+            header: tr('common.actions'),
             cell: ({ row: { original: u } }) => (
                 <div className="flex flex-wrap gap-1">
                     <Button size="xs" variant="outline" onClick={() => setPasswordFor(u)}>
-                        <KeyRound /> {tr('ตั้งรหัสผ่าน')}
+                        <KeyRound /> {tr('users.setPassword')}
                     </Button>
                     {u.lockedUntil && (
                         <Button
                             size="xs"
                             variant="outline"
                             onClick={() =>
-                                void run(() => update.mutateAsync({ id: u.id, input: { unlock: true } }), tr('ปลดล็อกบัญชีแล้ว'), tr('ปลดล็อกไม่สำเร็จ')).catch(
-                                    () => {},
-                                )
+                                void run(
+                                    () => update.mutateAsync({ id: u.id, input: { unlock: true } }),
+                                    tr('users.accountUnlocked'),
+                                    tr('users.failedToUnlock'),
+                                ).catch(() => {})
                             }
                         >
-                            <LockOpen /> {tr('ปลดล็อก')}
+                            <LockOpen /> {tr('users.unlock')}
                         </Button>
                     )}
                     <Button size="xs" variant="outline" className="text-amber-700 dark:text-amber-300" onClick={() => void revokeSessions(u)}>
-                        <LogOut /> {tr('เตะออกทุกเครื่อง')}
+                        <LogOut /> {tr('users.kickFromAllDevices')}
                     </Button>
                     {!u.isSelf && (
                         <Button size="xs" variant="destructive" onClick={() => void remove(u)}>
-                            <Trash2 /> {tr('ลบ')}
+                            <Trash2 /> {tr('common.deleted')}
                         </Button>
                     )}
                 </div>
@@ -388,19 +390,11 @@ function UsersPage() {
 
     return (
         <>
-            <PageHeader
-                help="users"
-                title={tr('จัดการผู้ใช้')}
-                description={tr('จัดการผู้ใช้ Dashboard — กำหนด role, ปิดบัญชี, รีเซ็ตรหัสผ่าน และบังคับออกจากระบบ')}
-            />
+            <PageHeader help="users" title={tr('common.users')} description={tr('users.manageDashboardUsersSetRolesDisable')} />
             <Card>
                 <CardHeader>
-                    <CardTitle>{tr('เพิ่มผู้ใช้ (username / password)')}</CardTitle>
-                    <CardDescription>
-                        {tr(
-                            'เจ้าของเซิร์ฟเวอร์ที่เข้าสู่ระบบด้วย Discord ครั้งแรกจะได้ role OWNER อัตโนมัติ (เห็นและตั้งค่าได้เฉพาะเซิร์ฟเวอร์ของตัวเอง) ส่วน USER ดูได้เฉพาะหน้า Levels ของเซิร์ฟเวอร์ตัวเอง — ADMIN จัดการได้ทุกเซิร์ฟเวอร์ที่บอทอยู่ รวมถึงผู้ใช้และ log ของระบบ',
-                        )}
-                    </CardDescription>
+                    <CardTitle>{tr('users.addUserUsernamePassword')}</CardTitle>
+                    <CardDescription>{tr('users.serverOwnersLoggingInWithDiscord')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <CreateUserForm />
@@ -416,7 +410,7 @@ function UsersPage() {
                         <DataTable
                             columns={columns}
                             data={data ?? []}
-                            empty={tr('ยังไม่มีผู้ใช้')}
+                            empty={tr('users.noUsersYet')}
                             rowClassName={(u) => (u.isActive ? undefined : 'opacity-60')}
                         />
                     )}
@@ -425,7 +419,7 @@ function UsersPage() {
             <SetPasswordDialog
                 user={passwordFor}
                 onClose={() => setPasswordFor(null)}
-                onSave={(input) => run(() => update.mutateAsync({ id: passwordFor!.id, input }), tr('ตั้งรหัสผ่านแล้ว'), tr('ตั้งรหัสผ่านไม่สำเร็จ'))}
+                onSave={(input) => run(() => update.mutateAsync({ id: passwordFor!.id, input }), tr('users.passwordSet'), tr('users.failedToSetPassword'))}
             />
         </>
     );

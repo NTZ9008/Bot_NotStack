@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useInView, useSteps } from './reveal';
+import { tr } from '../../lib/i18n';
 
 // ==========================================
 // 🖼️ ภาพประกอบความสามารถแต่ละกลุ่ม — หน้าตาแบบ Discord (ข้อความจำลอง) ค่อยๆ เล่นเหตุการณ์ทีละอย่างเมื่อเลื่อนมาเห็น
@@ -53,26 +54,27 @@ function SecurityIllustration({ botName, botAvatar, active }: BotProps & { activ
             <Appear show={step >= 1} className="space-y-2">
                 <BotLine avatar={botAvatar} name={botName} />
                 <Embed color="border-amber-400">
-                    <p className="font-semibold text-slate-100">⚠️ มีคนเปลี่ยนการตั้งค่าห้องเสียง</p>
+                    <p className="font-semibold text-slate-100">{tr('landing.illVoiceChanged')}</p>
                     <div className="grid grid-cols-[4.5rem_1fr] gap-y-1 text-slate-300">
-                        <span className="text-slate-500">ห้อง</span>
-                        <span>🔊 เล่นเกม</span>
+                        <span className="text-slate-500">{tr('landing.illChannel')}</span>
+                        <span>{tr('landing.illGamingChannel')}</span>
                         <span className="text-slate-500">Bitrate</span>
                         <span>
                             96 kbps →{' '}
                             <span className={`font-semibold transition-colors duration-700 ${step >= 2 ? 'text-rose-300' : 'text-slate-300'}`}>8 kbps</span>
                         </span>
-                        <span className="text-slate-500">โดย</span>
-                        <span className="text-indigo-200">@ขี้แกล้ง</span>
+                        <span className="text-slate-500">{tr('relations.by')}</span>
+                        <span className="text-indigo-200">{tr('landing.illTroll')}</span>
                     </div>
                 </Embed>
             </Appear>
             <Appear show={step >= 3}>
                 <Embed color="border-rose-400">
                     <p className="text-slate-200">
-                        🚫 <span className="font-semibold">Voice Guard</span> ตัด <span className="text-indigo-200">@คนนอก</span> ออกจาก 🔊 ประชุมทีม
+                        🚫 <span className="font-semibold">Voice Guard</span> {tr('landing.illDisconnected')}{' '}
+                        <span className="text-indigo-200">{tr('landing.illOutsider')}</span> {tr('landing.illFromTeamMeeting')}
                     </p>
-                    <p className="text-xs text-slate-400">เหตุผล: ไม่อยู่ใน whitelist ของห้องนี้</p>
+                    <p className="text-xs text-slate-400">{tr('landing.illNotWhitelisted')}</p>
                 </Embed>
             </Appear>
         </Frame>
@@ -82,8 +84,8 @@ function SecurityIllustration({ botName, botAvatar, active }: BotProps & { activ
 function CommunityIllustration({ active }: { active: boolean }) {
     const step = useSteps(active, 4, 650);
     const gains = [
-        { label: '+15 XP', reason: 'พิมพ์ในห้อง' },
-        { label: '+40 XP', reason: 'อยู่ห้องเสียง 10 นาที' },
+        { label: '+15 XP', reason: tr('landing.illXpChat') },
+        { label: '+40 XP', reason: tr('landing.illXpVoice') },
     ];
     return (
         <div className="relative w-full max-w-md rotate-[0.8deg]">
@@ -91,13 +93,13 @@ function CommunityIllustration({ active }: { active: boolean }) {
             <div className="overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br from-[#1e1b4b] via-[#1e293b] to-[#0f172a] p-5 shadow-xl">
                 <div className="flex items-center gap-4">
                     <div className="flex size-16 shrink-0 items-center justify-center rounded-full bg-emerald-700 text-2xl font-semibold text-white ring-4 ring-indigo-400/40">
-                        ม
+                        {tr('landing.sampleInitial')}
                     </div>
                     <div className="min-w-0 flex-1">
                         <div className="flex items-baseline justify-between gap-2">
-                            <p className="truncate text-lg font-semibold">มายด์</p>
+                            <p className="truncate text-lg font-semibold">{tr('landing.sampleName')}</p>
                             <p className="shrink-0 text-sm text-slate-400">
-                                อันดับ <span className="font-semibold text-slate-100">#3</span>
+                                {tr('common.rank')} <span className="font-semibold text-slate-100">#3</span>
                             </p>
                         </div>
                         <p className="text-sm text-indigo-200">
@@ -128,7 +130,7 @@ function CommunityIllustration({ active }: { active: boolean }) {
                 ))}
                 <Appear show={step >= 4}>
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/30 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-200">
-                        🎉 เลเวลอัป! ได้ยศ Regular
+                        {tr('landing.illLevelUp')}
                     </span>
                 </Appear>
             </div>
@@ -140,23 +142,23 @@ function TeamIllustration({ botName, botAvatar, active }: BotProps & { active: b
     const step = useSteps(active, 3, 900);
     const merged = step >= 3;
     const rows = [
-        { icon: '✅', text: 'CI ผ่าน 3/3', show: step >= 1 },
-        { icon: '👍', text: 'approve โดย @arlif', show: step >= 2 },
-        { icon: '🟣', text: 'merge เข้า release แล้ว', show: step >= 3 },
+        { icon: '✅', text: tr('landing.illCiPassed'), show: step >= 1 },
+        { icon: '👍', text: tr('landing.illApproved'), show: step >= 2 },
+        { icon: '🟣', text: tr('landing.illMergedToRelease'), show: step >= 3 },
     ];
     return (
         <Frame channel="pull-requests" tilt="-rotate-[0.6deg]">
             <BotLine avatar={botAvatar} name={botName} />
             <Embed color={`transition-colors duration-500 ${merged ? 'border-purple-400' : 'border-emerald-400'}`}>
                 <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold text-sky-300">#128 เพิ่มหน้าแรกของบอท</p>
+                    <p className="font-semibold text-sky-300">{tr('landing.illPrTitle')}</p>
                     <span
                         className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors duration-500 ${merged ? 'bg-purple-500/25 text-purple-200' : 'bg-emerald-500/20 text-emerald-200'}`}
                     >
                         {merged ? 'Merged' : 'Open'}
                     </span>
                 </div>
-                <p className="text-xs text-slate-400">boatngin ต้องการ merge 4 commits</p>
+                <p className="text-xs text-slate-400">{tr('landing.illPrMeta')}</p>
                 <ul className="space-y-1 pt-1 text-slate-300">
                     {rows.map((row) => (
                         <li key={row.text}>
@@ -167,7 +169,7 @@ function TeamIllustration({ botName, botAvatar, active }: BotProps & { active: b
                     ))}
                 </ul>
             </Embed>
-            <p className="text-xs text-slate-500">ข้อความเดิมถูกแก้ไขเรื่อยๆ — ไม่มีข้อความใหม่มารกห้อง</p>
+            <p className="text-xs text-slate-500">{tr('landing.illPrSameMessage')}</p>
         </Frame>
     );
 }
@@ -175,10 +177,10 @@ function TeamIllustration({ botName, botAvatar, active }: BotProps & { active: b
 function LogsIllustration({ active }: { active: boolean }) {
     const step = useSteps(active, 4, 450);
     const events = [
-        { time: '20:14', icon: '📥', text: 'มายด์ เข้าเซิร์ฟ' },
-        { time: '20:16', icon: '🔊', text: 'บอส ย้ายจาก เล่นเกม → ฟังเพลง' },
-        { time: '20:21', icon: '✏️', text: 'ปอนด์ แก้ข้อความใน #คุยเล่น' },
-        { time: '20:23', icon: '🗑️', text: 'ข้อความถูกลบใน #ประกาศ' },
+        { time: '20:14', icon: '📥', text: tr('landing.illLogJoin') },
+        { time: '20:16', icon: '🔊', text: tr('landing.illLogMove') },
+        { time: '20:21', icon: '✏️', text: tr('landing.illLogEdit') },
+        { time: '20:23', icon: '🗑️', text: tr('landing.illLogDelete') },
     ];
     const bars = [35, 52, 44, 70, 58, 88, 64];
     return (
@@ -197,7 +199,7 @@ function LogsIllustration({ active }: { active: boolean }) {
                 </ul>
             </Frame>
             <div className="rounded-lg border bg-card p-4 shadow-xl">
-                <p className="mb-3 text-xs text-muted-foreground">คนในห้องเสียง 7 วันล่าสุด</p>
+                <p className="mb-3 text-xs text-muted-foreground">{tr('landing.illVoiceLast7Days')}</p>
                 <div className="flex h-20 items-end gap-2">
                     {bars.map((height, index) => (
                         <div

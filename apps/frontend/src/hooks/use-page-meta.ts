@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 // relative (ไม่ใช่ @/) ให้ tests/frontend-lib.test.cjs โหลดไฟล์นี้บน Node ได้
+import { tr } from '../lib/i18n';
 import { PAGES, SITE_ORIGIN, type PublicPath } from '../lib/seo';
 
 type MetaDocument = Pick<Document, 'title' | 'querySelector'>;
 
 /** เขียน title / description / canonical / Open Graph / Twitter ของหน้านั้นลงใน <head> */
 export function applyPageMeta(doc: MetaDocument, path: PublicPath) {
-    const { title, description } = PAGES[path];
+    const title = tr(PAGES[path].title);
+    const description = tr(PAGES[path].description);
     const url = `${SITE_ORIGIN}${path}`;
     doc.title = title;
     const meta: Record<string, string> = {

@@ -1,4 +1,4 @@
-import { tr, dateLocale, byLang } from '../../lib/i18n';
+import { tr, dateLocale, byLang, trText } from '../../lib/i18n';
 import {
     RELATION_KIND_LABELS,
     RELATION_STATUS_TEXT,
@@ -27,22 +27,22 @@ import { BoardCanvas, type BoardHandle, type BoardSelection } from './board-canv
 import { assignGroups } from './layout';
 
 const RANGES = byLang(() => [
-    { days: 7, label: tr('7 วันล่าสุด') },
-    { days: 30, label: tr('30 วันล่าสุด') },
-    { days: 90, label: tr('90 วันล่าสุด') },
-    { days: 365, label: tr('ทั้งหมดที่เก็บไว้') },
+    { days: 7, label: tr('common.last7Days') },
+    { days: 30, label: tr('common.last30Days') },
+    { days: 90, label: tr('common.last90Days') },
+    { days: 365, label: tr('relations.everythingStored') },
 ]);
 
 const LINE_FILTERS = byLang(() => [
-    { tier: 1, label: tr('แสดงทุกเส้น') },
-    { tier: 2, label: tr('เฉพาะเส้นสี') },
-    { tier: 3, label: tr('เฉพาะคนที่สนิท') },
+    { tier: 1, label: tr('relations.showAllLinks') },
+    { tier: 2, label: tr('relations.coloredLinksOnly') },
+    { tier: 3, label: tr('relations.closeFriendsOnly') },
 ]);
 
 const LEGEND = byLang((): { kind: RelationKind; color: string; unit: string }[] => [
-    { kind: 'voice', color: 'var(--chart-2)', unit: tr('ชั่วโมง') },
-    { kind: 'chat', color: 'var(--chart-4)', unit: tr('จำนวนครั้ง') },
-    { kind: 'mod', color: 'var(--chart-5)', unit: tr('จำนวนครั้ง') },
+    { kind: 'voice', color: 'var(--chart-2)', unit: tr('common.hour') },
+    { kind: 'chat', color: 'var(--chart-4)', unit: tr('common.count') },
+    { kind: 'mod', color: 'var(--chart-5)', unit: tr('common.count') },
 ]);
 
 function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excluded: ReadonlySet<string>; onChange: (next: Set<string>) => void }) {
@@ -57,18 +57,18 @@ function RolePicker({ roles, excluded, onChange }: { roles: RelationRole[]; excl
             <PopoverTrigger asChild>
                 <Button variant="outline">
                     <ListFilter />
-                    {tr('เลือก role (')}
+                    {tr('relations.pickRoles')}
                     {roles.length - roles.filter((role) => excluded.has(role.id)).length}/{roles.length})
                 </Button>
             </PopoverTrigger>
             <PopoverContent align="start" className="w-72 p-2">
-                <p className="px-1 pb-2 text-xs text-muted-foreground">{tr('เรียงจาก role สูงสุด คนที่มีหลาย role จะอยู่กลุ่มที่สูงที่สุดที่เลือกไว้')}</p>
+                <p className="px-1 pb-2 text-xs text-muted-foreground">{tr('relations.sortedFromTheHighestRolePeople')}</p>
                 <div className="flex gap-1 px-1 pb-2">
                     <Button size="sm" variant="secondary" onClick={() => onChange(new Set())}>
-                        {tr('เลือกทั้งหมด')}
+                        {tr('relations.selectAll')}
                     </Button>
                     <Button size="sm" variant="secondary" onClick={() => onChange(new Set(roles.map((role) => role.id)))}>
-                        {tr('ไม่เลือกเลย')}
+                        {tr('relations.selectNone')}
                     </Button>
                 </div>
                 <ul className="max-h-72 space-y-0.5 overflow-y-auto">
@@ -109,7 +109,7 @@ function Legend({ showPresence }: { showPresence: boolean }) {
                             style={{ background: `linear-gradient(90deg, color-mix(in oklch, ${color} 18%, oklch(0.68 0 0)), ${color})` }}
                             aria-hidden="true"
                         />
-                        {tr(RELATION_KIND_LABELS[kind])} ({unit})
+                        {trText(RELATION_KIND_LABELS[kind])} ({unit})
                     </li>
                 ))}
             </ul>
@@ -118,12 +118,12 @@ function Legend({ showPresence }: { showPresence: boolean }) {
                     {PRESENCE_LEGEND.map(({ status, className }) => (
                         <li key={status} className="flex items-center gap-1.5">
                             <span className={`size-2.5 rounded-full ${className}`} aria-hidden="true" />
-                            {tr(RELATION_STATUS_TEXT[status])}
+                            {trText(RELATION_STATUS_TEXT[status])}
                         </li>
                     ))}
                 </ul>
             )}
-            <p className="mt-1 text-neutral-400">{tr('สีจางคือน้อย ยิ่งมากสียิ่งสดและเส้นยิ่งหนา ชี้ที่เส้นเพื่อดูตัวเลข')}</p>
+            <p className="mt-1 text-neutral-400">{tr('relations.faintMeansFewTheMoreThe')}</p>
         </div>
     );
 }
@@ -168,9 +168,9 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const selectLink = (link: RelationLink) => setSelection({ type: 'link', link });
     const resetLayout = async () => {
         const accepted = await confirm({
-            title: tr('จัดกระดานใหม่?'),
-            description: tr('ตำแหน่งการ์ดที่ลากไว้ในเบราว์เซอร์นี้จะหายไป และระบบจะจัดวางให้ใหม่'),
-            confirmText: tr('จัดใหม่'),
+            title: tr('relations.rearrangeTheBoard'),
+            description: tr('relations.cardPositionsYouDraggedInThis'),
+            confirmText: tr('relations.rearrange'),
         });
         if (accepted) canvas.current?.resetLayout();
     };
@@ -179,7 +179,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
         <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
                 <div className="relative min-w-52 flex-1 sm:max-w-xs">
-                    <SearchInput value={search} onChange={setSearch} placeholder={tr('ค้นหาชื่อคนบนกระดาน')} />
+                    <SearchInput value={search} onChange={setSearch} placeholder={tr('relations.searchPeopleOnTheBoard')} />
                     {matches.length > 0 && (
                         <ul className="absolute top-full z-20 mt-1 w-full rounded-lg border bg-popover p-1 shadow-lg">
                             {matches.map((person) => (
@@ -198,7 +198,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                     )}
                 </div>
                 <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
-                    <SelectTrigger className="w-40" aria-label={tr('ช่วงเวลา')}>
+                    <SelectTrigger className="w-40" aria-label={tr('relations.timeRange')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -210,7 +210,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                     </SelectContent>
                 </Select>
                 <Select value={String(minTier)} onValueChange={(value) => setMinTier(Number(value))}>
-                    <SelectTrigger className="w-40" aria-label={tr('เส้นที่แสดง')}>
+                    <SelectTrigger className="w-40" aria-label={tr('relations.linksShown')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -222,32 +222,31 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                     </SelectContent>
                 </Select>
                 <Select value={grouping} onValueChange={(value) => setGrouping(value as 'none' | 'role')}>
-                    <SelectTrigger className="w-44" aria-label={tr('การจัดกลุ่ม')}>
+                    <SelectTrigger className="w-44" aria-label={tr('relations.grouping')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="none">{tr('ไม่จัดกลุ่ม')}</SelectItem>
-                        <SelectItem value="role">{tr('จัดกลุ่มตาม role สูงสุด')}</SelectItem>
+                        <SelectItem value="none">{tr('relations.noGrouping')}</SelectItem>
+                        <SelectItem value="role">{tr('relations.groupByHighestRole')}</SelectItem>
                     </SelectContent>
                 </Select>
                 {grouping === 'role' && roles.length > 0 && <RolePicker roles={roles} excluded={excludedRoles} onChange={setExcludedRoles} />}
                 <div className="flex items-center gap-2 px-1">
                     <Switch id="relation-bots" checked={includeBots} onCheckedChange={setIncludeBots} />
-                    <Label htmlFor="relation-bots">{tr('แสดงบอท')}</Label>
+                    <Label htmlFor="relation-bots">{tr('relations.showBots')}</Label>
                 </div>
                 {board.data && (
                     <p className="text-xs text-muted-foreground sm:ml-auto">
-                        {people.length.toLocaleString(dateLocale())} {tr('คน ·')} {links.length.toLocaleString(dateLocale())} {tr('เส้น')}
-                        {goneCount > 0 && tr(' · ออกไปแล้ว {0} คน', { 0: goneCount.toLocaleString(dateLocale()) })}
+                        {people.length.toLocaleString(dateLocale())} {tr('relations.people')} {links.length.toLocaleString(dateLocale())}{' '}
+                        {tr('relations.links')}
+                        {goneCount > 0 && tr('relations.haveLeft', { 0: goneCount.toLocaleString(dateLocale()) })}
                     </p>
                 )}
             </div>
 
             {board.isError && <ErrorState error={board.error} />}
             {board.isPending && <Skeleton className="h-[72svh] min-h-[480px] w-full rounded-xl" />}
-            {board.isSuccess && people.length === 0 && (
-                <EmptyState>{tr('ยังไม่มีข้อมูลในช่วงเวลานี้ ลองขยายช่วงเวลา หรือเปิด “บันทึกกิจกรรม” ในหน้าตั้งค่าบันทึกเหตุการณ์')}</EmptyState>
-            )}
+            {board.isSuccess && people.length === 0 && <EmptyState>{tr('relations.noDataInThisPeriodYet')}</EmptyState>}
             {board.isSuccess && people.length > 0 && (
                 <div className="relative h-[72svh] min-h-[480px] overflow-hidden rounded-xl border">
                     <BoardCanvas
@@ -264,30 +263,27 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
                         onSelectLink={selectLink}
                     />
                     <div className="absolute top-3 right-3 flex flex-col gap-1">
-                        <Button size="icon" variant="secondary" aria-label={tr('ซูมเข้า')} onClick={() => canvas.current?.zoom(1.25)}>
+                        <Button size="icon" variant="secondary" aria-label={tr('relations.zoomIn')} onClick={() => canvas.current?.zoom(1.25)}>
                             <Plus />
                         </Button>
-                        <Button size="icon" variant="secondary" aria-label={tr('ซูมออก')} onClick={() => canvas.current?.zoom(0.8)}>
+                        <Button size="icon" variant="secondary" aria-label={tr('relations.zoomOut')} onClick={() => canvas.current?.zoom(0.8)}>
                             <Minus />
                         </Button>
-                        <Button size="icon" variant="secondary" aria-label={tr('ดูทั้งกระดาน')} onClick={() => canvas.current?.fit()}>
+                        <Button size="icon" variant="secondary" aria-label={tr('relations.fitBoard')} onClick={() => canvas.current?.fit()}>
                             <Maximize />
                         </Button>
-                        <Button size="icon" variant="secondary" aria-label={tr('จัดกระดานใหม่')} onClick={() => void resetLayout()}>
+                        <Button size="icon" variant="secondary" aria-label={tr('relations.rearrangeBoard')} onClick={() => void resetLayout()}>
                             <RotateCcw />
                         </Button>
                     </div>
                     <Legend showPresence={presence.data?.available === true} />
                 </div>
             )}
-            {presence.data?.available === false && (
-                <p className="text-xs text-muted-foreground">
-                    {tr('ยังแสดงสถานะออนไลน์ไม่ได้ ผู้ดูแลบอทต้องเปิด Presence Intent และตั้ง DISCORD_PRESENCE_INTENT=true ก่อน')}
-                </p>
-            )}
+            {presence.data?.available === false && <p className="text-xs text-muted-foreground">{tr('relations.onlineStatusIsntAvailableYetThe')}</p>}
             {board.data && board.data.hiddenPeople > 0 && (
                 <p className="text-xs text-muted-foreground">
-                    {tr('แสดงเฉพาะคนที่มีความสัมพันธ์มากที่สุด ยังมีอีก')} {board.data.hiddenPeople.toLocaleString(dateLocale())} {tr('คนที่ไม่ได้ขึ้นกระดาน')}
+                    {tr('relations.showingOnlyTheMostConnectedPeople')} {board.data.hiddenPeople.toLocaleString(dateLocale())}{' '}
+                    {tr('relations.morePeopleNotOnTheBoard')}
                 </p>
             )}
 

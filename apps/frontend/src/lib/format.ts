@@ -7,11 +7,11 @@ export function formatDateTime(value: string | number | Date | null | undefined)
 export const formatNumber = (value: number | null | undefined): string => Number(value || 0).toLocaleString(dateLocale());
 
 export function formatMinutes(minutes: number): string {
-    if (!minutes) return tr('0 นาที');
+    if (!minutes) return tr('common.n0Min');
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
-    if (hours === 0) return tr('{0} นาที', { 0: mins });
-    return mins === 0 ? tr('{0} ชม.', { 0: hours }) : tr('{0} ชม. {1} นาที', { 0: hours, 1: mins });
+    if (hours === 0) return tr('common.min', { 0: mins });
+    return mins === 0 ? tr('common.hr', { 0: hours }) : tr('common.hrMin', { 0: hours, 1: mins });
 }
 
 export function formatBytes(bytes: number): string {
@@ -29,13 +29,13 @@ export function formatCountdown(ms: number): string {
 // เวลาที่ผ่านมาแบบสั้น (รายการกิจกรรมสด)
 export function formatTimeAgo(value: string | number | Date, now = Date.now()): string {
     const seconds = Math.max(0, Math.round((now - new Date(value).getTime()) / 1000));
-    if (seconds < 10) return tr('เมื่อสักครู่');
-    if (seconds < 60) return tr('{0} วินาทีที่แล้ว', { 0: seconds });
-    if (seconds < 3600) return tr('{0} นาทีที่แล้ว', { 0: Math.floor(seconds / 60) });
-    return tr('{0} ชม.ที่แล้ว', { 0: Math.floor(seconds / 3600) });
+    if (seconds < 10) return tr('common.justNow');
+    if (seconds < 60) return tr('common.secondsAgo', { 0: seconds });
+    if (seconds < 3600) return tr('common.minutesAgo', { 0: Math.floor(seconds / 60) });
+    return tr('common.hrAgo', { 0: Math.floor(seconds / 3600) });
 }
 
-export const nowTimeLabel = () => tr('วันนี้ {0}', { 0: new Date().toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) });
+export const nowTimeLabel = () => tr('common.today2', { 0: new Date().toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' }) });
 
 // ค่าสำหรับ <input type="datetime-local"> (เวลาท้องถิ่น)
 export const toLocalInput = (date: Date) => new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);

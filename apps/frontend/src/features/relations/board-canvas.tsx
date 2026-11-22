@@ -1,4 +1,4 @@
-import { tr, dateLocale } from '../../lib/i18n';
+import { tr, dateLocale, trText } from '../../lib/i18n';
 import {
     RELATION_STATUS_LABELS,
     RELATION_STATUS_TEXT,
@@ -99,9 +99,9 @@ function placeZone(el: HTMLElement, zone: ZoneRect): void {
 
 function linkSummary(link: RelationLink): string {
     return [
-        link.voiceMinutes > 0 && tr('ห้องเสียง {0}', { 0: compactVoiceTime(link.voiceMinutes) }),
-        link.chatExchanges > 0 && tr('คุย {0} ครั้ง', { 0: link.chatExchanges.toLocaleString(dateLocale()) }),
-        link.modActions > 0 && tr('ลงมือ {0} ครั้ง', { 0: link.modActions.toLocaleString(dateLocale()) }),
+        link.voiceMinutes > 0 && tr('relations.voice3', { 0: compactVoiceTime(link.voiceMinutes) }),
+        link.chatExchanges > 0 && tr('relations.talkedTimes', { 0: link.chatExchanges.toLocaleString(dateLocale()) }),
+        link.modActions > 0 && tr('relations.actedTimes', { 0: link.modActions.toLocaleString(dateLocale()) }),
     ]
         .filter(Boolean)
         .join(' · ');
@@ -125,11 +125,11 @@ const PersonCard = memo(function PersonCard({
     register: (id: string, el: HTMLElement | null) => void;
 }) {
     const gone = person.status !== 'member';
-    const tag = gone ? tr(RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS]) : person.isBot ? tr('บอท') : '';
+    const tag = gone ? trText(RELATION_STATUS_LABELS[person.status as keyof typeof RELATION_STATUS_LABELS]) : person.isBot ? tr('relations.bot') : '';
     const presenceLine = relationPresenceLine(presence);
     const voiceTime = heat ? compactVoiceTime(person.voiceMinutes) : '';
-    const voiceText = voiceTime ? tr(', ห้องเสียง {0}', { 0: voiceTime }) : '';
-    const statusText = presence ? `, ${tr(RELATION_STATUS_TEXT[presence.status])}` : '';
+    const voiceText = voiceTime ? tr('relations.voice', { 0: voiceTime }) : '';
+    const statusText = presence ? `, ${trText(RELATION_STATUS_TEXT[presence.status])}` : '';
     return (
         <button
             type="button"
@@ -139,7 +139,7 @@ const PersonCard = memo(function PersonCard({
             data-gone={gone || undefined}
             data-heat={heat || undefined}
             data-selected={selected || undefined}
-            aria-label={tr('{0}{1}{2}{3}{4} ดูประวัติ', {
+            aria-label={tr('relations.viewHistory', {
                 0: person.name,
                 1: tag ? ` (${tag})` : '',
                 2: statusText,
@@ -573,7 +573,7 @@ export function BoardCanvas({
                                 <span className="rb-zone-dot" />
                                 <span className="rb-zone-name">{group.name}</span>
                                 <span className="rb-zone-count">
-                                    {group.members.length.toLocaleString(dateLocale())} {tr('คน')}
+                                    {group.members.length.toLocaleString(dateLocale())} {tr('common.people')}
                                 </span>
                             </div>
                         </div>

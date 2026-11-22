@@ -59,26 +59,26 @@ function AiSettingsPage() {
             setApiKey('');
             setTestResult(null);
             client.setQueryData(query.queryKey, next);
-            toast.success(tr('บันทึกการตั้งค่า AI แล้ว'));
+            toast.success(tr('ai.aiSettingsSaved'));
         },
-        onError: (error) => toast.error(tr('บันทึกไม่สำเร็จ'), { description: errorMessage(error) }),
+        onError: (error) => toast.error(tr('common.saveFailed'), { description: errorMessage(error) }),
     });
     const toggle = useMutation({
         mutationFn: (aiEnabled: boolean) => updateAiSettings(guildId, { aiEnabled }),
         onSuccess: (next) => {
             client.setQueryData(query.queryKey, next);
-            toast.success(next.aiEnabled ? tr('เปิดใช้งาน AI แล้ว') : tr('ปิดใช้งาน AI แล้ว'));
+            toast.success(next.aiEnabled ? tr('ai.aiEnabled') : tr('ai.aiDisabled'));
         },
-        onError: (error) => toast.error(tr('เปลี่ยนสถานะไม่สำเร็จ'), { description: errorMessage(error) }),
+        onError: (error) => toast.error(tr('common.failedToChangeStatus'), { description: errorMessage(error) }),
     });
     const removeKey = useMutation({
         mutationFn: () => updateAiSettings(guildId, { apiKey: null }),
         onSuccess: (next) => {
             client.setQueryData(query.queryKey, next);
             setApiKey('');
-            toast.success(tr('ลบ API Key แล้ว'));
+            toast.success(tr('ai.apiKeyRemoved'));
         },
-        onError: (error) => toast.error(tr('ลบ Key ไม่สำเร็จ'), { description: errorMessage(error) }),
+        onError: (error) => toast.error(tr('ai.failedToRemoveKey'), { description: errorMessage(error) }),
     });
     const test = useMutation({
         mutationFn: () => testAiKey(guildId, apiKey.trim() || undefined),
@@ -89,43 +89,41 @@ function AiSettingsPage() {
         },
         onError: (error) => {
             setTestResult({ ok: false, message: errorMessage(error) });
-            toast.error(tr('ทดสอบ Key ไม่สำเร็จ'), { description: errorMessage(error) });
+            toast.error(tr('ai.keyTestFailed'), { description: errorMessage(error) });
         },
     });
 
     return (
         <div className="space-y-6">
-            <PageHeader title={tr('ตั้งค่า AI Chat')} description={tr('จัดการ Gemini API Key และติดตามโควตาการใช้งาน AI ของเซิร์ฟเวอร์นี้')} />
+            <PageHeader title={tr('common.aiChatSettings')} description={tr('ai.manageTheGeminiApiKeyAnd')} />
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <Bot className="size-5 text-highlight" />
-                        {tr('สถานะและ Gemini API Key')}
+                        {tr('ai.statusAndGeminiApiKey')}
                     </CardTitle>
-                    <CardDescription>{tr('Key จะถูกเข้ารหัสก่อนบันทึก และใช้แยกเฉพาะเซิร์ฟเวอร์นี้')}</CardDescription>
+                    <CardDescription>{tr('ai.theKeyIsEncryptedBeforeSaving')}</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
                     {isLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Loader2 className="size-4 animate-spin" />
-                            {tr('กำลังโหลดการตั้งค่า...')}
+                            {tr('ai.loadingSettings')}
                         </div>
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
                                 <div className="space-y-1">
                                     <div className="font-medium">
-                                        {tr('ระบบ AI')} {data?.aiEnabled ? tr('เปิดใช้งาน') : tr('ปิดใช้งาน')}
+                                        {tr('ai.aiSystem')} {data?.aiEnabled ? tr('common.enabled') : tr('common.disable')}
                                     </div>
                                     <p className="max-w-2xl text-sm text-muted-foreground">
-                                        {data?.aiEnabled
-                                            ? tr('บอทจะตอบเมื่อถูกแท็กและใช้ AI ช่วยกรองข้อความในเซิร์ฟเวอร์นี้')
-                                            : tr('เมื่อปิด บอทจะไม่ตอบแชทเมื่อถูกแท็กและไม่ใช้ AI ช่วยกรองคำหยาบในเซิร์ฟเวอร์นี้')}
+                                        {data?.aiEnabled ? tr('ai.theBotRepliesWhenMentionedAnd') : tr('ai.whenOffTheBotWontReply')}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <span className={data?.aiEnabled ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-muted-foreground'}>
-                                        {data?.aiEnabled ? tr('เปิด') : tr('ปิด')}
+                                        {data?.aiEnabled ? tr('ai.on') : tr('common.close')}
                                     </span>
                                     <Switch
                                         checked={Boolean(data?.aiEnabled)}
@@ -135,11 +133,11 @@ function AiSettingsPage() {
                                 </div>
                             </div>
                             {!data?.aiEnabled && !canEnable && (
-                                <p className="-mt-2 text-sm text-amber-700 dark:text-amber-400">{tr('บันทึก Gemini API Key ก่อน จึงจะเปิดใช้งาน AI ได้')}</p>
+                                <p className="-mt-2 text-sm text-amber-700 dark:text-amber-400">{tr('ai.saveAGeminiApiKeyFirst')}</p>
                             )}
                             {data?.isUsingFallbackHomeKey && (
                                 <p className="rounded-md border border-highlight/30 bg-highlight/5 p-3 text-sm text-highlight">
-                                    {tr('เซิร์ฟเวอร์หลักกำลังใช้ Key สำรองจากการตั้งค่าระบบ (')}
+                                    {tr('ai.theHomeServerIsUsingThe')}
                                     {data.maskedKey ?? 'GEMINI_KEY'})
                                 </p>
                             )}
@@ -150,21 +148,21 @@ function AiSettingsPage() {
                                         id="gemini-key"
                                         type={showKey ? 'text' : 'password'}
                                         autoComplete="off"
-                                        placeholder={data?.maskedKey ?? tr('วาง Gemini API Key ที่นี่')}
+                                        placeholder={data?.maskedKey ?? tr('ai.pasteAGeminiApiKeyHere')}
                                         value={apiKey}
                                         onChange={(event) => setApiKey(event.target.value)}
                                     />
                                     <Button
                                         variant="outline"
                                         size="icon"
-                                        aria-label={showKey ? tr('ซ่อน Key') : tr('แสดง Key')}
+                                        aria-label={showKey ? tr('ai.hideKey') : tr('ai.showKey')}
                                         onClick={() => setShowKey(!showKey)}
                                     >
                                         {showKey ? <EyeOff /> : <Eye />}
                                     </Button>
                                 </div>
                                 <p className="text-xs text-muted-foreground">
-                                    {data?.hasKey ? tr('ตั้งค่าแล้ว: {0}', { 0: data.maskedKey }) : tr('ยังไม่ได้ตั้งค่า Key สำหรับเซิร์ฟเวอร์นี้')}
+                                    {data?.hasKey ? tr('ai.set', { 0: data.maskedKey }) : tr('ai.noKeySetForThisServer')}
                                 </p>
                             </div>
                             <div className="flex flex-wrap items-center gap-2">
@@ -174,16 +172,16 @@ function AiSettingsPage() {
                                     onClick={() => test.mutate()}
                                 >
                                     {test.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
-                                    {tr('ทดสอบ Key')}
+                                    {tr('ai.testKey')}
                                 </Button>
                                 <Button disabled={save.isPending || (!apiKey.trim() && Number(dailyLimit) === data?.dailyLimit)} onClick={() => save.mutate()}>
                                     {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-                                    {tr('บันทึกการตั้งค่า')}
+                                    {tr('ai.saveSettings')}
                                 </Button>
                                 {data?.hasKey && (
                                     <Button variant="destructive" disabled={removeKey.isPending} onClick={() => removeKey.mutate()}>
                                         {removeKey.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
-                                        {tr('ลบ Key')}
+                                        {tr('ai.removeKey')}
                                     </Button>
                                 )}
                                 {testResult && (
@@ -195,7 +193,7 @@ function AiSettingsPage() {
                                 )}
                             </div>
                             <div className="grid max-w-sm gap-2">
-                                <Label htmlFor="daily-limit">{tr('ลิมิตคำขอต่อวันของเซิร์ฟเวอร์')}</Label>
+                                <Label htmlFor="daily-limit">{tr('ai.serverDailyRequestLimit')}</Label>
                                 <Input
                                     id="daily-limit"
                                     type="number"
@@ -206,17 +204,15 @@ function AiSettingsPage() {
                                 />
                             </div>
                             <div className="rounded-lg border bg-muted/20 p-4 text-sm">
-                                <p className="mb-1 font-medium">{tr('ขอ API Key ฟรีจาก Google AI Studio')}</p>
-                                <p className="text-muted-foreground">
-                                    {tr('สร้าง API Key ในบัญชี Google แล้วนำมาวางด้านบน เพื่อให้เซิร์ฟเวอร์ใช้โควตาของตัวเอง')}
-                                </p>
+                                <p className="mb-1 font-medium">{tr('ai.getAFreeApiKeyFrom')}</p>
+                                <p className="text-muted-foreground">{tr('ai.createAnApiKeyInYour')}</p>
                                 <a
                                     className="mt-2 inline-flex items-center gap-1 text-highlight hover:underline"
                                     href="https://aistudio.google.com/app/apikey"
                                     target="_blank"
                                     rel="noreferrer"
                                 >
-                                    {tr('เปิด Google AI Studio')} <ExternalLink className="size-3.5" />
+                                    {tr('ai.openGoogleAiStudio')} <ExternalLink className="size-3.5" />
                                 </a>
                             </div>
                         </>
@@ -229,12 +225,12 @@ function AiSettingsPage() {
                         <div>
                             <CardTitle>Gemini API Rate Limit &amp; Usage</CardTitle>
                             <CardDescription className="mt-1">
-                                {tr('คำขอวันนี้')} {data?.todayTotalRequests ?? 0} {tr('รายการ · อัปเดตอัตโนมัติทุก 20 วินาที')}
+                                {tr('ai.requestsToday')} {data?.todayTotalRequests ?? 0} {tr('ai.entriesAutoRefreshEvery20Seconds')}
                             </CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
                             {isFetching ? <Loader2 className="animate-spin" /> : <RefreshCw />}
-                            {tr('รีเฟรช')}
+                            {tr('common.refresh')}
                         </Button>
                     </div>
                 </CardHeader>
@@ -245,9 +241,9 @@ function AiSettingsPage() {
                                 <tr className="border-b text-left text-xs text-muted-foreground">
                                     <th className="px-3 py-3 font-medium">Model</th>
                                     <th className="px-3 py-3 font-medium">Category</th>
-                                    <th className="w-44 px-3 py-3 font-medium">{tr('RPM (คำขอ/นาที)')}</th>
-                                    <th className="w-44 px-3 py-3 font-medium">{tr('TPM (โทเคน/นาที)')}</th>
-                                    <th className="w-44 px-3 py-3 font-medium">{tr('RPD (คำขอ/วัน)')}</th>
+                                    <th className="w-44 px-3 py-3 font-medium">{tr('ai.rpmRequestsMin')}</th>
+                                    <th className="w-44 px-3 py-3 font-medium">{tr('ai.tpmTokensMin')}</th>
+                                    <th className="w-44 px-3 py-3 font-medium">{tr('ai.rpdRequestsDay')}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -268,7 +264,7 @@ function AiSettingsPage() {
                                                 {cooldownSeconds > 0 && (
                                                     <div className="mt-1 flex items-center gap-1 text-xs text-red-700 dark:text-red-400">
                                                         <ShieldAlert className="size-3" />
-                                                        {tr('พักอีก')} {cooldownSeconds} {tr('วินาที')}
+                                                        {tr('ai.coolingDown')} {cooldownSeconds} {tr('ai.seconds')}
                                                     </div>
                                                 )}
                                             </td>
