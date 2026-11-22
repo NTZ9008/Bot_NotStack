@@ -3,6 +3,7 @@
 // แยกจาก seo.ts เพื่อไม่ให้เนื้อหา landing (content.ts) ติดไปกับ JS ของหน้า login / privacy / terms
 // ห้ามใช้ DOM: รันบน Node
 // ==========================================
+import type { Plugin } from 'vite';
 import { FEATURE_GROUPS } from '../features/landing/content';
 import { PAGES, SITE_ORIGIN, type PublicPath } from './seo';
 
@@ -52,4 +53,24 @@ export function renderPageHtml(html: string, path: PublicPath): string {
     }
     out = out.replace(/(<link rel="canonical" href=")[^"]*(")/, (_, a: string, b: string) => a + url + b);
     return out.replace('<div id="root">', `<div id="root">${BODIES[path]()}`);
+}
+
+// หน้าสาธารณะได้ไฟล์ HTML ของตัวเอง (privacy.html → /privacy บน Cloudflare) ที่มี <head> และเนื้อหาของหน้านั้นจริง
+// บอทค้นหาที่ไม่รัน JavaScript จะได้ไม่เห็นแค่ splash และ canonical ไม่ชี้ไปหน้าแรกทุกหน้า
+export function seoPagesPlugin(): Plugin {
+    return {
+        name: 'seo-pages',
+        apply: 'build',
+        enforce: 'post', // ต้องรันหลัง vite:build-html ที่สร้าง index.html
+        generateBundle(_, bundle) {
+            const index = bundle['index.html'];
+            if (index?.type !== 'asset') return;
+            const html = String(index.source);
+            for (const path of Object.keys(PAGES) as PublicPath[]) {
+                const source = renderPageHtml(html, path);
+                if (path === '/') index.source = source;
+                else this.emitFile({ type: 'asset', fileName: `${path.slice(1)}.html`, source });
+            }
+        },
+    };
 }
