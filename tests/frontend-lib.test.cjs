@@ -446,6 +446,26 @@ test('i18n translates by key from locales/*.json, falls back to Thai, fills {par
     assert.equal(translateText('en', 'ข้อความที่ยังไม่แปล'), 'ข้อความที่ยังไม่แปล');
 });
 
+test('i18n splitRichText turns <b>/<code>/{slot} into tokens', () => {
+    const { splitRichText } = require('../apps/frontend/src/lib/i18n.ts');
+    assert.deepEqual(splitRichText('<b>ชื่อ:</b> ใช้ <code>guildId</code> และ {tos}.'), [
+        { tag: 'b', text: 'ชื่อ:' },
+        { tag: 'text', text: ' ใช้ ' },
+        { tag: 'code', text: 'guildId' },
+        { tag: 'text', text: ' และ ' },
+        { tag: 'slot', name: 'tos' },
+        { tag: 'text', text: '.' },
+    ]);
+    assert.deepEqual(splitRichText('ข้อความธรรมดา'), [{ tag: 'text', text: 'ข้อความธรรมดา' }]);
+});
+
+test('i18n keyByText prefers data.* keys, then the first key, for runtime Thai text', () => {
+    const { keyByText } = require('../apps/frontend/src/lib/i18n.ts');
+    const map = keyByText({ 'a.first': 'ซ้ำ', 'b.second': 'ซ้ำ', 'c.x': 'อื่น', 'data.y': 'อื่น' });
+    assert.equal(map.get('ซ้ำ'), 'a.first');
+    assert.equal(map.get('อื่น'), 'data.y');
+});
+
 test('i18n en.json only uses keys from th.json with the same {params}', () => {
     const th = require('../apps/frontend/src/locales/th.json');
     const en = require('../apps/frontend/src/locales/en.json');

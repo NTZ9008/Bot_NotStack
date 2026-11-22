@@ -1,12 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, FileText, ShieldCheck } from '@/components/icons';
-import { useEffect, type ReactNode } from 'react';
+import { Fragment, useEffect, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { Button } from '@/components/ui/button';
 import { usePageMeta } from '@/hooks/use-page-meta';
-
-const LAST_UPDATED = '22 ตุลาคม 2569';
+import { splitRichText, tr, type MessageKey } from '@/lib/i18n';
 
 function LegalLayout({
     active,
@@ -52,13 +51,13 @@ function LegalLayout({
 
             <main className="mx-auto max-w-4xl px-4 py-12 sm:py-16">
                 <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground">
-                    <ArrowLeft className="size-4" /> กลับหน้าแรก
+                    <ArrowLeft className="size-4" /> {tr('login.backToHome')}
                 </Link>
 
                 <div className="mt-6 border-b pb-8">
                     <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/30 bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300">
                         {icon}
-                        <span>อัปเดตล่าสุด: {LAST_UPDATED}</span>
+                        <span>{tr('legal.lastUpdated', { 0: tr('legal.lastUpdatedDate') })}</span>
                     </div>
                     <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
                     <p className="mt-2 text-pretty text-muted-foreground">{subtitle}</p>
@@ -71,17 +70,17 @@ function LegalLayout({
                 <div className="mx-auto flex max-w-4xl flex-col gap-3 px-4 py-6 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
                     <p>
                         {bot.name}
-                        {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
+                        {info?.version ? ` v${info.version}` : ''} {tr('landing.footerBuiltBy')}
                     </p>
                     <div className="flex flex-wrap items-center gap-4">
                         <Link to="/" className="hover:text-foreground">
-                            หน้าแรก
+                            {tr('layout.home')}
                         </Link>
                         <Link to="/privacy" className="hover:text-foreground">
-                            นโยบายความเป็นส่วนตัว
+                            {tr('login.privacyPolicy')}
                         </Link>
                         <Link to="/terms" className="hover:text-foreground">
-                            ข้อกำหนดการใช้งาน
+                            {tr('login.termsOfService')}
                         </Link>
                         <Link to="/dashboard" className="hover:text-foreground">
                             Dashboard →
@@ -105,105 +104,65 @@ function SectionBlock({ number, title, children }: { number: string; title: stri
     );
 }
 
+// ข้อความในคำแปลที่มี <b> / <code> / {slot} (ดู splitRichText)
+function Rich({ k, slots }: { k: MessageKey; slots?: Record<string, ReactNode> }) {
+    return splitRichText(tr(k)).map((token, i) =>
+        token.tag === 'b' ? (
+            <strong key={i}>{token.text}</strong>
+        ) : token.tag === 'code' ? (
+            <code key={i}>{token.text}</code>
+        ) : token.tag === 'slot' ? (
+            <Fragment key={i}>{slots?.[token.name]}</Fragment>
+        ) : (
+            <Fragment key={i}>{token.text}</Fragment>
+        ),
+    );
+}
+
+const List = ({ items }: { items: MessageKey[] }) => (
+    <ul className="list-disc space-y-1.5 pl-5">
+        {items.map((k) => (
+            <li key={k}>
+                <Rich k={k} />
+            </li>
+        ))}
+    </ul>
+);
+
+const externalLink = (href: string, label: string) => (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="text-indigo-300 underline underline-offset-4 hover:text-indigo-200">
+        {label}
+    </a>
+);
+
 export function PrivacyPolicyPage() {
     usePageMeta('/privacy');
 
     return (
-        <LegalLayout
-            active="privacy"
-            icon={<ShieldCheck className="size-3.5" />}
-            title="นโยบายความเป็นส่วนตัว (Privacy Policy)"
-            subtitle="เอกสารนี้อธิบายว่า Bot_NotStack และเว็บ Dashboard (bntdash.arlifzs.com) จัดเก็บ ใช้ และปกป้องข้อมูลของคุณและเซิร์ฟเวอร์ Discord ของคุณอย่างไร"
-        >
-            <SectionBlock number="01" title="ข้อมูลที่เราจัดเก็บ (Information We Collect)">
-                <p>เราจัดเก็บเฉพาะข้อมูลที่จำเป็นต่อการทำงานของฟีเจอร์บอทและการยืนยันตัวตนบน Dashboard เท่านั้น ได้แก่:</p>
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        <strong>ข้อมูลเซิร์ฟเวอร์ Discord (Guild Data):</strong> รหัสเซิร์ฟเวอร์ (<code>guildId</code>), ชื่อเซิร์ฟเวอร์, ไอคอนเซิร์ฟเวอร์,
-                        รหัสเจ้าของเซิร์ฟเวอร์ (<code>ownerId</code>) และรหัสห้องหรือยศที่ผู้ดูแลเซิร์ฟเวอร์เลือกตั้งค่าไว้
-                    </li>
-                    <li>
-                        <strong>ข้อมูลบัญชีผู้ใช้ Dashboard:</strong> เมื่อคุณเข้าสู่ระบบผ่าน Discord OAuth2 ระบบจะขอสิทธิ์เฉพาะ <code>identify</code> เพื่อรับ
-                        Discord User ID, ชื่อผู้ใช้ (Username/Display Name) และลิงก์รูปโปรไฟล์ (Avatar URL) ไม่มีการขอสิทธิ์เข้าถึงอีเมลหรือข้อความส่วนตัวของคุณ
-                    </li>
-                    <li>
-                        <strong>ข้อมูลการใช้งานฟีเจอร์ภายในเซิร์ฟเวอร์:</strong> คะแนนเลเวลและประวัติ XP, การตั้งค่าการ์ดต้อนรับและรูปพื้นหลังที่อัปโหลด,
-                        การตั้งค่ารายงานสภาพอากาศ, รายการสิทธิ์เข้าห้อง (Room Access / Voice Guard), ข้อมูลหัวข้อเก็บเงิน (Fund) และข้อมูลบัตรงาน Jira หรือ
-                        GitHub PR เฉพาะเซิร์ฟเวอร์ที่เปิดใช้งาน
-                    </li>
-                    <li>
-                        <strong>บันทึกเหตุการณ์และประวัติความปลอดภัย (Activity & Audit Logs):</strong> เหตุการณ์ในเซิร์ฟเวอร์ตามที่ผู้ดูแลเซิร์ฟเวอร์เปิดบันทึก
-                        และประวัติการเข้าสู่ระบบหรือการแก้ไขค่าบน Dashboard (รวมถึง IP Address และ User-Agent เพื่อป้องกันการโจมตีและตรวจสอบความปลอดภัย)
-                    </li>
-                </ul>
+        <LegalLayout active="privacy" icon={<ShieldCheck className="size-3.5" />} title={tr('privacy.title')} subtitle={tr('privacy.subtitle')}>
+            <SectionBlock number="01" title={tr('privacy.collectTitle')}>
+                <p>{tr('privacy.collectIntro')}</p>
+                <List items={['privacy.collectGuild', 'privacy.collectAccount', 'privacy.collectFeatures', 'privacy.collectLogs']} />
             </SectionBlock>
 
-            <SectionBlock number="02" title="การแยกข้อมูลตามเซิร์ฟเวอร์และการจำกัดสิทธิ์ (Role-Based Isolation)">
+            <SectionBlock number="02" title={tr('privacy.isolationTitle')}>
                 <p>
-                    ข้อมูลทุกส่วนในฐานข้อมูลถูกแยกตามรหัสเซิร์ฟเวอร์ (<code>guildId</code>) อย่างชัดเจน และควบคุมการเข้าถึงด้วยระบบ Role-Based Access Control:
+                    <Rich k="privacy.isolationIntro" />
                 </p>
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        <strong>เจ้าของเซิร์ฟเวอร์ (Role OWNER):</strong> จะมองเห็นและจัดการได้<strong>เฉพาะเซิร์ฟเวอร์ของตนเอง</strong> (เป็น Server Owner
-                        หรือมีสิทธิ์ <code>Manage Server</code> / <code>Administrator</code> ในเซิร์ฟเวอร์นั้น) เท่านั้น
-                        ไม่สามารถมองเห็นเซิร์ฟเวอร์อื่นหรือดูรายชื่อห้อง Discord ของผู้อื่นได้
-                    </li>
-                    <li>
-                        <strong>ผู้ใช้ทั่วไป (Role USER):</strong> เห็นเฉพาะเซิร์ฟเวอร์ที่ตนเป็นเจ้าของหรือมีสิทธิ์จัดการในโหมดดูอันดับ (Levels) เท่านั้น
-                        ไม่สามารถแก้ไขการตั้งค่าบอทได้
-                    </li>
-                    <li>
-                        <strong>ผู้ดูแลระบบบอท (Role ADMIN):</strong> มีหน้าที่ดูแลความเสถียรของระบบส่วนกลางและจัดการบัญชีผู้ใช้ในกรณีเกิดปัญหาทางเทคนิค
-                    </li>
-                </ul>
+                <List items={['privacy.isolationOwner', 'privacy.isolationUser', 'privacy.isolationAdmin']} />
             </SectionBlock>
 
-            <SectionBlock number="03" title="มาตรการรักษาความปลอดภัยของข้อมูล (Data Security)">
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        รหัสผ่านของบัญชี Dashboard (กรณีตั้งรหัสผ่าน) ถูกเข้ารหัสทางเดียวด้วย <code>bcrypt</code>
-                    </li>
-                    <li>
-                        ข้อมูลความลับที่เชื่อมต่อบริการภายนอก เช่น Jira API Token ถูกเข้ารหัสด้วย <code>AES-256-GCM</code> ก่อนบันทึกลงฐานข้อมูล
-                        และไม่ส่งกลับไปแสดงบนหน้าเว็บอีก
-                    </li>
-                    <li>
-                        GitHub Webhook ตรวจสอบลายเซ็น <code>HMAC-SHA256</code> ทุกครั้งก่อนประมวลผล
-                    </li>
-                    <li>
-                        Session การเข้าสู่ระบบใช้คุกกี้แบบ <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code> พร้อมระบบหมุนเวียน Refresh Token
-                        และการป้องกัน CSRF ทุกคำสั่งที่แก้ไขข้อมูล
-                    </li>
-                </ul>
+            <SectionBlock number="03" title={tr('privacy.securityTitle')}>
+                <List items={['privacy.securityPasswords', 'privacy.securitySecrets', 'privacy.securityWebhook', 'privacy.securitySession']} />
             </SectionBlock>
 
-            <SectionBlock number="04" title="การเชื่อมต่อกับบริการภายนอก (Third-Party Services)">
-                <p>เราไม่ขายหรือนำข้อมูลของคุณไปใช้เพื่อการโฆษณา ข้อมูลบางส่วนจะถูกส่งไปยังบริการภายนอกเฉพาะเมื่อคุณเรียกใช้ฟีเจอร์นั้นๆ ได้แก่:</p>
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        <strong>Discord API:</strong> สำหรับการทำงานของบอทและการยืนยันตัวตนด้วย Discord OAuth2
-                    </li>
-                    <li>
-                        <strong>Google Gemini API:</strong> เฉพาะเมื่อสมาชิกแท็กบอทเพื่อถามคำถาม AI หรือเมื่อเซิร์ฟเวอร์เปิดระบบช่วยตรวจคำหยาบ
-                    </li>
-                    <li>
-                        <strong>OpenWeatherMap & RainViewer:</strong> สำหรับดึงข้อมูลสภาพอากาศและเรดาร์ฝนตามพิกัดที่เซิร์ฟเวอร์ตั้งค่า
-                    </li>
-                    <li>
-                        <strong>GitHub & Atlassian Jira:</strong> เฉพาะเซิร์ฟเวอร์ที่ผู้ดูแลตั้งค่าเชื่อมต่อด้วยตนเอง
-                    </li>
-                </ul>
+            <SectionBlock number="04" title={tr('privacy.thirdPartyTitle')}>
+                <p>{tr('privacy.thirdPartyIntro')}</p>
+                <List items={['privacy.thirdPartyDiscord', 'privacy.thirdPartyGemini', 'privacy.thirdPartyWeather', 'privacy.thirdPartyDev']} />
             </SectionBlock>
 
-            <SectionBlock number="05" title="การเก็บรักษาและการขอลบข้อมูล (Data Retention & Deletion)">
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>ข้อมูลเหตุการณ์ในเซิร์ฟเวอร์ (Activity Events) และประวัติ XP จะถูกลบอัตโนมัติเมื่อพ้นระยะเวลาเก็บรักษาที่ระบบกำหนด</li>
-                    <li>เมื่อเตะบอทออกจากเซิร์ฟเวอร์ ระบบจะหยุดเก็บข้อมูลใหม่จากเซิร์ฟเวอร์นั้นทันที</li>
-                    <li>
-                        คุณสามารถยกเลิกการเชื่อมต่อบัญชี Discord หรือออกจากระบบทุกอุปกรณ์ได้ที่หน้า <strong>บัญชีของฉัน (My Account)</strong>{' '}
-                        และสามารถติดต่อทีมผู้พัฒนาเพื่อขอลบบัญชีหรือข้อมูลของเซิร์ฟเวอร์ออกอย่างถาวรได้ตลอดเวลา
-                    </li>
-                </ul>
+            <SectionBlock number="05" title={tr('privacy.retentionTitle')}>
+                <List items={['privacy.retentionAuto', 'privacy.retentionKick', 'privacy.retentionRequest']} />
             </SectionBlock>
         </LegalLayout>
     );
@@ -213,79 +172,34 @@ export function TermsOfServicePage() {
     usePageMeta('/terms');
 
     return (
-        <LegalLayout
-            active="terms"
-            icon={<FileText className="size-3.5" />}
-            title="ข้อกำหนดการใช้งาน (Terms of Service)"
-            subtitle="การเชิญบอท Bot_NotStack เข้าสู่เซิร์ฟเวอร์ Discord หรือการเข้าใช้งานเว็บ Dashboard ถือว่าคุณยอมรับข้อกำหนดและเงื่อนไขดังต่อไปนี้"
-        >
-            <SectionBlock number="01" title="การยอมรับข้อกำหนดและกฎของ Discord">
+        <LegalLayout active="terms" icon={<FileText className="size-3.5" />} title={tr('terms.title')} subtitle={tr('terms.subtitle')}>
+            <SectionBlock number="01" title={tr('terms.acceptTitle')}>
                 <p>
-                    ผู้ใช้งานและเจ้าของเซิร์ฟเวอร์ที่นำ <strong>Bot_NotStack</strong> ไปใช้งานต้องปฏิบัติตามข้อกำหนดฉบับนี้ รวมถึง{' '}
-                    <a
-                        href="https://discord.com/terms"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-300 underline underline-offset-4 hover:text-indigo-200"
-                    >
-                        Discord Terms of Service
-                    </a>{' '}
-                    และ{' '}
-                    <a
-                        href="https://discord.com/guidelines"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-300 underline underline-offset-4 hover:text-indigo-200"
-                    >
-                        Discord Community Guidelines
-                    </a>{' '}
-                    อย่างเคร่งครัด
+                    <Rich
+                        k="terms.acceptBody"
+                        slots={{
+                            tos: externalLink('https://discord.com/terms', 'Discord Terms of Service'),
+                            guidelines: externalLink('https://discord.com/guidelines', 'Discord Community Guidelines'),
+                        }}
+                    />
                 </p>
             </SectionBlock>
 
-            <SectionBlock number="02" title="สิทธิ์และขอบเขตการใช้งาน Dashboard">
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        เจ้าของเซิร์ฟเวอร์หรือผู้ที่มีสิทธิ์ <code>Manage Server</code> / <code>Administrator</code> ใน Discord จะได้รับสิทธิ์ระดับ{' '}
-                        <strong>OWNER</strong> เพื่อตั้งค่าบอทเฉพาะในเซิร์ฟเวอร์ของตนเองเท่านั้น
-                    </li>
-                    <li>
-                        คุณต้องรับผิดชอบต่อการตั้งค่าข้อความต้อนรับ ข่าวประกาศ การให้สิทธิ์เข้าห้อง และการเชื่อมต่อ Webhook/API Token ภายในเซิร์ฟเวอร์ของคุณเอง
-                    </li>
-                    <li>ห้ามพยายามเข้าถึง แก้ไข หรือสอดแนมข้อมูลของเซิร์ฟเวอร์อื่นที่ตนไม่ได้เป็นเจ้าของหรือไม่มีสิทธิ์จัดการ</li>
-                </ul>
+            <SectionBlock number="02" title={tr('terms.scopeTitle')}>
+                <List items={['terms.scopeOwner', 'terms.scopeResponsibility', 'terms.scopeNoSnooping']} />
             </SectionBlock>
 
-            <SectionBlock number="03" title="ข้อห้ามในการใช้งาน (Acceptable Use)">
-                <p>ผู้ใช้งานตกลงที่จะไม่กระทำการดังต่อไปนี้:</p>
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>ใช้บอทเพื่อส่งข้อความสแปม คุกคาม เผยแพร่เนื้อหาผิดกฎหมาย หรือละเมิดสิทธิ์ของผู้อื่น</li>
-                    <li>ยิงคำขออัตโนมัติ (Bot / Flood / DoS) หรือพยายามเจาะระบบความปลอดภัยของเว็บ Dashboard และ API</li>
-                    <li>ใช้ฟีเจอร์ AI Chat หรือระบบประกาศของบอทในทางที่ละเมิดนโยบายการใช้งานของ Discord หรือผู้ให้บริการภายนอก</li>
-                </ul>
+            <SectionBlock number="03" title={tr('terms.useTitle')}>
+                <p>{tr('terms.useIntro')}</p>
+                <List items={['terms.useSpam', 'terms.useAttacks', 'terms.useAbuse']} />
             </SectionBlock>
 
-            <SectionBlock number="04" title="โควตาและเสถียรภาพของบริการ (Service Availability & Quotas)">
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        Bot_NotStack ให้บริการโดยไม่มีค่าใช้จ่าย และมีการกำหนด Rate Limit รวมถึงโควตาการใช้งาน AI
-                        รายวันต่อเซิร์ฟเวอร์เพื่อให้ทุกเซิร์ฟเวอร์ใช้งานร่วมกันได้อย่างเสถียร
-                    </li>
-                    <li>ระบบอาจมีการปิดปรับปรุงชั่วคราวเพื่ออัปเดตฟีเจอร์หรือแก้ไขข้อผิดพลาด โดยสามารถตรวจสอบสถานะการทำงานสดได้ที่หน้าแรกของเว็บไซต์</li>
-                </ul>
+            <SectionBlock number="04" title={tr('terms.availabilityTitle')}>
+                <List items={['terms.availabilityFree', 'terms.availabilityMaintenance']} />
             </SectionBlock>
 
-            <SectionBlock number="05" title="การระงับสิทธิ์และการจำกัดความรับผิดชอบ">
-                <ul className="list-disc space-y-1.5 pl-5">
-                    <li>
-                        ทีมผู้พัฒนาขอสงวนสิทธิ์ในการระงับบัญชี Dashboard
-                        หรือนำบอทออกจากเซิร์ฟเวอร์ที่ละเมิดข้อกำหนดการใช้งานหรือสร้างภาระผิดปกติต่อระบบโดยไม่ต้องแจ้งให้ทราบล่วงหน้า
-                    </li>
-                    <li>
-                        บริการนี้จัดทำขึ้นตามสภาพ (&ldquo;AS IS&rdquo;) ทีมผู้พัฒนาไม่รับผิดชอบต่อความเสียหายที่เกิดจากการตั้งค่าที่ผิดพลาดของผู้ดูแลเซิร์ฟเวอร์
-                        หรือการหยุดชะงักของบริการภายนอก (เช่น Discord, OpenWeatherMap, GitHub หรือ Jira)
-                    </li>
-                </ul>
+            <SectionBlock number="05" title={tr('terms.liabilityTitle')}>
+                <List items={['terms.liabilitySuspend', 'terms.liabilityAsIs']} />
             </SectionBlock>
         </LegalLayout>
     );

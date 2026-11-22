@@ -96,6 +96,20 @@ export function translateFields<T>(value: T): T {
     return walk(value) as T;
 }
 
+// คำแปลที่มีตัวหนา/โค้ดกลางประโยค เช่น '<b>ชื่อ</b> ใช้ <code>id</code> และ {link}' → token ให้ component render เอง (ไม่ใช้ innerHTML)
+export type RichToken = { tag: 'text' | 'b' | 'code'; text: string } | { tag: 'slot'; name: string };
+export function splitRichText(text: string): RichToken[] {
+    return text
+        .split(/(<b>.*?<\/b>|<code>.*?<\/code>|\{\w+\})/)
+        .filter(Boolean)
+        .map((part): RichToken => {
+            const tag = /^<(b|code)>(.*)<\/\1>$/.exec(part);
+            if (tag) return { tag: tag[1] as 'b' | 'code', text: tag[2] };
+            const slot = /^\{(\w+)\}$/.exec(part);
+            return slot ? { tag: 'slot', name: slot[1] } : { tag: 'text', text: part };
+        });
+}
+
 // locale ของวันที่/ตัวเลข (ไทย = ปี พ.ศ.)
 export const dateLocale = () => (read() === 'en' ? 'en-GB' : 'th-TH');
 

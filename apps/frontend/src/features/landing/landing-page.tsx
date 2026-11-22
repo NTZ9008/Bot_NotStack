@@ -32,6 +32,7 @@ import mascotThumbs from './mascot/thumbs-up.webp';
 import showcaseLevelUp from './showcase/level-up.webp';
 import showcaseWeather from './showcase/weather.webp';
 import showcaseWelcome from './showcase/welcome.webp';
+import { byLang, tr, useLang } from '../../lib/i18n';
 
 // ลูกโลกเป็นแค่ฉากหลัง — แยก chunk ไม่ให้ live-globe (+ zod ที่ติดมากับ @notstack/shared) ขวางการแสดงหน้าแรก
 const LandingGlobe = lazy(() => import('@/features/live/live-globe').then((m) => ({ default: m.LandingGlobe })));
@@ -42,28 +43,28 @@ const LandingGlobe = lazy(() => import('@/features/live/live-globe').then((m) =>
 // ==========================================
 
 // ลำดับเดียวกับ section ในหน้า: รู้จัก → เริ่มใช้ → ใช้งาน → ความน่าเชื่อถือ → คนทำ
-const NAV_LINKS = [
-    { href: '#features', label: 'ทำอะไรได้' },
-    { href: '#start', label: 'เริ่มใช้' },
-    { href: '#commands', label: 'คำสั่ง' },
-    { href: '#status', label: 'สถานะ' },
-    { href: '#growth', label: 'การเติบโต' },
-    { href: '#team', label: 'ผู้พัฒนา' },
-];
+const NAV_LINKS = byLang(() => [
+    { href: '#features', label: tr('section.navFeatures') },
+    { href: '#start', label: tr('section.navStart') },
+    { href: '#commands', label: tr('section.navCommands') },
+    { href: '#status', label: tr('section.navStatus') },
+    { href: '#growth', label: tr('section.navGrowth') },
+    { href: '#team', label: tr('section.navTeam') },
+]);
 
-const SECTION_IDS = NAV_LINKS.map((link) => link.href.slice(1));
+const SECTION_IDS = NAV_LINKS().map((link) => link.href.slice(1));
 
 // ข้อความที่ค่อยๆ สว่างทีละคำตอนเลื่อนผ่าน
-const MANIFESTO = 'กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล แจ้งอากาศทุกเช้า แจ้ง PR ให้ทีม ตั้งค่าผ่านเว็บได้หมด ไม่ต้องจำคำสั่ง'.split(' ');
+const MANIFESTO = byLang(() => tr('landing.manifesto').split(' '));
 
 // การ์ดความสามารถแบบ bento (จอใหญ่ 6 คอลัมน์): กว้าง-แคบ / แคบ-กว้าง สลับกัน
 const BENTO_SPANS = ['lg:col-span-4', 'lg:col-span-2', 'lg:col-span-2', 'lg:col-span-4'];
 
-const STEPS = [
-    { title: 'เชิญบอท', text: 'กด “เพิ่มเข้า Discord” แล้วเลือกเซิร์ฟ' },
-    { title: 'Login', text: 'เข้า Dashboard ด้วยบัญชี Discord' },
-    { title: 'ตั้งค่า', text: 'เลือกห้อง แล้วเปิดสิ่งที่อยากใช้' },
-];
+const STEPS = byLang(() => [
+    { title: tr('servers.inviteBot'), text: tr('landing.stepInviteText') },
+    { title: 'Login', text: tr('landing.stepLoginText') },
+    { title: tr('landing.stepSetup'), text: tr('landing.stepSetupText') },
+]);
 
 const STEP_MS = 4500;
 
@@ -105,14 +106,14 @@ function InviteButton({ inviteUrl, className = '', icon = <DiscordIcon /> }: { i
     const style = `inline-flex items-center justify-center gap-2 rounded-full font-semibold transition-[transform,background-color] active:scale-[0.97] ${className}`;
     if (!inviteUrl) {
         return (
-            <span aria-disabled title="บอทยังไม่ออนไลน์ ลองใหม่อีกครั้งภายหลัง" className={`${style} cursor-not-allowed opacity-50`}>
-                {icon} เพิ่มเข้า Discord
+            <span aria-disabled title={tr('landing.botOffline')} className={`${style} cursor-not-allowed opacity-50`}>
+                {icon} {tr('landing.addToDiscord')}
             </span>
         );
     }
     return (
         <a href={inviteUrl} target="_blank" rel="noopener noreferrer" className={`${style} hover:scale-[1.03]`}>
-            {icon} เพิ่มเข้า Discord
+            {icon} {tr('landing.addToDiscord')}
         </a>
     );
 }
@@ -123,7 +124,7 @@ function DashboardLink({ className = '' }: { className?: string }) {
             to="/dashboard"
             className={`group inline-flex items-center justify-center gap-1.5 rounded-full border border-white/20 font-semibold transition-colors hover:border-white hover:bg-white hover:text-slate-950 ${className}`}
         >
-            เข้า Dashboard
+            {tr('landing.openDashboard')}
             <ArrowUpRight className="size-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </Link>
     );
@@ -231,6 +232,17 @@ function scrollToSection(event: MouseEvent) {
 
 // navbar แถบเดียวลอยด้านบน: โลโก้หัวมาสคอต + เมนู (ไฮไลต์ section ปัจจุบัน) + ปุ่มเชิญที่หัวมาสคอตโบกตอนชี้
 // บนสุดของหน้าโปร่งใส เลื่อนลงแล้วเป็นกระจกฝ้า · จอเล็กมีปุ่มเปิดแผงเมนู · ขอบล่างเป็นแถบความคืบหน้าการเลื่อน
+// สลับ ไทย ⇄ English — ป้ายเป็นชื่อภาษาปลายทางในภาษานั้นเอง (อ่านออกแม้ไม่รู้ภาษาที่แสดงอยู่)
+function LanguageToggle() {
+    const [lang, setLang] = useLang();
+    const next = lang === 'th' ? 'en' : 'th';
+    return (
+        <button type="button" lang={next} onClick={() => void setLang(next)} className="rounded-xl px-3 py-2 text-sm text-slate-300 hover:text-white">
+            {next === 'en' ? 'English' : tr('layout.thaiLanguageName')}
+        </button>
+    );
+}
+
 function TopNav({ active, botName, inviteUrl }: { active: string | null; botName: string; inviteUrl?: string | null }) {
     const [open, setOpen] = useState(false);
     // กดลิงก์ในเมนูแล้วปิดแผง (การเลื่อนไป section ทำที่ scrollToSection)
@@ -269,7 +281,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
     return (
         <header className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
             <nav
-                aria-label="ส่วนของหน้า"
+                aria-label={tr('landing.pageSections')}
                 className={`relative mx-auto max-w-6xl rounded-2xl border transition-[background-color,border-color,box-shadow] duration-300 ${
                     scrolled || open ? 'border-white/12 bg-[var(--ld-card)]/85 shadow-2xl shadow-black/40 backdrop-blur-xl' : 'border-transparent'
                 }`}
@@ -290,7 +302,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                     </a>
 
                     <div className="mx-auto hidden items-center gap-0.5 rounded-xl bg-white/[0.04] p-1 whitespace-nowrap lg:flex">
-                        {NAV_LINKS.map((link) => (
+                        {NAV_LINKS().map((link) => (
                             <a key={link.href} href={link.href} className={linkClass(link.href)}>
                                 {link.label}
                             </a>
@@ -298,6 +310,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                     </div>
 
                     <div className="ml-auto flex shrink-0 items-center gap-1.5 lg:ml-0">
+                        <LanguageToggle />
                         <Link to="/dashboard" className="hidden rounded-xl px-3 py-2 text-sm text-slate-300 hover:text-white sm:block">
                             Dashboard
                         </Link>
@@ -314,7 +327,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                             onClick={() => setOpen((value) => !value)}
                             aria-expanded={open}
                             aria-controls="landing-menu"
-                            aria-label={open ? 'ปิดเมนู' : 'เปิดเมนู'}
+                            aria-label={open ? tr('landing.closeMenu') : tr('landing.openMenu')}
                             className="grid size-10 place-items-center rounded-xl text-slate-200 hover:bg-white/10 lg:hidden"
                         >
                             {open ? <X className="size-5" /> : <Menu className="size-5" />}
@@ -325,7 +338,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                 {open && (
                     <div id="landing-menu" className="flex items-end gap-3 overflow-hidden border-t border-white/10 px-3 pt-3 lg:hidden">
                         <div className="grid flex-1 grid-cols-2 gap-2 pb-4">
-                            {NAV_LINKS.map((link) => (
+                            {NAV_LINKS().map((link) => (
                                 <a key={link.href} href={link.href} onClick={closeMenu} className={`bg-white/[0.04] ${linkClass(link.href, true)}`}>
                                     {link.label}
                                 </a>
@@ -336,7 +349,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                                 onClick={closeMenu}
                                 className="col-span-2 rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold hover:bg-white/10"
                             >
-                                เข้า Dashboard →
+                                {tr('landing.openDashboardArrow')}
                             </Link>
                         </div>
                         <Mascot src={mascotPresent} motion="pop" className="h-44 w-auto shrink-0 -scale-x-100" />
@@ -369,7 +382,7 @@ function HeldCard({ src, label, className }: { src: string; label: string; class
 // สามคนยืนบนเวที แต่ละคนโชว์ฟีเจอร์เด่นของตัวเอง:
 // ซ้ายชูนิ้วให้การ์ดเลเวลอัป · กลางถือป้ายการ์ดต้อนรับไว้หน้าอก · ขวากอดอกยืนข้างกราฟพยากรณ์อากาศ
 // ตำแหน่งการ์ดเป็น % ของภาพมาสคอต จะได้อยู่ที่มือเสมอไม่ว่ามาสคอตสูงเท่าไร (จอเล็ก การ์ดของคนข้างๆ ย้ายไปลอยเหนือหัว ไม่งั้นล้นจอ)
-const HERO_CREW = [
+const HERO_CREW = byLang(() => [
     {
         src: crewGold,
         mirror: false,
@@ -378,7 +391,7 @@ const HERO_CREW = [
         idle: -1300,
         card: {
             src: showcaseLevelUp,
-            label: '🏆 เลเวล & XP',
+            label: tr('landing.cardLevels'),
             className: 'bottom-[101%] left-0 w-28 -rotate-6 md:right-[94%] md:bottom-[64%] md:left-auto md:w-36 lg:w-64',
         },
     },
@@ -388,7 +401,7 @@ const HERO_CREW = [
         center: true,
         delay: 100,
         idle: 0,
-        card: { src: showcaseWelcome, label: '👋 การ์ดต้อนรับ', className: 'top-[38%] left-1/2 w-[150%] -translate-x-1/2 rotate-2' },
+        card: { src: showcaseWelcome, label: tr('landing.cardWelcome'), className: 'top-[38%] left-1/2 w-[150%] -translate-x-1/2 rotate-2' },
     },
     {
         src: crewNavy,
@@ -398,11 +411,11 @@ const HERO_CREW = [
         idle: -2600,
         card: {
             src: showcaseWeather,
-            label: '☀️ รายงานอากาศ',
+            label: tr('landing.cardWeather'),
             className: 'right-0 bottom-[101%] w-28 rotate-6 md:right-auto md:bottom-[56%] md:left-[94%] md:w-36 lg:w-64',
         },
     },
-];
+]);
 
 function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
     const festivalCrew = loyKrathongCrew(); // 🪷 ชั่วคราว: ชุดลอยกระทง (null นอกช่วงเทศกาล)
@@ -420,12 +433,12 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
             <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
                 <Reveal delay={100}>
                     <h1 className="text-[clamp(2.2rem,5.5vw,3.75rem)] leading-[1.1] font-black tracking-tight">
-                        บอท Discord <span className="whitespace-nowrap text-[var(--ld-blue-ink)]">ที่ตั้งค่าบนเว็บ</span>
+                        {tr('landing.heroTitle')} <span className="whitespace-nowrap text-[var(--ld-blue-ink)]">{tr('landing.heroTitleAccent')}</span>
                     </h1>
                 </Reveal>
                 <Reveal delay={200}>
                     <p className="mx-auto mt-4 max-w-2xl text-pretty text-slate-300 sm:text-lg">
-                        บอทประจำเซิร์ฟ NotStackOverflow — กันคนป่วน เก็บเลเวล แจ้งอากาศ แจ้ง PR <span className="text-white">ตอนนี้เซิร์ฟคุณก็ใช้ได้</span>
+                        {tr('landing.heroLead')} <span className="text-white">{tr('landing.heroLeadAccent')}</span>
                     </p>
                 </Reveal>
                 <Reveal delay={300} className="mt-6 flex flex-wrap justify-center gap-3">
@@ -450,7 +463,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                 {/* 🪷 ชั่วคราว: ช่วงลอยกระทงให้มาสคอตยืนบนกระทงยักษ์ — หลังเทศกาลถอด wrapper นี้ออก */}
                 <LoyKrathongRaft>
                     <div className="flex items-end">
-                        {HERO_CREW.map((crew, index) => (
+                        {HERO_CREW().map((crew, index) => (
                             <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
                                 {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
                                 <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
@@ -492,11 +505,11 @@ function LiveShowcase({ botName, botAvatar }: { botName: string; botAvatar: stri
                 <Reveal>
                     <p className="font-mono text-xs tracking-[0.3em] text-[var(--ld-blue-ink)] uppercase">Every morning · 07:00</p>
                     <h2 className="mt-4 text-[clamp(3rem,8vw,6rem)] leading-none font-black tracking-tight">
-                        ตื่นมา
+                        {tr('landing.morningTitle')}
                         <br />
-                        <span className="text-[var(--ld-blue-ink)]">ก็รู้เลย</span>
+                        <span className="text-[var(--ld-blue-ink)]">{tr('landing.morningTitleAccent')}</span>
                     </h2>
-                    <p className="mt-6 max-w-sm text-lg text-pretty text-slate-300">รายงานอากาศส่งเข้าห้องเองทุกเช้า คนใหม่เข้าเซิร์ฟก็ได้การ์ดต้อนรับทันที</p>
+                    <p className="mt-6 max-w-sm text-lg text-pretty text-slate-300">{tr('landing.morningLead')}</p>
                 </Reveal>
                 <WhenVisible className="flex min-h-[32rem] justify-center lg:justify-end">
                     <div className="w-full max-w-md rounded-[1.75rem] bg-white/10 p-2.5 shadow-2xl shadow-black/50 ring-1 ring-white/20 lg:[transform:perspective(1400px)_rotateY(-10deg)_rotateX(4deg)]">
@@ -513,7 +526,7 @@ function FeatureBand({ names }: { names: string[] }) {
     const half = Math.ceil(names.length / 2);
     return (
         <section
-            aria-label="ความสามารถทั้งหมด"
+            aria-label={tr('landing.allFeatures')}
             className="landing-band landing-grain relative isolate overflow-hidden bg-[var(--ld-blue)] py-20 text-white [--outline-fill:var(--ld-blue)]"
         >
             <p
@@ -533,12 +546,12 @@ function FeatureBand({ names }: { names: string[] }) {
 // ข้อความตัวใหญ่กลางจอ ค้างไว้ (sticky) แล้วคำค่อยๆ สว่างตามที่เลื่อน — คำล่าสุดเป็นสีน้ำเงิน
 function Manifesto() {
     const [ref, progress] = useScrollProgress<HTMLElement>();
-    const lit = Math.round(progress * (MANIFESTO.length + 1));
+    const lit = Math.round(progress * (MANIFESTO().length + 1));
     return (
         <section id="manifesto" ref={ref} className="relative h-[220svh]">
             <div className="sticky top-0 flex h-svh items-center px-4 sm:px-8">
                 <p className="mx-auto max-w-6xl text-[clamp(2.2rem,6.5vw,6rem)] leading-[1.15] font-black tracking-tight">
-                    {MANIFESTO.map((word, index) => (
+                    {MANIFESTO().map((word, index) => (
                         <span
                             key={word}
                             className={`transition-colors duration-300 motion-reduce:transition-none ${
@@ -606,12 +619,12 @@ function StepMock({ step, botName, botAvatar }: { step: number; botName: string;
                     <img src={botAvatar} alt="" className="size-12 rounded-full" />
                     <div>
                         <p className="font-bold text-white">{botName}</p>
-                        <p className="text-xs text-slate-400">ต้องการเข้าร่วมเซิร์ฟของคุณ</p>
+                        <p className="text-xs text-slate-400">{tr('landing.oauthWantsToJoin')}</p>
                     </div>
                 </div>
-                <p className="mt-5 text-xs font-semibold text-slate-400 uppercase">เพิ่มเข้าเซิร์ฟ</p>
-                <div className="mt-1.5 rounded-md bg-[#1e1f22] px-3 py-2">เซิร์ฟของฉัน ▾</div>
-                <div className="mt-5 rounded-md bg-[#5865F2] py-2 text-center font-semibold text-white">ดำเนินการต่อ</div>
+                <p className="mt-5 text-xs font-semibold text-slate-400 uppercase">{tr('landing.oauthAddToServer')}</p>
+                <div className="mt-1.5 rounded-md bg-[#1e1f22] px-3 py-2">{tr('landing.oauthMyServer')}</div>
+                <div className="mt-5 rounded-md bg-[#5865F2] py-2 text-center font-semibold text-white">{tr('landing.oauthContinue')}</div>
             </div>
         );
     }
@@ -619,16 +632,16 @@ function StepMock({ step, botName, botAvatar }: { step: number; botName: string;
         return (
             <div className={`${box} text-center`}>
                 <p className="text-lg font-bold text-white">Dashboard</p>
-                <p className="mt-1 text-xs text-slate-400">ใช้บัญชี Discord เดิม ไม่ต้องสมัครใหม่</p>
+                <p className="mt-1 text-xs text-slate-400">{tr('landing.oauthNoSignup')}</p>
                 <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#5865F2] px-5 py-2.5 font-semibold text-white">
-                    <DiscordIcon /> เข้าสู่ระบบด้วย Discord
+                    <DiscordIcon /> {tr('login.logInWithDiscord')}
                 </div>
             </div>
         );
     }
     return (
         <div className={`${box} space-y-3`}>
-            {['การ์ดต้อนรับ', 'เลเวล & XP', 'รายงานอากาศ'].map((name, index) => (
+            {[tr('welcome.welcomeCards'), tr('landing.levelsXp'), tr('landing.featWeather')].map((name, index) => (
                 <div key={name} className="flex items-center justify-between rounded-lg bg-[#2b2d31] px-3 py-2.5">
                     <span>{name}</span>
                     <span className={`flex h-5 w-9 items-center rounded-full p-0.5 ${index < 2 ? 'justify-end bg-[var(--ld-blue)]' : 'bg-slate-600'}`}>
@@ -648,14 +661,14 @@ function Steps({ botName, botAvatar }: { botName: string; botAvatar: string }) {
 
     useEffect(() => {
         if (!auto) return;
-        const timer = setTimeout(() => setActive((current) => (current + 1) % STEPS.length), STEP_MS);
+        const timer = setTimeout(() => setActive((current) => (current + 1) % STEPS().length), STEP_MS);
         return () => clearTimeout(timer);
     }, [auto, active]);
 
     return (
         <div ref={ref} className="grid gap-6 lg:grid-cols-[minmax(0,24rem)_1fr]">
             <ol className="space-y-3">
-                {STEPS.map((step, index) => (
+                {STEPS().map((step, index) => (
                     <li key={step.title}>
                         <button
                             type="button"
@@ -735,11 +748,11 @@ export function LandingPage() {
                     <div className="mx-auto max-w-6xl">
                         <SectionHead
                             eyebrow="Features"
-                            title="ทำอะไรได้"
-                            accent="บ้าง"
-                            aside="เปิด / ปิดแต่ละอย่างได้เองจาก Dashboard"
+                            title={tr('section.featuresTitle')}
+                            accent={tr('section.featuresAccent')}
+                            aside={tr('section.featuresAside')}
                             host={mascotPresent}
-                            say="ดูนี่! บอทเราทำได้เยอะกว่าที่คิดนะ 👀"
+                            say={tr('section.featuresSay')}
                         />
                         <Features botName={bot.name} botAvatar={bot.avatar} />
                     </div>
@@ -747,7 +760,14 @@ export function LandingPage() {
 
                 <section id="start" className="scroll-mt-20 px-4 pb-24 sm:px-8 sm:pb-32">
                     <div className="mx-auto max-w-6xl">
-                        <SectionHead eyebrow="Get started" title="เริ่มใช้ใน" accent="3 ขั้น" host={mascotSit} say="ง่ายจนนั่งทำสบายๆ ได้เลย 😆" flip />
+                        <SectionHead
+                            eyebrow="Get started"
+                            title={tr('section.startTitle')}
+                            accent={tr('section.startAccent')}
+                            host={mascotSit}
+                            say={tr('section.startSay')}
+                            flip
+                        />
                         <Steps botName={bot.name} botAvatar={bot.avatar} />
                     </div>
                 </section>
@@ -756,11 +776,11 @@ export function LandingPage() {
                     <div className="mx-auto max-w-6xl">
                         <SectionHead
                             eyebrow="Commands"
-                            title="รวม"
-                            accent="คำสั่ง"
-                            aside="ค้นหา แล้วกดดูวิธีใช้"
+                            title={tr('section.commandsTitle')}
+                            accent={tr('section.commandsAccent')}
+                            aside={tr('section.commandsAside')}
                             host={mascotLaptop}
-                            say="พิมพ์ / ในแชท แล้วเลือกคำสั่งได้เลย ⌨️"
+                            say={tr('section.commandsSay')}
                         />
                         <Reveal delay={100}>
                             <CommandSearch />
@@ -772,11 +792,11 @@ export function LandingPage() {
                     <div className="mx-auto max-w-6xl">
                         <SectionHead
                             eyebrow="Status"
-                            title="สถานะ"
-                            accent="ระบบ"
-                            aside="ข้อมูลสด อัปเดตทุกนาที"
+                            title={tr('section.statusTitle')}
+                            accent={tr('section.statusAccent')}
+                            aside={tr('section.statusAside')}
                             host={mascotKneel}
-                            say="ผมเฝ้าระบบให้ตลอด 24 ชม. 🛡️"
+                            say={tr('section.statusSay')}
                             flip
                         />
                         <Reveal delay={100}>
@@ -789,11 +809,11 @@ export function LandingPage() {
                     <div className="mx-auto max-w-6xl">
                         <SectionHead
                             eyebrow="Growth"
-                            title="การ"
-                            accent="เติบโต"
-                            aside="commit และ PR ตั้งแต่วันแรก"
+                            title={tr('section.growthTitle')}
+                            accent={tr('section.growthAccent')}
+                            aside={tr('section.growthAside')}
                             host={mascotLaptop2}
-                            say="โค้ดเพิ่มขึ้นทุกวัน ไม่เคยหยุดพัฒนา 🚀"
+                            say={tr('section.growthSay')}
                         />
                         <Reveal delay={100}>
                             <GrowthSection />
@@ -805,11 +825,11 @@ export function LandingPage() {
                     <div className="mx-auto max-w-6xl">
                         <SectionHead
                             eyebrow="Team"
-                            title="คนทำ"
-                            accent="บอท"
-                            aside="เจอบั๊ก ทักมาในเซิร์ฟได้เลย"
+                            title={tr('section.teamTitle')}
+                            accent={tr('section.teamAccent')}
+                            aside={tr('section.teamAside')}
                             host={mascotPockets}
-                            say="นี่ทีมเราเอง มีอะไรทักมาได้เลย ✌️"
+                            say={tr('section.teamSay')}
                             flip
                         />
                         <ul className="grid gap-4 md:grid-cols-2">
@@ -886,14 +906,14 @@ export function LandingPage() {
                     <div className="mt-24 flex flex-col gap-3 border-t border-white/20 pt-6 text-sm text-white/75 sm:flex-row sm:items-center sm:justify-between">
                         <p>
                             {bot.name}
-                            {info?.version ? ` v${info.version}` : ''} · พัฒนาโดยทีม NotStackOverflow
+                            {info?.version ? ` v${info.version}` : ''} {tr('landing.footerBuiltBy')}
                         </p>
                         <div className="flex flex-wrap items-center gap-4">
                             <Link to="/privacy" className="hover:text-white">
-                                นโยบายความเป็นส่วนตัว
+                                {tr('login.privacyPolicy')}
                             </Link>
                             <Link to="/terms" className="hover:text-white">
-                                ข้อกำหนดการใช้งาน
+                                {tr('login.termsOfService')}
                             </Link>
                             <Link to="/dashboard" className="hover:text-white">
                                 Dashboard →
