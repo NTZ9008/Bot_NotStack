@@ -18,6 +18,9 @@ jobs:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/')
     runs-on: ubuntu-latest
     environment: prod
+    # ส่ง secret ผ่าน env แทนการแทนค่าลงใน run โดยตรง (กัน script injection)
+    env:
+      SSH_TARGET: ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}
 
     steps:
       - name: Checkout Code
@@ -71,7 +74,7 @@ jobs:
       #   (migration ที่รันไปแล้วไม่ถูกย้อน — migration ของ repo นี้เป็นแบบเพิ่มอย่างเดียว เวอร์ชันเก่าจึงยังรันได้)
       - name: Backup current release
         run: |
-          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh $SSH_OPTS "$SSH_TARGET" "
             set -e
             cd /home/arlifzs
             if [ -d BotNotStack ]; then
@@ -92,11 +95,11 @@ jobs:
             --exclude '/database.sqlite' \
             --exclude '/prbot' \
             --exclude 'apps/backend/src/generated' \
-            --delete bundle/ ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/home/arlifzs/BotNotStack/
+            --delete bundle/ "$SSH_TARGET":/home/arlifzs/BotNotStack/
 
       - name: Install, Migrate, Register Commands & Restart
         run: |
-          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh $SSH_OPTS "$SSH_TARGET" "
             set -e
             source ~/.bashrc
             export NVM_DIR=\"\$HOME/.nvm\"
@@ -124,7 +127,7 @@ jobs:
 
       - name: Health check
         run: |
-          ssh $SSH_OPTS ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} "
+          ssh $SSH_OPTS "$SSH_TARGET" "
             source ~/.bashrc
             export NVM_DIR=\"\$HOME/.nvm\"
             [ -s \"\$NVM_DIR/nvm.sh\" ] && \. \"\$NVM_DIR/nvm.sh\"

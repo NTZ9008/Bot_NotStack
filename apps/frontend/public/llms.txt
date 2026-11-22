@@ -1,0 +1,19 @@
+# Bot_NotStack
+
+> บอท Discord ภาษาไทย ใช้ฟรี ตั้งค่าทุกอย่างผ่านเว็บ Dashboard ไม่ต้องจำคำสั่ง — บอทประจำเซิร์ฟ NotStackOverflow ที่เปิดให้เซิร์ฟอื่นใช้ได้ (Thai-language Discord bot with a web dashboard, free to use)
+
+ความสามารถหลัก:
+
+- กันคนป่วน: Voice Monitor, Voice Guard, Anti-spam, กรองคำหยาบ (มี AI ช่วยดูคำก้ำกึ่ง), Room Access ตั้งเวลาหมดอายุ
+- ทำให้เซิร์ฟคึกคัก: ระบบเลเวล XP และการ์ดอันดับ, การ์ดต้อนรับสมาชิกใหม่, แชทกับ AI, ประกาศ, รายงานพยากรณ์อากาศทุกเช้า, โพลและสุ่มของ, รับยศจาก reaction
+- ใช้กับทีม: แจ้งเตือน GitHub PR, เปิด Jira card จาก Discord, ระบบเก็บเงิน
+- ย้อนดูได้: Log Manager, กราฟภาพรวมเซิร์ฟ, ประวัติการตั้งค่า
+
+เริ่มใช้: เชิญบอทเข้าเซิร์ฟ → Login เข้า Dashboard ด้วยบัญชี Discord → เลือกห้องแล้วเปิดสิ่งที่อยากใช้
+
+## Pages
+
+- [หน้าแรก](https://bntdash.arlifzs.com/): แนะนำบอท ค้นหาคำสั่ง สถานะระบบ และทีมผู้พัฒนา
+- [เข้าสู่ระบบ Dashboard](https://bntdash.arlifzs.com/login): Login ด้วยบัญชี Discord
+- [นโยบายความเป็นส่วนตัว](https://bntdash.arlifzs.com/privacy)
+- [ข้อกำหนดการใช้งาน](https://bntdash.arlifzs.com/terms)

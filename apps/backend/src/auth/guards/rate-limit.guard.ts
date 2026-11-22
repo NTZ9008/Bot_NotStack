@@ -42,7 +42,7 @@ const renderLimiter = createLimiter({
 function runLimiter(limiter: RateLimitRequestHandler, context: ExecutionContext): Promise<boolean> {
     const http = context.switchToHttp();
     return new Promise((resolve, reject) => {
-        void limiter(http.getRequest<Request>(), http.getResponse<Response>(), (err?: unknown) => (err ? reject(err) : resolve(true)));
+        void limiter(http.getRequest<Request>(), http.getResponse<Response>(), (err?: unknown) => (err ? reject(err instanceof Error ? err : new Error(String(err))) : resolve(true)));
     });
 }
 

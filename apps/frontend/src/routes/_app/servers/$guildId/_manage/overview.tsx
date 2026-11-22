@@ -127,7 +127,7 @@ function Tables({ data }: { data: ActivityStats }) {
                     <CardTitle className="text-base">อันดับผู้ใช้ที่เคลื่อนไหวมากสุด</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <DataTable columns={topUserColumns} data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
+                    <DataTable label="อันดับผู้ใช้ที่เคลื่อนไหวมากสุด" columns={topUserColumns} data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
                 </CardContent>
             </Card>
             <Card>
@@ -135,7 +135,7 @@ function Tables({ data }: { data: ActivityStats }) {
                     <CardTitle className="text-base">เวลาอยู่ในห้องเสียงมากสุด</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <DataTable columns={voiceUserColumns} data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
+                    <DataTable label="เวลาอยู่ในห้องเสียงมากสุด" columns={voiceUserColumns} data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))} empty={empty} />
                 </CardContent>
             </Card>
             <Card>
@@ -144,6 +144,7 @@ function Tables({ data }: { data: ActivityStats }) {
                 </CardHeader>
                 <CardContent>
                     <DataTable
+                        label="ห้องเสียงที่ถูกใช้มากสุด"
                         columns={voiceChannelColumns}
                         data={data.topVoiceChannels.map((c, i) => ({ ...c, rank: i + 1, minutes: minutesByChannel.get(c.channelId) ?? 0 }))}
                         empty={empty}
@@ -251,8 +252,13 @@ function OverviewPage() {
                                 <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
                             </Label>
                             <Button variant="outline" onClick={refresh}>
-                                <RefreshCw className={isFetching ? 'animate-spin' : undefined} /> รีเฟรช
+                                {/* reduced motion: slow the spin instead of stopping it, so activity stays visible */}
+                                <RefreshCw className={isFetching ? 'animate-spin motion-reduce:[animation-duration:6s]' : undefined} /> รีเฟรช
                             </Button>
+                            {/* Always mounted so screen readers pick up the text change */}
+                            <span role="status" className="sr-only">
+                                {isFetching ? 'กำลังโหลดข้อมูล' : ''}
+                            </span>
                         </div>
                     </div>
                     {preset === 'custom' && (

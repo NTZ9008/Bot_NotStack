@@ -157,7 +157,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                 disabled={!roles.length}
                 onValueChange={(roleId) => {
                     const tag = `<@&${roleId}>`;
-                    patch((d) => void (d.content = (d.content ? `${d.content.replace(/\s+$/, '')} ${tag}` : tag).slice(0, meta.limits.maxContentLength)));
+                    patch((d) => void (d.content = (d.content ? `${d.content.trimEnd()} ${tag}` : tag).slice(0, meta.limits.maxContentLength)));
                 }}
             >
                 <SelectTrigger className="w-full max-w-sm">

@@ -47,7 +47,26 @@ test('navigation keeps all existing features available to server managers and sy
             .filter((item) => item.guild)
             .map((item) => item.to.split('/').pop())
             .sort(),
-        ['ai', 'audit-logs', 'config', 'custom-summary', 'funds', 'grafana-alerts', 'jira', 'levels', 'log-manager', 'news', 'overview', 'pr-bot', 'relations', 'room-access', 'voice-guard', 'voice-listen', 'weather', 'welcome'],
+        [
+            'ai',
+            'audit-logs',
+            'config',
+            'custom-summary',
+            'funds',
+            'grafana-alerts',
+            'jira',
+            'levels',
+            'log-manager',
+            'news',
+            'overview',
+            'pr-bot',
+            'relations',
+            'room-access',
+            'voice-guard',
+            'voice-listen',
+            'weather',
+            'welcome',
+        ],
     );
     assert.deepEqual(
         manager
@@ -386,10 +405,76 @@ test('command palette guide walks through a partial XP command step by step', ()
     assert.deepEqual(filled(guide), ['ทำอะไร', 'สมาชิก', 'จำนวน XP', 'เหตุผล']);
     assert.equal(guide.next, null);
     // รีเซ็ตไม่มีขั้นจำนวน XP
-    assert.deepEqual(commandGuide('รีเซ็ต xp @boat').steps.map((step) => step.label), ['ทำอะไร', 'สมาชิก', 'เหตุผล']);
+    assert.deepEqual(
+        commandGuide('รีเซ็ต xp @boat').steps.map((step) => step.label),
+        ['ทำอะไร', 'สมาชิก', 'เหตุผล'],
+    );
     assert.match(commandGuide('xp').next, /ให้ \/ หัก/);
     assert.match(commandGuide('log').next, /คำที่จะค้น/);
     assert.match(commandGuide('@').next, /ชื่อ/);
     // ค้นหาหน้าธรรมดาไม่ขึ้นคำแนะนำ
     for (const text of ['', 'ตั้งค่า', 'ให้', 'voice', 'log boat']) assert.equal(commandGuide(text), null, text);
+});
+
+test('SEO prerender gives each public page its own head and crawlable body', () => {
+    const { renderPageHtml } = require('../apps/frontend/src/lib/seo-prerender.ts');
+    const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');
+    const privacy = renderPageHtml(html, '/privacy');
+    assert.match(privacy, /<link rel="canonical" href="https:\/\/bntdash\.arlifzs\.com\/privacy"/);
+    assert.match(privacy, /<meta property="og:url" content="https:\/\/bntdash\.arlifzs\.com\/privacy"/);
+    assert.match(privacy, /<title>นโยบายความเป็นส่วนตัว[^<]*<\/title>/);
+    assert.match(privacy, /<div id="root"><main class="seo-prerender"><h1>นโยบายความเป็นส่วนตัว<\/h1>/);
+    const home = renderPageHtml(html, '/');
+    assert.match(home, /<h2>กันคนป่วน — /);
+    assert.equal((home.match(/<h1>/g) ?? []).length, 1);
+});
+
+test('SEO build plugin rewrites index.html and emits one HTML file per public page', () => {
+    const { seoPagesPlugin } = require('../apps/frontend/src/lib/seo-prerender.ts');
+    const plugin = seoPagesPlugin();
+    assert.equal(plugin.enforce, 'post');
+    const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');
+    const index = { type: 'asset', source: html };
+    const emitted = {};
+    plugin.generateBundle.call({ emitFile: (file) => (emitted[file.fileName] = file.source) }, {}, { 'index.html': index });
+    assert.deepEqual(Object.keys(emitted).sort(), ['login.html', 'privacy.html', 'terms.html']);
+    assert.match(index.source, /<link rel="canonical" href="https:\/\/bntdash\.arlifzs\.com\/"/);
+    assert.match(emitted['terms.html'], /<link rel="canonical" href="https:\/\/bntdash\.arlifzs\.com\/terms"/);
+    assert.match(emitted['login.html'], /<h1>เข้าสู่ระบบ Dashboard<\/h1>/);
+    // no index.html in the bundle (e.g. library build) → nothing to do
+    const none = {};
+    plugin.generateBundle.call({ emitFile: () => assert.fail('should not emit') }, {}, none);
+});
+
+test('SEO prerender escapes HTML in page text', () => {
+    const { renderPageHtml } = require('../apps/frontend/src/lib/seo-prerender.ts');
+    const { PAGES } = require('../apps/frontend/src/lib/seo.ts');
+    const original = PAGES['/terms'].title;
+    PAGES['/terms'].title = 'A & <B> "C"';
+    try {
+        const out = renderPageHtml('<title>x</title><meta name="twitter:title" content="x" />', '/terms');
+        assert.match(out, /<title>A &#38; &#60;B&#62; &#34;C&#34;<\/title>/);
+        assert.match(out, /content="A &#38; &#60;B&#62; &#34;C&#34;"/);
+    } finally {
+        PAGES['/terms'].title = original;
+    }
+});
+
+test('usePageMeta writes title, canonical and social tags for client-side navigation', () => {
+    const { applyPageMeta } = require('../apps/frontend/src/hooks/use-page-meta.ts');
+    const els = {
+        'meta[name="description"]': {},
+        'meta[property="og:title"]': {},
+        'meta[property="og:url"]': {},
+        'link[rel="canonical"]': {},
+    };
+    const doc = { title: '', querySelector: (selector) => els[selector] ?? null };
+    applyPageMeta(doc, '/privacy');
+    assert.match(doc.title, /^นโยบายความเป็นส่วนตัว/);
+    assert.equal(els['meta[property="og:title"]'].content, doc.title);
+    assert.match(els['meta[name="description"]'].content, /Bot_NotStack/);
+    assert.equal(els['meta[property="og:url"]'].content, 'https://bntdash.arlifzs.com/privacy');
+    assert.equal(els['link[rel="canonical"]'].href, 'https://bntdash.arlifzs.com/privacy');
+    // a page without the optional tags must not throw
+    applyPageMeta({ title: '', querySelector: () => null }, '/');
 });

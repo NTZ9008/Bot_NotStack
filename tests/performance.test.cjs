@@ -379,12 +379,13 @@ for (const mode of ['whitelist', 'blacklist']) {
     });
 }
 
-test('Room Access keeps fresh permissions and room-specific expiry while deduplicating profile lookups', async () => {
+test('Room Access reads gateway-synced channels, keeps room-specific expiry and batches profile lookups', async () => {
     const { RoomAccessService } = require('../apps/backend/dist/room-access/room-access.service');
     const { Collection, OverwriteType } = require('../apps/backend/node_modules/discord.js');
     const channels = Array.from({ length: 8 }, (_, i) => ({ channelId: `c${i}` }));
     const fetched = [],
-        forced = [];
+        forced = [],
+        batched = [];
     let active = 0,
         peak = 0;
     const service = new RoomAccessService(
@@ -417,6 +418,10 @@ test('Room Access keeps fresh permissions and room-specific expiry while dedupli
                     },
                 };
             },
+            cacheMembers: async (guild, ids) => {
+                assert.equal(guild, 'g');
+                batched.push(ids);
+            },
             fetchUser: async (id) => {
                 fetched.push(id);
                 return null;
@@ -426,7 +431,9 @@ test('Room Access keeps fresh permissions and room-specific expiry while dedupli
     const rows = await service.list('g');
     assert.equal(peak, 5);
     assert.equal(forced.length, 8);
-    assert(forced.every(Boolean));
+    assert(forced.every((force) => !force));
+    assert.equal(batched.length, 1);
+    assert.deepEqual([...new Set(batched[0])], ['u']);
     assert.deepEqual(fetched, ['u']);
     assert.equal(rows.length, 7);
     assert.deepEqual(
@@ -448,6 +455,7 @@ test('Levels reads settings alongside the page and preserves page ranks with bou
         active = 0,
         peak = 0;
     const rows = Array.from({ length: 12 }, (_, i) => ({ userId: `u${i}`, xp: 1000 - i, level: 0 }));
+    const batched = [];
     const service = new LevelsService(
         {
             xpSetting: {
@@ -468,6 +476,7 @@ test('Levels reads settings alongside the page and preserves page ranks with bou
         {
             ready: true,
             guild: () => null,
+            cacheMembers: async (guild, ids) => batched.push([guild, ids]),
             displayName: async (id) => {
                 peak = Math.max(peak, ++active);
                 await new Promise(setImmediate);
@@ -487,4 +496,50 @@ test('Levels reads settings alongside the page and preserves page ranks with bou
         Array.from({ length: 12 }, (_, i) => 13 + i),
     );
     assert.equal(result.items[0].username, 'Name u0');
+    assert.deepEqual(batched, [['g', rows.map((row) => row.userId)]]);
+});
+
+test('Room Access refreshes each changed channel after editing permissions', async () => {
+    const { RoomAccessService } = require('../apps/backend/dist/room-access/room-access.service');
+    const calls = [];
+    const channel = { name: 'vip', permissionOverwrites: { cache: new Map(), edit: async () => calls.push('edit') } };
+    const service = new RoomAccessService(
+        {
+            roomAccessChannel: { findMany: async () => [{ channelId: 'c1' }] },
+            roomAccess: { deleteMany: async () => calls.push('db') },
+        },
+        {
+            requireReady() {},
+            fetchGuildChannel: async (guild, id, force) => {
+                calls.push(force ? `refresh:${id}` : `read:${id}`);
+                return channel;
+            },
+        },
+    );
+    const result = await service.change('g', { action: 'grant', roomId: 'c1', userId: 'u' });
+    assert.equal(result.success, true);
+    assert.deepEqual(calls, ['read:c1', 'edit', 'db', 'refresh:c1']);
+});
+
+test('cacheMembers asks the gateway once per 100 unknown users and never throws', async () => {
+    const { DiscordService } = require('../apps/backend/dist/discord/discord.service');
+    const discord = new DiscordService({ get: (key) => (key === 'DISCORD_PRESENCE_INTENT' ? false : '1') });
+    const requests = [];
+    discord.client.isReady = () => true;
+    discord.client.guilds.cache.set('g', {
+        members: {
+            cache: new Map([['member', {}]]),
+            fetch: async (options) => {
+                requests.push(options.user);
+                throw new Error('rate limited');
+            },
+        },
+    });
+    discord.client.users.cache.set('known', {});
+    const unknown = Array.from({ length: 150 }, (_, i) => `u${i}`);
+    await discord.cacheMembers('g', ['member', 'known', ...unknown, 'u0']);
+    assert.deepEqual(requests, [unknown.slice(0, 100), unknown.slice(100)]);
+    await discord.cacheMembers('missing-guild', ['u1']);
+    assert.equal(requests.length, 2);
+    await discord.client.destroy();
 });

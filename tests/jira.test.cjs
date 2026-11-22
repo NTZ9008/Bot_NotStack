@@ -673,3 +673,12 @@ test('scheduled closes fire once, are rescheduled after a restart and cleared on
         false,
     );
 });
+
+test('trimChar ตัดตัวอักษรหัว/ท้ายโดยไม่ใช้ regex', () => {
+    const { trimChar } = require('../packages/shared/dist/text.js');
+    assert.equal(trimChar('__a_b__', '_'), 'a_b');
+    assert.equal(trimChar('https://x.io///', '/', 'end'), 'https://x.io');
+    assert.equal(trimChar('//a', '/', 'end'), '//a');
+    assert.equal(trimChar('----', '-'), '');
+    assert.equal(trimChar('', '/'), '');
+});

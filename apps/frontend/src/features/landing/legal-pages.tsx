@@ -4,28 +4,9 @@ import { ArrowLeft, FileText, ShieldCheck } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { Button } from '@/components/ui/button';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
-const SITE_ORIGIN = 'https://bntdash.arlifzs.com';
 const LAST_UPDATED = '22 ตุลาคม 2569';
-
-export function usePageMeta({ title, description, path }: { title: string; description: string; path: string }) {
-    useEffect(() => {
-        const url = `${SITE_ORIGIN}${path}`;
-        document.title = title;
-        const setMeta = (selector: string, content: string) => {
-            const el = document.querySelector<HTMLMetaElement>(selector);
-            if (el) el.content = content;
-        };
-        setMeta('meta[name="description"]', description);
-        setMeta('meta[property="og:title"]', title);
-        setMeta('meta[property="og:description"]', description);
-        setMeta('meta[property="og:url"]', url);
-        setMeta('meta[name="twitter:title"]', title);
-        setMeta('meta[name="twitter:description"]', description);
-        const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-        if (canonical) canonical.href = url;
-    }, [title, description, path]);
-}
 
 function LegalLayout({
     active,
@@ -56,16 +37,10 @@ function LegalLayout({
                         <span className="truncate">{bot.name}</span>
                     </Link>
                     <nav className="ml-auto flex items-center gap-4 text-sm">
-                        <Link
-                            to="/privacy"
-                            className={active === 'privacy' ? 'font-medium text-indigo-300' : 'text-muted-foreground hover:text-foreground'}
-                        >
+                        <Link to="/privacy" className={active === 'privacy' ? 'font-medium text-indigo-300' : 'text-muted-foreground hover:text-foreground'}>
                             Privacy Policy
                         </Link>
-                        <Link
-                            to="/terms"
-                            className={active === 'terms' ? 'font-medium text-indigo-300' : 'text-muted-foreground hover:text-foreground'}
-                        >
+                        <Link to="/terms" className={active === 'terms' ? 'font-medium text-indigo-300' : 'text-muted-foreground hover:text-foreground'}>
                             Terms of Service
                         </Link>
                         <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex">
@@ -131,12 +106,7 @@ function SectionBlock({ number, title, children }: { number: string; title: stri
 }
 
 export function PrivacyPolicyPage() {
-    usePageMeta({
-        title: 'นโยบายความเป็นส่วนตัว (Privacy Policy) — Bot_NotStack',
-        description:
-            'นโยบายความเป็นส่วนตัวของ Bot_NotStack และเว็บ Dashboard อธิบายข้อมูลที่จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน',
-        path: '/privacy',
-    });
+    usePageMeta('/privacy');
 
     return (
         <LegalLayout
@@ -169,14 +139,18 @@ export function PrivacyPolicyPage() {
             </SectionBlock>
 
             <SectionBlock number="02" title="การแยกข้อมูลตามเซิร์ฟเวอร์และการจำกัดสิทธิ์ (Role-Based Isolation)">
-                <p>ข้อมูลทุกส่วนในฐานข้อมูลถูกแยกตามรหัสเซิร์ฟเวอร์ (<code>guildId</code>) อย่างชัดเจน และควบคุมการเข้าถึงด้วยระบบ Role-Based Access Control:</p>
+                <p>
+                    ข้อมูลทุกส่วนในฐานข้อมูลถูกแยกตามรหัสเซิร์ฟเวอร์ (<code>guildId</code>) อย่างชัดเจน และควบคุมการเข้าถึงด้วยระบบ Role-Based Access Control:
+                </p>
                 <ul className="list-disc space-y-1.5 pl-5">
                     <li>
-                        <strong>เจ้าของเซิร์ฟเวอร์ (Role OWNER):</strong> จะมองเห็นและจัดการได้<strong>เฉพาะเซิร์ฟเวอร์ของตนเอง</strong> (เป็น Server Owner หรือมีสิทธิ์{' '}
-                        <code>Manage Server</code> / <code>Administrator</code> ในเซิร์ฟเวอร์นั้น) เท่านั้น ไม่สามารถมองเห็นเซิร์ฟเวอร์อื่นหรือดูรายชื่อห้อง Discord ของผู้อื่นได้
+                        <strong>เจ้าของเซิร์ฟเวอร์ (Role OWNER):</strong> จะมองเห็นและจัดการได้<strong>เฉพาะเซิร์ฟเวอร์ของตนเอง</strong> (เป็น Server Owner
+                        หรือมีสิทธิ์ <code>Manage Server</code> / <code>Administrator</code> ในเซิร์ฟเวอร์นั้น) เท่านั้น
+                        ไม่สามารถมองเห็นเซิร์ฟเวอร์อื่นหรือดูรายชื่อห้อง Discord ของผู้อื่นได้
                     </li>
                     <li>
-                        <strong>ผู้ใช้ทั่วไป (Role USER):</strong> เห็นเฉพาะเซิร์ฟเวอร์ที่ตนเป็นเจ้าของหรือมีสิทธิ์จัดการในโหมดดูอันดับ (Levels) เท่านั้น ไม่สามารถแก้ไขการตั้งค่าบอทได้
+                        <strong>ผู้ใช้ทั่วไป (Role USER):</strong> เห็นเฉพาะเซิร์ฟเวอร์ที่ตนเป็นเจ้าของหรือมีสิทธิ์จัดการในโหมดดูอันดับ (Levels) เท่านั้น
+                        ไม่สามารถแก้ไขการตั้งค่าบอทได้
                     </li>
                     <li>
                         <strong>ผู้ดูแลระบบบอท (Role ADMIN):</strong> มีหน้าที่ดูแลความเสถียรของระบบส่วนกลางและจัดการบัญชีผู้ใช้ในกรณีเกิดปัญหาทางเทคนิค
@@ -186,9 +160,16 @@ export function PrivacyPolicyPage() {
 
             <SectionBlock number="03" title="มาตรการรักษาความปลอดภัยของข้อมูล (Data Security)">
                 <ul className="list-disc space-y-1.5 pl-5">
-                    <li>รหัสผ่านของบัญชี Dashboard (กรณีตั้งรหัสผ่าน) ถูกเข้ารหัสทางเดียวด้วย <code>bcrypt</code></li>
-                    <li>ข้อมูลความลับที่เชื่อมต่อบริการภายนอก เช่น Jira API Token ถูกเข้ารหัสด้วย <code>AES-256-GCM</code> ก่อนบันทึกลงฐานข้อมูล และไม่ส่งกลับไปแสดงบนหน้าเว็บอีก</li>
-                    <li>GitHub Webhook ตรวจสอบลายเซ็น <code>HMAC-SHA256</code> ทุกครั้งก่อนประมวลผล</li>
+                    <li>
+                        รหัสผ่านของบัญชี Dashboard (กรณีตั้งรหัสผ่าน) ถูกเข้ารหัสทางเดียวด้วย <code>bcrypt</code>
+                    </li>
+                    <li>
+                        ข้อมูลความลับที่เชื่อมต่อบริการภายนอก เช่น Jira API Token ถูกเข้ารหัสด้วย <code>AES-256-GCM</code> ก่อนบันทึกลงฐานข้อมูล
+                        และไม่ส่งกลับไปแสดงบนหน้าเว็บอีก
+                    </li>
+                    <li>
+                        GitHub Webhook ตรวจสอบลายเซ็น <code>HMAC-SHA256</code> ทุกครั้งก่อนประมวลผล
+                    </li>
                     <li>
                         Session การเข้าสู่ระบบใช้คุกกี้แบบ <code>HttpOnly</code>, <code>Secure</code>, <code>SameSite</code> พร้อมระบบหมุนเวียน Refresh Token
                         และการป้องกัน CSRF ทุกคำสั่งที่แก้ไขข้อมูล
@@ -199,10 +180,18 @@ export function PrivacyPolicyPage() {
             <SectionBlock number="04" title="การเชื่อมต่อกับบริการภายนอก (Third-Party Services)">
                 <p>เราไม่ขายหรือนำข้อมูลของคุณไปใช้เพื่อการโฆษณา ข้อมูลบางส่วนจะถูกส่งไปยังบริการภายนอกเฉพาะเมื่อคุณเรียกใช้ฟีเจอร์นั้นๆ ได้แก่:</p>
                 <ul className="list-disc space-y-1.5 pl-5">
-                    <li><strong>Discord API:</strong> สำหรับการทำงานของบอทและการยืนยันตัวตนด้วย Discord OAuth2</li>
-                    <li><strong>Google Gemini API:</strong> เฉพาะเมื่อสมาชิกแท็กบอทเพื่อถามคำถาม AI หรือเมื่อเซิร์ฟเวอร์เปิดระบบช่วยตรวจคำหยาบ</li>
-                    <li><strong>OpenWeatherMap & RainViewer:</strong> สำหรับดึงข้อมูลสภาพอากาศและเรดาร์ฝนตามพิกัดที่เซิร์ฟเวอร์ตั้งค่า</li>
-                    <li><strong>GitHub & Atlassian Jira:</strong> เฉพาะเซิร์ฟเวอร์ที่ผู้ดูแลตั้งค่าเชื่อมต่อด้วยตนเอง</li>
+                    <li>
+                        <strong>Discord API:</strong> สำหรับการทำงานของบอทและการยืนยันตัวตนด้วย Discord OAuth2
+                    </li>
+                    <li>
+                        <strong>Google Gemini API:</strong> เฉพาะเมื่อสมาชิกแท็กบอทเพื่อถามคำถาม AI หรือเมื่อเซิร์ฟเวอร์เปิดระบบช่วยตรวจคำหยาบ
+                    </li>
+                    <li>
+                        <strong>OpenWeatherMap & RainViewer:</strong> สำหรับดึงข้อมูลสภาพอากาศและเรดาร์ฝนตามพิกัดที่เซิร์ฟเวอร์ตั้งค่า
+                    </li>
+                    <li>
+                        <strong>GitHub & Atlassian Jira:</strong> เฉพาะเซิร์ฟเวอร์ที่ผู้ดูแลตั้งค่าเชื่อมต่อด้วยตนเอง
+                    </li>
                 </ul>
             </SectionBlock>
 
@@ -211,7 +200,8 @@ export function PrivacyPolicyPage() {
                     <li>ข้อมูลเหตุการณ์ในเซิร์ฟเวอร์ (Activity Events) และประวัติ XP จะถูกลบอัตโนมัติเมื่อพ้นระยะเวลาเก็บรักษาที่ระบบกำหนด</li>
                     <li>เมื่อเตะบอทออกจากเซิร์ฟเวอร์ ระบบจะหยุดเก็บข้อมูลใหม่จากเซิร์ฟเวอร์นั้นทันที</li>
                     <li>
-                        คุณสามารถยกเลิกการเชื่อมต่อบัญชี Discord หรือออกจากระบบทุกอุปกรณ์ได้ที่หน้า <strong>บัญชีของฉัน (My Account)</strong> และสามารถติดต่อทีมผู้พัฒนาเพื่อขอลบบัญชีหรือข้อมูลของเซิร์ฟเวอร์ออกอย่างถาวรได้ตลอดเวลา
+                        คุณสามารถยกเลิกการเชื่อมต่อบัญชี Discord หรือออกจากระบบทุกอุปกรณ์ได้ที่หน้า <strong>บัญชีของฉัน (My Account)</strong>{' '}
+                        และสามารถติดต่อทีมผู้พัฒนาเพื่อขอลบบัญชีหรือข้อมูลของเซิร์ฟเวอร์ออกอย่างถาวรได้ตลอดเวลา
                     </li>
                 </ul>
             </SectionBlock>
@@ -220,12 +210,7 @@ export function PrivacyPolicyPage() {
 }
 
 export function TermsOfServicePage() {
-    usePageMeta({
-        title: 'ข้อกำหนดการใช้งาน (Terms of Service) — Bot_NotStack',
-        description:
-            'ข้อกำหนดและเงื่อนไขการใช้งานบอท Discord Bot_NotStack และเว็บ Dashboard สำหรับเจ้าของเซิร์ฟเวอร์และผู้ใช้งาน',
-        path: '/terms',
-    });
+    usePageMeta('/terms');
 
     return (
         <LegalLayout
@@ -283,21 +268,22 @@ export function TermsOfServicePage() {
             <SectionBlock number="04" title="โควตาและเสถียรภาพของบริการ (Service Availability & Quotas)">
                 <ul className="list-disc space-y-1.5 pl-5">
                     <li>
-                        Bot_NotStack ให้บริการโดยไม่มีค่าใช้จ่าย และมีการกำหนด Rate Limit รวมถึงโควตาการใช้งาน AI รายวันต่อเซิร์ฟเวอร์เพื่อให้ทุกเซิร์ฟเวอร์ใช้งานร่วมกันได้อย่างเสถียร
+                        Bot_NotStack ให้บริการโดยไม่มีค่าใช้จ่าย และมีการกำหนด Rate Limit รวมถึงโควตาการใช้งาน AI
+                        รายวันต่อเซิร์ฟเวอร์เพื่อให้ทุกเซิร์ฟเวอร์ใช้งานร่วมกันได้อย่างเสถียร
                     </li>
-                    <li>
-                        ระบบอาจมีการปิดปรับปรุงชั่วคราวเพื่ออัปเดตฟีเจอร์หรือแก้ไขข้อผิดพลาด โดยสามารถตรวจสอบสถานะการทำงานสดได้ที่หน้าแรกของเว็บไซต์
-                    </li>
+                    <li>ระบบอาจมีการปิดปรับปรุงชั่วคราวเพื่ออัปเดตฟีเจอร์หรือแก้ไขข้อผิดพลาด โดยสามารถตรวจสอบสถานะการทำงานสดได้ที่หน้าแรกของเว็บไซต์</li>
                 </ul>
             </SectionBlock>
 
             <SectionBlock number="05" title="การระงับสิทธิ์และการจำกัดความรับผิดชอบ">
                 <ul className="list-disc space-y-1.5 pl-5">
                     <li>
-                        ทีมผู้พัฒนาขอสงวนสิทธิ์ในการระงับบัญชี Dashboard หรือนำบอทออกจากเซิร์ฟเวอร์ที่ละเมิดข้อกำหนดการใช้งานหรือสร้างภาระผิดปกติต่อระบบโดยไม่ต้องแจ้งให้ทราบล่วงหน้า
+                        ทีมผู้พัฒนาขอสงวนสิทธิ์ในการระงับบัญชี Dashboard
+                        หรือนำบอทออกจากเซิร์ฟเวอร์ที่ละเมิดข้อกำหนดการใช้งานหรือสร้างภาระผิดปกติต่อระบบโดยไม่ต้องแจ้งให้ทราบล่วงหน้า
                     </li>
                     <li>
-                        บริการนี้จัดทำขึ้นตามสภาพ (&ldquo;AS IS&rdquo;) ทีมผู้พัฒนาไม่รับผิดชอบต่อความเสียหายที่เกิดจากการตั้งค่าที่ผิดพลาดของผู้ดูแลเซิร์ฟเวอร์ หรือการหยุดชะงักของบริการภายนอก (เช่น Discord, OpenWeatherMap, GitHub หรือ Jira)
+                        บริการนี้จัดทำขึ้นตามสภาพ (&ldquo;AS IS&rdquo;) ทีมผู้พัฒนาไม่รับผิดชอบต่อความเสียหายที่เกิดจากการตั้งค่าที่ผิดพลาดของผู้ดูแลเซิร์ฟเวอร์
+                        หรือการหยุดชะงักของบริการภายนอก (เช่น Discord, OpenWeatherMap, GitHub หรือ Jira)
                     </li>
                 </ul>
             </SectionBlock>

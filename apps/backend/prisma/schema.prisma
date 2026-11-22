@@ -282,6 +282,7 @@ model ActivityEvent {
 
   @@index([createdAt])
   @@index([guildId, createdAt])
+  @@index([guildId, eventKey, createdAt])
   @@index([eventKey, createdAt])
   @@index([userId, createdAt])
   @@index([channelId, createdAt])

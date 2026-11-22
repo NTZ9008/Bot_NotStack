@@ -16,6 +16,11 @@
       "source": "./src/auth-codes.ts",
       "types": "./dist/auth-codes.d.ts",
       "default": "./dist/auth-codes.js"
+    },
+    "./text": {
+      "source": "./src/text.ts",
+      "types": "./dist/text.d.ts",
+      "default": "./dist/text.js"
     }
   },
   "files": [

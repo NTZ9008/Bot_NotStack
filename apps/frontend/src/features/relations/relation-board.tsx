@@ -146,7 +146,7 @@ export function RelationBoardView({ guildId }: { guildId: string }) {
     const links = useMemo(() => allLinks.filter((link) => link.tier >= minTier), [allLinks, minTier]);
     const roles = useMemo(() => board.data?.roles ?? [], [board.data]);
     const groups = useMemo(() => (grouping === 'role' ? assignGroups(people, roles, excludedRoles) : null), [grouping, people, roles, excludedRoles]);
-    const pinScope = grouping === 'role' ? `roles:${[...excludedRoles].sort().join(',')}` : '';
+    const pinScope = grouping === 'role' ? `roles:${[...excludedRoles].sort((x, y) => x.localeCompare(y)).join(',')}` : '';
     const peopleById = useMemo(() => new Map(people.map((person) => [person.userId, person])), [people]);
 
     const memberIds = useMemo(() => people.filter((person) => person.status === 'member').map((person) => person.userId), [people]);

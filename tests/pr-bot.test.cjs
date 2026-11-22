@@ -550,8 +550,17 @@ test('GitHub comment markdown is converted to what Discord can render', () => {
     assert.equal(md('```suggestion\nconst a = 1;\n```'), '**Suggested change:**\n```\nconst a = 1;\n```');
     assert.equal(md('```js\nunclosed'), '```js\nunclosed\n```');
     assert.equal(md('a\r\n\r\n\r\n\r\nb'), 'a\n\nb');
+    // \n ที่ได้จาก <summary> / <br> ต้องไม่หาย และตัดช่องว่างท้ายทุกบรรทัดย่อย
+    assert.equal(md('<details><summary>Logs</summary>\nhidden</details>'), '**▸ Logs**\n\nhidden');
+    assert.equal(md('foo   <br>bar   '), 'foo\nbar');
     const cut = md(`text\n\`\`\`\n${'x\n'.repeat(100)}\`\`\``, 60);
     assert.ok(cut.length <= 60);
     assert.ok(cut.endsWith('…\n```'));
     assert.equal(md('word '.repeat(50), 30).length <= 30, true);
+});
+
+test('githubMarkdownToDiscord strips nested tags and comments that reassemble after one pass', () => {
+    const { githubMarkdownToDiscord } = require('../apps/backend/dist/pr-bot/utils/github-markdown');
+    const out = githubMarkdownToDiscord('a <scr<i>ipt>x <!<!-- -->-- hidden --> b', 2000);
+    assert.ok(!/<script|<!--/i.test(out), out);
 });

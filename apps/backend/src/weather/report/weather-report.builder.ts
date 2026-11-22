@@ -44,7 +44,7 @@ function summarize({ current, forecast }: WeatherData): Summary {
 }
 
 // ค่าในแต่ละช่อง — บรรทัดแรกคือค่าหลัก บรรทัดที่สอง (ถ้ามี) คือรายละเอียด
-const FIELD_VALUES: Record<WeatherFieldKey, (w: WeatherData, s: Summary) => string> = {
+const FIELD_VALUES_BY_KEY: Record<WeatherFieldKey, (w: WeatherData, s: Summary) => string> = {
     temp: ({ current }) => fmt.formatTemp(current.temp),
     feelsLike: ({ current }) => fmt.formatTemp(current.feelsLike),
     range: (_w, s) => `${Math.round(s.max)}° / ${Math.round(s.min)}°`,
@@ -75,6 +75,8 @@ const FIELD_VALUES: Record<WeatherFieldKey, (w: WeatherData, s: Summary) => stri
     },
     pressure: ({ current }) => `${current.pressure} hPa`,
 };
+// Map.get คืน undefined กับ key แปลก (เช่น "constructor") ไม่ไปเรียก method ของ Object.prototype
+const FIELD_RENDERERS = new Map(Object.entries(FIELD_VALUES_BY_KEY) as [WeatherFieldKey, (w: WeatherData, s: Summary) => string][]);
 
 function buildVars(options: WeatherOptions, weather: WeatherData, summary: Summary): Record<string, string> {
     const { current, timezone } = weather;
@@ -106,7 +108,13 @@ export async function buildWeatherReport({ content, options }: { content: string
     const description = fillWeatherPlaceholders(style.description, vars).trim().slice(0, 4096);
     if (description) embed.setDescription(description);
     if (style.fields.length) {
-        embed.addFields(style.fields.map((key) => ({ name: FIELD_LABELS.get(key)!, value: FIELD_VALUES[key](weather, summary), inline: true })));
+        embed.addFields(
+            style.fields.flatMap((key) => {
+                const render = FIELD_RENDERERS.get(key);
+                if (typeof render !== 'function') return [];
+                return [{ name: FIELD_LABELS.get(key)!, value: render(weather, summary), inline: true }];
+            }),
+        );
     }
     if (style.thumbnail && weather.current.icon) {
         embed.setThumbnail(`https://openweathermap.org/img/wn/${weather.current.icon}@2x.png`);

@@ -49,6 +49,8 @@ export interface LevelChange {
 const SETTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
 const cooldownKey = (guildId: string, userId: string, ruleId: string) => `${guildId}:${userId}:${ruleId}`;
 
+const DEFAULT_LEVEL_QUERY: LevelQuery = { page: 1, pageSize: 25 };
+
 @Injectable()
 export class LevelsService {
     private readonly logger = new Logger('Levels');
@@ -148,7 +150,7 @@ export class LevelsService {
         return result;
     }
 
-    async list(guildId: string, query: LevelQuery = { page: 1, pageSize: 25 }): Promise<LevelPage> {
+    async list(guildId: string, query: LevelQuery = DEFAULT_LEVEL_QUERY): Promise<LevelPage> {
         const where: Prisma.LevelWhereInput = { guildId };
         let filtered = false,
             searchLimited = false;
@@ -173,6 +175,11 @@ export class LevelsService {
                 }),
             ]),
         ]);
+        if (this.discord.ready)
+            await this.discord.cacheMembers(
+                guildId,
+                rows.map((row) => row.userId),
+            );
         // Keep five lookups moving; a slow Discord response must not hold back the next batch.
         const items: LevelRow[] = await mapConcurrent(rows, 5, async (row, i) => {
             const cached = this.discord.guild(guildId)?.members.cache.get(row.userId);

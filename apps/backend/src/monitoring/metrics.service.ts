@@ -1,9 +1,10 @@
+import { trimChar } from '@notstack/shared/text';
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Events, type Interaction, type Message } from 'discord.js';
 import type { Request, Response, NextFunction } from 'express';
-import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from 'prom-client';
+import { collectDefaultMetrics, Counter, Gauge, Histogram, Registry } from '@prometheus-io/client';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -62,11 +63,11 @@ export class MetricsService {
         this.observeDiscord();
     }
 
-    private gauge(name: string, help: string, labelNames: string[] = []): Gauge {
+    private gauge(name: string, help: string, labelNames: string[] = []): Gauge<string> {
         return new Gauge({ name: `notstack_${name}`, help, labelNames, registers: [this.registry] });
     }
 
-    private counter(name: string, help: string, labelNames: string[]): Counter {
+    private counter(name: string, help: string, labelNames: string[]): Counter<string> {
         return new Counter({ name: `notstack_${name}`, help, labelNames, registers: [this.registry] });
     }
 
@@ -104,7 +105,7 @@ export class MetricsService {
 
     // Installed before rate limiting/body parsing so rejected requests are counted too.
     readonly middleware = (req: Request, res: Response, next: NextFunction): void => {
-        const path = req.path.toLowerCase().replace(/\/+$/, '');
+        const path = trimChar(req.path.toLowerCase(), '/', 'end');
         const token = this.config.get('METRICS_TOKEN', { infer: true });
         if (path === '/api/metrics') {
             res.setHeader('Cache-Control', 'no-store');
@@ -159,7 +160,7 @@ export class MetricsService {
         this.discordEnabled.set(this.config.get('TOKEN', { infer: true }) ? 1 : 0);
         this.discordReady.set(ready ? 1 : 0);
         const ping = ready?.ws.ping;
-        this.discordPing.set(ping !== undefined && ping >= 0 ? ping / 1000 : NaN);
+        this.discordPing.set(ping !== undefined && ping >= 0 ? ping / 1000 : Number.NaN);
         const guilds = this.discord.client.guilds.cache;
         this.guilds.set(guilds.size);
         let members = 0;

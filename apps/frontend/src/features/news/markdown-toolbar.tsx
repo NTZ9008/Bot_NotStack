@@ -78,6 +78,7 @@ export function MarkdownToolbar({ textareaRef, onApply }: { textareaRef: RefObje
                                 type="button"
                                 variant="ghost"
                                 size="icon-sm"
+                                aria-label={button.title}
                                 onMouseDown={(e) => e.preventDefault()}
                                 onClick={() => {
                                     onApply(button.action);

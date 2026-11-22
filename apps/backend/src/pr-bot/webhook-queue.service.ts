@@ -37,6 +37,8 @@ const schemas: Record<string, z.ZodType> = {
 // - GitHub ไม่ส่งซ้ำให้เองเมื่อเราตอบ error จึงต้องรับได้ทั้งชุดที่มาพร้อมกัน (PR หนึ่งอันมี check_run หลายสิบ event)
 // ==========================================
 const DRAIN_BATCH = 100;
+// ข้อความ error สั้นๆ ไว้ดูสาเหตุ — ไม่ log stack / payload (อาจมีเนื้อหา PR ยาวๆ)
+const errorText = (err: unknown) => (err instanceof Error ? err.message : String(err)).slice(0, 300);
 // แถวที่เสร็จแล้วเก็บไว้กันส่งซ้ำช่วงหนึ่งแล้วลบ (payload ถูกล้างตั้งแต่ตอนเสร็จ) / ที่ล้มเหลวเก็บนานกว่าไว้ตรวจสอบ
 const DONE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const FAILED_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -90,8 +92,8 @@ export class WebhookQueueService {
             if (exhausted.count) this.logger.error(JSON.stringify({ event: 'webhook_dead_letter', count: exhausted.count }));
             // ทำต่อเนื่องจนคิวว่าง (ทีละรายการ ตามลำดับที่เข้ามา) — รอบละไม่เกิน DRAIN_BATCH ให้ event loop ได้พักบ้าง
             for (let i = 0; i < DRAIN_BATCH && (await this.processNext()); i++);
-        } catch {
-            this.logger.error(JSON.stringify({ event: 'webhook_queue_unavailable' }));
+        } catch (err) {
+            this.logger.error(JSON.stringify({ event: 'webhook_queue_unavailable', error: errorText(err) }));
         } finally {
             this.running = false;
         }
@@ -116,13 +118,13 @@ export class WebhookQueueService {
         try {
             await this.bot.handle(job.guildId, job.event, job.payload, job.id);
             await this.prisma.webhookDelivery.update({ where: { id: job.id }, data: { status: 'done', completedAt: new Date(), payload: {} } });
-        } catch {
+        } catch (err) {
             const failed = job.attempts >= 5;
             await this.prisma.webhookDelivery.update({
                 where: { id: job.id },
                 data: { status: failed ? 'failed' : 'pending', availableAt: new Date(Date.now() + 5000 * 2 ** (job.attempts - 1)) },
             });
-            this.logger.error(JSON.stringify({ event: failed ? 'webhook_dead_letter' : 'webhook_retry', jobId: job.id, attempts: job.attempts }));
+            this.logger.error(JSON.stringify({ event: failed ? 'webhook_dead_letter' : 'webhook_retry', jobId: job.id, attempts: job.attempts, error: errorText(err) }));
         }
         return true;
     }
