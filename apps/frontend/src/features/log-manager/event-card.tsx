@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { logSettingsApi } from '@/api/bot';
 import { ChannelSelect } from '@/components/channel-select';
+import { ColorPicker } from '@/components/color-field';
 import { Switch } from '@/components/ui/switch';
 import { useGuildId } from '@/hooks/use-guild';
 import { failedToast, savedToast, useSettingsCache } from './use-log-settings';
@@ -66,13 +67,12 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
             />
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {tr('สี')}
-                <input
+                <ColorPicker
                     aria-label={tr('สีของ {0}', { 0: event.label })}
                     disabled={mutation.isPending}
-                    type="color"
-                    className="h-6 w-10 cursor-pointer rounded border border-input bg-transparent"
+                    className="h-6 w-10 p-0.5"
                     value={color}
-                    onChange={(e) => setColor(e.target.value)}
+                    onChange={setColor}
                 />
                 <span className="font-mono">{color.toUpperCase()}</span>
                 <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-700 dark:text-amber-400' : ''}`}>

@@ -14,7 +14,7 @@ createRoot(document.getElementById('root')!).render(
             <TooltipProvider>
                 <ConfirmProvider>
                     <RouterProvider router={router} />
-                    <Toaster position="top-right" richColors closeButton />
+                    <Toaster position="top-right" closeButton />
                 </ConfirmProvider>
             </TooltipProvider>
         </QueryClientProvider>

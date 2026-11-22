@@ -9,6 +9,9 @@ export const EN_PAGES: Record<string, string> = {
     '(ไม่พบห้องนี้)': '(channel not found)',
     // components/color-field.tsx
     เลือกสี: 'Pick a color',
+    รหัสสี: 'Hex color',
+    ความอิ่มสีและความสว่าง: 'Saturation and brightness',
+    เฉดสี: 'Hue',
     // components/confirm-dialog.tsx
     ยกเลิก: 'Cancel',
     ยืนยัน: 'Confirm',
