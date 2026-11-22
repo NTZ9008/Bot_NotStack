@@ -71,7 +71,7 @@ function LoginPage() {
                         <img
                             src={info?.bot?.avatar ?? DEFAULT_BOT.avatar}
                             alt="Bot Logo"
-                            className="size-18 rounded-full border-2 border-border shadow-[0_0_20px_rgba(99,102,241,0.4)]"
+                            className="size-18 rounded-full border-2 border-border"
                         />
                     </Link>
                 </div>

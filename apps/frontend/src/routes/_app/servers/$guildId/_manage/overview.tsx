@@ -207,9 +207,9 @@ function OverviewPage() {
             />
             <GettingStarted />
             <Link to="/servers/$guildId/ai" params={{ guildId }} className="block">
-                <Card className="transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/5">
+                <Card className="transition-colors hover:border-highlight/50 hover:bg-highlight/5">
                     <CardContent className="flex items-center gap-3 py-4">
-                        <Bot className="size-5 text-indigo-700 dark:text-indigo-300" />
+                        <Bot className="size-5 text-highlight" />
                         <div><div className="font-medium">ตั้งค่า AI Chat</div><p className="text-sm text-muted-foreground">เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage</p></div>
                     </CardContent>
                 </Card>

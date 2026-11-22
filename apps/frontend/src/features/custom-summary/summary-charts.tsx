@@ -28,7 +28,7 @@ const VOICE_CONFIG = {
 } satisfies ChartConfig;
 
 const PR_CONFIG = {
-    sent: { label: 'เปิด / อัปเดต PR', color: '#6366f1' },
+    sent: { label: 'เปิด / อัปเดต PR', color: 'var(--chart-1)' },
     merged: { label: 'Merge แล้ว', color: '#a855f7' },
     closed: { label: 'ปิด PR (ไม่ Merge)', color: '#f59e0b' },
 } satisfies ChartConfig;
@@ -82,7 +82,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                            <TrendingUp className="size-4 text-indigo-700 dark:text-indigo-400" />
+                            <TrendingUp className="size-4 text-highlight" />
                             แนวโน้มกิจกรรมตามช่วงเวลา ({summary.range.interval === 'hour' ? 'รายชั่วโมง' : 'รายวัน'})
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">
@@ -319,7 +319,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                             />
                                             <ChartTooltip content={<ChartTooltipContent />} />
                                             <ChartLegend content={<ChartLegendContent />} />
-                                            <Bar dataKey="sent" stackId="pr" fill="#6366f1" />
+                                            <Bar dataKey="sent" stackId="pr" fill="var(--chart-1)" />
                                             <Bar dataKey="merged" stackId="pr" fill="#a855f7" />
                                             <Bar dataKey="closed" stackId="pr" fill="#f59e0b" radius={[0, 5, 5, 0]} />
                                         </BarChart>

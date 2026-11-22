@@ -195,13 +195,13 @@ function CustomLogSummaryPage() {
                         {/* แถบสถานะผลลัพธ์ที่ประมวลผลล่าสุด */}
                         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs">
                             <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-                                <Sparkles className="size-4 text-indigo-700 dark:text-indigo-400" />
+                                <Sparkles className="size-4 text-highlight" />
                                 <span className="font-medium text-foreground">{summary.guild.name}</span>
                                 <span className="text-muted-foreground">•</span>
                                 <span>
                                     {formatBangkokDateTime(summary.range.from)} — {formatBangkokDateTime(summary.range.to)}
                                 </span>
-                                <Badge variant="outline" className="border-border bg-background text-[11px] text-indigo-700 dark:text-indigo-300">
+                                <Badge variant="outline" className="border-border bg-background text-[11px] text-highlight">
                                     <Layers3 className="mr-1 size-3" />
                                     {summary.filters.selectedChannels.length === 0
                                         ? `ทุกห้อง (${summary.availableChannels.length} ห้อง)`

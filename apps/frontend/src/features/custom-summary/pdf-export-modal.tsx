@@ -97,7 +97,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
             <DialogContent className="flex max-h-[calc(100dvh-2rem)] flex-col gap-3 overflow-hidden border-border bg-card p-5 text-foreground sm:max-w-2xl">
                 <DialogHeader className="shrink-0">
                     <DialogTitle className="flex items-center gap-2 text-lg text-foreground">
-                        <FileText className="size-5 text-indigo-700 dark:text-indigo-400" />
+                        <FileText className="size-5 text-highlight" />
                         ตั้งค่าการส่งออกรายงาน PDF
                     </DialogTitle>
                     <DialogDescription className="text-xs text-muted-foreground">
@@ -131,11 +131,11 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 className={cn(
                                     'flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     theme === 'dark'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
+                                        ? 'border-highlight bg-highlight/15'
                                         : 'border-border bg-background hover:border-border',
                                 )}
                             >
-                                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-indigo-700 dark:text-indigo-400">
+                                <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-highlight">
                                     <Moon className="size-4" />
                                 </span>
                                 <div>
@@ -150,7 +150,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 className={cn(
                                     'flex items-start gap-3 rounded-xl border p-3 text-left transition-all',
                                     theme === 'light'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
+                                        ? 'border-highlight bg-highlight/15'
                                         : 'border-border bg-background hover:border-border',
                                 )}
                             >
@@ -175,7 +175,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 className={cn(
                                     'rounded-xl border p-3 text-left transition-all',
                                     detailMode === 'executive'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
+                                        ? 'border-highlight bg-highlight/15'
                                         : 'border-border bg-background hover:border-border',
                                 )}
                             >
@@ -189,7 +189,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                                 className={cn(
                                     'rounded-xl border p-3 text-left transition-all',
                                     detailMode === 'detailed'
-                                        ? 'border-indigo-500 bg-indigo-600/15'
+                                        ? 'border-highlight bg-highlight/15'
                                         : 'border-border bg-background hover:border-border',
                                 )}
                             >
@@ -214,7 +214,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                             type="checkbox"
                             checked={maskIds}
                             onChange={(e) => setMaskIds(e.target.checked)}
-                            className="size-4 accent-indigo-600"
+                            className="size-4 accent-highlight"
                         />
                     </label>
 
@@ -226,7 +226,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         )}
                     >
                         <div className="flex items-center justify-between border-b pb-2 text-[11px] opacity-80">
-                            <span className="font-semibold text-indigo-500">Bot_NotStack V4.2.0 • {summary.guild.name}</span>
+                            <span className="font-semibold text-highlight">Bot_NotStack V4.2.0 • {summary.guild.name}</span>
                             <span>ขนาด A4 • แบ่งหน้าอัตโนมัติ</span>
                         </div>
                         <div className="mt-2 font-semibold">{title.trim() || defaultTitle}</div>

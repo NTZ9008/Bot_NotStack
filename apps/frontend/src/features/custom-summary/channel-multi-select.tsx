@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass: string }> = {
     text: {
         label: 'ห้องแชทข้อความ',
-        badgeClass: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/30',
+        badgeClass: 'bg-highlight/15 text-highlight border-highlight/30',
     },
     voice: {
         label: 'ห้องเสียง',
@@ -27,7 +27,7 @@ const GROUP_META: Record<CustomSummaryChannelGroup, { label: string; badgeClass:
 function GroupIcon({ group }: { group: CustomSummaryChannelGroup }) {
     if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-400" />;
     if (group === 'devops') return <GitPullRequest className="size-3.5 shrink-0 text-purple-700 dark:text-purple-400" />;
-    return <Hash className="size-3.5 shrink-0 text-indigo-700 dark:text-indigo-400" />;
+    return <Hash className="size-3.5 shrink-0 text-highlight" />;
 }
 
 export interface ChannelMultiSelectProps {
@@ -107,10 +107,10 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                     <Button
                         type="button"
                         variant="outline"
-                        className="h-9 w-full justify-between border-border bg-background px-3 text-left font-normal text-foreground hover:border-indigo-500/50 hover:bg-muted"
+                        className="h-9 w-full justify-between border-border bg-background px-3 text-left font-normal text-foreground hover:border-highlight/50 hover:bg-muted"
                     >
                         <span className="flex min-w-0 items-center gap-2 truncate">
-                            <Hash className="size-4 shrink-0 text-indigo-700 dark:text-indigo-400" />
+                            <Hash className="size-4 shrink-0 text-highlight" />
                             <span className="truncate">{triggerSummary}</span>
                         </span>
                         <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
@@ -134,7 +134,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                     type="button"
                                     size="xs"
                                     variant="secondary"
-                                    className="bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-600/30"
+                                    className="bg-highlight/20 text-highlight hover:bg-highlight/30"
                                     onClick={() => onChange(allIds)}
                                 >
                                     <Check className="mr-1 size-3" />
@@ -151,7 +151,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                 </Button>
                             </div>
                             {selectedIds.length > 0 && (
-                                <span className="text-[11px] text-indigo-700 dark:text-indigo-300">เลือกเจาะจง {selectedIds.length} ห้อง</span>
+                                <span className="text-[11px] text-highlight">เลือกเจาะจง {selectedIds.length} ห้อง</span>
                             )}
                         </div>
                     </div>
@@ -173,7 +173,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                 <button
                                                     type="button"
                                                     onClick={() => toggleGroup(items)}
-                                                    className="text-[11px] font-medium text-indigo-700 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                                                    className="text-[11px] font-medium text-highlight hover:text-highlight"
                                                 >
                                                     {allGroupSelected ? 'เอาออกทั้งกลุ่ม' : 'เลือกทั้งกลุ่ม'}
                                                 </button>
@@ -187,7 +187,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                             className={cn(
                                                                 'flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-xs transition-colors',
                                                                 checked
-                                                                    ? 'bg-indigo-600/15 text-foreground'
+                                                                    ? 'bg-highlight/15 text-foreground'
                                                                     : 'text-muted-foreground hover:bg-muted/60',
                                                             )}
                                                         >
@@ -195,7 +195,7 @@ export function ChannelMultiSelect({ channels, selectedIds, onChange, loading }:
                                                                 <Checkbox
                                                                     checked={checked}
                                                                     onCheckedChange={() => toggleOne(ch.id)}
-                                                                    className="border-input data-[state=checked]:border-indigo-500 data-[state=checked]:bg-indigo-600"
+                                                                    className="border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
                                                                 />
                                                                 <span className="truncate font-medium">#{ch.name}</span>
                                                             </span>

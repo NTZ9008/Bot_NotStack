@@ -10,7 +10,7 @@ const toggleVariants = cva(
       variant: {
         default: "bg-transparent",
         // ปุ่มที่เลือกอยู่เป็นสี indigo ให้เห็นชัดบนพื้นเข้ม (เหมือน .segmented ของหน้าเดิม)
-        outline: "border border-input bg-transparent hover:bg-muted data-[state=on]:border-primary/60 data-[state=on]:bg-primary/20 data-[state=on]:text-indigo-200",
+        outline: "border border-input bg-transparent hover:bg-muted data-[state=on]:border-primary/60 data-[state=on]:bg-primary/20 data-[state=on]:text-highlight",
       },
       size: {
         default:

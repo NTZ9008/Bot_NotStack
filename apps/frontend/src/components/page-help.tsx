@@ -21,7 +21,7 @@ export function PageHelp({ guide }: { guide: PageGuide }) {
                         <li key={step} className="flex items-start gap-3 leading-relaxed">
                             <span
                                 aria-hidden="true"
-                                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-indigo-700 dark:text-indigo-300"
+                                className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-highlight"
                             >
                                 {index + 1}
                             </span>

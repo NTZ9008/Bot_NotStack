@@ -46,7 +46,7 @@
     --muted-foreground: oklch(0.48 0 0);
     --accent: oklch(0.95 0 0);
     --accent-foreground: oklch(0.21 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
+    --destructive: oklch(0.5 0.2 27);
     --border: oklch(0.915 0 0);
     --input: oklch(0.87 0 0);
     --ring: oklch(0.58 0.19 255);
@@ -59,11 +59,13 @@
     --info: oklch(0.52 0.18 255);
     --discord: oklch(0.585 0.2 277); /* #5865F2 */
 
-    --chart-1: oklch(0.55 0.22 270);
-    --chart-2: oklch(0.6 0.15 235);
-    --chart-3: oklch(0.6 0.15 162);
-    --chart-4: oklch(0.7 0.17 70);
-    --chart-5: oklch(0.6 0.22 16);
+    --chart-1: oklch(0.62 0.17 251);
+    --chart-2: oklch(0.66 0.17 150);
+    --chart-3: oklch(0.72 0.16 70);
+    --chart-4: oklch(0.62 0.2 20);
+    --chart-5: oklch(0.6 0.14 200);
+    /* สีเน้น (ไอคอน/ป้าย/ข้อความเด่น) */
+    --highlight: oklch(0.53 0.17 251);
 
     /* มุมโค้ง 4px แบบ ref (Mantine radius sm) — rounded-lg = 4px, rounded-xl ≈ 6px */
     --radius: 0.25rem;
@@ -105,11 +107,12 @@
     --warning: oklch(0.769 0.188 70.08);
     --info: oklch(0.746 0.16 232.661);
 
-    --chart-1: oklch(0.585 0.233 277.117);
-    --chart-2: oklch(0.746 0.16 232.661);
-    --chart-3: oklch(0.696 0.17 162.48);
-    --chart-4: oklch(0.769 0.188 70.08);
-    --chart-5: oklch(0.645 0.246 16.439);
+    --chart-1: oklch(0.68 0.15 251);
+    --chart-2: oklch(0.72 0.16 150);
+    --chart-3: oklch(0.77 0.15 70);
+    --chart-4: oklch(0.68 0.19 20);
+    --chart-5: oklch(0.7 0.12 200);
+    --highlight: oklch(0.74 0.12 251);
 
     --sidebar: oklch(0.18 0 0);
     --sidebar-foreground: oklch(0.93 0 0);
@@ -119,6 +122,51 @@
     --sidebar-accent-foreground: oklch(0.97 0 0);
     --sidebar-border: oklch(1 0 0 / 8%);
     --sidebar-ring: oklch(0.65 0.17 255);
+}
+
+/* ธีม "สีเดิม" — ล้อสีหน้า landing: กรมท่าเข้ม #060818 + น้ำเงินไฟฟ้า #2a45ff (ไม่ใช้ร่วมกับธีมขาว/ดำ) */
+.classic {
+    color-scheme: dark;
+
+    --background: #060818;
+    --foreground: #eef0ff;
+    --card: #0b1030;
+    --card-foreground: #eef0ff;
+    --popover: #0e1438;
+    --popover-foreground: #eef0ff;
+    --primary: #2a45ff;
+    --primary-foreground: #ffffff;
+    --secondary: #141c4a;
+    --secondary-foreground: #eef0ff;
+    --muted: #111842;
+    --muted-foreground: #a3acd6;
+    --accent: #18215a;
+    --accent-foreground: #eef0ff;
+    --destructive: oklch(0.637 0.237 25.331);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: #3d56ff;
+    --brand: #3d56ff;
+    --highlight: #8a9bff;
+
+    --success: oklch(0.696 0.17 162.48);
+    --warning: oklch(0.769 0.188 70.08);
+    --info: #8a9bff;
+
+    --chart-1: #5b72ff;
+    --chart-2: #8a9bff;
+    --chart-3: oklch(0.696 0.17 162.48);
+    --chart-4: oklch(0.769 0.188 70.08);
+    --chart-5: oklch(0.645 0.246 16.439);
+
+    --sidebar: #050716;
+    --sidebar-foreground: #dde1ff;
+    --sidebar-primary: #2a45ff;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: rgb(42 69 255 / 18%);
+    --sidebar-accent-foreground: #c3ccff;
+    --sidebar-border: oklch(1 0 0 / 8%);
+    --sidebar-ring: #3d56ff;
 }
 
 @theme inline {
@@ -140,6 +188,7 @@
     --color-chart-1: var(--chart-1);
     --color-ring: var(--ring);
     --color-brand: var(--brand);
+    --color-highlight: var(--highlight);
     --color-input: var(--input);
     --color-border: var(--border);
     --color-destructive: var(--destructive);
@@ -179,6 +228,11 @@
     }
     body {
         @apply bg-background text-foreground;
+    }
+    /* ธีมสีเดิม: แสงน้ำเงินจางๆ มุมซ้ายบนแบบหน้า landing */
+    .classic body {
+        background-image: radial-gradient(circle at 10% 10%, rgb(42 69 255 / 12%) 0%, transparent 50%);
+        background-attachment: fixed;
     }
     button:not(:disabled),
     [role='button']:not(:disabled) {

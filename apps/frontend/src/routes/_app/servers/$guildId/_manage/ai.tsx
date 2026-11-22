@@ -69,7 +69,7 @@ function AiSettingsPage() {
     return <div className="space-y-6">
         <PageHeader title="ตั้งค่า AI Chat" description="จัดการ Gemini API Key และติดตามโควตาการใช้งาน AI ของเซิร์ฟเวอร์นี้" />
         <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="size-5 text-indigo-700 dark:text-indigo-400" />สถานะและ Gemini API Key</CardTitle><CardDescription>Key จะถูกเข้ารหัสก่อนบันทึก และใช้แยกเฉพาะเซิร์ฟเวอร์นี้</CardDescription></CardHeader>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Bot className="size-5 text-highlight" />สถานะและ Gemini API Key</CardTitle><CardDescription>Key จะถูกเข้ารหัสก่อนบันทึก และใช้แยกเฉพาะเซิร์ฟเวอร์นี้</CardDescription></CardHeader>
             <CardContent className="space-y-5">
                 {isLoading ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />กำลังโหลดการตั้งค่า...</div> : <>
                     <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
@@ -77,7 +77,7 @@ function AiSettingsPage() {
                         <div className="flex items-center gap-3"><span className={data?.aiEnabled ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-muted-foreground'}>{data?.aiEnabled ? 'เปิด' : 'ปิด'}</span><Switch checked={Boolean(data?.aiEnabled)} disabled={toggle.isPending || (!data?.aiEnabled && !canEnable)} onCheckedChange={(checked) => toggle.mutate(checked)} /></div>
                     </div>
                     {!data?.aiEnabled && !canEnable && <p className="-mt-2 text-sm text-amber-700 dark:text-amber-400">บันทึก Gemini API Key ก่อน จึงจะเปิดใช้งาน AI ได้</p>}
-                    {data?.isUsingFallbackHomeKey && <p className="rounded-md border border-indigo-400/30 bg-indigo-400/5 p-3 text-sm text-indigo-800 dark:text-indigo-200">เซิร์ฟเวอร์หลักกำลังใช้ Key สำรองจากการตั้งค่าระบบ ({data.maskedKey ?? 'GEMINI_KEY'})</p>}
+                    {data?.isUsingFallbackHomeKey && <p className="rounded-md border border-highlight/30 bg-highlight/5 p-3 text-sm text-highlight">เซิร์ฟเวอร์หลักกำลังใช้ Key สำรองจากการตั้งค่าระบบ ({data.maskedKey ?? 'GEMINI_KEY'})</p>}
                     <div className="grid gap-2"><Label htmlFor="gemini-key">Gemini API Key</Label><div className="flex gap-2"><Input id="gemini-key" type={showKey ? 'text' : 'password'} autoComplete="off" placeholder={data?.maskedKey ?? 'วาง Gemini API Key ที่นี่'} value={apiKey} onChange={(event) => setApiKey(event.target.value)} /><Button variant="outline" size="icon" aria-label={showKey ? 'ซ่อน Key' : 'แสดง Key'} onClick={() => setShowKey(!showKey)}>{showKey ? <EyeOff /> : <Eye />}</Button></div><p className="text-xs text-muted-foreground">{data?.hasKey ? `ตั้งค่าแล้ว: ${data.maskedKey}` : 'ยังไม่ได้ตั้งค่า Key สำหรับเซิร์ฟเวอร์นี้'}</p></div>
                     <div className="flex flex-wrap items-center gap-2">
                         <Button variant="outline" disabled={test.isPending || (!apiKey.trim() && !data?.hasKey && !data?.isUsingFallbackHomeKey)} onClick={() => test.mutate()}>{test.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}ทดสอบ Key</Button>
@@ -86,7 +86,7 @@ function AiSettingsPage() {
                         {testResult && <span className={testResult.ok ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-red-700 dark:text-red-400'}>{testResult.message}</span>}
                     </div>
                     <div className="grid max-w-sm gap-2"><Label htmlFor="daily-limit">ลิมิตคำขอต่อวันของเซิร์ฟเวอร์</Label><Input id="daily-limit" type="number" min="1" max="100000" value={dailyLimit} onChange={(event) => setDailyLimit(event.target.value)} /></div>
-                    <div className="rounded-lg border bg-muted/20 p-4 text-sm"><p className="mb-1 font-medium">ขอ API Key ฟรีจาก Google AI Studio</p><p className="text-muted-foreground">สร้าง API Key ในบัญชี Google แล้วนำมาวางด้านบน เพื่อให้เซิร์ฟเวอร์ใช้โควตาของตัวเอง</p><a className="mt-2 inline-flex items-center gap-1 text-indigo-700 dark:text-indigo-300 hover:underline" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">เปิด Google AI Studio <ExternalLink className="size-3.5" /></a></div>
+                    <div className="rounded-lg border bg-muted/20 p-4 text-sm"><p className="mb-1 font-medium">ขอ API Key ฟรีจาก Google AI Studio</p><p className="text-muted-foreground">สร้าง API Key ในบัญชี Google แล้วนำมาวางด้านบน เพื่อให้เซิร์ฟเวอร์ใช้โควตาของตัวเอง</p><a className="mt-2 inline-flex items-center gap-1 text-highlight hover:underline" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">เปิด Google AI Studio <ExternalLink className="size-3.5" /></a></div>
                 </>}
             </CardContent>
         </Card>

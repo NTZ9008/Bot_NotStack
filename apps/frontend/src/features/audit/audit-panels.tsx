@@ -25,7 +25,7 @@ const ALL = '__all__';
 
 // สีของป้าย action ตามหมวด
 const GROUP_TONE: Record<string, string> = {
-    auth: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+    auth: 'bg-highlight/15 text-highlight',
     user: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
     config: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
     news: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
@@ -41,7 +41,7 @@ const GROUP_TONE: Record<string, string> = {
 // สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager
 const ACTIVITY_TONE: Record<string, string> = {
     สมาชิก: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-    ข้อความ: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+    ข้อความ: 'bg-highlight/15 text-highlight',
     'ช่อง & เธรด': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
     'บทบาท & เซิร์ฟเวอร์': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
     ห้องเสียง: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',

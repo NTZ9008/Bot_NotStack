@@ -110,7 +110,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
                             ก่อนส่งครั้งแรก เลือกห้องประกาศใน{' '}
-                            <Link to="/servers/$guildId/config" params={{ guildId }} className="text-indigo-700 dark:text-indigo-300 underline underline-offset-4">
+                            <Link to="/servers/$guildId/config" params={{ guildId }} className="text-highlight underline underline-offset-4">
                                 ตั้งค่าบอท
                             </Link>
                         </p>

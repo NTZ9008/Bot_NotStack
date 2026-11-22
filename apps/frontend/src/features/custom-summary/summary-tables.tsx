@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { formatBangkokShortTime, formatThaiDuration } from './timezone';
 
 const KIND_BADGE: Record<CustomSummaryChannelGroup, { label: string; className: string }> = {
-    text: { label: 'ข้อความ', className: 'border-indigo-500/30 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
+    text: { label: 'ข้อความ', className: 'border-highlight/30 bg-highlight/15 text-highlight' },
     voice: { label: 'ห้องเสียง', className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
     devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
 };
@@ -315,7 +315,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                            <ListTree className="size-4 text-indigo-700 dark:text-indigo-400" />
+                            <ListTree className="size-4 text-highlight" />
                             รายการ Log รายบรรทัด ({summary.detailedLogs.length} รายการล่าสุด)
                         </CardTitle>
                         <CardDescription className="text-xs text-muted-foreground">

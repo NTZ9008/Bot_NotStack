@@ -117,7 +117,7 @@ export function SummaryKpis({ summary }: { summary: CustomSummaryResponse }) {
                             {enabled.has('githubPr') ? (
                                 <>
                                     <span>
-                                        เปิด/อัปเดต <strong className="text-indigo-700 dark:text-indigo-400">{githubPr.openedOrUpdated}</strong>
+                                        เปิด/อัปเดต <strong className="text-highlight">{githubPr.openedOrUpdated}</strong>
                                     </span>
                                     <span>
                                         Merge <strong className="text-purple-700 dark:text-purple-400">{githubPr.merged}</strong>
@@ -138,11 +138,11 @@ export function SummaryKpis({ summary }: { summary: CustomSummaryResponse }) {
                     <CardContent className="pt-5">
                         <div className="flex items-start justify-between gap-2">
                             <span className="text-xs font-medium text-muted-foreground">จำนวนผู้ใช้งานที่มีส่วนร่วม</span>
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-700 dark:text-indigo-400">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-highlight/15 text-highlight">
                                 <Users className="size-4" />
                             </span>
                         </div>
-                        <div className="mt-2 text-3xl font-bold tracking-tight text-indigo-700 dark:text-indigo-400">
+                        <div className="mt-2 text-3xl font-bold tracking-tight text-highlight">
                             {activeUsers.toLocaleString('en-US')}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -201,12 +201,12 @@ export function SummaryKpis({ summary }: { summary: CustomSummaryResponse }) {
                     <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
                         <div>
                             <div className="text-[11px] font-medium text-muted-foreground">คำสั่งบอทที่ใช้งาน</div>
-                            <div className="mt-0.5 text-lg font-bold text-indigo-700 dark:text-indigo-400">
+                            <div className="mt-0.5 text-lg font-bold text-highlight">
                                 {devopsOther.commandsUsed.toLocaleString('en-US')}
                             </div>
                             <div className="text-[11px] text-muted-foreground">Slash Commands ในขอบเขตที่กรอง</div>
                         </div>
-                        <Terminal className="size-5 text-indigo-700/70 dark:text-indigo-400/70" />
+                        <Terminal className="size-5 text-highlight/70" />
                     </div>
                 </div>
             )}

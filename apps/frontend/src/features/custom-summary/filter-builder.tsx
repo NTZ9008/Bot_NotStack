@@ -64,7 +64,7 @@ const MODULE_OPTIONS: Array<{
         title: 'สถิติห้องเสียง',
         hint: 'voiceJoin, voiceLeave, เวลารวม & เฉลี่ยต่อครั้ง',
         icon: Volume2,
-        activeClass: 'border-sky-500/50 bg-sky-500/10 text-sky-100',
+        activeClass: 'border-sky-500/50 bg-sky-500/10 text-sky-900 dark:text-sky-100',
         iconClass: 'text-sky-700 dark:text-sky-400',
     },
     {
@@ -72,7 +72,7 @@ const MODULE_OPTIONS: Array<{
         title: 'สถิติห้องข้อความ',
         hint: 'messageSent, ลบ/แก้ไข, ห้องที่คึกคักที่สุด',
         icon: MessageSquareText,
-        activeClass: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-100',
+        activeClass: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100',
         iconClass: 'text-emerald-700 dark:text-emerald-400',
     },
     {
@@ -80,7 +80,7 @@ const MODULE_OPTIONS: Array<{
         title: 'สถิติ GitHub PR',
         hint: 'PR เปิด/อัปเดต, Merge, ปิด PR แยกตาม Repo/ห้อง',
         icon: GitPullRequest,
-        activeClass: 'border-purple-500/50 bg-purple-500/10 text-purple-100',
+        activeClass: 'border-purple-500/50 bg-purple-500/10 text-purple-900 dark:text-purple-100',
         iconClass: 'text-purple-700 dark:text-purple-400',
     },
     {
@@ -88,7 +88,7 @@ const MODULE_OPTIONS: Array<{
         title: 'สถิติ DevOps & อื่นๆ',
         hint: 'Grafana Alert, Jira Card, สมาชิกเข้า/ออกเซิร์ฟเวอร์',
         icon: Activity,
-        activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-100',
+        activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
         iconClass: 'text-amber-700 dark:text-amber-400',
     },
 ];
@@ -147,7 +147,7 @@ export function FilterBuilder({
         <section className="rounded-xl border border-border bg-card p-5 shadow-lg shadow-black/25">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3.5">
                 <div className="flex items-center gap-2.5">
-                    <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-600/20 text-indigo-700 dark:text-indigo-400">
+                    <span className="flex size-8 items-center justify-center rounded-lg bg-highlight/20 text-highlight">
                         <Filter className="size-4" />
                     </span>
                     <div>
@@ -175,7 +175,7 @@ export function FilterBuilder({
                 <div className="grid gap-4 lg:grid-cols-12">
                     <div className="space-y-2 lg:col-span-5">
                         <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                            <CalendarClock className="size-3.5 text-indigo-700 dark:text-indigo-400" />
+                            <CalendarClock className="size-3.5 text-highlight" />
                             ช่วงเวลาดึงข้อมูล
                         </Label>
                         <div className="flex flex-wrap gap-1.5">
@@ -207,6 +207,7 @@ export function FilterBuilder({
                             <Label className="text-[11px] text-muted-foreground">วัน-เวลาเริ่มต้น</Label>
                             <Input
                                 type="datetime-local"
+                                aria-label="วัน-เวลาเริ่มต้น"
                                 value={draft.fromInput}
                                 onChange={(e) => onUpdate({ preset: 'custom', fromInput: e.target.value })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
@@ -216,6 +217,7 @@ export function FilterBuilder({
                             <Label className="text-[11px] text-muted-foreground">วัน-เวลาสิ้นสุด</Label>
                             <Input
                                 type="datetime-local"
+                                aria-label="วัน-เวลาสิ้นสุด"
                                 value={draft.toInput}
                                 onChange={(e) => onUpdate({ preset: 'custom', toInput: e.target.value })}
                                 className="h-9 border-border bg-background text-xs text-foreground"
@@ -224,7 +226,7 @@ export function FilterBuilder({
                         <div className="space-y-1.5">
                             <Label className="text-[11px] text-muted-foreground">ความละเอียดกราฟ</Label>
                             <Select value={draft.interval} onValueChange={(v) => onUpdate({ interval: v as 'auto' | 'hour' | 'day' })}>
-                                <SelectTrigger className="h-9 w-full border-border bg-background text-xs text-foreground">
+                                <SelectTrigger aria-label="ความละเอียดกราฟ" className="h-9 w-full border-border bg-background text-xs text-foreground">
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="border-border bg-card text-foreground">
@@ -252,7 +254,7 @@ export function FilterBuilder({
                     <div className="grid gap-3 sm:grid-cols-12 lg:col-span-6">
                         <div className="space-y-1.5 sm:col-span-8">
                             <Label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                                <UserRound className="size-3.5 text-indigo-700 dark:text-indigo-400" />
+                                <UserRound className="size-3.5 text-highlight" />
                                 กรองตามผู้ใช้ / User ID
                             </Label>
                             <div className="flex gap-1.5">
@@ -323,7 +325,7 @@ export function FilterBuilder({
                                                                 });
                                                                 setMemberPopoverOpen(false);
                                                             }}
-                                                            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-indigo-600/20"
+                                                            className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-highlight/20"
                                                         >
                                                             <span className="truncate font-medium text-foreground">{displayName}</span>
                                                             <span className="ml-2 shrink-0 text-[10px] text-muted-foreground">{member.userId}</span>
@@ -364,6 +366,7 @@ export function FilterBuilder({
                                 <button
                                     key={mod.key}
                                     type="button"
+                                    aria-pressed={checked}
                                     onClick={() => toggleModule(mod.key)}
                                     className={cn(
                                         'flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all',
@@ -373,8 +376,10 @@ export function FilterBuilder({
                                     )}
                                 >
                                     <Checkbox
+                                        aria-hidden
+                                        tabIndex={-1}
                                         checked={checked}
-                                        className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-indigo-400 data-[state=checked]:bg-indigo-600"
+                                        className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
                                     />
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-1.5 text-xs font-semibold">
@@ -417,7 +422,7 @@ export function FilterBuilder({
                             variant="outline"
                             onClick={onOpenPdfModal}
                             disabled={!hasSummary || isProcessing}
-                            className="h-9 border-indigo-500/40 bg-indigo-500/10 px-4 font-medium text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/20 hover:text-indigo-800 dark:hover:text-indigo-200"
+                            className="h-9 border-highlight/40 bg-highlight/10 px-4 font-medium text-highlight hover:bg-highlight/20 hover:text-highlight"
                         >
                             <Download className="mr-1.5 size-4" />
                             Export เป็น PDF

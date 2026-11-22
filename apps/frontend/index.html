@@ -74,7 +74,8 @@
       // ธีมสว่าง/มืด: ใส่ class ก่อนวาดหน้า จะได้ไม่กะพริบ (ค่าเริ่มต้นตามระบบ) — ต้องตรงกับ src/hooks/use-theme.ts
       try {
         var t = localStorage.getItem('theme');
-        if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
+        if (t === 'classic') document.documentElement.classList.add('dark', 'classic');
+        else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
       } catch (e) {}
     </script>
     <style>
@@ -99,6 +100,11 @@
         color: #1f1f1f;
         font-family: 'LINESeedSansTH', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
         z-index: 50;
+      }
+      html.classic,
+      html.classic body,
+      html.classic .app-splash {
+        background: #060818;
       }
       html.dark .app-splash {
         background: #1c1c1c;

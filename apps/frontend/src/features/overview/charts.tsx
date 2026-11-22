@@ -5,7 +5,7 @@ import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartToo
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // สีของกราฟโดนัท — วนใช้ซ้ำเมื่อชนิดเหตุการณ์มีมากกว่าจำนวนสี
-const PALETTE = ['#6366f1', '#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#a78bfa', '#14b8a6', '#fb923c', '#64748b'];
+const PALETTE = ['var(--chart-1)', '#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#a78bfa', '#14b8a6', '#fb923c', '#64748b'];
 
 const serverConfig = {
     serverJoin: { label: 'เข้าเซิร์ฟเวอร์', color: '#10b981' },
@@ -15,7 +15,7 @@ const voiceConfig = {
     voiceJoin: { label: 'เข้าห้องเสียง', color: '#38bdf8' },
     voiceLeave: { label: 'ออกห้องเสียง', color: '#f59e0b' },
 } satisfies ChartConfig;
-const usersConfig = { total: { label: 'จำนวนเหตุการณ์', color: '#6366f1' } } satisfies ChartConfig;
+const usersConfig = { total: { label: 'จำนวนเหตุการณ์', color: 'var(--chart-1)' } } satisfies ChartConfig;
 
 // label จาก API เป็น 'YYYY-MM-DD HH:00' (ตามโซนเวลา) — ย่อให้อ่านง่ายบนแกน X
 function shortLabel(bucket: string, interval: string): string {
