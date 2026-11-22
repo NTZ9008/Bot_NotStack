@@ -4,13 +4,13 @@ import { ArrowUpRight, Check, Menu, X } from '@/components/icons';
 import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { DiscordIcon } from '@/components/discord-icon';
+import { usePageMeta } from '@/hooks/use-page-meta';
 import { CommandSearch } from './command-search';
 import { LoyKrathong, LoyKrathongRaft, loyKrathongCrew } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
-import { usePageMeta } from './legal-pages';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { SystemStatus } from './system-status';
 import './landing.css';
@@ -574,17 +574,17 @@ function Features({ botName, botAvatar }: { botName: string; botAvatar: string }
                             </span>
                             <h3 className="mt-4 text-[clamp(1.75rem,3.5vw,2.5rem)] leading-tight font-black tracking-tight">{group.label}</h3>
                             <p className="mt-1 text-slate-300">{group.intro}</p>
-                            <dl className={`mt-6 grid gap-x-6 gap-y-4 ${wide ? 'sm:grid-cols-2 xl:grid-cols-1' : ''}`}>
+                            <ul className={`mt-6 grid gap-x-6 gap-y-4 ${wide ? 'sm:grid-cols-2 xl:grid-cols-1' : ''}`}>
                                 {group.features.map((feature) => (
-                                    <div key={feature.title} className="flex gap-2.5">
-                                        <Check className="mt-0.5 size-4 shrink-0 text-[var(--ld-blue-ink)]" />
+                                    <li key={feature.title} className="flex gap-2.5">
+                                        <Check aria-hidden className="mt-0.5 size-4 shrink-0 text-[var(--ld-blue-ink)]" />
                                         <div>
-                                            <dt className="font-semibold">{feature.title}</dt>
-                                            <dd className="text-sm text-pretty text-slate-400">{feature.description}</dd>
+                                            <p className="font-semibold">{feature.title}</p>
+                                            <p className="text-sm text-pretty text-slate-400">{feature.description}</p>
                                         </div>
-                                    </div>
+                                    </li>
                                 ))}
-                            </dl>
+                            </ul>
                         </div>
                         <div className="relative min-w-0">
                             <FeatureIllustration group={group.id} botName={botName} botAvatar={botAvatar} />
@@ -716,12 +716,7 @@ export function LandingPage() {
     }, []);
     const featureNames = FEATURE_GROUPS.flatMap((group) => group.features.map((feature) => feature.title));
 
-    usePageMeta({
-        title: 'Bot_NotStack — บอท Discord ภาษาไทยพร้อมเว็บ Dashboard',
-        description:
-            'Bot_NotStack บอท Discord ภาษาไทยจากเซิร์ฟ NotStackOverflow กันคนป่วน ต้อนรับคนใหม่ เก็บเลเวล XP แจ้งอากาศ เช็ค PR/Jira ตั้งค่าผ่านเว็บ Dashboard ได้หมด',
-        path: '/',
-    });
+    usePageMeta('/');
 
     return (
         <div className="landing dark min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">

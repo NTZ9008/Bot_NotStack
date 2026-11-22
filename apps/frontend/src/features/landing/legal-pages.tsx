@@ -4,28 +4,9 @@ import { ArrowLeft, FileText, ShieldCheck } from '@/components/icons';
 import { useEffect, type ReactNode } from 'react';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
 import { Button } from '@/components/ui/button';
+import { usePageMeta } from '@/hooks/use-page-meta';
 
-const SITE_ORIGIN = 'https://bntdash.arlifzs.com';
 const LAST_UPDATED = '22 ตุลาคม 2569';
-
-export function usePageMeta({ title, description, path }: { title: string; description: string; path: string }) {
-    useEffect(() => {
-        const url = `${SITE_ORIGIN}${path}`;
-        document.title = title;
-        const setMeta = (selector: string, content: string) => {
-            const el = document.querySelector<HTMLMetaElement>(selector);
-            if (el) el.content = content;
-        };
-        setMeta('meta[name="description"]', description);
-        setMeta('meta[property="og:title"]', title);
-        setMeta('meta[property="og:description"]', description);
-        setMeta('meta[property="og:url"]', url);
-        setMeta('meta[name="twitter:title"]', title);
-        setMeta('meta[name="twitter:description"]', description);
-        const canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-        if (canonical) canonical.href = url;
-    }, [title, description, path]);
-}
 
 function LegalLayout({
     active,
@@ -125,12 +106,7 @@ function SectionBlock({ number, title, children }: { number: string; title: stri
 }
 
 export function PrivacyPolicyPage() {
-    usePageMeta({
-        title: 'นโยบายความเป็นส่วนตัว (Privacy Policy) — Bot_NotStack',
-        description:
-            'นโยบายความเป็นส่วนตัวของ Bot_NotStack และเว็บ Dashboard อธิบายข้อมูลที่จัดเก็บ การแยกสิทธิ์ตามเซิร์ฟเวอร์ มาตรการความปลอดภัย และสิทธิ์ของผู้ใช้งาน',
-        path: '/privacy',
-    });
+    usePageMeta('/privacy');
 
     return (
         <LegalLayout
@@ -234,11 +210,7 @@ export function PrivacyPolicyPage() {
 }
 
 export function TermsOfServicePage() {
-    usePageMeta({
-        title: 'ข้อกำหนดการใช้งาน (Terms of Service) — Bot_NotStack',
-        description: 'ข้อกำหนดและเงื่อนไขการใช้งานบอท Discord Bot_NotStack และเว็บ Dashboard สำหรับเจ้าของเซิร์ฟเวอร์และผู้ใช้งาน',
-        path: '/terms',
-    });
+    usePageMeta('/terms');
 
     return (
         <LegalLayout
