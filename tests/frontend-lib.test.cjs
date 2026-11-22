@@ -395,7 +395,7 @@ test('command palette guide walks through a partial XP command step by step', ()
 });
 
 test('SEO prerender gives each public page its own head and crawlable body', () => {
-    const { renderPageHtml } = require('../apps/frontend/src/lib/seo.ts');
+    const { renderPageHtml } = require('../apps/frontend/src/lib/seo-prerender.ts');
     const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');
     const privacy = renderPageHtml(html, '/privacy');
     assert.match(privacy, /<link rel="canonical" href="https:\/\/bntdash\.arlifzs\.com\/privacy"/);
