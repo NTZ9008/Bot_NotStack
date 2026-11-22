@@ -77,7 +77,7 @@ export function PeriodFields({
                                 <span>
                                     {' '}
                                     (วันละ {formatBaht(dailyRate)} ={' '}
-                                    <span className="font-semibold text-emerald-400">
+                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
                                         {formatBaht(days * dailyRate)}
                                         {amountSuffix}
                                     </span>

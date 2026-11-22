@@ -78,18 +78,18 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
     return (
         <div className="space-y-4">
             {/* 1. กราฟแนวโน้มการใช้งานตามช่วงเวลา */}
-            <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+            <Card className="rounded-xl border-border bg-card">
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                            <TrendingUp className="size-4 text-indigo-400" />
+                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                            <TrendingUp className="size-4 text-indigo-700 dark:text-indigo-400" />
                             แนวโน้มกิจกรรมตามช่วงเวลา ({summary.range.interval === 'hour' ? 'รายชั่วโมง' : 'รายวัน'})
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-400">
+                        <CardDescription className="text-xs text-muted-foreground">
                             เปรียบเทียบปริมาณข้อความ เวลาห้องเสียง GitHub PR และ DevOps ตามเวลาไทย Asia/Bangkok
                         </CardDescription>
                     </div>
-                    <div className="flex items-center gap-1 rounded-lg border border-[#1e2638] bg-[#0b0e17] p-1">
+                    <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
                         <Button
                             type="button"
                             size="xs"
@@ -97,7 +97,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                             onClick={() => setChartMode('area')}
                             className={cn(
                                 'h-7 px-2.5 text-xs',
-                                chartMode === 'area' ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'text-slate-400 hover:text-slate-100',
+                                chartMode === 'area' ? 'bg-primary text-primary-foreground hover:bg-primary/80' : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
                             <TrendingUp className="mr-1 size-3" />
@@ -110,7 +110,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                             onClick={() => setChartMode('bar')}
                             className={cn(
                                 'h-7 px-2.5 text-xs',
-                                chartMode === 'bar' ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'text-slate-400 hover:text-slate-100',
+                                chartMode === 'bar' ? 'bg-primary text-primary-foreground hover:bg-primary/80' : 'text-muted-foreground hover:text-foreground',
                             )}
                         >
                             <BarChart3 className="mr-1 size-3" />
@@ -207,13 +207,13 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
             {(enabled.has('voice') || enabled.has('githubPr')) && (
                 <div className={cn('grid gap-4', enabled.has('voice') && enabled.has('githubPr') ? 'lg:grid-cols-2' : 'grid-cols-1')}>
                     {enabled.has('voice') && (
-                        <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+                        <Card className="rounded-xl border-border bg-card">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                                    <Volume2 className="size-4 text-sky-400" />
+                                <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                                    <Volume2 className="size-4 text-sky-700 dark:text-sky-400" />
                                     สัดส่วนเวลาใช้งานห้องเสียง
                                 </CardTitle>
-                                <CardDescription className="text-xs text-slate-400">
+                                <CardDescription className="text-xs text-muted-foreground">
                                     เวลาคุยรวม (นาที) จากการจับคู่ voiceJoin / voiceLeave / voiceSwitch แยกแต่ละห้อง
                                 </CardDescription>
                             </CardHeader>
@@ -240,11 +240,11 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                                             const payload = item?.payload as (typeof voiceData)[number] | undefined;
                                                             return (
                                                                 <div className="space-y-0.5 text-xs">
-                                                                    <div className="font-semibold text-sky-400">
+                                                                    <div className="font-semibold text-sky-700 dark:text-sky-400">
                                                                         {payload?.durationText ?? `${value} นาที`}
                                                                     </div>
                                                                     {payload && (
-                                                                        <div className="text-slate-400">
+                                                                        <div className="text-muted-foreground">
                                                                             เข้า {payload.joins} • ออก {payload.leaves} • เฉลี่ย {payload.avgSessionMinutes} น.
                                                                         </div>
                                                                     )}
@@ -263,18 +263,18 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                     )}
 
                     {enabled.has('githubPr') && (
-                        <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+                        <Card className="rounded-xl border-border bg-card">
                             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
-                                    <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                                        <GitPullRequest className="size-4 text-purple-400" />
+                                    <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                                        <GitPullRequest className="size-4 text-purple-700 dark:text-purple-400" />
                                         ความถี่การเปิด / Merge / ปิด PR
                                     </CardTitle>
-                                    <CardDescription className="text-xs text-slate-400">
+                                    <CardDescription className="text-xs text-muted-foreground">
                                         แยกตาม Repository หรือห้องแจ้งเตือน Discord ที่เลือก
                                     </CardDescription>
                                 </div>
-                                <div className="flex items-center gap-1 rounded-lg border border-[#1e2638] bg-[#0b0e17] p-1">
+                                <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
                                     <Button
                                         type="button"
                                         size="xs"
@@ -282,7 +282,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                         onClick={() => setPrMode('repo')}
                                         className={cn(
                                             'h-7 px-2 text-xs',
-                                            prMode === 'repo' ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'text-slate-400 hover:text-slate-100',
+                                            prMode === 'repo' ? 'bg-primary text-primary-foreground hover:bg-primary/80' : 'text-muted-foreground hover:text-foreground',
                                         )}
                                     >
                                         แยกตาม Repo
@@ -294,7 +294,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                         onClick={() => setPrMode('channel')}
                                         className={cn(
                                             'h-7 px-2 text-xs',
-                                            prMode === 'channel' ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'text-slate-400 hover:text-slate-100',
+                                            prMode === 'channel' ? 'bg-primary text-primary-foreground hover:bg-primary/80' : 'text-muted-foreground hover:text-foreground',
                                         )}
                                     >
                                         แยกตามห้อง
@@ -333,13 +333,13 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
 
             {/* 3. กราฟ DevOps & สมาชิกเข้า/ออก (เมื่อเปิด devopsOther) */}
             {enabled.has('devopsOther') && timelineData.length > 0 && (
-                <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+                <Card className="rounded-xl border-border bg-card">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                            <ShieldAlert className="size-4 text-amber-400" />
+                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                            <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400" />
                             สถิติ DevOps & การเข้า-ออกเซิร์ฟเวอร์
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-400">
+                        <CardDescription className="text-xs text-muted-foreground">
                             แนวโน้ม Grafana Alert, การ์ด Jira และการเข้า/ออกของสมาชิกเซิร์ฟเวอร์
                         </CardDescription>
                     </CardHeader>

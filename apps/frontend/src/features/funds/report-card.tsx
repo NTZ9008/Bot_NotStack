@@ -94,7 +94,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                 </div>
 
                 {showPreview && (
-                    <div className="rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
+                    <div className="dark rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
                         <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
                             <span className="flex items-center gap-1.5">
                                 <ImageIcon className="size-3.5 shrink-0" /> ตัวอย่างการ์ดรายงาน · PNG
@@ -115,7 +115,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             </p>
                         )}
 
-                        <div className="overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
+                        <div className="dark overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
                             <img
                                 src={previewUrl}
                                 alt={`รายงานการเก็บเงิน: ${topic.name}`}

@@ -91,7 +91,7 @@ function LogManagerPage() {
                             </p>
                         )}
                         <Tabs defaultValue="events" className="gap-5">
-                            <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit">
+                            <TabsList variant="line" className="overflow-x-auto">
                                 <TabsTrigger value="events" className="px-4 py-2">
                                     เหตุการณ์และห้อง
                                 </TabsTrigger>

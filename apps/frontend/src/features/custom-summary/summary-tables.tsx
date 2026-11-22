@@ -19,16 +19,16 @@ import { cn } from '@/lib/utils';
 import { formatBangkokShortTime, formatThaiDuration } from './timezone';
 
 const KIND_BADGE: Record<CustomSummaryChannelGroup, { label: string; className: string }> = {
-    text: { label: 'ข้อความ', className: 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300' },
-    voice: { label: 'ห้องเสียง', className: 'border-sky-500/30 bg-sky-500/15 text-sky-300' },
-    devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-300' },
+    text: { label: 'ข้อความ', className: 'border-indigo-500/30 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300' },
+    voice: { label: 'ห้องเสียง', className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+    devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
 };
 
 const SOURCE_BADGE: Record<CustomSummaryLogRow['source'], { label: string; className: string }> = {
-    activity: { label: 'Discord', className: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300' },
-    pr: { label: 'GitHub PR', className: 'border-purple-500/30 bg-purple-500/15 text-purple-300' },
-    grafana: { label: 'Grafana', className: 'border-sky-500/30 bg-sky-500/15 text-sky-300' },
-    jira: { label: 'Jira', className: 'border-amber-500/30 bg-amber-500/15 text-amber-300' },
+    activity: { label: 'Discord', className: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
+    pr: { label: 'GitHub PR', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
+    grafana: { label: 'Grafana', className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+    jira: { label: 'Jira', className: 'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300' },
 };
 
 /** ตารางสรุปแยกตามห้อง, อันดับผู้ใช้งานสูงสุด และตัวอย่างรายการ Log รายบรรทัด */
@@ -44,8 +44,8 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 header: 'ชื่อห้อง',
                 cell: ({ row }) => (
                     <div className="min-w-0">
-                        <div className="font-medium text-slate-100">#{row.original.channelName}</div>
-                        <div className="text-[11px] text-slate-500">{row.original.channelId}</div>
+                        <div className="font-medium text-foreground">#{row.original.channelName}</div>
+                        <div className="text-[11px] text-muted-foreground">{row.original.channelId}</div>
                     </div>
                 ),
             },
@@ -65,7 +65,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorKey: 'messages',
                 header: 'จำนวนข้อความ',
                 cell: ({ row }) => (
-                    <span className={row.original.messages > 0 ? 'font-medium text-slate-100 tabular-nums' : 'text-slate-500'}>
+                    <span className={row.original.messages > 0 ? 'font-medium text-foreground tabular-nums' : 'text-muted-foreground'}>
                         {row.original.messages > 0 ? row.original.messages.toLocaleString('en-US') : '-'}
                     </span>
                 ),
@@ -75,12 +75,12 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 header: 'เวลาคุยรวม',
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 font-medium text-sky-400">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-sky-700 dark:text-sky-400">
                             <Volume2 className="size-3.5 shrink-0" />
                             {formatThaiDuration(row.original.voiceSeconds)}
                         </span>
                     ) : (
-                        <span className="text-slate-500">-</span>
+                        <span className="text-muted-foreground">-</span>
                     ),
             },
             {
@@ -90,20 +90,20 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 cell: ({ row }) => {
                     const r = row.original;
                     const total = r.prEvents + r.grafanaAlerts + r.jiraCards + r.otherEvents;
-                    if (total === 0) return <span className="text-slate-500">-</span>;
+                    if (total === 0) return <span className="text-muted-foreground">-</span>;
                     return (
                         <div className="flex flex-wrap gap-1.5 text-xs">
                             {r.prEvents > 0 && (
-                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-300">PR {r.prEvents}</span>
+                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">PR {r.prEvents}</span>
                             )}
                             {r.grafanaAlerts > 0 && (
-                                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-sky-300">Alert {r.grafanaAlerts}</span>
+                                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-sky-700 dark:text-sky-300">Alert {r.grafanaAlerts}</span>
                             )}
                             {r.jiraCards > 0 && (
-                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-300">Jira {r.jiraCards}</span>
+                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">Jira {r.jiraCards}</span>
                             )}
                             {r.otherEvents > 0 && (
-                                <span className="rounded bg-slate-700/60 px-1.5 py-0.5 text-slate-300">อื่นๆ {r.otherEvents}</span>
+                                <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">อื่นๆ {r.otherEvents}</span>
                             )}
                         </div>
                     );
@@ -127,14 +127,14 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 cell: ({ row }) => (
                     <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                            <span className="truncate font-medium text-slate-100">{row.original.userName}</span>
+                            <span className="truncate font-medium text-foreground">{row.original.userName}</span>
                             {row.original.isBot && (
-                                <Badge variant="outline" className="border-slate-700 bg-slate-800 px-1.5 text-[10px] text-slate-300">
+                                <Badge variant="outline" className="border-border bg-muted px-1.5 text-[10px] text-muted-foreground">
                                     BOT
                                 </Badge>
                             )}
                         </div>
-                        <div className="font-mono text-[11px] text-slate-500">{row.original.userId}</div>
+                        <div className="font-mono text-[11px] text-muted-foreground">{row.original.userId}</div>
                     </div>
                 ),
             },
@@ -144,18 +144,18 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
                         <div>
-                            <div className="font-medium text-sky-400">{formatThaiDuration(row.original.voiceSeconds)}</div>
-                            <div className="text-[11px] text-slate-400">{row.original.voiceSessions} เซสชัน</div>
+                            <div className="font-medium text-sky-700 dark:text-sky-400">{formatThaiDuration(row.original.voiceSeconds)}</div>
+                            <div className="text-[11px] text-muted-foreground">{row.original.voiceSessions} เซสชัน</div>
                         </div>
                     ) : (
-                        <span className="text-slate-500">-</span>
+                        <span className="text-muted-foreground">-</span>
                     ),
             },
             {
                 accessorKey: 'messages',
                 header: 'ข้อความที่ส่ง',
                 cell: ({ row }) => (
-                    <span className={row.original.messages > 0 ? 'font-medium text-slate-100 tabular-nums' : 'text-slate-500'}>
+                    <span className={row.original.messages > 0 ? 'font-medium text-foreground tabular-nums' : 'text-muted-foreground'}>
                         {row.original.messages > 0 ? row.original.messages.toLocaleString('en-US') : '-'}
                     </span>
                 ),
@@ -166,14 +166,14 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorFn: (row) => row.prActivity + row.jiraTickets,
                 cell: ({ row }) => {
                     const { prActivity, jiraTickets } = row.original;
-                    if (prActivity + jiraTickets === 0) return <span className="text-slate-500">-</span>;
+                    if (prActivity + jiraTickets === 0) return <span className="text-muted-foreground">-</span>;
                     return (
                         <div className="flex flex-wrap gap-1.5 text-xs">
                             {prActivity > 0 && (
-                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-300">{prActivity} PR</span>
+                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">{prActivity} PR</span>
                             )}
                             {jiraTickets > 0 && (
-                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-300">{jiraTickets} Jira</span>
+                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">{jiraTickets} Jira</span>
                             )}
                         </div>
                     );
@@ -189,7 +189,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorKey: 'createdAt',
                 header: 'เวลา',
                 cell: ({ row }) => (
-                    <span className="whitespace-nowrap font-mono text-xs text-slate-400">
+                    <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                         {formatBangkokShortTime(row.original.createdAt)}
                     </span>
                 ),
@@ -204,7 +204,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             <Badge variant="outline" className={cn('text-[10px]', badge.className)}>
                                 {badge.label}
                             </Badge>
-                            <span className="text-xs font-medium text-slate-200">{row.original.eventLabel}</span>
+                            <span className="text-xs font-medium text-foreground">{row.original.eventLabel}</span>
                         </div>
                     );
                 },
@@ -213,14 +213,14 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorKey: 'userName',
                 header: 'ผู้กระทำ',
                 cell: ({ row }) => (
-                    <span className="text-xs text-slate-200">{row.original.userName || row.original.userId || '-'}</span>
+                    <span className="text-xs text-foreground">{row.original.userName || row.original.userId || '-'}</span>
                 ),
             },
             {
                 accessorKey: 'channelName',
                 header: 'ห้อง',
                 cell: ({ row }) => (
-                    <span className="text-xs text-slate-300">
+                    <span className="text-xs text-muted-foreground">
                         {row.original.channelName ? `#${row.original.channelName}` : '-'}
                     </span>
                 ),
@@ -228,7 +228,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             {
                 accessorKey: 'summary',
                 header: 'รายละเอียด',
-                cell: ({ row }) => <span className="line-clamp-2 text-xs text-slate-400">{row.original.summary}</span>,
+                cell: ({ row }) => <span className="line-clamp-2 text-xs text-muted-foreground">{row.original.summary}</span>,
             },
         ],
         [],
@@ -237,24 +237,24 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
     return (
         <div className="space-y-4">
             {/* ตารางที่ 1: สรุปตามห้อง */}
-            <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+            <Card className="rounded-xl border-border bg-card">
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                            <FileSpreadsheet className="size-4 text-emerald-400" />
+                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                            <FileSpreadsheet className="size-4 text-emerald-700 dark:text-emerald-400" />
                             ตารางที่ 1: สรุปตามห้อง
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-400">
+                        <CardDescription className="text-xs text-muted-foreground">
                             แสดงชื่อห้อง ประเภท จำนวนข้อความ เวลาคุยรวม และกิจกรรม DevOps ในขอบเขตที่เลือก
                         </CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
-                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-400" />
+                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={channelSearch}
                             onChange={(e) => setChannelSearch(e.target.value)}
                             placeholder="กรองชื่อห้องในตาราง..."
-                            className="h-8 border-[#1e2638] bg-[#0b0e17] pl-8 text-xs text-slate-100"
+                            className="h-8 border-border bg-background pl-8 text-xs text-foreground"
                         />
                     </div>
                 </CardHeader>
@@ -266,7 +266,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             columns={channelColumns}
                             data={summary.channelBreakdown}
                             globalFilter={channelSearch}
-                            className="border-[#1e2638] bg-[#0b0e17]/40"
+                            className="border-border bg-background/40"
                             empty="ไม่พบห้องที่ตรงกับคำค้นหา"
                         />
                     )}
@@ -274,24 +274,24 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             </Card>
 
             {/* ตารางที่ 2: อันดับผู้ใช้งานสูงสุด */}
-            <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+            <Card className="rounded-xl border-border bg-card">
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                            <Trophy className="size-4 text-amber-400" />
+                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                            <Trophy className="size-4 text-amber-700 dark:text-amber-400" />
                             ตารางที่ 2: อันดับผู้ใช้งานสูงสุด
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-400">
+                        <CardDescription className="text-xs text-muted-foreground">
                             จัดอันดับตามเวลาในห้องเสียง จำนวนข้อความ และกิจกรรม GitHub PR / Jira ที่เชื่อมโยงกับผู้ใช้
                         </CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
-                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-400" />
+                        <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             value={userSearch}
                             onChange={(e) => setUserSearch(e.target.value)}
                             placeholder="ค้นหาชื่อผู้ใช้ หรือ User ID..."
-                            className="h-8 border-[#1e2638] bg-[#0b0e17] pl-8 text-xs text-slate-100"
+                            className="h-8 border-border bg-background pl-8 text-xs text-foreground"
                         />
                     </div>
                 </CardHeader>
@@ -303,7 +303,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             columns={contributorColumns}
                             data={summary.topContributors}
                             globalFilter={userSearch}
-                            className="border-[#1e2638] bg-[#0b0e17]/40"
+                            className="border-border bg-background/40"
                             empty="ไม่พบผู้ใช้งานที่ตรงกับคำค้นหา"
                         />
                     )}
@@ -311,14 +311,14 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             </Card>
 
             {/* ตารางที่ 3: รายการ Log รายบรรทัด (ย่อ/ขยายได้) */}
-            <Card className="rounded-xl border-[#1e2638] bg-[#111625]">
+            <Card className="rounded-xl border-border bg-card">
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <CardTitle className="flex items-center gap-2 text-base text-slate-100">
-                            <ListTree className="size-4 text-indigo-400" />
+                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                            <ListTree className="size-4 text-indigo-700 dark:text-indigo-400" />
                             รายการ Log รายบรรทัด ({summary.detailedLogs.length} รายการล่าสุด)
                         </CardTitle>
-                        <CardDescription className="text-xs text-slate-400">
+                        <CardDescription className="text-xs text-muted-foreground">
                             ใช้เป็นข้อมูลท้ายรายงานเมื่อส่งออก PDF แบบ Full Detailed Report
                             {summary.detailedLogsTruncated && ' • แสดงสูงสุด 200 รายการล่าสุด'}
                         </CardDescription>
@@ -328,7 +328,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                         size="sm"
                         variant="outline"
                         onClick={() => setShowDetailedPreview((prev) => !prev)}
-                        className="border-[#1e2638] bg-[#0b0e17] text-xs text-slate-200 hover:bg-slate-800"
+                        className="border-border bg-background text-xs text-foreground hover:bg-muted"
                     >
                         {showDetailedPreview ? (
                             <>
@@ -351,7 +351,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                             <DataTable
                                 columns={logColumns}
                                 data={summary.detailedLogs}
-                                className="border-[#1e2638] bg-[#0b0e17]/40"
+                                className="border-border bg-background/40"
                             />
                         )}
                     </CardContent>

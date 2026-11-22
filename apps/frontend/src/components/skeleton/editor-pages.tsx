@@ -131,7 +131,7 @@ export function WeatherPageSkeleton() {
                     preview={
                         <>
                             <DiscordPreviewSkeleton>
-                                <div className="max-w-lg space-y-2 rounded border-l-4 border-white/10 bg-[#2b2d31] p-3">
+                                <div className="dark max-w-lg space-y-2 rounded border-l-4 border-white/10 bg-[#2b2d31] p-3">
                                     <Bone className="h-4 w-1/2 bg-white/10" />
                                     <div className="grid grid-cols-3 gap-2">
                                         {Array.from({ length: 6 }, (_, i) => (
@@ -224,7 +224,7 @@ export function JiraPageSkeleton() {
                         <FieldBone />
                     </div>
                     <DiscordPreviewSkeleton>
-                        <div className="max-w-md space-y-2 rounded border-l-4 border-white/10 bg-[#2b2d31] p-3">
+                        <div className="dark max-w-md space-y-2 rounded border-l-4 border-white/10 bg-[#2b2d31] p-3">
                             <Bone className="h-4 w-1/2 bg-white/10" />
                             <Bone className="h-3 w-5/6 bg-white/10" />
                         </div>

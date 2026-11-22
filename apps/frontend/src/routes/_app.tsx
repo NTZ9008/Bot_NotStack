@@ -5,10 +5,7 @@ import { meQuery } from '@/api/auth';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { findNavItem } from '@/components/layout/nav-items';
 import { CommandPalette } from '@/components/layout/command-palette';
-import { ProfileMenu } from '@/components/layout/profile-menu';
-import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { ChevronRight } from 'lucide-react';
 import { SplashScreen } from '@/components/splash-screen';
 
 // ==========================================
@@ -37,21 +34,19 @@ function AppLayout() {
         <SidebarProvider>
             <AppSidebar />
             <SidebarInset className="min-w-0 bg-transparent">
-                <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
+                <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center gap-2 bg-background/80 px-3 backdrop-blur md:px-4">
                     {isNavigating && <div role="progressbar" aria-label="กำลังเปิดหน้า" className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
                     <SidebarTrigger />
-                    <Separator orientation="vertical" className="mx-1 h-5" />
-                    <div className="flex min-w-0 items-center gap-1.5 text-sm">
-                        <span className="hidden max-w-48 truncate text-muted-foreground sm:inline">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
-                        <ChevronRight className="hidden size-4 text-muted-foreground sm:inline" />
-                        <h1 className="truncate font-medium">{current?.label ?? 'Dashboard'}</h1>
-                    </div>
                     <div className="ml-auto flex items-center gap-2">
                         <CommandPalette />
-                        <ProfileMenu />
                     </div>
                 </header>
-                <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-6">
+                <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 px-4 pt-2 pb-8 md:px-8">
+                    <nav aria-label="breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
+                        <span className="max-w-56 truncate text-muted-foreground">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
+                        <span aria-hidden className="text-muted-foreground">/</span>
+                        <span aria-current="page" className="truncate font-medium">{current?.label ?? 'Dashboard'}</span>
+                    </nav>
                     <Outlet />
                 </main>
                 <footer className="border-t px-6 py-4 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot</footer>

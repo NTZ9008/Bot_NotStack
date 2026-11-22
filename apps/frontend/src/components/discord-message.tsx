@@ -9,7 +9,7 @@ export function DiscordMessage({ children, bot }: { children: ReactNode; bot?: {
     const author = bot ?? info?.bot ?? DEFAULT_BOT;
 
     return (
-        <div className="rounded-lg bg-[#313338] p-4 font-sans text-[#dbdee1] shadow-inner">
+        <div className="dark rounded-lg bg-[#313338] p-4 font-sans text-[#dbdee1] shadow-inner">
             <div className="flex gap-4">
                 <img src={author.avatar} alt="" className="size-10 shrink-0 rounded-full" />
                 <div className="min-w-0 flex-1 space-y-1">

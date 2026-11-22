@@ -13,7 +13,7 @@ const initials = (name: string) =>
 export function GuildIcon({ guild, className }: { guild: Pick<GuildSummary, 'name' | 'iconUrl'>; className?: string }) {
     if (guild.iconUrl) return <img src={guild.iconUrl} alt="" className={cn('size-8 shrink-0 rounded-2xl object-cover', className)} />;
     return (
-        <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/20 text-xs font-semibold text-indigo-200', className)}>
+        <div className={cn('flex size-8 shrink-0 items-center justify-center rounded-2xl bg-indigo-500/20 text-xs font-semibold text-indigo-800 dark:text-indigo-200', className)}>
             {initials(guild.name)}
         </div>
     );

@@ -93,7 +93,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                             ทั้งหมด {topics.length} หัวข้อ · เปิดอยู่ {totals.activeCount}
                         </Badge>
                         {totals.completedCount > 0 && (
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-400">
+                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400">
                                 <CheckCircle2 className="size-3" /> ครบเป้า {totals.completedCount} หัวข้อ
                             </Badge>
                         )}
@@ -109,15 +109,15 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label="เป้ารวมทุกหัวข้อ"
                         value={formatBaht(totals.target)}
                         subtext={`จาก ${topics.length} หัวข้อเก็บเงิน`}
-                        icon={<Target className="size-3.5 text-rose-400" />}
+                        icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
                         variant="overview"
                     />
                     <StatTile
                         label="เก็บได้รวมทั้งหมด"
                         value={formatBaht(totals.collected)}
                         subtext={`คืบหน้ารวม ${totals.pct}%`}
-                        icon={<Banknote className="size-3.5 text-emerald-400" />}
-                        valueClassName="text-emerald-400"
+                        icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
+                        valueClassName="text-emerald-700 dark:text-emerald-400"
                         tone="emerald"
                         variant="overview"
                     />
@@ -125,8 +125,8 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label="ยอดคงค้างรวม"
                         value={formatBaht(totals.remaining)}
                         subtext={totals.remaining > 0 ? 'รอเก็บเพิ่มเติม' : 'เก็บครบทุกหัวข้อแล้ว'}
-                        icon={<Clock className="size-3.5 text-amber-400" />}
-                        valueClassName={totals.remaining > 0 ? 'text-amber-400' : 'text-muted-foreground'}
+                        icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
+                        valueClassName={totals.remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
                         tone={totals.remaining > 0 ? 'amber' : 'default'}
                         variant="overview"
                     />
@@ -134,7 +134,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label="ความคืบหน้ารวม"
                         value={`${totals.pct}%`}
                         subtext={`จ่ายครบ ${totals.memberPaid} จาก ${totals.memberTotal} คน`}
-                        icon={<TrendingUp className="size-3.5 text-sky-400" />}
+                        icon={<TrendingUp className="size-3.5 text-sky-700 dark:text-sky-400" />}
                         tone="sky"
                         variant="overview"
                     />
@@ -188,7 +188,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <Lock className="size-2.5" /> ปิด
                     </Badge>
                 ) : isCompleted ? (
-                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-400">
+                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400">
                         <CheckCircle2 className="size-2.5" /> ครบเป้า
                     </Badge>
                 ) : due?.tone === 'overdue' ? (
@@ -196,7 +196,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <AlertTriangle className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : due?.tone === 'soon' ? (
-                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-400">
+                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-700 dark:text-amber-400">
                         <Clock className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : null}
@@ -219,7 +219,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground tabular-nums">
                 <span className="truncate">
-                    <span className="font-medium text-emerald-400">{formatBaht(topic.collected)}</span> / {formatBaht(topic.target)}
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">{formatBaht(topic.collected)}</span> / {formatBaht(topic.target)}
                 </span>
                 <span className="shrink-0">
                     ครบ {topic.paidCount}/{topic.memberCount} คน

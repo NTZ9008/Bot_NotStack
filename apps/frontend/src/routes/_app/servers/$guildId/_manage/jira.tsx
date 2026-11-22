@@ -164,7 +164,7 @@ function JiraPage() {
                 <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
                         {current.enabled ? (
-                            <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-300">เปิดอยู่</Badge>
+                            <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">เปิดอยู่</Badge>
                         ) : (
                             <Badge variant="secondary" className="mr-1.5">
                                 ปิดอยู่
@@ -173,7 +173,7 @@ function JiraPage() {
                         {current.panelMessageId ? `แผงอยู่ที่ ${channelLabel(allChannels, current.panelChannelId) ?? '-'}` : 'ยังไม่ได้ส่งแผงเข้าห้อง'}
                     </div>
                     <div className="flex items-center gap-3">
-                        {dirty && <Badge className="bg-amber-500/15 text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
+                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
                         <Label className="flex items-center gap-2" title="เปิด/ปิดการเปิด card จาก Discord (บันทึกทันที)">
                             เปิดใช้งาน
                             <Switch checked={current.enabled} disabled={busy === 'toggle'} onCheckedChange={(checked) => void toggle(checked)} />

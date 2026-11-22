@@ -724,7 +724,7 @@ export function LandingPage() {
     });
 
     return (
-        <div className="landing min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
+        <div className="landing dark min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
             <TopNav active={active} botName={bot.name} inviteUrl={inviteUrl} />
 
             <main id="top">

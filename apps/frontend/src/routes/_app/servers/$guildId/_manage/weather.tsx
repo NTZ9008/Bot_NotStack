@@ -164,7 +164,7 @@ function WeatherPage() {
 
             {!meta.data.apiKeyConfigured && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" />
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
                     <p>
                         ยังไม่ได้ตั้งค่า <code>OPENWEATHER_KEY</code> ในไฟล์ .env ของเซิร์ฟเวอร์ — บอทจะดึงข้อมูลอากาศไม่ได้
                     </p>
@@ -177,7 +177,7 @@ function WeatherPage() {
                         <p className="text-muted-foreground">
                             {current.enabled && current.nextRunAt ? (
                                 <>
-                                    <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-300">เปิดอยู่</Badge>
+                                    <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">เปิดอยู่</Badge>
                                     ส่งครั้งถัดไป <strong className="text-foreground">{formatThai(current.nextRunAt)}</strong> เข้า {channelLabel(allChannels, current.channelId) ?? '-'}
                                 </>
                             ) : (
@@ -195,17 +195,17 @@ function WeatherPage() {
                                 'ยังไม่เคยส่งตามเวลา'
                             ) : current.lastError ? (
                                 <>
-                                    <span className="font-semibold text-red-400">✗ ส่งไม่สำเร็จ</span> {formatThai(current.lastRunAt)} — {current.lastError}
+                                    <span className="font-semibold text-red-700 dark:text-red-400">✗ ส่งไม่สำเร็จ</span> {formatThai(current.lastRunAt)} — {current.lastError}
                                 </>
                             ) : (
                                 <>
-                                    <span className="font-semibold text-emerald-400">✓ ส่งสำเร็จ</span> {formatThai(current.lastRunAt)}
+                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">✓ ส่งสำเร็จ</span> {formatThai(current.lastRunAt)}
                                 </>
                             )}
                         </p>
                     </div>
                     <div className="flex items-center gap-3">
-                        {dirty && <Badge className="bg-amber-500/15 text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
+                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
                         <Label className="flex items-center gap-2" title="เปิด/ปิดการส่งรายงานตามเวลา (บันทึกทันที)">
                             เปิดใช้งาน
                             <Switch checked={current.enabled} disabled={busy === 'toggle'} onCheckedChange={(checked) => void toggle(checked)} />
@@ -235,7 +235,7 @@ function WeatherPage() {
                             <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
                                 <RotateCcw /> ยกเลิกการแก้ไข
                             </Button>
-                            <Button variant="secondary" className="text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
+                            <Button variant="secondary" className="text-amber-700 dark:text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
                                 {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} ส่งทดสอบ
                             </Button>
                         </div>

@@ -25,27 +25,27 @@ const ALL = '__all__';
 
 // สีของป้าย action ตามหมวด
 const GROUP_TONE: Record<string, string> = {
-    auth: 'bg-indigo-500/15 text-indigo-300',
-    user: 'bg-emerald-500/15 text-emerald-300',
-    config: 'bg-amber-500/15 text-amber-300',
-    news: 'bg-rose-500/15 text-rose-300',
-    room_access: 'bg-sky-500/15 text-sky-300',
-    voice_guard: 'bg-cyan-500/15 text-cyan-300',
-    log_settings: 'bg-violet-500/15 text-violet-300',
-    pr_bot: 'bg-fuchsia-500/15 text-fuchsia-300',
-    welcome: 'bg-pink-500/15 text-pink-300',
-    weather: 'bg-orange-500/15 text-orange-300',
-    jira: 'bg-blue-500/15 text-blue-300',
+    auth: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+    user: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    config: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    news: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+    room_access: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+    voice_guard: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
+    log_settings: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
+    pr_bot: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300',
+    welcome: 'bg-pink-500/15 text-pink-700 dark:text-pink-300',
+    weather: 'bg-orange-500/15 text-orange-700 dark:text-orange-300',
+    jira: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
 };
 
 // สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager
 const ACTIVITY_TONE: Record<string, string> = {
-    สมาชิก: 'bg-emerald-500/15 text-emerald-300',
-    ข้อความ: 'bg-indigo-500/15 text-indigo-300',
-    'ช่อง & เธรด': 'bg-amber-500/15 text-amber-300',
-    'บทบาท & เซิร์ฟเวอร์': 'bg-amber-500/15 text-amber-300',
-    ห้องเสียง: 'bg-sky-500/15 text-sky-300',
-    'ความปลอดภัย & AutoMod': 'bg-rose-500/15 text-rose-300',
+    สมาชิก: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    ข้อความ: 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300',
+    'ช่อง & เธรด': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    'บทบาท & เซิร์ฟเวอร์': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
+    ห้องเสียง: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+    'ความปลอดภัย & AutoMod': 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
 };
 
 function ActionBadge({ tone, label, code }: { tone?: string; label: string; code: string }) {
@@ -73,7 +73,7 @@ function DetailDialog({ title, rows, json, onClose }: { title: string | null; ro
                     ))}
                 </dl>
                 {json !== undefined && json !== null && (
-                    <pre className="overflow-x-auto rounded-lg bg-black/40 p-3 font-mono text-xs">{JSON.stringify(json, null, 2)}</pre>
+                    <pre className="overflow-x-auto rounded-lg bg-muted p-3 font-mono text-xs">{JSON.stringify(json, null, 2)}</pre>
                 )}
             </DialogContent>
         </Dialog>
@@ -127,7 +127,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             header: 'ผลลัพธ์',
             cell: ({ row }) =>
                 row.original.success ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-300">สำเร็จ</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">สำเร็จ</Badge>
                 ) : (
                     <Badge variant="destructive">ไม่สำเร็จ</Badge>
                 ),

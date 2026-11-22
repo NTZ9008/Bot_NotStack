@@ -201,7 +201,7 @@ function LevelsPage() {
         <>
             <PageHeader help="levels" title="อันดับและเลเวล" description={`ระบบประสบการณ์ของ ${guild.name} — อันดับ การ์ด /rank กฎกิจกรรม และประวัติ XP`} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
-                <TabsList className="mb-4 flex h-auto flex-wrap">
+                <TabsList variant="line" className="mb-4">
                     <TabsTrigger value="leaderboard">อันดับสมาชิก</TabsTrigger>
                     <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
                         การ์ดของฉัน

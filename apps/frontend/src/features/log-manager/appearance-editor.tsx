@@ -204,7 +204,7 @@ export function AppearanceEditor({
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="rounded-xl bg-[#313338] p-4 text-[#dbdee1] sm:p-5">
+                    <div className="dark rounded-xl bg-[#313338] p-4 text-[#dbdee1] sm:p-5">
                         <div className="mb-3 flex items-center gap-2 text-sm">
                             <span className="flex size-8 items-center justify-center rounded-full bg-indigo-500 font-bold text-white">N</span>
                             <span className="font-semibold text-white">NotStack</span>
@@ -212,7 +212,7 @@ export function AppearanceEditor({
                             <span className="text-xs text-[#b5bac1]">วันนี้ 19:00</span>
                         </div>
                         <div
-                            className="relative min-w-0 rounded border-l-4 bg-[#2b2d31] p-4"
+                            className="dark relative min-w-0 rounded border-l-4 bg-[#2b2d31] p-4"
                             style={{ borderLeftColor: `#${preview.color.toString(16).padStart(6, '0')}` }}
                         >
                             <div className="flex items-start justify-between gap-3">

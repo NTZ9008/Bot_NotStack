@@ -25,7 +25,7 @@ function RootError({ error, reset }: ErrorComponentProps) {
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Unplug className="size-5 text-amber-400" /> เชื่อมต่อ API ไม่ได้
+                            <Unplug className="size-5 text-amber-700 dark:text-amber-400" /> เชื่อมต่อ API ไม่ได้
                         </CardTitle>
                         <CardDescription>backend ยังไม่เปิด กำลังเริ่มทำงาน หรือระบบส่งต่อ /api ไปที่ backend ไม่ได้ — ลองใหม่อีกครั้งในอีกสักครู่</CardDescription>
                     </CardHeader>
@@ -58,7 +58,7 @@ function RootError({ error, reset }: ErrorComponentProps) {
 function NotFound() {
     return (
         <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-            <p className="text-5xl font-bold text-indigo-300">404</p>
+            <p className="text-5xl font-bold text-indigo-700 dark:text-indigo-300">404</p>
             <p className="text-muted-foreground">ไม่พบหน้าที่คุณต้องการ</p>
             <Button asChild>
                 <Link to="/">กลับหน้าหลัก</Link>

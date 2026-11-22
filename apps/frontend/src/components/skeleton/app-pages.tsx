@@ -111,7 +111,7 @@ const LOG_LINE_WIDTHS = ['w-11/12', 'w-3/4', 'w-5/6', 'w-2/3', 'w-full', 'w-4/5'
 
 export function LogContentSkeleton() {
     return (
-        <div className="h-[60vh] space-y-2.5 overflow-hidden rounded-lg border bg-black/40 p-4" role="status" aria-busy="true" aria-label="กำลังโหลดไฟล์บันทึก">
+        <div className="h-[60vh] space-y-2.5 overflow-hidden rounded-lg border bg-muted p-4" role="status" aria-busy="true" aria-label="กำลังโหลดไฟล์บันทึก">
             {LOG_LINE_WIDTHS.map((width, i) => (
                 <Skeleton key={i} className={`h-3 bg-white/10 ${width}`} />
             ))}

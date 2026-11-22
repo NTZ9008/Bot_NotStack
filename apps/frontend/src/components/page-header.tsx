@@ -9,9 +9,9 @@ export function PageHeader({ title, description, actions, help }: { title: strin
     return (
         <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1 basis-72 space-y-1">
-                <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
                 {description && <p className="text-sm text-muted-foreground">{description}</p>}
-                {help && <p className="text-xs leading-relaxed text-indigo-300">{PAGE_GUIDES[help].saving}</p>}
+                {help && <p className="text-xs leading-relaxed text-info">{PAGE_GUIDES[help].saving}</p>}
             </div>
             {(help || actions) && (
                 <div className="flex max-w-full flex-wrap items-center gap-2">

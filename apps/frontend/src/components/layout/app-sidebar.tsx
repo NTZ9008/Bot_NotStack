@@ -20,6 +20,8 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { GuildSwitcher } from './guild-switcher';
+import { ProfileMenu } from './profile-menu';
+import { ThemeToggle } from './theme-toggle';
 import { visibleNavGroups } from './nav-items';
 
 // ==========================================
@@ -53,24 +55,18 @@ export function AppSidebar() {
 
     return (
         <Sidebar collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/servers">
-                                <img
-                                    src={bot.avatar}
-                                    alt=""
-                                    className="size-8 shrink-0 rounded-full border border-white/10 shadow-[0_0_16px_rgba(99,102,241,0.35)]"
-                                />
-                                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                    <span className="truncate font-semibold text-indigo-300">{bot.name}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
-                                </div>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+            <SidebarHeader className="gap-3 pt-4">
+                <div className="flex items-center gap-2 px-1">
+                    <Link to="/servers" className="flex min-w-0 flex-1 items-center gap-2 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+                        <img src={bot.avatar} alt="" className="size-8 shrink-0 rounded-md border border-border" />
+                        <span className="grid min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
+                            <span className="truncate text-lg font-bold tracking-tight">{bot.name}</span>
+                            <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
+                        </span>
+                    </Link>
+                    <ThemeToggle className="group-data-[collapsible=icon]:hidden" />
+                </div>
+                <ProfileMenu />
                 <GuildSwitcher guildId={guildId} />
             </SidebarHeader>
 

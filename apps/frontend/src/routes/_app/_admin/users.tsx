@@ -337,7 +337,7 @@ function UsersPage() {
                             <LockOpen /> ปลดล็อก
                         </Button>
                     )}
-                    <Button size="xs" variant="outline" className="text-amber-300" onClick={() => void revokeSessions(u)}>
+                    <Button size="xs" variant="outline" className="text-amber-700 dark:text-amber-300" onClick={() => void revokeSessions(u)}>
                         <LogOut /> เตะออกทุกเครื่อง
                     </Button>
                     {!u.isSelf && (

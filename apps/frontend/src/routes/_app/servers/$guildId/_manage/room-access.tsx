@@ -218,9 +218,9 @@ function RoomAccessPage() {
             header: 'Type',
             cell: ({ row }) =>
                 row.original.type === 'temporary' ? (
-                    <Badge className="bg-amber-500/15 text-amber-300">จำกัดเวลา</Badge>
+                    <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">จำกัดเวลา</Badge>
                 ) : (
-                    <Badge className="bg-emerald-500/15 text-emerald-300">ถาวร</Badge>
+                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">ถาวร</Badge>
                 ),
         },
         {

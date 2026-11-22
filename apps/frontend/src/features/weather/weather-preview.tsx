@@ -32,7 +32,7 @@ function EmbedView({ embed, files, roles, channels }: { embed: PreviewEmbed; fil
     const image = resolveFile(files, embed.image?.url);
     const footer = [embed.footer?.text, embed.timestamp ? `วันนี้ เวลา ${timeLabel(embed.timestamp)}` : ''].filter(Boolean).join(' • ');
     return (
-        <div className="max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4" style={{ borderLeftColor: `#${(embed.color ?? 0).toString(16).padStart(6, '0')}` }}>
+        <div className="dark max-w-[520px] overflow-hidden rounded border-l-4 bg-[#2b2d31] p-3 pr-4" style={{ borderLeftColor: `#${(embed.color ?? 0).toString(16).padStart(6, '0')}` }}>
             {embed.thumbnail?.url && <img src={embed.thumbnail.url} alt="" className="float-right mb-2 ml-4 size-20 rounded object-contain" />}
             {embed.title &&
                 (embed.url ? (
@@ -103,9 +103,9 @@ export function WeatherPreview({
                             <Loader2 className="size-4 animate-spin" /> กำลังโหลดข้อมูลอากาศ...
                         </p>
                     )}
-                    {preview.error && <p className="text-sm text-red-400">สร้างตัวอย่างไม่สำเร็จ: {errorMessage(preview.error)}</p>}
+                    {preview.error && <p className="text-sm text-red-700 dark:text-red-400">สร้างตัวอย่างไม่สำเร็จ: {errorMessage(preview.error)}</p>}
                     {data?.warnings.length ? (
-                        <p className="flex items-start gap-1.5 text-sm text-amber-300">
+                        <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-300">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" /> {data.warnings.join(' · ')}
                         </p>
                     ) : null}

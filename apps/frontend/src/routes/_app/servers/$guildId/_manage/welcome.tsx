@@ -263,7 +263,7 @@ function WelcomePage() {
                                             {card.channelId ? (
                                                 <span className="text-muted-foreground">{channelLabel(allChannels, card.channelId)}</span>
                                             ) : (
-                                                <span className="text-amber-400">ยังไม่ได้เลือกห้อง</span>
+                                                <span className="text-amber-700 dark:text-amber-400">ยังไม่ได้เลือกห้อง</span>
                                             )}
                                         </p>
                                     </div>
@@ -283,7 +283,7 @@ function WelcomePage() {
                     <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
                             <CardTitle className="truncate text-lg">{draft.name || '(ไม่มีชื่อ)'}</CardTitle>
-                            {dirty && <Badge className="bg-amber-500/15 text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
+                            {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">มีการแก้ไขที่ยังไม่บันทึก</Badge>}
                         </div>
                         <Label className="flex items-center gap-2" title="เปิด/ปิดการ์ดนี้ (บันทึกทันที)">
                             เปิดใช้งาน
@@ -342,7 +342,7 @@ function WelcomePage() {
                                 <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
                                     <RotateCcw /> ยกเลิกการแก้ไข
                                 </Button>
-                                <Button variant="secondary" className="text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
+                                <Button variant="secondary" className="text-amber-700 dark:text-amber-300" onClick={() => void testSend()} disabled={busy === 'test'}>
                                     {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} ส่งทดสอบ
                                 </Button>
                             </div>

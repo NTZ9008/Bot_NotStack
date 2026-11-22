@@ -95,7 +95,7 @@ function GeneralSection({ meta, draft, patch, channels }: FormProps & { channels
                 <ul className="space-y-0.5 text-muted-foreground">
                     {meta.placeholders.map((p) => (
                         <li key={p.key}>
-                            <code className="text-indigo-300">{`{${p.key}}`}</code> {p.label}
+                            <code className="text-indigo-700 dark:text-indigo-300">{`{${p.key}}`}</code> {p.label}
                         </li>
                     ))}
                 </ul>

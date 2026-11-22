@@ -56,7 +56,7 @@ function LogsPage() {
                     {files.error && <ErrorState error={files.error} />}
                     <pre
                         ref={viewer}
-                        className="h-[60vh] overflow-auto rounded-lg border bg-black/40 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-300"
+                        className="h-[60vh] overflow-auto rounded-lg border bg-muted p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-muted-foreground"
                     >
                         {!file ? (
                             <span className="text-muted-foreground">เลือกไฟล์บันทึกด้านบนเพื่อดูเนื้อหา</span>

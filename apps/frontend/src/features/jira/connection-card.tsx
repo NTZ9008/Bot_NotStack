@@ -22,7 +22,7 @@ export function JiraConnectionCard({
                 <CardDescription>
                     รองรับ Jira Cloud — card จะถูกสร้างในนามบัญชีนี้ สร้าง API token ได้ที่{' '}
                     <a
-                        className="text-sky-400 hover:underline"
+                        className="text-sky-700 dark:text-sky-400 hover:underline"
                         href="https://id.atlassian.com/manage-profile/security/api-tokens"
                         target="_blank"
                         rel="noreferrer"
@@ -71,7 +71,7 @@ export function JiraConnectionCard({
                         {testing ? <Loader2 className="animate-spin" /> : <PlugZap />} ทดสอบการเชื่อมต่อ
                     </Button>
                     {connection && (
-                        <span className="text-sm text-emerald-400">
+                        <span className="text-sm text-emerald-700 dark:text-emerald-400">
                             ✓ {connection.accountName} · {connection.projectName}
                         </span>
                     )}

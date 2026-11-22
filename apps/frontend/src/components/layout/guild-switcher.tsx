@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useRouterState } from '@tanstack/react-router';
+import { Link, useNavigate, useRouterState } from '@tanstack/react-router';
 import { Check, ChevronsUpDown, LayoutGrid, Plus } from 'lucide-react';
 import { guildQuery, guildsQuery } from '@/api/guilds';
 import { GuildIcon } from '@/components/guild-icon';
@@ -31,11 +31,16 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
     };
 
     return (
-        <SidebarMenu>
+        <SidebarMenu className="gap-1.5">
+            <p className="px-1 text-sm font-semibold group-data-[collapsible=icon]:hidden">เซิร์ฟเวอร์</p>
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg" className="border bg-sidebar-accent/40 data-[state=open]:bg-sidebar-accent" tooltip="เลือกเซิร์ฟเวอร์">
+                        <SidebarMenuButton
+                            size="lg"
+                            className="border border-input bg-background hover:bg-background data-[state=open]:border-ring group-data-[collapsible=icon]:border-0"
+                            tooltip="เลือกเซิร์ฟเวอร์"
+                        >
                             {current ? <GuildIcon guild={current} /> : <LayoutGrid className="size-8 p-1.5" />}
                             <div className="grid min-w-0 flex-1 text-left leading-tight">
                                 <span className="truncate text-sm font-medium">{current?.name ?? 'เลือกเซิร์ฟเวอร์'}</span>
@@ -75,6 +80,13 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
+            <Link
+                to="/servers"
+                onClick={() => isMobile && setOpenMobile(false)}
+                className="px-1 text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground group-data-[collapsible=icon]:hidden"
+            >
+                ดูเซิร์ฟเวอร์ทั้งหมด
+            </Link>
         </SidebarMenu>
     );
 }

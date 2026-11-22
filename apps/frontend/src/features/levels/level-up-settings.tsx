@@ -104,7 +104,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
             </div>
 
             {saved.warnings.length > 0 && (
-                <div role="alert" className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-200">
+                <div role="alert" className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
                     {saved.warnings.map((warning) => (
                         <p key={warning} className="flex gap-2">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" />

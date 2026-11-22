@@ -41,7 +41,7 @@ function GuildCard({ guild }: { guild: GuildSummary }) {
                     )}
                     {guild.isHome && <Badge variant="secondary">เซิร์ฟเวอร์หลัก</Badge>}
                     {guild.access === 'manage' ? (
-                        <Badge className="bg-emerald-500/15 text-emerald-300">
+                        <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
                             <ShieldCheck /> จัดการได้
                         </Badge>
                     ) : (
@@ -77,7 +77,7 @@ function ServersPage() {
 
             {denied && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" />
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
                     <p>คุณไม่มีสิทธิ์ในเซิร์ฟเวอร์นั้น หรือบอทไม่ได้อยู่ในเซิร์ฟเวอร์นั้นแล้ว</p>
                 </div>
             )}
@@ -104,7 +104,7 @@ function ServersPage() {
 
             {data && !data.botOnline && (
                 <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-400" />
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
                     <p>บอทยังไม่ออนไลน์ — รายชื่อเซิร์ฟเวอร์อาจไม่ครบ และเชิญบอทเพิ่มยังไม่ได้ตอนนี้</p>
                 </div>
             )}

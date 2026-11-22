@@ -274,14 +274,14 @@ export function PaymentDialog({
                             <div className="flex items-center gap-1.5 tabular-nums">
                                 <span className="text-muted-foreground">จ่ายสะสม: {formatBaht(balancePreview.basePaid)}</span>
                                 <ArrowRight className="size-3 text-muted-foreground" />
-                                <span className="font-semibold text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
+                                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
                             </div>
                             {balancePreview.willComplete ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-400">
+                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-400">
                                     <CheckCircle2 className="size-3" /> จ่ายครบตามเป้า!
                                 </Badge>
                             ) : (
-                                <span className="font-medium text-amber-400 tabular-nums">คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}</span>
+                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">คงค้างเหลือ {formatBaht(balancePreview.nextRemaining)}</span>
                             )}
                         </div>
                     )}

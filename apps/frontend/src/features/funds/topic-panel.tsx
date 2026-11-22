@@ -157,7 +157,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     <Lock /> ปิดแล้ว
                                 </Badge>
                             ) : isCompleted ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-400">
+                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                                     <CheckCircle2 /> เก็บครบตามเป้าแล้ว
                                 </Badge>
                             ) : null}
@@ -186,7 +186,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         due.tone === 'overdue'
                                             ? 'border-destructive/40 bg-destructive/10 font-normal text-destructive'
                                             : due.tone === 'soon'
-                                              ? 'border-amber-500/40 bg-amber-500/10 font-normal text-amber-400'
+                                              ? 'border-amber-500/40 bg-amber-500/10 font-normal text-amber-700 dark:text-amber-400'
                                               : 'font-normal text-muted-foreground'
                                     }
                                 >
@@ -208,7 +208,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                             className="h-6 text-[11px]"
                                             onClick={() => void copyText(accountDigits.replace(/[^\d]/g, ''), 'account', `เลขบัญชี/พร้อมเพย์ (${accountDigits})`)}
                                         >
-                                            {copiedKey === 'account' ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
+                                            {copiedKey === 'account' ? <Check className="size-3 text-emerald-700 dark:text-emerald-400" /> : <Copy className="size-3" />}
                                             คัดลอกเลข {accountDigits}
                                         </Button>
                                     )}
@@ -219,7 +219,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         className="h-6 text-[11px]"
                                         onClick={() => void copyText(topic.description, 'desc', 'รายละเอียดการโอน')}
                                     >
-                                        {copiedKey === 'desc' ? <Check className="size-3 text-emerald-400" /> : <Copy className="size-3" />}
+                                        {copiedKey === 'desc' ? <Check className="size-3 text-emerald-700 dark:text-emerald-400" /> : <Copy className="size-3" />}
                                         คัดลอกข้อความ
                                     </Button>
                                 </div>
@@ -259,7 +259,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                 <CardContent className="space-y-3">
                     {topic.closed && (
-                        <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-300 sm:flex-row sm:items-center">
+                        <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 sm:flex-row sm:items-center">
                             <div className="flex items-start gap-2 sm:items-center">
                                 <Lock className="mt-0.5 size-4 shrink-0 sm:mt-0" />
                                 <span>หัวข้อนี้ปิดการเก็บเงินแล้ว — กด “เปิดอีกครั้ง” หากต้องการเพิ่ม/ลบคนหรือบันทึกรับเงินเพิ่ม</span>
@@ -267,7 +267,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             <Button
                                 size="xs"
                                 variant="outline"
-                                className="w-full shrink-0 border-amber-500/40 text-amber-200 hover:bg-amber-500/20 sm:w-auto"
+                                className="w-full shrink-0 border-amber-500/40 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 sm:w-auto"
                                 onClick={() => toggleClosed.mutate(false)}
                                 disabled={toggleClosed.isPending}
                             >
@@ -281,15 +281,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             label="เป้าหมายรวม"
                             value={formatBaht(topic.target)}
                             subtext={dailyRate ? `วันละ ${formatBaht(dailyRate)} · ${topic.memberCount} คน` : `คนละ ${formatBaht(topic.amountPerMember)} · ${topic.memberCount} คน`}
-                            icon={<Target className="size-3.5 text-rose-400" />}
+                            icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
                             variant="summary"
                         />
                         <StatTile
                             label="เก็บได้แล้ว"
                             value={formatBaht(topic.collected)}
                             subtext={`เป้าหมาย ${pct}% · ${topic.payments.length} รายการโอน`}
-                            icon={<Banknote className="size-3.5 text-emerald-400" />}
-                            valueClassName="text-emerald-400"
+                            icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
+                            valueClassName="text-emerald-700 dark:text-emerald-400"
                             tone="emerald"
                             variant="summary"
                         />
@@ -301,8 +301,8 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     ? `ค้างชำระ ${statusCounts.partial + statusCounts.unpaid} คน`
                                     : 'ไม่มีค้างชำระ เก็บครบทุกคนแล้ว'
                             }
-                            icon={<Clock className="size-3.5 text-amber-400" />}
-                            valueClassName={remaining > 0 ? 'text-amber-400' : 'text-muted-foreground'}
+                            icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
+                            valueClassName={remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
                             tone={remaining > 0 ? 'amber' : 'default'}
                             variant="summary"
                         />
@@ -310,7 +310,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             label="สถานะสมาชิก"
                             value={`${topic.paidCount} / ${topic.memberCount} คน`}
                             subtext={`บางส่วน ${statusCounts.partial} · ยังไม่จ่าย ${statusCounts.unpaid}`}
-                            icon={<Users className="size-3.5 text-sky-400" />}
+                            icon={<Users className="size-3.5 text-sky-700 dark:text-sky-400" />}
                             tone="sky"
                             variant="summary"
                         />

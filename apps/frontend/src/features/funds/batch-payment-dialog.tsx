@@ -203,7 +203,7 @@ export function BatchPaymentDialog({
                                                 {m.remaining > 0 ? (
                                                     `ค้าง ${formatBaht(m.remaining)}`
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 text-emerald-400">
+                                                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
                                                         <CheckCircle2 className="size-3" /> จ่ายครบแล้ว
                                                     </span>
                                                 )}
@@ -218,7 +218,7 @@ export function BatchPaymentDialog({
                 <DialogFooter className="flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="text-xs text-muted-foreground">
                         <span>ยอดรับรวม ({selectedIds.length} คน): </span>
-                        <span className="font-semibold text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
+                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
                     </div>
                     <div className="flex w-full justify-end gap-2 sm:w-auto">
                         <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => onOpenChange(false)}>

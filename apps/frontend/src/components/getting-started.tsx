@@ -20,7 +20,7 @@ export function GettingStarted() {
         <Card className="border-primary/25 bg-primary/5">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Compass className="size-5 text-indigo-300" /> เริ่มต้นใช้งานบอท
+                    <Compass className="size-5 text-indigo-700 dark:text-indigo-300" /> เริ่มต้นใช้งานบอท
                 </CardTitle>
                 <CardDescription>เลือกสิ่งที่อยากทำใน {guild.name} — ไม่จำเป็นต้องตั้งค่าทุกฟีเจอร์ แต่ละหน้ามีปุ่ม ⓘ วิธีใช้งาน</CardDescription>
             </CardHeader>
@@ -36,7 +36,7 @@ export function GettingStarted() {
                                 params={{ guildId: guild.id }}
                                 className="group flex items-start gap-3 rounded-lg border bg-card p-4 transition-colors hover:border-primary/60 focus-visible:outline-2 focus-visible:outline-ring"
                             >
-                                <item.icon className="mt-0.5 size-5 shrink-0 text-indigo-300" />
+                                <item.icon className="mt-0.5 size-5 shrink-0 text-indigo-700 dark:text-indigo-300" />
                                 <div className="min-w-0 flex-1 space-y-1">
                                     <p className="text-sm font-medium">{key === 'config' ? 'เริ่มที่นี่: ตั้งค่าบอท' : item.label}</p>
                                     <p className="text-xs leading-relaxed text-muted-foreground">{PAGE_GUIDES[key].summary}</p>

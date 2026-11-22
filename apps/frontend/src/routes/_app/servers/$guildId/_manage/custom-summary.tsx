@@ -55,16 +55,16 @@ function CustomSummaryLoadingSkeleton() {
         <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[0, 1, 2, 3].map((idx) => (
-                    <div key={idx} className="rounded-xl border border-[#1e2638] bg-[#111625] p-5">
-                        <Skeleton className="h-4 w-32 bg-slate-800" />
-                        <Skeleton className="mt-3 h-9 w-28 bg-slate-800" />
-                        <Skeleton className="mt-3 h-3 w-44 bg-slate-800" />
+                    <div key={idx} className="rounded-xl border border-border bg-card p-5">
+                        <Skeleton className="h-4 w-32 bg-muted" />
+                        <Skeleton className="mt-3 h-9 w-28 bg-muted" />
+                        <Skeleton className="mt-3 h-3 w-44 bg-muted" />
                     </div>
                 ))}
             </div>
-            <div className="rounded-xl border border-[#1e2638] bg-[#111625] p-5">
-                <Skeleton className="h-5 w-52 bg-slate-800" />
-                <Skeleton className="mt-4 h-[260px] w-full bg-slate-800/70" />
+            <div className="rounded-xl border border-border bg-card p-5">
+                <Skeleton className="h-5 w-52 bg-muted" />
+                <Skeleton className="mt-4 h-[260px] w-full bg-muted/70" />
             </div>
         </div>
     );
@@ -170,7 +170,7 @@ function CustomLogSummaryPage() {
                 description={`สรุปสถิติห้องเสียง ข้อความ GitHub PR และ DevOps แบบกำหนดเงื่อนไขได้เองสำหรับ ${guild.name}`}
             />
 
-            <div className="space-y-5 rounded-2xl border border-[#1e2638] bg-[#0b0e17] p-4 sm:p-5">
+            <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
                 <FilterBuilder
                     guildId={guildId}
                     draft={draft}
@@ -193,22 +193,22 @@ function CustomLogSummaryPage() {
                 ) : (
                     <div className="space-y-5">
                         {/* แถบสถานะผลลัพธ์ที่ประมวลผลล่าสุด */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#1e2638] bg-[#111625]/90 px-4 py-2.5 text-xs">
-                            <div className="flex flex-wrap items-center gap-2 text-slate-300">
-                                <Sparkles className="size-4 text-indigo-400" />
-                                <span className="font-medium text-slate-100">{summary.guild.name}</span>
-                                <span className="text-slate-500">•</span>
+                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs">
+                            <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                                <Sparkles className="size-4 text-indigo-700 dark:text-indigo-400" />
+                                <span className="font-medium text-foreground">{summary.guild.name}</span>
+                                <span className="text-muted-foreground">•</span>
                                 <span>
                                     {formatBangkokDateTime(summary.range.from)} — {formatBangkokDateTime(summary.range.to)}
                                 </span>
-                                <Badge variant="outline" className="border-[#1e2638] bg-[#0b0e17] text-[11px] text-indigo-300">
+                                <Badge variant="outline" className="border-border bg-background text-[11px] text-indigo-700 dark:text-indigo-300">
                                     <Layers3 className="mr-1 size-3" />
                                     {summary.filters.selectedChannels.length === 0
                                         ? `ทุกห้อง (${summary.availableChannels.length} ห้อง)`
                                         : `${summary.filters.selectedChannels.length} ห้องที่เลือก`}
                                 </Badge>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                                 <Clock className="size-3.5" />
                                 <span>ประมวลผลล่าสุด: {formatBangkokDateTime(summary.generatedAt)}</span>
                             </div>

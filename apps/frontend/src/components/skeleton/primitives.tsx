@@ -213,7 +213,7 @@ export function ToggleGroupBone({ count, className }: { count: number; className
 // กรอบข้อความจำลองแบบ Discord (<DiscordMessage>) + รูป/embed ด้านใน
 export function DiscordPreviewSkeleton({ children, aspect = '10 / 3' }: { children?: ReactNode; aspect?: string }) {
     return (
-        <div className="rounded-lg bg-[#313338] p-4 shadow-inner" aria-hidden>
+        <div className="dark rounded-lg bg-[#313338] p-4 shadow-inner" aria-hidden>
             <div className="flex gap-4">
                 <Skeleton className="size-10 shrink-0 rounded-full bg-white/10" />
                 <div className="min-w-0 flex-1 space-y-2">

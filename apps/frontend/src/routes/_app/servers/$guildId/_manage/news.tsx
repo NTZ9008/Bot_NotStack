@@ -110,7 +110,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                     <CardContent className="space-y-4">
                         <p className="text-sm text-muted-foreground">
                             ก่อนส่งครั้งแรก เลือกห้องประกาศใน{' '}
-                            <Link to="/servers/$guildId/config" params={{ guildId }} className="text-indigo-300 underline underline-offset-4">
+                            <Link to="/servers/$guildId/config" params={{ guildId }} className="text-indigo-700 dark:text-indigo-300 underline underline-offset-4">
                                 ตั้งค่าบอท
                             </Link>
                         </p>
@@ -217,7 +217,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                 <div className="space-y-2 xl:sticky xl:top-20 xl:self-start">
                     <p className="text-sm text-muted-foreground">ตัวอย่างที่จะเห็นใน Discord</p>
                     <DiscordMessage>
-                        <div className="max-w-lg rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderLeftColor: HEX_COLOR_RE.test(color) ? color : NEWS_PRESETS[type].color }}>
+                        <div className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderLeftColor: HEX_COLOR_RE.test(color) ? color : NEWS_PRESETS[type].color }}>
                             {form.title.trim() && (
                                 <p className="mb-1 font-semibold text-white">
                                     {NEWS_PRESETS[type].prefix} {form.title.trim()}

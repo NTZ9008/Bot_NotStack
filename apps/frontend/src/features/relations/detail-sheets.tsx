@@ -23,7 +23,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { fallbackAvatar, formatDateTime, formatMinutes } from '@/lib/format';
 
 const KIND_ICON: Record<RelationKind, LucideIcon> = { voice: Mic, chat: MessagesSquare, mod: ShieldAlert };
-const KIND_TEXT: Record<RelationKind, string> = { voice: 'text-sky-400', chat: 'text-amber-400', mod: 'text-rose-400' };
+const KIND_TEXT: Record<RelationKind, string> = { voice: 'text-sky-700 dark:text-sky-400', chat: 'text-amber-700 dark:text-amber-400', mod: 'text-rose-700 dark:text-rose-400' };
 const TIER_LABELS = ['', 'เบาบาง', 'พอรู้จัก', 'สนิท', 'แน่นแฟ้นมาก'];
 
 export function Avatar({ person, userId, className }: { person?: RelationPerson; userId: string; className?: string }) {
@@ -42,13 +42,13 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 function VoiceStat({ label, minutes, days }: { label: string; minutes: number; days?: number }) {
     return (
         <div className="flex items-center gap-3 rounded-lg border border-sky-400/40 bg-sky-400/10 p-3">
-            <Mic className="size-5 shrink-0 text-sky-400" aria-hidden="true" />
+            <Mic className="size-5 shrink-0 text-sky-700 dark:text-sky-400" aria-hidden="true" />
             <div className="min-w-0">
                 <div className="text-xs text-muted-foreground">
                     {label}
                     {days ? ` · ${days} วันล่าสุด` : ''}
                 </div>
-                <div className="text-xl font-bold text-sky-300">{formatMinutes(minutes)}</div>
+                <div className="text-xl font-bold text-sky-700 dark:text-sky-300">{formatMinutes(minutes)}</div>
             </div>
         </div>
     );
@@ -164,7 +164,7 @@ export function PersonSheet({
                                                         <span className="block text-xs text-muted-foreground">
                                                             {TIER_LABELS[link.tier]} · {RELATION_KIND_LABELS[link.kind]}
                                                             {link.voiceMinutes > 0 && (
-                                                                <span className="text-sky-400"> · ห้องเสียง {formatMinutes(link.voiceMinutes)}</span>
+                                                                <span className="text-sky-700 dark:text-sky-400"> · ห้องเสียง {formatMinutes(link.voiceMinutes)}</span>
                                                             )}
                                                         </span>
                                                     </span>
@@ -224,7 +224,7 @@ function TimelineRow({ item }: { item: RelationTimelineItem }) {
     if (item.type === 'voice') {
         title = (
             <>
-                อยู่ห้องเสียงด้วยกัน <span className="text-sky-400">{formatMinutes(item.minutes)}</span>
+                อยู่ห้องเสียงด้วยกัน <span className="text-sky-700 dark:text-sky-400">{formatMinutes(item.minutes)}</span>
             </>
         );
         detail = item.channelName ? `ห้อง ${item.channelName}` : null;

@@ -143,7 +143,7 @@ function AccountPage() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center gap-4">
-                            <img src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" className="size-16 rounded-full border border-white/10" />
+                            <img src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" className="size-16 rounded-full border border-border" />
                             <div className="min-w-0 space-y-1">
                                 <div className="flex flex-wrap items-center gap-2">
                                     <p className="truncate text-lg font-semibold">{user.displayName}</p>

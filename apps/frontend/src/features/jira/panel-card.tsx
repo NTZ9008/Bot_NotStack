@@ -42,7 +42,7 @@ export function JiraPanelCard({ draft, patchOptions }: Pick<JiraDraftProps, 'dra
                     </Field>
                 </div>
                 <DiscordMessage>
-                    <div className="max-w-md rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderColor: panel.color }}>
+                    <div className="dark max-w-md rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderColor: panel.color }}>
                         {panel.title && <div className="font-semibold text-white">{panel.title}</div>}
                         {panel.description && <div className="mt-1 text-sm whitespace-pre-wrap">{panel.description}</div>}
                     </div>

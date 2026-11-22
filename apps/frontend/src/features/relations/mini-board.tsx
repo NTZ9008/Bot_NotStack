@@ -38,7 +38,7 @@ function BoardMessage({ children, pulse }: { children?: React.ReactNode; pulse?:
     return (
         <div
             className={cn(
-                'flex size-full items-center justify-center px-6 text-center text-sm text-slate-400',
+                'flex size-full items-center justify-center px-6 text-center text-sm text-muted-foreground',
                 pulse && 'animate-pulse motion-reduce:animate-none',
             )}
         >
@@ -67,7 +67,7 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
     return (
         <section
             className={cn(
-                'relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-slate-100 shadow-sm dark:border-white/10',
+                'dark relative isolate overflow-hidden rounded-xl border border-white/10 bg-[#05060a] text-foreground shadow-sm dark:border-white/10',
                 className,
             )}
         >
@@ -98,9 +98,9 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
                     <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-3 bg-gradient-to-b from-[#05060a]/90 to-transparent p-4 pb-8">
                         <div>
                             <p className="flex items-center gap-2 text-sm font-semibold">
-                                <Waypoints className="size-4 text-indigo-300" /> กระดานความสัมพันธ์
+                                <Waypoints className="size-4 text-indigo-700 dark:text-indigo-300" /> กระดานความสัมพันธ์
                             </p>
-                            <p className="mt-0.5 text-xs text-slate-400">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                                 {top.people.length > 0
                                     ? `${top.people.length.toLocaleString('th-TH')} คนที่ผูกกันมากที่สุด · 30 วันล่าสุด · ลากการ์ดได้`
                                     : '30 วันล่าสุด'}
@@ -109,7 +109,7 @@ export function MiniRelationBoard({ guildId, className }: { guildId: string; cla
                         <Link
                             to="/servers/$guildId/relations"
                             params={{ guildId }}
-                            className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-slate-200 transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/10"
+                            className="pointer-events-auto inline-flex shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-xs text-foreground transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/10"
                         >
                             ดูกระดานเต็ม <ArrowUpRight className="size-3.5" />
                         </Link>

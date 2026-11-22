@@ -59,7 +59,7 @@ function AuditLogsPage() {
                             void navigate({ to: '/servers/$guildId/audit-logs', params: { guildId }, search: { source: value as 'dashboard' | 'discord' } })
                         }
                     >
-                        <TabsList className="mb-4">
+                        <TabsList variant="line" className="mb-4">
                             <TabsTrigger
                                 value="dashboard"
                                 onMouseEnter={() => prioritize(`${guildId}:audit:dashboard`)}

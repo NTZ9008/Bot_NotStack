@@ -135,7 +135,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                 </div>
                 <div className="flex flex-wrap gap-x-3 text-xs">
                     {DAY_PRESETS.map((preset) => (
-                        <button key={preset.label} type="button" className="text-indigo-300 hover:underline" onClick={() => setDays(preset.days)}>
+                        <button key={preset.label} type="button" className="text-indigo-700 dark:text-indigo-300 hover:underline" onClick={() => setDays(preset.days)}>
                             {preset.label}
                         </button>
                     ))}
@@ -210,7 +210,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                <MapPin className="size-6 shrink-0 text-rose-400" />
+                <MapPin className="size-6 shrink-0 text-rose-700 dark:text-rose-400" />
                 <div className="min-w-0">
                     <p className="truncate font-medium">{location.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">
@@ -354,7 +354,7 @@ function EmbedSection({ meta, draft, patch }: FormProps) {
                 <ul className="grid gap-0.5 text-xs text-muted-foreground">
                     {meta.placeholders.map((p) => (
                         <li key={p.key}>
-                            <code className="text-indigo-300">{`{${p.key}}`}</code> {p.label}
+                            <code className="text-indigo-700 dark:text-indigo-300">{`{${p.key}}`}</code> {p.label}
                         </li>
                     ))}
                 </ul>

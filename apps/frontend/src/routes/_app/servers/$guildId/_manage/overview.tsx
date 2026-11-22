@@ -65,9 +65,9 @@ function StatTile({ label, value, tone }: { label: string; value: string; tone?:
             <p
                 className={cn(
                     'text-2xl font-semibold tabular-nums',
-                    tone === 'ok' && 'text-emerald-400',
-                    tone === 'bad' && 'text-red-400',
-                    tone === 'info' && 'text-sky-400',
+                    tone === 'ok' && 'text-emerald-700 dark:text-emerald-400',
+                    tone === 'bad' && 'text-red-700 dark:text-red-400',
+                    tone === 'info' && 'text-sky-700 dark:text-sky-400',
                 )}
             >
                 {value}
@@ -209,7 +209,7 @@ function OverviewPage() {
             <Link to="/servers/$guildId/ai" params={{ guildId }} className="block">
                 <Card className="transition-colors hover:border-indigo-400/50 hover:bg-indigo-400/5">
                     <CardContent className="flex items-center gap-3 py-4">
-                        <Bot className="size-5 text-indigo-300" />
+                        <Bot className="size-5 text-indigo-700 dark:text-indigo-300" />
                         <div><div className="font-medium">ตั้งค่า AI Chat</div><p className="text-sm text-muted-foreground">เชื่อม Gemini API Key ของเซิร์ฟเวอร์และดู Usage</p></div>
                     </CardContent>
                 </Card>
