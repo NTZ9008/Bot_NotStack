@@ -5,15 +5,14 @@ import { guildQuery } from '@/api/guilds';
 import { meQuery } from '@/api/auth';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { findNavItem } from '@/components/layout/nav-items';
-import { CommandPalette } from '@/components/layout/command-palette';
-import { ProfileMenu } from '@/components/layout/profile-menu';
-import { Separator } from '@/components/ui/separator';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { TopBar } from '@/components/layout/top-bar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { ChevronRight } from '@/components/icons';
 import { SplashScreen } from '@/components/splash-screen';
 
 // ==========================================
-// 🔐 Layout ของทุกหน้าที่ต้อง login — เมนูซ้าย + แถบบน (ชื่อหน้า / ⌘K ค้นหาและสั่งงาน / เมนูโปรไฟล์)
+// 🔐 Layout ของทุกหน้าที่ต้อง login — แถบบนลอย (โลโก้ / ลิงก์ด่วน / ⌘K / ภาษา / ธีม / โปรไฟล์)
+// + เมนูซ้ายแบบการ์ดลอย + เนื้อหาที่ค่อยๆ ลอยขึ้นทุกครั้งที่เปลี่ยนหน้า
 // ==========================================
 export const Route = createFileRoute('/_app')({
     beforeLoad: async ({ context, location }) => {
@@ -29,7 +28,7 @@ export const Route = createFileRoute('/_app')({
 });
 
 function AppLayout() {
-    const isNavigating = useRouterState({ select: (state) => state.isLoading });
+    const pathname = useRouterState({ select: (state) => state.location.pathname });
     const routePath = useRouterState({ select: (state) => state.matches[state.matches.length - 1]?.fullPath });
     const current = findNavItem(routePath);
     const { guildId } = useParams({ strict: false });
@@ -37,28 +36,41 @@ function AppLayout() {
     const t = useT();
 
     return (
-        <SidebarProvider>
+        // --dash-top = ความสูงแถบบน (64px) + ระยะขอบบน/ล่าง 12px ; เมนูซ้ายกับเนื้อหาเริ่มใต้เส้นนี้
+        <SidebarProvider className="mx-auto max-w-[1440px] [--dash-top:5.5rem]">
+            <BackgroundWordmark />
+            <TopBar />
             <AppSidebar />
-            <SidebarInset className="min-w-0 bg-transparent">
-                <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b bg-background/80 px-3 backdrop-blur md:px-4">
-                    {isNavigating && <div role="progressbar" aria-label={t('app.openingPage')} className="absolute inset-x-0 bottom-0 h-0.5 bg-primary/70" />}
-                    <SidebarTrigger />
-                    <Separator orientation="vertical" className="mx-1 h-5" />
-                    <div className="flex min-w-0 items-center gap-1.5 text-sm">
-                        <span className="hidden max-w-48 truncate text-muted-foreground sm:inline">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
-                        <ChevronRight className="hidden size-4 text-muted-foreground sm:inline" />
+            <SidebarInset className="min-w-0 bg-transparent pt-(--dash-top)">
+                <div className="mx-auto w-full max-w-6xl flex-1 px-3 pb-10 md:px-5">
+                    <nav aria-label={t('app.breadcrumb')} className="mb-4 flex min-w-0 items-center gap-1.5 text-sm">
+                        <span className="max-w-48 truncate text-muted-foreground">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
+                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
                         <h1 className="truncate font-medium">{current ? trText(current.label) : 'Dashboard'}</h1>
+                    </nav>
+                    {/* key ตาม path: เปลี่ยนหน้าแล้วเล่นแอนิเมชันเข้าใหม่ (เปลี่ยนแค่ ?search เช่นตัวกรอง จะไม่กระพริบ) */}
+                    <div key={pathname} className="dash-page-in space-y-6">
+                        <Outlet />
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
-                        <CommandPalette />
-                        <ProfileMenu />
-                    </div>
-                </header>
-                <main className="mx-auto w-full max-w-7xl flex-1 space-y-6 p-4 md:p-6">
-                    <Outlet />
-                </main>
-                <footer className="border-t px-6 py-4 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot</footer>
+                </div>
+                <footer className="px-6 pb-6 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot · Developed by arlifzs © 2026</footer>
             </SidebarInset>
         </SidebarProvider>
+    );
+}
+
+// ลายน้ำพื้นหลัง: คำว่า BOT NOTSTACK ตัวโตแบบเส้นขอบจางๆ เลื่อนช้าๆ สลับทิศกันทีละแถว (แบบตัวหนังสือวิ่งของหน้า landing)
+// อยู่หลังเนื้อหา (z-0 มาก่อนใน DOM; -z-10 จะโดนพื้นหลังของ body ทับ) และจางพอให้การ์ด/ตัวหนังสือของ UI เด่นกว่าพื้นหลังชัดเจน
+const WORDMARK = 'BOT NOTSTACK · BOT NOTSTACK · BOT NOTSTACK · ';
+function BackgroundWordmark() {
+    return (
+        <div aria-hidden className="pointer-events-none fixed inset-0 z-0 flex flex-col justify-center gap-[4vh] overflow-hidden select-none">
+            {[0, 1, 2].map((row) => (
+                <div key={row} className={`dash-wordmark ${row % 2 ? 'dash-wordmark-reverse' : ''}`}>
+                    <span>{WORDMARK}</span>
+                    <span>{WORDMARK}</span>
+                </div>
+            ))}
+        </div>
     );
 }

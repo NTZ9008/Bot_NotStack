@@ -39,10 +39,16 @@ export function GuildSwitcher({ guildId }: { guildId: string | undefined }) {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="border bg-sidebar-accent/40 data-[state=open]:bg-sidebar-accent"
+                            className="h-14 rounded-2xl bg-sidebar-accent/60 ring-1 ring-sidebar-border transition-colors duration-200 hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent group-data-[collapsible=icon]:ring-0"
                             tooltip={t('layout.selectAServer')}
                         >
-                            {current ? <GuildIcon guild={current} /> : <LayoutGrid className="size-8 p-1.5" />}
+                            {current ? (
+                                <GuildIcon guild={current} />
+                            ) : (
+                                <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/15 text-primary">
+                                    <LayoutGrid />
+                                </span>
+                            )}
                             <div className="grid min-w-0 flex-1 text-left leading-tight">
                                 <span className="truncate text-sm font-medium">{current?.name ?? t('layout.selectAServer')}</span>
                                 <span className="truncate text-xs text-muted-foreground">

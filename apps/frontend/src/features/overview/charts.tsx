@@ -1,121 +1,132 @@
 import { tr, byLang } from '../../lib/i18n';
 import type { ActivityStats } from '@notstack/shared';
-import { ViewportContent } from '@/components/viewport-content';
-import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
+import { useState } from 'react';
+import { Area, AreaChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatNumber, shortBucketLabel } from '@/lib/format';
+import { PillTabs } from '@/components/report';
 
 // สีของกราฟโดนัท — วนใช้ซ้ำเมื่อชนิดเหตุการณ์มีมากกว่าจำนวนสี
-const PALETTE = ['var(--chart-1)', '#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#a78bfa', '#14b8a6', '#fb923c', '#64748b'];
+const PALETTE = [
+    'var(--chart-1)',
+    'var(--chart-5)',
+    'var(--chart-2)',
+    'var(--chart-3)',
+    'var(--chart-4)',
+    '#ec4899',
+    '#a78bfa',
+    '#14b8a6',
+    '#fb923c',
+    '#64748b',
+];
 
-const serverConfig = byLang(
-    () =>
-        ({
-            serverJoin: { label: tr('common.joinedServer'), color: '#10b981' },
-            serverLeave: { label: tr('common.leftServer'), color: '#ef4444' },
-        }) satisfies ChartConfig,
-);
-const voiceConfig = byLang(
-    () =>
-        ({
-            voiceJoin: { label: tr('overview.voiceJoins'), color: '#38bdf8' },
-            voiceLeave: { label: tr('overview.voiceLeaves'), color: '#f59e0b' },
-        }) satisfies ChartConfig,
-);
-const usersConfig = byLang(() => ({ total: { label: tr('overview.events'), color: 'var(--chart-1)' } }) satisfies ChartConfig);
+// มุมมองของกราฟแนวโน้ม (สลับด้วยปุ่มแคปซูลมุมขวาบน)
+const VIEWS = byLang(() => ({
+    all: { label: tr('report.trendAll'), config: { total: { label: tr('overview.events'), color: 'var(--chart-1)' } } satisfies ChartConfig },
+    members: {
+        label: tr('report.trendMembers'),
+        config: {
+            serverJoin: { label: tr('common.joinedServer'), color: 'var(--chart-2)' },
+            serverLeave: { label: tr('common.leftServer'), color: 'var(--chart-4)' },
+        } satisfies ChartConfig,
+    },
+    voice: {
+        label: tr('report.trendVoice'),
+        config: {
+            voiceJoin: { label: tr('overview.voiceJoins'), color: 'var(--chart-1)' },
+            voiceLeave: { label: tr('overview.voiceLeaves'), color: 'var(--chart-3)' },
+        } satisfies ChartConfig,
+    },
+}));
+type View = keyof ReturnType<typeof VIEWS>;
 
-// label จาก API เป็น 'YYYY-MM-DD HH:00' (ตามโซนเวลา) — ย่อให้อ่านง่ายบนแกน X
-function shortLabel(bucket: string, interval: string): string {
-    const [date = '', time = ''] = bucket.split(' ');
-    const [, month, day] = date.split('-');
-    return interval === 'hour' ? `${day}/${month} ${time.slice(0, 2)}:00` : `${day}/${month}`;
-}
-
-function ChartCard({ title, children }: { title: string; children: React.ReactNode }) {
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-base">{title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ViewportContent fallback={<div className="h-64" />}>{children}</ViewportContent>
-            </CardContent>
-        </Card>
-    );
-}
-
-export default function Charts({ data }: { data: ActivityStats }) {
+function Trend({ data }: { data: ActivityStats }) {
+    const [view, setView] = useState<View>('all');
+    const views = VIEWS();
+    const config = views[view].config;
     const series = data.labels.map((bucket, i) => ({
-        label: shortLabel(bucket, data.range.interval),
+        label: shortBucketLabel(bucket, data.range.interval),
+        total: data.datasets.total[i],
         serverJoin: data.datasets.serverJoin[i],
         serverLeave: data.datasets.serverLeave[i],
         voiceJoin: data.datasets.voiceJoin[i],
         voiceLeave: data.datasets.voiceLeave[i],
     }));
-    const topUsers = data.topUsers.slice(0, 10).map((u) => ({ name: u.userName, total: u.total }));
-    const breakdown = data.breakdown.slice(0, 10);
-    const breakdownConfig = Object.fromEntries(
-        breakdown.map((row, i) => [row.eventKey, { label: row.label, color: PALETTE[i % PALETTE.length] }]),
-    ) satisfies ChartConfig;
-
-    const area = (config: ChartConfig, keys: string[]) => (
-        <ChartContainer config={config} className="aspect-auto h-64 w-full">
-            <AreaChart data={series} margin={{ left: 0, right: 8 }}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={24} />
-                <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={32} />
-                <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
-                <ChartLegend content={<ChartLegendContent />} />
-                {keys.map((key) => (
-                    <Area
-                        key={key}
-                        dataKey={key}
-                        type="monotone"
-                        stroke={`var(--color-${key})`}
-                        fill={`var(--color-${key})`}
-                        fillOpacity={0.2}
-                        strokeWidth={2}
-                    />
-                ))}
-            </AreaChart>
-        </ChartContainer>
-    );
-
     return (
-        <div className="grid gap-4 lg:grid-cols-2">
-            <ChartCard title={tr('overview.serverJoinsLeaves')}>{area(serverConfig(), ['serverJoin', 'serverLeave'])}</ChartCard>
-            <ChartCard title={tr('overview.voiceJoinsLeaves')}>{area(voiceConfig(), ['voiceJoin', 'voiceLeave'])}</ChartCard>
-            <ChartCard title={tr('overview.mostActiveUsers')}>
-                <ChartContainer config={usersConfig()} className="aspect-auto h-64 w-full">
-                    <BarChart data={topUsers} layout="vertical" margin={{ left: 8, right: 16 }}>
-                        <CartesianGrid horizontal={false} />
-                        <XAxis type="number" allowDecimals={false} tickLine={false} axisLine={false} />
-                        <YAxis
-                            type="category"
-                            dataKey="name"
-                            tickLine={false}
-                            axisLine={false}
-                            width={110}
-                            tickFormatter={(v: string) => (v.length > 14 ? `${v.slice(0, 13)}…` : v)}
+        <div className="space-y-3">
+            <PillTabs<View>
+                label={tr('report.trend')}
+                value={view}
+                onChange={setView}
+                options={(Object.keys(views) as View[]).map((key) => ({ value: key, label: views[key].label }))}
+            />
+            <ChartContainer config={config} className="aspect-auto h-80 w-full">
+                <AreaChart data={series} margin={{ left: 0, right: 8, top: 8 }}>
+                    <defs>
+                        {Object.keys(config).map((key) => (
+                            <linearGradient key={key} id={`trend-${key}`} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={`var(--color-${key})`} stopOpacity={0.35} />
+                                <stop offset="100%" stopColor={`var(--color-${key})`} stopOpacity={0} />
+                            </linearGradient>
+                        ))}
+                    </defs>
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} minTickGap={24} />
+                    <YAxis allowDecimals={false} tickLine={false} axisLine={false} width={32} />
+                    <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
+                    {Object.keys(config).length > 1 && <ChartLegend content={<ChartLegendContent />} />}
+                    {Object.keys(config).map((key) => (
+                        <Area
+                            key={`${view}-${key}`}
+                            dataKey={key}
+                            type="monotone"
+                            stroke={`var(--color-${key})`}
+                            fill={`url(#trend-${key})`}
+                            strokeWidth={2.5}
+                            animationDuration={700}
                         />
-                        <ChartTooltip content={<ChartTooltipContent hideLabel={false} />} />
-                        <Bar isAnimationActive={false} dataKey="total" fill="var(--color-total)" radius={6} />
-                    </BarChart>
-                </ChartContainer>
-            </ChartCard>
-            <ChartCard title={tr('overview.shareOfAllEvents')}>
-                <ChartContainer config={breakdownConfig} className="aspect-auto h-64 w-full">
-                    <PieChart>
-                        <ChartTooltip content={<ChartTooltipContent nameKey="eventKey" hideLabel />} />
-                        <Pie isAnimationActive={false} data={breakdown} dataKey="total" nameKey="eventKey" innerRadius={50} outerRadius={90} strokeWidth={2}>
-                            {breakdown.map((row, i) => (
-                                <Cell key={row.eventKey} fill={PALETTE[i % PALETTE.length]} />
-                            ))}
-                        </Pie>
-                        <ChartLegend content={<ChartLegendContent nameKey="eventKey" />} className="flex-wrap gap-2 text-[11px]" />
-                    </PieChart>
-                </ChartContainer>
-            </ChartCard>
+                    ))}
+                </AreaChart>
+            </ChartContainer>
         </div>
     );
+}
+
+function Share({ data }: { data: ActivityStats }) {
+    const breakdown = data.breakdown.slice(0, 8);
+    const total = data.breakdown.reduce((sum, row) => sum + row.total, 0) || 1;
+    const config = Object.fromEntries(
+        breakdown.map((row, i) => [row.eventKey, { label: row.label, color: PALETTE[i % PALETTE.length] }]),
+    ) satisfies ChartConfig;
+    if (breakdown.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">{tr('overview.noDataInThisPeriodYet2')}</p>;
+    return (
+        <div className="grid items-center gap-4 sm:grid-cols-[11rem_1fr]">
+            <ChartContainer config={config} className="mx-auto aspect-square h-44">
+                <PieChart>
+                    <ChartTooltip content={<ChartTooltipContent nameKey="eventKey" hideLabel />} />
+                    <Pie data={breakdown} dataKey="total" nameKey="eventKey" innerRadius={48} outerRadius={80} strokeWidth={2} animationDuration={700}>
+                        {breakdown.map((row, i) => (
+                            <Cell key={row.eventKey} fill={PALETTE[i % PALETTE.length]} />
+                        ))}
+                    </Pie>
+                </PieChart>
+            </ChartContainer>
+            {/* คำอธิบายสีพร้อมเปอร์เซ็นต์ อ่านได้โดยไม่ต้องชี้ที่กราฟ */}
+            <ul className="space-y-2 text-sm">
+                {breakdown.map((row, i) => (
+                    <li key={row.eventKey} className="flex items-center gap-2">
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
+                        <span className="min-w-0 flex-1 truncate">{row.label}</span>
+                        <span className="text-muted-foreground tabular-nums">{formatNumber(row.total)}</span>
+                        <span className="w-11 text-right font-semibold tabular-nums">{Math.round((row.total / total) * 100)}%</span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+// โหลดแยก (lazy) เพราะ recharts ใหญ่ — หน้าเดียวใช้สองส่วน
+export default function OverviewCharts({ data, part }: { data: ActivityStats; part: 'trend' | 'share' }) {
+    return part === 'trend' ? <Trend data={data} /> : <Share data={data} />;
 }

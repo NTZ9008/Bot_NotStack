@@ -537,10 +537,14 @@ export function CommandPalette() {
 
     return (
         <>
-            <Button variant="outline" className="h-8 justify-start gap-2 px-2.5 text-muted-foreground md:w-72" onClick={() => setOpen(true)}>
+            <Button
+                variant="outline"
+                className="h-10 justify-start gap-2 border-transparent bg-muted px-3 text-muted-foreground ring-1 ring-border hover:bg-accent hover:text-accent-foreground md:w-52 xl:w-64 2xl:w-56"
+                onClick={() => setOpen(true)}
+            >
                 <Search className="size-4" />
                 <span className="sr-only min-w-0 flex-1 truncate text-left md:not-sr-only md:whitespace-nowrap">{t('layout.searchOrTypeACommand')}</span>
-                <kbd className="pointer-events-none hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] md:inline">
+                <kbd className="pointer-events-none ml-auto hidden rounded-md border border-border bg-card px-1.5 font-mono text-[10px] md:inline">
                     {isMac ? '⌘ K' : 'Ctrl K'}
                 </kbd>
             </Button>
