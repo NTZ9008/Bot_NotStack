@@ -1,19 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const ts = require('../apps/backend/node_modules/typescript');
-// Only dependency-free helpers from the dashboard are loaded as TS for this Node test.
-// helper import ของ TS ประกาศที่นี่ที่เดียว (noEmitHelpers) — ถ้าแปะลงทุกไฟล์ branch ของ helper ที่เทสต์วิ่งไม่ถึงจะปนใน coverage ของไฟล์ .ts
-globalThis.__importDefault = (mod) => (mod?.__esModule ? mod : { default: mod });
-globalThis.__importStar = (mod) => (mod?.__esModule ? mod : { ...mod, default: mod });
-require.extensions['.ts'] = (module, filename) => {
-    module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
-            compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, noEmitHelpers: true },
-        }).outputText,
-        filename,
-    );
-};
+require('./ts-loader.cjs');
 const { escapeHtml, renderDiscordMarkdown } = require('../apps/frontend/src/lib/discord-markdown.ts');
 const { formatBytes, formatMinutes, shortBucketLabel } = require('../apps/frontend/src/lib/format.ts');
 
@@ -488,6 +476,104 @@ test('i18n en.json only uses keys from th.json with the same {params}', () => {
         assert.ok(key in th, `en.json has unknown key ${key}`);
         assert.equal(params(text), params(th[key]), `params differ for ${key}`);
     }
+});
+
+// document/localStorage จำลองแค่ส่วนที่ i18n.ts / use-theme.ts ใช้ (Node ไม่มี DOM)
+function fakeBrowser(t, { storageThrows = false } = {}) {
+    const classes = new Set();
+    const stored = {};
+    globalThis.document = {
+        documentElement: { lang: 'th', classList: { contains: (c) => classes.has(c), toggle: (c, on) => (on ? classes.add(c) : classes.delete(c)) } },
+    };
+    Object.defineProperty(globalThis, 'localStorage', {
+        configurable: true,
+        value: {
+            setItem: (k, v) => {
+                if (storageThrows) throw new Error('storage disabled');
+                stored[k] = v;
+            },
+        },
+    });
+    t.after(() => {
+        delete globalThis.document;
+        delete globalThis.localStorage;
+    });
+    return { classes, stored };
+}
+const React = require('../apps/frontend/node_modules/react');
+const { renderToString } = require('../apps/frontend/node_modules/react-dom/server');
+const renderHook = (hook) => renderToString(React.createElement(() => String(hook())));
+
+test('i18n setLang switches the page language, remembers it and notifies listeners', async (t) => {
+    const { setLang, tr, trText, dateLocale, byLang } = require('../apps/frontend/src/lib/i18n.ts');
+    const { stored } = fakeBrowser(t);
+    const label = byLang(() => ({ text: tr('common.botSettings') }));
+    assert.equal(label().text, 'ตั้งค่าบอท');
+    assert.equal(dateLocale(), 'th-TH');
+    await setLang('en');
+    assert.equal(document.documentElement.lang, 'en');
+    assert.equal(stored.lang, 'en');
+    assert.equal(tr('common.botSettings'), 'Bot settings');
+    assert.equal(trText('ตั้งค่าบอท'), 'Bot settings');
+    assert.equal(label().text, 'Bot settings');
+    assert.equal(label(), label()); // cache ต่อภาษา
+    assert.equal(dateLocale(), 'en-GB');
+});
+
+test('i18n setLang still works when localStorage is blocked', async (t) => {
+    const { setLang } = require('../apps/frontend/src/lib/i18n.ts');
+    fakeBrowser(t, { storageThrows: true });
+    await setLang('en');
+    assert.equal(document.documentElement.lang, 'en');
+});
+
+test('i18n translateFields only translates label fields of API data, and only in English', (t) => {
+    const { translateFields } = require('../apps/frontend/src/lib/i18n.ts');
+    fakeBrowser(t);
+    const data = { label: 'ตั้งค่าบอท', name: 'ตั้งค่าบอท', items: [{ description: 'ตั้งค่าบอท' }, null], blob: new Blob(['x']), count: 2 };
+    assert.equal(translateFields(data), data); // ภาษาไทย: คืนค่าเดิม
+    document.documentElement.lang = 'en';
+    const out = translateFields(data);
+    assert.deepEqual(
+        { ...out, blob: undefined },
+        { label: 'Bot settings', name: 'ตั้งค่าบอท', items: [{ description: 'Bot settings' }, null], blob: undefined, count: 2 },
+    );
+    assert.equal(out.blob, data.blob);
+});
+
+test('i18n useLang/useT render Thai on the server (no document yet)', () => {
+    const { useLang, useT } = require('../apps/frontend/src/lib/i18n.ts');
+    assert.equal(
+        renderHook(() => useLang()[0]),
+        'th',
+    );
+    assert.equal(
+        renderHook(() => useT()('common.botSettings')),
+        'ตั้งค่าบอท',
+    );
+});
+
+test('theme: setTheme toggles dark/classic classes and remembers the choice', (t) => {
+    const { setTheme, useTheme } = require('../apps/frontend/src/hooks/use-theme.ts');
+    const { classes, stored } = fakeBrowser(t);
+    setTheme('classic');
+    assert.deepEqual([...classes].sort(), ['classic', 'dark']);
+    setTheme('dark');
+    assert.deepEqual([...classes], ['dark']);
+    setTheme('light');
+    assert.deepEqual([...classes], []);
+    assert.equal(stored.theme, 'light');
+    assert.equal(
+        renderHook(() => useTheme()[0]),
+        'light',
+    );
+});
+
+test('theme: setTheme still applies when localStorage is blocked', (t) => {
+    const { setTheme } = require('../apps/frontend/src/hooks/use-theme.ts');
+    const { classes } = fakeBrowser(t, { storageThrows: true });
+    setTheme('dark');
+    assert.deepEqual([...classes], ['dark']);
 });
 
 test('SEO prerender gives each public page its own head and crawlable body', () => {
