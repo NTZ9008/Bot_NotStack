@@ -6,6 +6,7 @@ import { cn } from "cn"
 import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui"
 
 import { toggleVariants } from "@/components/ui/toggle"
+import { slidingIndicatorClass, useSlidingIndicator } from "@/hooks/use-sliding-indicator"
 
 const ToggleGroupContext = React.createContext<
   VariantProps<typeof toggleVariants> & {
@@ -32,6 +33,9 @@ function ToggleGroup({
     spacing?: number
     orientation?: "horizontal" | "vertical"
   }) {
+  // เลือกได้ทีละอัน → พื้นปุ่มที่เลือกเลื่อนตาม (แบบ Tabs)
+  const sliding = props.type === "single"
+  const { listRef, indicatorRef } = useSlidingIndicator('[data-state="on"]', sliding)
   return (
     <ToggleGroupPrimitive.Root
       data-slot="toggle-group"
@@ -41,11 +45,24 @@ function ToggleGroup({
       data-orientation={orientation}
       style={{ "--gap": spacing } as React.CSSProperties}
       className={cn(
-        "group/toggle-group flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch",
+        "group/toggle-group relative flex w-fit flex-row items-center gap-[--spacing(var(--gap))] rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch",
         className
       )}
       {...props}
+      ref={listRef}
     >
+      {sliding && (
+        <span
+          ref={indicatorRef}
+          aria-hidden
+          className={cn(
+            slidingIndicatorClass,
+            "rounded-lg",
+            variant === "outline" ? "bg-primary" : "bg-muted",
+            size === "sm" && "rounded-[min(var(--radius-md),12px)]"
+          )}
+        />
+      )}
       <ToggleGroupContext.Provider
         value={{ variant, size, spacing, orientation }}
       >
@@ -77,6 +94,8 @@ function ToggleGroupItem({
           variant: context.variant || variant,
           size: context.size || size,
         }),
+        // พื้นของปุ่มที่เลือกมาจาก indicator ที่เลื่อนได้ใน ToggleGroup
+        "relative data-[state=on]:bg-transparent data-[state=on]:hover:bg-transparent",
         className
       )}
       {...props}
