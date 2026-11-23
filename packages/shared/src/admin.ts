@@ -241,6 +241,8 @@ export interface ActivityTopUser {
     voiceJoins: number;
     commands: number;
     lastSeen: string;
+    // มีเฉพาะ 3 อันดับแรก (โพเดียม) และเฉพาะคนที่บอทเห็นใน cache
+    avatarUrl?: string | null;
 }
 
 export interface ActivityStats {
