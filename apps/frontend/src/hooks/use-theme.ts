@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react';
 
-// ธีม 3 แบบ: สว่าง / มืด / สีเดิม (สีเดียวกับหน้า landing) — เก็บใน localStorage ('light' | 'dark' | 'classic'; ไม่มีค่า = ตามระบบ)
+// ธีม 3 แบบ: สว่าง / มืด / สีเดิม (สีของ Dashboard เดิม slate + indigo) — เก็บใน localStorage ('light' | 'dark' | 'classic'; ไม่มีค่า = ตามระบบ)
 // index.html ใส่ class ให้ก่อนวาดหน้าแล้ว ; สีเดิมเป็นธีมมืดด้วย จึงใส่ทั้ง "dark" และ "classic"
 export type Theme = 'light' | 'dark' | 'classic';
 

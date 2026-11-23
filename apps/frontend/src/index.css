@@ -103,49 +103,49 @@
     --sidebar-ring: oklch(0.65 0.17 255);
 }
 
-/* ธีม "สีเดิม" — ล้อสีหน้า landing: กรมท่าเข้ม #060818 + น้ำเงินไฟฟ้า #2a45ff (ไม่ใช้ร่วมกับธีมขาว/ดำ) */
+/* ธีม "สีเดิม" — สีของ Dashboard เดิมจริงๆ (ก่อน redesign): พื้น slate เข้ม #0f172a + สีหลัก indigo #6366f1 */
 .classic {
     color-scheme: dark;
 
-    --background: #060818;
-    --foreground: #eef0ff;
-    --card: #0b1030;
-    --card-foreground: #eef0ff;
-    --popover: #0e1438;
-    --popover-foreground: #eef0ff;
-    --primary: #2a45ff;
-    --primary-foreground: #ffffff;
-    --secondary: #141c4a;
-    --secondary-foreground: #eef0ff;
-    --muted: #111842;
-    --muted-foreground: #a3acd6;
-    --accent: #18215a;
-    --accent-foreground: #eef0ff;
-    --destructive: oklch(0.71 0.17 22); /* แดงอ่อนลงให้อ่านออกบนพื้นเข้ม */
+    --background: oklch(0.208 0.042 265.755); /* #0f172a */
+    --foreground: oklch(0.984 0.003 247.858);
+    --card: oklch(0.243 0.041 263.5);
+    --card-foreground: oklch(0.984 0.003 247.858);
+    --popover: oklch(0.279 0.041 260.031); /* #1e293b */
+    --popover-foreground: oklch(0.984 0.003 247.858);
+    --primary: oklch(0.585 0.233 277.117); /* indigo-500 */
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.3 0.04 262);
+    --secondary-foreground: oklch(0.984 0.003 247.858);
+    --muted: oklch(0.279 0.041 260.031);
+    --muted-foreground: oklch(0.704 0.04 256.788); /* slate-400 */
+    --accent: oklch(0.32 0.045 262);
+    --accent-foreground: oklch(0.984 0.003 247.858);
+    --destructive: oklch(0.637 0.237 25.331); /* red-500 */
     --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: #3d56ff;
-    --brand: #3d56ff;
-    --highlight: #8a9bff;
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.585 0.233 277.117);
+    --brand: oklch(0.673 0.182 276.935); /* indigo-400 */
+    --highlight: oklch(0.785 0.115 274.713); /* indigo-300 แบบข้อความเน้นเดิม */
 
     --success: oklch(0.696 0.17 162.48);
     --warning: oklch(0.769 0.188 70.08);
-    --info: #8a9bff;
+    --info: oklch(0.746 0.16 232.661);
 
-    --chart-1: #5b72ff;
-    --chart-2: #8a9bff;
+    --chart-1: oklch(0.585 0.233 277.117);
+    --chart-2: oklch(0.746 0.16 232.661);
     --chart-3: oklch(0.696 0.17 162.48);
     --chart-4: oklch(0.769 0.188 70.08);
     --chart-5: oklch(0.645 0.246 16.439);
 
-    --sidebar: #050716;
-    --sidebar-foreground: #dde1ff;
-    --sidebar-primary: #2a45ff;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: rgb(42 69 255 / 18%);
-    --sidebar-accent-foreground: #c3ccff;
+    --sidebar: oklch(0.19 0.035 265);
+    --sidebar-foreground: oklch(0.929 0.013 255.508);
+    --sidebar-primary: oklch(0.585 0.233 277.117);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.585 0.233 277.117 / 16%);
+    --sidebar-accent-foreground: oklch(0.87 0.065 274.039); /* indigo-200 */
     --sidebar-border: oklch(1 0 0 / 8%);
-    --sidebar-ring: #3d56ff;
+    --sidebar-ring: oklch(0.585 0.233 277.117);
 }
 
 @theme inline {
@@ -208,9 +208,9 @@
     body {
         @apply bg-background text-foreground;
     }
-    /* ธีมสีเดิม: แสงน้ำเงินจางๆ มุมซ้ายบนแบบหน้า landing */
+    /* ธีมสีเดิม: แสงสี indigo จางๆ มุมซ้ายบนแบบหน้าเดิม */
     .classic body {
-        background-image: radial-gradient(circle at 10% 10%, rgb(42 69 255 / 12%) 0%, transparent 50%);
+        background-image: radial-gradient(circle at 10% 10%, oklch(0.585 0.233 277.117 / 8%) 0%, transparent 50%);
         background-attachment: fixed;
     }
     button:not(:disabled),
