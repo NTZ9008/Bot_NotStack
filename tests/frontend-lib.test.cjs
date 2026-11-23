@@ -3,10 +3,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('../apps/backend/node_modules/typescript');
 // Only dependency-free helpers from the dashboard are loaded as TS for this Node test.
+// helper import ของ TS ประกาศที่นี่ที่เดียว (noEmitHelpers) — ถ้าแปะลงทุกไฟล์ branch ของ helper ที่เทสต์วิ่งไม่ถึงจะปนใน coverage ของไฟล์ .ts
+globalThis.__importDefault = (mod) => (mod?.__esModule ? mod : { default: mod });
+globalThis.__importStar = (mod) => (mod?.__esModule ? mod : { ...mod, default: mod });
 require.extensions['.ts'] = (module, filename) => {
     module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
-            .outputText,
+        ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+            compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, noEmitHelpers: true },
+        }).outputText,
         filename,
     );
 };
@@ -435,8 +439,10 @@ test('date/time picker keeps the same string format as native inputs', () => {
 const { translate, translateText, loadLang } = require('../apps/frontend/src/lib/i18n.ts');
 
 test('i18n translates by key from locales/*.json, falls back to Thai, fills {params}', async () => {
+    await loadLang('th'); // ภาษาไทยอยู่ใน bundle แล้ว ไม่ต้องโหลดอะไร
     assert.equal(translate('en', 'common.botSettings'), 'ตั้งค่าบอท'); // en.json ยังไม่โหลด → ภาษาไทย
     await loadLang('en');
+    await loadLang('en'); // โหลดแล้วไม่โหลดซ้ำ
     assert.equal(translate('th', 'common.botSettings'), 'ตั้งค่าบอท');
     assert.equal(translate('en', 'common.botSettings'), 'Bot settings');
     assert.equal(translate('en', 'layout.countServers', { count: 3 }), '3 servers');
