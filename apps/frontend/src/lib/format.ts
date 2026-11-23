@@ -45,3 +45,10 @@ export const DEFAULT_AVATAR = 'https://cdn.discordapp.com/embed/avatars/0.png';
 export function fallbackAvatar(userId: string): string {
     return `https://cdn.discordapp.com/embed/avatars/${/^\d{5,25}$/.test(userId) ? Number(BigInt(userId) % 5n) : 0}.png`;
 }
+
+// label ช่วงเวลาจาก API เป็น 'YYYY-MM-DD HH:00' (ตามโซนเวลา) — ย่อให้อ่านง่าย (แกนกราฟ / ไฮไลต์)
+export function shortBucketLabel(bucket: string, interval: string): string {
+    const [date = '', time = ''] = bucket.split(' ');
+    const [, month, day] = date.split('-');
+    return interval === 'hour' ? `${day}/${month} ${time.slice(0, 2)}:00` : `${day}/${month}`;
+}

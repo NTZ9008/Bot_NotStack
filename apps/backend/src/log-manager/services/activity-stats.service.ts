@@ -1,8 +1,9 @@
 import { timeOperation } from '../../common/utils/server-timing';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import type { ActivityInterval, ActivityStats } from '@notstack/shared';
 import { Prisma } from '../../generated/prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DiscordService } from '../../discord/discord.service';
 import { activityEventLabel } from '../utils/activity-humanize.util';
 import {
     SERVER_JOIN_KEYS,
@@ -40,7 +41,19 @@ interface RangeFilter {
 // ==========================================
 @Injectable()
 export class ActivityStatsService {
-    constructor(private readonly prisma: PrismaService) {}
+    // Discord ไม่บังคับ: ไม่มี (เช่นในเทสต์) ก็ยังคืนสถิติได้ แค่ไม่มีรูปโปรไฟล์
+    constructor(
+        private readonly prisma: PrismaService,
+        @Optional() private readonly discord?: DiscordService,
+    ) {}
+
+    // รูปโปรไฟล์ของ 3 อันดับแรก (โพเดียมหน้า Overview) — อ่านจาก cache ของบอทอย่างเดียว ไม่ยิง Discord API เพิ่ม
+    // (ActivityTopUser.avatarUrl มีเฉพาะ 3 อันดับแรก; คนที่ไม่อยู่ใน cache = null)
+    private avatarOf(guildId: string, userId: string): string | null {
+        const client = this.discord?.client;
+        const user = client?.guilds.cache.get(guildId)?.members.cache.get(userId) ?? client?.users.cache.get(userId);
+        return user?.displayAvatarURL({ size: 128 }) ?? null;
+    }
 
     // นับจำนวนเหตุการณ์แยกตามช่วงเวลา (ชั่วโมง/วัน) ตามโซนเวลาที่เลือก
     // ให้ Postgres คืนชื่อช่วงเป็นข้อความไปเลย (to_char) จะได้ไม่ต้องแปลงเวลาไปกลับให้เพี้ยน
@@ -200,7 +213,7 @@ export class ActivityStatsService {
                 activeUsers: users.length,
                 voiceMinutes,
             },
-            topUsers: users,
+            topUsers: users.map((user, i) => (i < 3 ? { ...user, avatarUrl: this.avatarOf(guildId, user.userId) } : user)),
             topVoiceChannels: channels,
             topVoiceUsers: voice.users.slice(0, limit),
             voiceChannelMinutes: voice.channels.slice(0, limit),

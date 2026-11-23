@@ -2,28 +2,26 @@ import { tr, byLang } from '../../../../../lib/i18n';
 import type { ActivityStats } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Bot, RefreshCw } from '@/components/icons';
+import { Activity, CalendarDays, Clock3, Crown, Headphones, MessageSquare, RefreshCw, TrendingDown, TrendingUp, UserPlus, Users } from '@/components/icons';
 import { lazy, Suspense, useMemo, useState } from 'react';
 import { ViewportContent } from '@/components/viewport-content';
 import { activityStatsQuery, type StatsParams } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
 import { PageHeader } from '@/components/page-header';
 import { GettingStarted } from '@/components/getting-started';
-import { MiniRelationBoard } from '@/features/relations/mini-board';
 import { RankBadge } from '@/components/rank-badge';
 import { OverviewStatsSkeleton } from '@/components/skeleton/guild-pages';
 import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { formatDateTime, formatMinutes, formatNumber, toLocalInput } from '@/lib/format';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { formatDateTime, formatMinutes, formatNumber, shortBucketLabel, toLocalInput } from '@/lib/format';
+import { KpiStrip, PillTabs, RankList, ReportCard, type Kpi } from '@/components/report';
 import { useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/overview')({
@@ -33,13 +31,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/overview')(
 
 const Charts = lazy(() => import('@/features/overview/charts'));
 function ChartsSkeleton() {
-    return (
-        <div className="grid gap-4 lg:grid-cols-2" aria-label={tr('overview.loadingChart')}>
-            {[0, 1, 2, 3].map((key) => (
-                <div key={key} className="h-80 rounded-xl border bg-muted/30" />
-            ))}
-        </div>
-    );
+    return <div role="status" className="h-72 animate-pulse rounded-xl bg-muted/50" aria-label={tr('overview.loadingChart')} />;
 }
 
 const PRESETS = byLang(() => [
@@ -60,27 +52,7 @@ function rangeFromPreset(preset: string, custom: { from: string; to: string }): 
     return preset === '168' ? {} : { hours: Number(preset) };
 }
 
-function StatTile({ label, value, tone }: { label: string; value: string; tone?: 'ok' | 'bad' | 'info' }) {
-    return (
-        <div className="rounded-xl border bg-card p-4">
-            <p
-                className={cn(
-                    'text-2xl font-semibold tabular-nums',
-                    tone === 'ok' && 'text-emerald-700 dark:text-emerald-400',
-                    tone === 'bad' && 'text-red-700 dark:text-red-400',
-                    tone === 'info' && 'text-sky-700 dark:text-sky-400',
-                )}
-            >
-                {value}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">{label}</p>
-        </div>
-    );
-}
-
 type TopUser = ActivityStats['topUsers'][number] & { rank: number };
-type VoiceUser = ActivityStats['topVoiceUsers'][number] & { rank: number };
-type VoiceChannelRow = ActivityStats['topVoiceChannels'][number] & { rank: number; minutes: number };
 
 const userCell = (name: string, id: string, isBot = false) => (
     <div>
@@ -102,67 +74,228 @@ const topUserColumns = byLang((): ColumnDef<TopUser>[] => [
     { accessorKey: 'lastSeen', header: tr('common.recent'), cell: ({ row }) => <span className="text-xs">{formatDateTime(row.original.lastSeen)}</span> },
 ]);
 
-const voiceUserColumns = byLang((): ColumnDef<VoiceUser>[] => [
-    { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
-    { id: 'user', header: tr('common.user'), cell: ({ row: { original: u } }) => userCell(u.userName, u.userId) },
-    { accessorKey: 'minutes', header: tr('overview.totalTime'), cell: ({ row }) => formatMinutes(row.original.minutes) },
-    { accessorKey: 'sessions', header: tr('common.count'), cell: ({ row }) => formatNumber(row.original.sessions) },
-]);
+// ไฮไลต์: ประโยคสั้นๆ ที่ไม่ซ้ำกับโพเดียม/รายการด้านล่าง (สมาชิกเพิ่ม-ลด + ช่วงที่คึกคักที่สุด)
+function highlights(data: ActivityStats): { icon: typeof Crown; text: string; tone?: 'up' | 'down' }[] {
+    const { summary } = data;
+    const net = summary.serverJoin - summary.serverLeave;
+    const list: { icon: typeof Crown; text: string; tone?: 'up' | 'down' }[] = [
+        net > 0
+            ? { icon: TrendingUp, text: tr('report.hlGrow', { count: formatNumber(net) }), tone: 'up' }
+            : net < 0
+              ? { icon: TrendingDown, text: tr('report.hlShrink', { count: formatNumber(-net) }), tone: 'down' }
+              : { icon: Users, text: tr('report.hlSteady') },
+    ];
+    const totals = data.datasets.total;
+    const peak = totals.reduce((best, v, i) => (v > (totals[best] ?? 0) ? i : best), 0);
+    if ((totals[peak] ?? 0) > 0)
+        list.push({
+            icon: Clock3,
+            text: tr('report.hlBusiest', { label: shortBucketLabel(data.labels[peak] ?? '', data.range.interval), count: formatNumber(totals[peak] ?? 0) }),
+        });
+    return list;
+}
 
-const voiceChannelColumns = byLang((): ColumnDef<VoiceChannelRow>[] => [
-    { accessorKey: 'rank', header: '#', cell: ({ row }) => <RankBadge rank={row.original.rank} /> },
-    { id: 'channel', header: tr('common.channel'), cell: ({ row: { original: c } }) => userCell(c.channelName, c.channelId) },
-    { accessorKey: 'joins', header: tr('overview.joinsTimes'), cell: ({ row }) => formatNumber(row.original.joins) },
-    { accessorKey: 'members', header: tr('overview.uniquePeople'), cell: ({ row }) => formatNumber(row.original.members) },
-    { accessorKey: 'minutes', header: tr('overview.totalTime'), cell: ({ row }) => formatMinutes(row.original.minutes) },
-]);
+// แท่นรางวัล 3 อันดับแรก (เรียง 2-1-3 แบบโพเดียมจริง) — แท่นค่อยๆ ยกขึ้นทีละแท่น แล้วรูปโผล่ตาม
+const PODIUM = [
+    { place: 2, height: 'h-20', delay: 120, tone: 'from-[oklch(0.75_0.03_270)] to-[oklch(0.6_0.04_270)]' },
+    { place: 1, height: 'h-28', delay: 240, tone: 'from-primary to-[#1c2fd6]' },
+    { place: 3, height: 'h-14', delay: 0, tone: 'from-[oklch(0.72_0.1_55)] to-[oklch(0.58_0.11_45)]' },
+] as const;
 
-function Tables({ data }: { data: ActivityStats }) {
-    // เวลาในห้องเสียงคิดจากช่วงที่เลือกเท่านั้น จึงเก็บแยกไว้ผูกกับตารางห้อง
-    const minutesByChannel = new Map(data.voiceChannelMinutes.map((row) => [row.channelId, row.minutes]));
-    const empty = tr('overview.noDataInThisPeriodYet2');
+function Podium({ users }: { users: ActivityStats['topUsers'] }) {
+    if (users.length === 0) return <p className="py-8 text-center text-sm text-muted-foreground">{tr('overview.noDataInThisPeriodYet2')}</p>;
     return (
-        <div className="grid gap-4 lg:grid-cols-2">
-            <Card className="lg:col-span-2">
-                <CardHeader>
-                    <CardTitle className="text-base">{tr('overview.mostActiveUsers2')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        label={tr('overview.mostActiveUsers2')}
-                        columns={topUserColumns()}
-                        data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
+        <ol className="grid grid-cols-3 items-end gap-2 pt-6">
+            {PODIUM.map(({ place, height, delay, tone }) => {
+                const user = users[place - 1];
+                return (
+                    <li key={place} className="group/podium flex flex-col items-center text-center" aria-label={tr('report.rank', { rank: place })}>
+                        {user && (
+                            <div className="dash-pop mb-2 flex w-full flex-col items-center gap-1" style={{ animationDelay: `${delay + 350}ms` }}>
+                                <span className="relative">
+                                    {place === 1 && (
+                                        <Crown className="absolute -top-5 left-1/2 size-5 -translate-x-1/2 fill-amber-400 text-amber-500 drop-shadow transition-transform duration-500 ease-spring group-hover/podium:-translate-y-0.5" />
+                                    )}
+                                    <span
+                                        className={cn(
+                                            'grid place-items-center overflow-hidden rounded-full bg-gradient-to-br font-bold text-white uppercase shadow-lg ring-4 ring-card transition-transform duration-500 ease-spring group-hover/podium:-translate-y-0.5',
+                                            tone,
+                                            place === 1 ? 'size-14 text-lg' : 'size-11 text-base',
+                                        )}
+                                    >
+                                        {user.avatarUrl ? (
+                                            <img src={user.avatarUrl} alt="" width={56} height={56} loading="lazy" className="size-full rounded-full object-cover" />
+                                        ) : (
+                                            user.userName.slice(0, 1)
+                                        )}
+                                    </span>
+                                </span>
+                                <span className="w-full truncate text-sm font-semibold">{user.userName}</span>
+                                <span className="text-xs text-muted-foreground tabular-nums">
+                                    {tr('report.timesCount', { count: formatNumber(user.total) })}
+                                </span>
+                            </div>
+                        )}
+                        {/* แท่น: ตัวเลขอันดับตัวโตแบบเส้นขอบ (สไตล์เดียวกับลายน้ำพื้นหลัง) */}
+                        <div
+                            className={cn(
+                                'dash-rise relative grid w-full place-items-center overflow-hidden rounded-t-2xl bg-gradient-to-b shadow-[inset_0_1px_0_oklch(1_0_0/30%)] transition-[filter,transform] duration-500 ease-spring group-hover/podium:-translate-y-1 group-hover/podium:brightness-110',
+                                height,
+                                tone,
+                            )}
+                            style={{ animationDelay: `${delay}ms` }}
+                        >
+                            <span className="text-4xl font-black text-white/90 [-webkit-text-stroke:1px_oklch(1_0_0/40%)]">{place}</span>
+                        </div>
+                    </li>
+                );
+            })}
+        </ol>
+    );
+}
+
+function Report({ data }: { data: ActivityStats }) {
+    const { summary } = data;
+    const net = summary.serverJoin - summary.serverLeave;
+    const empty = tr('overview.noDataInThisPeriodYet2');
+    const minutesByChannel = new Map(data.voiceChannelMinutes.map((row) => [row.channelId, row.minutes]));
+    const kpis: Kpi[] = [
+        {
+            label: tr('report.activeUsers'),
+            value: formatNumber(summary.activeUsers),
+            unit: tr('common.people'),
+            icon: Users,
+            hint: tr('report.activeUsersHint'),
+            foot: `${tr('overview.allEvents')} ${formatNumber(summary.totalEvents)}`,
+        },
+        {
+            label: tr('report.messages'),
+            value: formatNumber(summary.messages),
+            icon: MessageSquare,
+            hint: tr('report.messagesHint'),
+            foot: tr('report.perPerson', { count: formatNumber(summary.activeUsers ? Math.round(summary.messages / summary.activeUsers) : 0) }),
+        },
+        {
+            label: tr('report.voiceTime'),
+            value: formatMinutes(summary.voiceMinutes),
+            icon: Headphones,
+            hint: tr('report.voiceHint'),
+            foot: tr('report.voiceJoinsCount', { count: formatNumber(summary.voiceJoin) }),
+        },
+        {
+            label: tr('report.memberChange'),
+            value: `${net > 0 ? '+' : ''}${formatNumber(net)}`,
+            unit: tr('common.people'),
+            icon: UserPlus,
+            tone: net > 0 ? 'up' : net < 0 ? 'down' : undefined,
+            hint: tr('report.memberChangeHint'),
+            foot: tr('report.joinLeave', { join: formatNumber(summary.serverJoin), leave: formatNumber(summary.serverLeave) }),
+        },
+    ];
+    return (
+        <>
+            <section aria-label={tr('report.summary')}>
+                <KpiStrip items={kpis} />
+            </section>
+
+            {/* ไฮไลต์เป็นชิปสั้นๆ แถวเดียว — สมาชิกเพิ่ม/ลด + ช่วงที่คึกคักที่สุด */}
+            <ul aria-label={tr('report.highlights')} className="flex flex-wrap gap-2">
+                {highlights(data).map((item) => (
+                    <li
+                        key={item.text}
+                        className="group/hl flex items-center gap-2 rounded-full bg-card py-1.5 pr-4 pl-1.5 text-sm shadow-soft ring-1 ring-border transition-transform duration-500 ease-spring hover:-translate-y-0.5"
+                    >
+                        <span
+                            className={cn(
+                                'grid size-7 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground transition-transform duration-500 ease-spring group-hover/hl:scale-105',
+                                item.tone === 'up' && 'bg-success/15 text-success',
+                                item.tone === 'down' && 'bg-destructive/15 text-destructive',
+                            )}
+                        >
+                            <item.icon className="size-4" />
+                        </span>
+                        <span className="font-medium">{item.text}</span>
+                    </li>
+                ))}
+            </ul>
+
+            <div className="grid gap-6 lg:grid-cols-3">
+                <ReportCard className="lg:col-span-2" title={tr('report.trend')}>
+                    <ViewportContent fallback={<ChartsSkeleton />}>
+                        <Suspense fallback={<ChartsSkeleton />}>
+                            <Charts data={data} part="trend" />
+                        </Suspense>
+                    </ViewportContent>
+                </ReportCard>
+                <ReportCard title={tr('report.podium')}>
+                    <Podium users={data.topUsers} />
+                    {data.topUsers.length > 3 && (
+                        <div className="mt-4 border-t pt-3">
+                            <RankList
+                                empty={empty}
+                                rows={data.topUsers.slice(3, 5).map((u, i) => ({
+                                    key: u.userId,
+                                    name: u.userName,
+                                    value: u.total,
+                                    display: formatNumber(u.total),
+                                    lead: (
+                                        <span className="grid size-7 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-muted-foreground tabular-nums">
+                                            {i + 4}
+                                        </span>
+                                    ),
+                                }))}
+                            />
+                        </div>
+                    )}
+                </ReportCard>
+            </div>
+
+            <h2 className="flex items-center gap-2 pt-2 text-lg font-semibold">
+                <Activity className="size-5 text-ink" /> {tr('report.deepDive')}
+            </h2>
+            <div className="grid gap-6 lg:grid-cols-3">
+                <ReportCard title={tr('report.topVoiceUsers')}>
+                    <RankList
                         empty={empty}
+                        rows={data.topVoiceUsers.slice(0, 6).map((u) => ({
+                            key: u.userId,
+                            name: u.userName,
+                            value: u.minutes,
+                            display: formatMinutes(u.minutes),
+                            sub: tr('report.sessions', { count: formatNumber(u.sessions) }),
+                        }))}
                     />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">{tr('overview.mostTimeInVoice')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        label={tr('overview.mostTimeInVoice')}
-                        columns={voiceUserColumns()}
-                        data={data.topVoiceUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
+                </ReportCard>
+                <ReportCard title={tr('report.topVoiceChannels')}>
+                    <RankList
                         empty={empty}
+                        rows={data.topVoiceChannels.slice(0, 6).map((c) => ({
+                            key: c.channelId,
+                            name: c.channelName,
+                            value: c.joins,
+                            display: tr('report.timesCount', { count: formatNumber(c.joins) }),
+                            sub: `${tr('report.membersCount', { count: formatNumber(c.members) })} · ${formatMinutes(minutesByChannel.get(c.channelId) ?? 0)}`,
+                        }))}
                     />
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-base">{tr('overview.mostUsedVoiceChannels')}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <DataTable
-                        label={tr('overview.mostUsedVoiceChannels')}
-                        columns={voiceChannelColumns()}
-                        data={data.topVoiceChannels.map((c, i) => ({ ...c, rank: i + 1, minutes: minutesByChannel.get(c.channelId) ?? 0 }))}
-                        empty={empty}
-                    />
-                </CardContent>
-            </Card>
-        </div>
+                </ReportCard>
+                <ReportCard title={tr('report.eventShare')}>
+                    <ViewportContent fallback={<ChartsSkeleton />}>
+                        <Suspense fallback={<ChartsSkeleton />}>
+                            <Charts data={data} part="share" />
+                        </Suspense>
+                    </ViewportContent>
+                </ReportCard>
+            </div>
+
+            <ReportCard title={tr('report.allActiveUsers')}>
+                <DataTable
+                    label={tr('report.allActiveUsers')}
+                    columns={topUserColumns()}
+                    data={data.topUsers.map((u, i) => ({ ...u, rank: i + 1 }))}
+                    empty={empty}
+                />
+            </ReportCard>
+        </>
     );
 }
 
@@ -170,7 +303,6 @@ function OverviewPage() {
     const guildId = useGuildId();
     const queryClient = useQueryClient();
     const [preset, setPreset] = useState('168');
-    const [interval, setInterval] = useState<'auto' | 'hour' | 'day'>('auto');
     const [includeBots, setIncludeBots] = useState(false);
     const [custom, setCustom] = useState({ from: toLocalInput(new Date(Date.now() - 7 * 86400000)), to: toLocalInput(new Date()) });
     // ช่วงเวลาที่ใช้ดึงข้อมูลจริง (คำนวณใหม่เมื่อเลือกช่วง / กดรีเฟรช / กดดูข้อมูล)
@@ -178,8 +310,9 @@ function OverviewPage() {
     const [range, setRange] = useState<Pick<StatsParams, 'from' | 'to' | 'hours'>>({});
 
     const params = useMemo<StatsParams>(
-        () => ({ ...range, interval: interval === 'auto' ? undefined : interval, includeBots }),
-        [range, interval, includeBots],
+        // ความละเอียด (รายชั่วโมง/รายวัน) ให้ API เลือกเองตามช่วงเวลา
+        () => ({ ...range, includeBots }),
+        [range, includeBots],
     );
     const { data, isLoading, isFetching, error } = useQuery({ ...activityStatsQuery(guildId, params), placeholderData: keepPreviousData });
 
@@ -189,79 +322,30 @@ function OverviewPage() {
         // Bypass both freshness layers on an explicit refresh, including identical custom dates.
         void queryClient
             .fetchQuery({
-                ...activityStatsQuery(guildId, { ...nextRange, interval: params.interval, includeBots }, true),
+                ...activityStatsQuery(guildId, { ...nextRange, includeBots }, true),
                 staleTime: 0,
             })
             .catch(() => undefined);
     };
-    const summary = data?.summary;
-    const net = summary ? summary.serverJoin - summary.serverLeave : 0;
-    const tiles = summary
-        ? [
-              { label: tr('overview.allEvents'), value: formatNumber(summary.totalEvents) },
-              { label: tr('common.joinedServer'), value: formatNumber(summary.serverJoin), tone: 'ok' as const },
-              { label: tr('common.leftServer'), value: formatNumber(summary.serverLeave), tone: 'bad' as const },
-              {
-                  label: tr('overview.netMemberChange'),
-                  value: `${net > 0 ? '+' : ''}${formatNumber(net)}`,
-                  tone: net >= 0 ? ('ok' as const) : ('bad' as const),
-              },
-              { label: tr('overview.voiceJoins'), value: formatNumber(summary.voiceJoin), tone: 'info' as const },
-              { label: tr('common.totalVoiceTime'), value: formatMinutes(summary.voiceMinutes), tone: 'info' as const },
-              { label: tr('common.messagesSent'), value: formatNumber(summary.messages) },
-              { label: tr('overview.activeUsers'), value: formatNumber(summary.activeUsers) },
-          ]
-        : [];
-
     return (
         <>
-            <PageHeader help="overview" title={tr('common.serverOverview')} description={tr('overview.serverActivityAtAGlanceJoins')} />
+            <PageHeader help="overview" title={tr('common.serverOverview')} />
             <GettingStarted />
-            <Link to="/servers/$guildId/ai" params={{ guildId }} className="block">
-                <Card className="transition-colors hover:border-highlight/50 hover:bg-highlight/5">
-                    <CardContent className="flex items-center gap-3 py-4">
-                        <Bot className="size-5 text-highlight" />
-                        <div>
-                            <div className="font-medium">{tr('common.aiChatSettings')}</div>
-                            <p className="text-sm text-muted-foreground">{tr('overview.connectTheServersGeminiApiKey')}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            </Link>
-            <MiniRelationBoard guildId={guildId} />
             <Card>
                 <CardContent className="space-y-3">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <ToggleGroup
-                            className="flex-wrap justify-start"
-                            type="single"
-                            variant="outline"
+                        <PillTabs
+                            label={tr('relations.timeRange')}
                             value={preset}
-                            onValueChange={(value) => {
-                                if (!value) return;
+                            options={PRESETS()}
+                            onChange={(value) => {
                                 setPreset(value);
                                 // "กำหนดเอง" รอให้ผู้ใช้กด "ดูข้อมูล" เอง
                                 if (value !== 'custom') setRange(rangeFromPreset(value, custom));
                             }}
-                        >
-                            {PRESETS().map((p) => (
-                                <ToggleGroupItem key={p.value} value={p.value}>
-                                    {p.label}
-                                </ToggleGroupItem>
-                            ))}
-                        </ToggleGroup>
+                        />
                         <div className="flex flex-wrap items-center gap-2">
-                            <Select value={interval} onValueChange={(value) => setInterval(value as typeof interval)}>
-                                <SelectTrigger className="w-48">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="auto">{tr('overview.resolutionAuto')}</SelectItem>
-                                    <SelectItem value="hour">{tr('common.hourly')}</SelectItem>
-                                    <SelectItem value="day">{tr('common.daily')}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Label className="flex items-center gap-2 rounded-lg border px-3 py-1.5">
+                            <Label className="flex h-9 items-center gap-2 rounded-full border px-3">
                                 {tr('common.includeBots')}
                                 <Switch checked={includeBots} onCheckedChange={setIncludeBots} />
                             </Label>
@@ -300,7 +384,8 @@ function OverviewPage() {
                             <Button onClick={() => setRange(rangeFromPreset('custom', custom))}>{tr('overview.viewData')}</Button>
                         </div>
                     )}
-                    <p className="text-sm text-muted-foreground">
+                    <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <CalendarDays className="size-4 shrink-0" />
                         {data
                             ? `${formatDateTime(data.range.from)} — ${formatDateTime(data.range.to)} · ${data.range.interval === 'hour' ? tr('common.hourly') : tr('common.daily')}${
                                   data.summary.totalEvents === 0 ? tr('overview.noDataInThisPeriodYet') : ''
@@ -310,27 +395,7 @@ function OverviewPage() {
                 </CardContent>
             </Card>
 
-            {isLoading ? (
-                <OverviewStatsSkeleton />
-            ) : error ? (
-                <ErrorState error={error} />
-            ) : (
-                data && (
-                    <>
-                        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                            {tiles.map((tile) => (
-                                <StatTile key={tile.label} {...tile} />
-                            ))}
-                        </div>
-                        <ViewportContent fallback={<ChartsSkeleton />}>
-                            <Suspense fallback={<ChartsSkeleton />}>
-                                <Charts data={data} />
-                            </Suspense>
-                        </ViewportContent>
-                        <Tables data={data} />
-                    </>
-                )
-            )}
+            {isLoading ? <OverviewStatsSkeleton /> : error ? <ErrorState error={error} /> : data && <Report data={data} />}
         </>
     );
 }

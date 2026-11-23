@@ -11,6 +11,7 @@ import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
 import { HeroShowcase } from './hero-showcase';
+import { LanguageToggle } from './language-toggle';
 import { prefersReducedMotion, Reveal, useInView, useScrollProgress } from './reveal';
 import { SystemStatus } from './system-status';
 import './landing.css';
@@ -32,7 +33,7 @@ import mascotThumbs from './mascot/thumbs-up.webp';
 import showcaseLevelUp from './showcase/level-up.webp';
 import showcaseWeather from './showcase/weather.webp';
 import showcaseWelcome from './showcase/welcome.webp';
-import { byLang, tr, useLang } from '../../lib/i18n';
+import { byLang, tr } from '../../lib/i18n';
 
 // ลูกโลกเป็นแค่ฉากหลัง — แยก chunk ไม่ให้ live-globe (+ zod ที่ติดมากับ @notstack/shared) ขวางการแสดงหน้าแรก
 const LandingGlobe = lazy(() => import('@/features/live/live-globe').then((m) => ({ default: m.LandingGlobe })));
@@ -232,17 +233,6 @@ function scrollToSection(event: MouseEvent) {
 
 // navbar แถบเดียวลอยด้านบน: โลโก้หัวมาสคอต + เมนู (ไฮไลต์ section ปัจจุบัน) + ปุ่มเชิญที่หัวมาสคอตโบกตอนชี้
 // บนสุดของหน้าโปร่งใส เลื่อนลงแล้วเป็นกระจกฝ้า · จอเล็กมีปุ่มเปิดแผงเมนู · ขอบล่างเป็นแถบความคืบหน้าการเลื่อน
-// สลับ ไทย ⇄ English — ป้ายเป็นชื่อภาษาปลายทางในภาษานั้นเอง (อ่านออกแม้ไม่รู้ภาษาที่แสดงอยู่)
-function LanguageToggle() {
-    const [lang, setLang] = useLang();
-    const next = lang === 'th' ? 'en' : 'th';
-    return (
-        <button type="button" lang={next} onClick={() => void setLang(next)} className="rounded-xl px-3 py-2 text-sm text-slate-300 hover:text-white">
-            {next === 'en' ? 'English' : tr('layout.thaiLanguageName')}
-        </button>
-    );
-}
-
 function TopNav({ active, botName, inviteUrl }: { active: string | null; botName: string; inviteUrl?: string | null }) {
     const [open, setOpen] = useState(false);
     // กดลิงก์ในเมนูแล้วปิดแผง (การเลื่อนไป section ทำที่ scrollToSection)
@@ -287,7 +277,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                 }`}
             >
                 <div className="flex h-16 items-center gap-2 px-2.5">
-                    <a href="#top" onClick={closeMenu} className="group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
+                    <a href="#top" onClick={closeMenu} className="landing-brand group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
                         <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
                             <img
                                 src={headWhite}

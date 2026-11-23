@@ -15,7 +15,8 @@ type Params = Record<string, unknown>;
 // en.json โหลดเฉพาะตอนเลือก English (ผู้ใช้ภาษาไทยไม่ต้องโหลด) — main.tsx รอ loadLang ก่อน render ครั้งแรก
 const DICT: Record<Lang, Partial<Record<MessageKey, string>>> = { th, en: {} };
 export async function loadLang(lang: Lang) {
-    if (lang === 'en' && !Object.keys(DICT.en).length) DICT.en = (await import('../locales/en.json', { with: { type: 'json' } })).default;
+    // ห้ามใส่ `with { type: 'json' }`: Vite dev ส่ง JSON เป็น JS แต่ไม่ลบ attribute ของ import() → เบราว์เซอร์ปฏิเสธ กดเปลี่ยนภาษาไม่ได้
+    if (lang === 'en' && !Object.keys(DICT.en).length) DICT.en = (await import('../locales/en.json')).default;
 }
 // ข้อความไทยที่มาตอนรันไทม์ (ข้อมูลจาก API, ป้ายจาก @notstack/shared ที่บอทใช้ร่วม) → key
 // ข้อความไทยเดียวกันมีได้หลาย key (แปลอังกฤษต่างกันตามบริบท) → ใช้ data.* ก่อน แล้วค่อย key แรกตามลำดับในไฟล์

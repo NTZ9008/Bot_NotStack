@@ -319,3 +319,56 @@ test('log listeners bind every Discord event once and route member/voice changes
         ['voiceJoin', 'voiceSwitch', 'voiceLeave', 'voiceStateChange'],
     );
 });
+
+const { ActivityStatsService } = require('../apps/backend/dist/log-manager/services/activity-stats.service');
+
+test('activity stats attach cached Discord avatars to the top 3 users only, and work without Discord', async () => {
+    const row = (id, total) => ({
+        user_id: id,
+        user_name: `name-${id}`,
+        is_bot: false,
+        total,
+        messages: total,
+        voice_joins: 0,
+        commands: 0,
+        last_seen: new Date(),
+    });
+    // ตอบเฉพาะ query อันดับผู้ใช้ — ที่เหลือคืนว่าง (ไม่มีเหตุการณ์)
+    const prisma = {
+        $queryRaw: async (sql) => (sql.join('').includes('MAX(user_name) AS user_name') ? [row('u1', 9), row('u2', 8), row('u3', 7), row('u4', 6)] : []),
+    };
+    const avatar = (url) => ({ displayAvatarURL: () => url });
+    const discord = {
+        client: {
+            guilds: { cache: new Map([['g1', { members: { cache: new Map([['u1', avatar('https://cdn/member-u1.png')]]) } }]]) },
+            users: {
+                cache: new Map([
+                    ['u2', avatar('https://cdn/user-u2.png')],
+                    ['u4', avatar('https://cdn/user-u4.png')],
+                ]),
+            },
+        },
+    };
+    const range = {
+        guildId: 'g1',
+        from: new Date(Date.now() - 86_400_000),
+        to: new Date(),
+        includeBots: false,
+        interval: 'day',
+        timeZone: 'Asia/Bangkok',
+        limit: 10,
+    };
+
+    const { topUsers } = await new ActivityStatsService(prisma, discord).stats(range);
+    assert.deepEqual(
+        topUsers.map((u) => u.avatarUrl),
+        ['https://cdn/member-u1.png', 'https://cdn/user-u2.png', null, undefined], // สมาชิกใน guild ก่อน, แล้ว user cache, ไม่เจอ = null, อันดับ 4+ ไม่แนบ
+    );
+
+    const withoutDiscord = await new ActivityStatsService(prisma).stats(range);
+    assert.deepEqual(
+        withoutDiscord.topUsers.slice(0, 3).map((u) => u.avatarUrl),
+        [null, null, null],
+    );
+    assert.equal(withoutDiscord.summary.activeUsers, 4);
+});

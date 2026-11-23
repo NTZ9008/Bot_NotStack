@@ -1,6 +1,5 @@
 import { tr } from '../../../../../lib/i18n';
 import { createFileRoute, useNavigate, useRouter } from '@tanstack/react-router';
-import { BrandDiscord, LayoutDashboard } from '@/components/icons';
 import { useMemo } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery } from '@/api/admin';
 import { PageHeader } from '@/components/page-header';
@@ -57,14 +56,14 @@ function AuditLogsPage() {
                             void navigate({ to: '/servers/$guildId/audit-logs', params: { guildId }, search: { source: value as 'dashboard' | 'discord' } })
                         }
                     >
-                        <TabsList variant="line" className="mb-4">
+                        <TabsList className="mb-4">
                             <TabsTrigger
                                 value="dashboard"
                                 onMouseEnter={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onFocus={() => prioritize(`${guildId}:audit:dashboard`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:dashboard`)}
                             >
-                                <LayoutDashboard /> {tr('auditLogs.dashboardSettings')}
+                                {tr('auditLogs.dashboardSettings')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="discord"
@@ -72,7 +71,7 @@ function AuditLogsPage() {
                                 onFocus={() => prioritize(`${guildId}:audit:discord`)}
                                 onTouchStart={() => prioritize(`${guildId}:audit:discord`)}
                             >
-                                <BrandDiscord /> {tr('auditLogs.discordServerEvents')}
+                                {tr('auditLogs.discordServerEvents')}
                             </TabsTrigger>
                         </TabsList>
                         <TabsContent value="dashboard">

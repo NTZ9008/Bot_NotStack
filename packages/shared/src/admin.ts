@@ -241,6 +241,7 @@ export interface ActivityTopUser {
     voiceJoins: number;
     commands: number;
     lastSeen: string;
+    avatarUrl?: string | null;
 }
 
 export interface ActivityStats {

@@ -4,7 +4,8 @@ import { PageHelp } from '@/components/page-help';
 import { useDocumentTitle } from '@/hooks/use-document-title';
 import { PAGE_GUIDES, type PageGuideKey } from '@/lib/page-guides';
 
-// หัวของแต่ละหน้า: ชื่อ + คำอธิบาย + คู่มือ + ปุ่ม/สวิตช์ด้านขวา
+// หัวของแต่ละหน้า: ชื่อ + ปุ่มคู่มือ + ปุ่ม/สวิตช์ด้านขวา
+// คำอธิบาย/วิธีบันทึกอยู่ในปุ่ม "วิธีใช้งาน" แล้ว — โชว์ description ใต้ชื่อเฉพาะหน้าที่ไม่มีคู่มือ (ให้หน้ากระชับ)
 export function PageHeader({ title, description, actions, help }: { title: string; description?: ReactNode; actions?: ReactNode; help?: PageGuideKey }) {
     title = trText(title);
     if (typeof description === 'string') description = trText(description);
@@ -12,9 +13,8 @@ export function PageHeader({ title, description, actions, help }: { title: strin
     return (
         <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1 basis-72 space-y-1">
-                <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-                {description && <p className="text-sm text-muted-foreground">{description}</p>}
-                {help && <p className="text-xs leading-relaxed text-info">{trText(PAGE_GUIDES()[help].saving)}</p>}
+                <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+                {description && !help && <p className="text-sm text-muted-foreground">{description}</p>}
             </div>
             {(help || actions) && (
                 <div className="flex max-w-full flex-wrap items-center gap-2">

@@ -1,6 +1,5 @@
 import { tr } from '../../../../../lib/i18n';
 import { DEFAULT_LOG_APPEARANCE } from '@notstack/shared';
-import { Brush, Filter, ListTree } from '@/components/icons';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -95,15 +94,15 @@ function LogManagerPage() {
                             </p>
                         )}
                         <Tabs defaultValue="events" className="gap-5">
-                            <TabsList variant="line" className="overflow-x-auto">
-                                <TabsTrigger value="events">
-                                    <ListTree /> {tr('logManager.eventsChannels')}
+                            <TabsList className="h-auto w-full flex-wrap justify-start sm:w-fit">
+                                <TabsTrigger value="events" className="px-4 py-2">
+                                    {tr('logManager.eventsChannels')}
                                 </TabsTrigger>
-                                <TabsTrigger value="appearance">
-                                    <Brush /> {tr('logManager.messageFormat')}
+                                <TabsTrigger value="appearance" className="px-4 py-2">
+                                    {tr('logManager.messageFormat')}
                                 </TabsTrigger>
-                                <TabsTrigger value="filters">
-                                    <Filter /> {tr('logManager.filters')}
+                                <TabsTrigger value="filters" className="px-4 py-2">
+                                    {tr('logManager.filters')}
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="appearance" forceMount className="data-[state=inactive]:hidden">

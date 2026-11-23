@@ -35,7 +35,7 @@ void loadLang(document.documentElement.lang === 'en' ? 'en' : 'th')
                             <LangBoundary>
                                 <RouterProvider router={router} />
                             </LangBoundary>
-                            <Toaster position="top-right" closeButton />
+                            <Toaster position="bottom-center" closeButton />
                         </ConfirmProvider>
                     </TooltipProvider>
                 </QueryClientProvider>

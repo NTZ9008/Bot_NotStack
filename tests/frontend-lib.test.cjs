@@ -3,15 +3,19 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const ts = require('../apps/backend/node_modules/typescript');
 // Only dependency-free helpers from the dashboard are loaded as TS for this Node test.
+// helper import ของ TS ประกาศที่นี่ที่เดียว (noEmitHelpers) — ถ้าแปะลงทุกไฟล์ branch ของ helper ที่เทสต์วิ่งไม่ถึงจะปนใน coverage ของไฟล์ .ts
+globalThis.__importDefault = (mod) => (mod?.__esModule ? mod : { default: mod });
+globalThis.__importStar = (mod) => (mod?.__esModule ? mod : { ...mod, default: mod });
 require.extensions['.ts'] = (module, filename) => {
     module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
-            .outputText,
+        ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+            compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, noEmitHelpers: true },
+        }).outputText,
         filename,
     );
 };
 const { escapeHtml, renderDiscordMarkdown } = require('../apps/frontend/src/lib/discord-markdown.ts');
-const { formatBytes, formatMinutes } = require('../apps/frontend/src/lib/format.ts');
+const { formatBytes, formatMinutes, shortBucketLabel } = require('../apps/frontend/src/lib/format.ts');
 
 test('Discord markdown preview escapes user HTML before adding its own tags', () => {
     assert.equal(escapeHtml(`<img src=x onerror="alert(1)">'`), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&#39;');
@@ -35,6 +39,10 @@ test('Thai duration and size formatting', () => {
     assert.equal(formatMinutes(125), '2 ชม. 5 นาที');
     assert.equal(formatBytes(10), '1 KB');
     assert.equal(formatBytes(3 * 1024 * 1024), '3.0 MB');
+});
+test('activity bucket labels are shortened for chart axes and highlights', () => {
+    assert.equal(shortBucketLabel('2026-11-22 14:00', 'hour'), '22/11 14:00');
+    assert.equal(shortBucketLabel('2026-11-22 00:00', 'day'), '22/11');
 });
 
 const { visibleNavGroups, findNavItem } = require('../apps/frontend/src/components/layout/nav-items.ts');
@@ -435,8 +443,10 @@ test('date/time picker keeps the same string format as native inputs', () => {
 const { translate, translateText, loadLang } = require('../apps/frontend/src/lib/i18n.ts');
 
 test('i18n translates by key from locales/*.json, falls back to Thai, fills {params}', async () => {
+    await loadLang('th'); // ภาษาไทยอยู่ใน bundle แล้ว ไม่ต้องโหลดอะไร
     assert.equal(translate('en', 'common.botSettings'), 'ตั้งค่าบอท'); // en.json ยังไม่โหลด → ภาษาไทย
     await loadLang('en');
+    await loadLang('en'); // โหลดแล้วไม่โหลดซ้ำ
     assert.equal(translate('th', 'common.botSettings'), 'ตั้งค่าบอท');
     assert.equal(translate('en', 'common.botSettings'), 'Bot settings');
     assert.equal(translate('en', 'layout.countServers', { count: 3 }), '3 servers');

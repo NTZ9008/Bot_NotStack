@@ -1,6 +1,5 @@
 import { xpAtLevel, xpForNextLevel } from '@notstack/shared';
 import { useT, tr } from '@/lib/i18n';
-import { Award, History, IdCard, Palette, Settings, Trophy, Users } from '@/components/icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useMemo, useState } from 'react';
@@ -204,29 +203,25 @@ function LevelsPage() {
         <>
             <PageHeader help="levels" title={tr('common.ranksLevels')} description={t('levels.xpSystemForNameLeaderboardRank', { name: guild.name })} />
             <Tabs defaultValue="leaderboard" key={guild.id}>
-                <TabsList variant="line" className="mb-4">
-                    <TabsTrigger value="leaderboard">
-                        <Trophy /> {tr('levels.leaderboard')}
-                    </TabsTrigger>
+                <TabsList className="mb-4 flex h-auto flex-wrap">
+                    <TabsTrigger value="leaderboard">{tr('levels.leaderboard')}</TabsTrigger>
                     <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
-                        <IdCard /> {tr('levels.myCard')}
+                        {tr('levels.myCard')}
                     </TabsTrigger>
                     {manage && (
                         <>
                             <TabsTrigger value="card-theme" {...intent(['meta', 'theme', 'welcome-meta', 'assets', 'cards'])}>
-                                <Palette /> {tr('levels.cardTheme')}
+                                {tr('levels.cardTheme')}
                             </TabsTrigger>
                             <TabsTrigger value="level-up" {...intent(['meta', 'theme', 'level-up', 'channels', 'roles'])}>
-                                <Award /> {tr('levels.levelUpsRewardRoles')}
+                                {tr('levels.levelUpsRewardRoles')}
                             </TabsTrigger>
                             <TabsTrigger value="settings" {...intent(['settings', 'channels', 'roles'])}>
-                                <Settings /> {tr('levels.xpRulesRates')}
+                                {tr('levels.xpRulesRates')}
                             </TabsTrigger>
-                            <TabsTrigger value="members">
-                                <Users /> {tr('levels.manageMembers')}
-                            </TabsTrigger>
+                            <TabsTrigger value="members">{tr('levels.manageMembers')}</TabsTrigger>
                             <TabsTrigger value="history" {...intent(['history'])}>
-                                <History /> {tr('common.history')}
+                                {tr('common.history')}
                             </TabsTrigger>
                         </>
                     )}
