@@ -576,6 +576,63 @@ test('theme: setTheme still applies when localStorage is blocked', (t) => {
     assert.deepEqual([...classes], ['dark']);
 });
 
+test('sliding indicator follows the active item and cleans up its observers', (t) => {
+    const { trackActiveItem, useSlidingIndicator } = require('../apps/frontend/src/hooks/use-sliding-indicator.ts');
+    const observers = [];
+    class FakeObserver {
+        constructor(cb) {
+            this.cb = cb;
+            this.targets = [];
+            observers.push(this);
+        }
+        observe(target) {
+            this.targets.push(target);
+        }
+        disconnect() {
+            this.disconnected = true;
+        }
+    }
+    let frame;
+    Object.assign(globalThis, {
+        MutationObserver: FakeObserver,
+        ResizeObserver: FakeObserver,
+        requestAnimationFrame: (cb) => ((frame = cb), 7),
+        cancelAnimationFrame: (id) => (frame = id === 7 ? null : frame),
+    });
+    t.after(() => ['MutationObserver', 'ResizeObserver', 'requestAnimationFrame', 'cancelAnimationFrame'].forEach((k) => delete globalThis[k]));
+
+    const tab = (left, width) => ({ offsetLeft: left, offsetTop: 4, offsetWidth: width, offsetHeight: 28 });
+    const items = [tab(4, 99), tab(103, 144)];
+    let active = items[0];
+    const list = { children: items, querySelector: (sel) => (assert.equal(sel, ':scope > [data-state="active"]'), active) };
+    const pill = { style: {}, dataset: {} };
+
+    const cleanup = trackActiveItem(list, pill, '[data-state="active"]');
+    assert.deepEqual(pill.style, { opacity: '1', width: '99px', height: '28px', transform: 'translate(4px, 4px)' });
+    assert.equal(pill.dataset.ready, undefined); // ตำแหน่งแรกไม่ animate
+    frame();
+    assert.equal(pill.dataset.ready, '');
+    assert.deepEqual(observers[1].targets, [list, ...items]);
+
+    active = items[1];
+    observers[0].cb(); // data-state เปลี่ยน
+    assert.equal(pill.style.transform, 'translate(103px, 4px)');
+    assert.equal(pill.style.width, '144px');
+
+    active = null;
+    observers[1].cb();
+    assert.equal(pill.style.opacity, '0');
+
+    cleanup();
+    assert.ok(observers.every((o) => o.disconnected));
+
+    // render ฝั่ง server: ไม่มี DOM → คืน ref ว่าง ไม่ error
+    assert.equal(
+        renderHook(() => useSlidingIndicator('[data-state="on"]').listRef.current),
+        'null',
+    );
+});
+
 test('SEO prerender gives each public page its own head and crawlable body', () => {
     const { renderPageHtml } = require('../apps/frontend/src/lib/seo-prerender.ts');
     const html = fs.readFileSync(require.resolve('../apps/frontend/index.html'), 'utf8');
