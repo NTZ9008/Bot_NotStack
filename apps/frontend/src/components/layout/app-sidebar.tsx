@@ -54,31 +54,19 @@ export function AppSidebar() {
     const prioritize = usePreloadTasks(tasks);
 
     return (
-        <Sidebar collapsible="icon">
-            <SidebarHeader>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <Link to="/servers">
-                                <img
-                                    src={bot.avatar}
-                                    alt=""
-                                    className="size-8 shrink-0 rounded-full border border-border shadow-[0_0_16px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
-                                />
-                                <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                    <span className="truncate font-semibold text-highlight">{bot.name}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{info ? `V${info.version}` : ' '}</span>
-                                </div>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
+        // การ์ดลอยใต้แถบบน — ชิดขอบซ้ายของกรอบกลางจอ (max-w 1440px) เดียวกับแถบบน
+        <Sidebar
+            collapsible="icon"
+            variant="floating"
+            className="top-(--dash-top)! left-[max(0px,calc((100vw-1440px)/2))]! h-[calc(100svh-var(--dash-top))]! px-3 pt-0 pb-3 md:pr-0"
+        >
+            <SidebarHeader className="p-3 pb-1 group-data-[collapsible=icon]:px-2">
                 <GuildSwitcher guildId={guildId} />
             </SidebarHeader>
 
             <SidebarContent>
                 {visibleNavGroups(isAdmin, guildId ? (guild ?? null) : null).map((group) => (
-                    <SidebarGroup key={group.label}>
+                    <SidebarGroup key={group.label} className="px-3 py-1.5 group-data-[collapsible=icon]:px-2">
                         <SidebarGroupLabel>{trText(group.label)}</SidebarGroupLabel>
                         <SidebarGroupContent>
                             <SidebarMenu>
@@ -106,11 +94,20 @@ export function AppSidebar() {
                 ))}
             </SidebarContent>
 
-            <SidebarFooter>
+            <SidebarFooter className="p-3 pt-1">
                 <div className="space-y-2 group-data-[collapsible=icon]:hidden">
-                    <ThemeSwitcher />
-                    <LanguageSwitcher />
-                    <p className="px-2 pb-1 text-xs text-muted-foreground">Developed by arlifzs © 2026</p>
+                    {/* จอเล็กไม่มีที่บนแถบบน — ย้ายปุ่มธีม/ภาษามาไว้ในลิ้นชักเมนู */}
+                    {isMobile && (
+                        <>
+                            <ThemeSwitcher />
+                            <LanguageSwitcher />
+                        </>
+                    )}
+                    <div className="flex items-center gap-2 rounded-2xl bg-sidebar-accent/50 px-3 py-2">
+                        <img src={bot.avatar} alt="" width={24} height={24} className="size-6 shrink-0 rounded-full" />
+                        <span className="min-w-0 flex-1 truncate text-xs font-medium">{bot.name}</span>
+                        <span className="font-mono text-[10px] text-muted-foreground">{info ? `v${info.version}` : ''}</span>
+                    </div>
                 </div>
             </SidebarFooter>
             <SidebarRail />

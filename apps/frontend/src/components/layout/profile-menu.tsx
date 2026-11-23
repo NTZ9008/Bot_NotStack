@@ -47,18 +47,20 @@ export function ProfileMenu() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-10 gap-2 px-2">
-                    <Avatar className="size-7">
+                <Button className="h-10 gap-2 pr-3 pl-1">
+                    <Avatar className="size-8 ring-2 ring-white/30">
                         <AvatarImage src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" />
                         <AvatarFallback>{user.displayName.slice(0, 1)}</AvatarFallback>
                     </Avatar>
-                    <span className="sr-only max-w-36 truncate text-sm font-medium sm:not-sr-only">{user.displayName}</span>
-                    <RoleBadge role={user.role} className="hidden sm:inline-flex" />
-                    <ChevronDown className="size-4 text-muted-foreground" />
+                    <span className="sr-only max-w-32 truncate text-sm font-semibold sm:not-sr-only">{user.displayName}</span>
+                    <ChevronDown className="size-4 opacity-80 transition-transform duration-500 ease-spring group-aria-expanded/button:rotate-180" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel className="truncate">{user.displayName}</DropdownMenuLabel>
+                <DropdownMenuLabel className="flex items-center gap-2">
+                    <span className="min-w-0 flex-1 truncate">{user.displayName}</span>
+                    <RoleBadge role={user.role} />
+                </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                     <Link to="/account">
