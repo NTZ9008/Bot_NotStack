@@ -511,7 +511,7 @@ test('i18n setLang switches the page language, remembers it and notifies listene
     assert.equal(label().text, 'ตั้งค่าบอท');
     assert.equal(dateLocale(), 'th-TH');
     await setLang('en');
-    assert.equal(document.documentElement.lang, 'en');
+    assert.equal(globalThis.document.documentElement.lang, 'en');
     assert.equal(stored.lang, 'en');
     assert.equal(tr('common.botSettings'), 'Bot settings');
     assert.equal(trText('ตั้งค่าบอท'), 'Bot settings');
@@ -524,7 +524,7 @@ test('i18n setLang still works when localStorage is blocked', async (t) => {
     const { setLang } = require('../apps/frontend/src/lib/i18n.ts');
     fakeBrowser(t, { storageThrows: true });
     await setLang('en');
-    assert.equal(document.documentElement.lang, 'en');
+    assert.equal(globalThis.document.documentElement.lang, 'en');
 });
 
 test('i18n translateFields only translates label fields of API data, and only in English', (t) => {
@@ -532,7 +532,7 @@ test('i18n translateFields only translates label fields of API data, and only in
     fakeBrowser(t);
     const data = { label: 'ตั้งค่าบอท', name: 'ตั้งค่าบอท', items: [{ description: 'ตั้งค่าบอท' }, null], blob: new Blob(['x']), count: 2 };
     assert.equal(translateFields(data), data); // ภาษาไทย: คืนค่าเดิม
-    document.documentElement.lang = 'en';
+    globalThis.document.documentElement.lang = 'en';
     const out = translateFields(data);
     assert.deepEqual(
         { ...out, blob: undefined },
