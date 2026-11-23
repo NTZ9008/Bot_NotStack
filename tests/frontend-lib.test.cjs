@@ -15,7 +15,7 @@ require.extensions['.ts'] = (module, filename) => {
     );
 };
 const { escapeHtml, renderDiscordMarkdown } = require('../apps/frontend/src/lib/discord-markdown.ts');
-const { formatBytes, formatMinutes } = require('../apps/frontend/src/lib/format.ts');
+const { formatBytes, formatMinutes, shortBucketLabel } = require('../apps/frontend/src/lib/format.ts');
 
 test('Discord markdown preview escapes user HTML before adding its own tags', () => {
     assert.equal(escapeHtml(`<img src=x onerror="alert(1)">'`), '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;&#39;');
@@ -39,6 +39,10 @@ test('Thai duration and size formatting', () => {
     assert.equal(formatMinutes(125), '2 ชม. 5 นาที');
     assert.equal(formatBytes(10), '1 KB');
     assert.equal(formatBytes(3 * 1024 * 1024), '3.0 MB');
+});
+test('activity bucket labels are shortened for chart axes and highlights', () => {
+    assert.equal(shortBucketLabel('2026-11-22 14:00', 'hour'), '22/11 14:00');
+    assert.equal(shortBucketLabel('2026-11-22 00:00', 'day'), '22/11');
 });
 
 const { visibleNavGroups, findNavItem } = require('../apps/frontend/src/components/layout/nav-items.ts');

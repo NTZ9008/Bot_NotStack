@@ -48,6 +48,7 @@ export class ActivityStatsService {
     ) {}
 
     // รูปโปรไฟล์ของ 3 อันดับแรก (โพเดียมหน้า Overview) — อ่านจาก cache ของบอทอย่างเดียว ไม่ยิง Discord API เพิ่ม
+    // (ActivityTopUser.avatarUrl มีเฉพาะ 3 อันดับแรก; คนที่ไม่อยู่ใน cache = null)
     private avatarOf(guildId: string, userId: string): string | null {
         const client = this.discord?.client;
         const user = client?.guilds.cache.get(guildId)?.members.cache.get(userId) ?? client?.users.cache.get(userId);
