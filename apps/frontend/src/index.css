@@ -6,26 +6,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ฟอนต์หลักแบบ ref: LINE Seed Sans TH (มีทั้งไทยและอังกฤษ) */
-@font-face {
-    font-family: 'LINESeedSansTH';
-    src: url('/fonts/LINESeedSansTH_W_Rg.woff2') format('woff2');
-    font-weight: 400;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'LINESeedSansTH';
-    src: url('/fonts/LINESeedSansTH_W_Bd.woff2') format('woff2');
-    font-weight: 700;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'LINESeedSansTH';
-    src: url('/fonts/LINESeedSansTH_W_XBd.woff2') format('woff2');
-    font-weight: 800;
-    font-display: swap;
-}
-
 /* ==========================================
    🎨 THEME — โทนขาว/ดำเรียบๆ มีทั้งสว่าง (:root) และมืด (.dark) สลับได้จากปุ่มในเมนูซ้าย
    ========================================== */
@@ -67,8 +47,7 @@
     /* สีเน้น (ไอคอน/ป้าย/ข้อความเด่น) */
     --highlight: oklch(0.48 0.17 251);
 
-    /* มุมโค้ง 4px แบบ ref (Mantine radius sm) — rounded-lg = 4px, rounded-xl ≈ 6px */
-    --radius: 0.25rem;
+    --radius: 0.625rem;
 
     --sidebar: oklch(1 0 0);
     --sidebar-foreground: oklch(0.21 0 0);
@@ -170,7 +149,7 @@
 }
 
 @theme inline {
-    --font-sans: 'LINESeedSansTH', 'Noto Sans Thai Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-sans: 'Inter Variable', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, sans-serif;
     --font-heading: var(--font-sans);
 
     --color-sidebar: var(--sidebar);
@@ -282,7 +261,3 @@
     }
 }
 
-/* ไอคอน Tabler เส้นบาง 1.5 แบบ ref */
-.tabler-icon {
-    stroke-width: 1.5;
-}

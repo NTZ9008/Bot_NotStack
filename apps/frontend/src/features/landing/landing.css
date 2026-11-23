@@ -3,8 +3,6 @@
    ========================================== */
 
 .landing {
-    --radius: 0.625rem;
-    font-family: 'Inter Variable', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, sans-serif; /* landing คงฟอนต์เดิม */ /* หน้า landing คงมุมโค้งเดิม ไม่ตามธีม dashboard */
     --ld-bg: #060818;
     --ld-card: #0b1030;
     --ld-blue: #2a45ff;

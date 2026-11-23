@@ -1,33 +1,33 @@
 import { tr, byLang } from '../../lib/i18n';
 import { PAGE_GUIDES, type PageGuideKey } from '../../lib/page-guides';
 import type { GuildSummary } from '@notstack/shared';
-// import ตรงจาก tabler (ไม่ผ่าน alias @/) เพราะ tests/frontend-lib.test.cjs โหลดไฟล์นี้ด้วย Node
-import type { Icon as LucideIcon } from '@tabler/icons-react';
+// import ตรงจาก lucide (ไม่ผ่าน alias @/) เพราะ tests/frontend-lib.test.cjs โหลดไฟล์นี้ด้วย Node
+import type { LucideIcon } from 'lucide-react';
 import {
-    IconUserCircle as CircleUser,
-    IconSunWind as CloudSun,
-    IconRobot as Bot,
-    IconActivity as Activity,
-    IconCoins as Coins,
-    IconFileSpreadsheet as FileSpreadsheet,
-    IconFileText as FileText,
-    IconGitPullRequest as GitPullRequest,
-    IconHeadphones as Headphones,
-    IconHistory as History,
-    IconChartLine as LineChart,
-    IconLock as Lock,
-    IconMicrophone as Mic,
-    IconNews as Newspaper,
-    IconFileDescription as ScrollText,
-    IconServer as Server,
-    IconSettings as Settings,
-    IconShieldCheck as ShieldCheck,
-    IconTicket as Ticket,
-    IconTrophy as Trophy,
-    IconUserPlus as UserPlus,
-    IconUsers as Users,
-    IconAffiliate as Waypoints,
-} from '@tabler/icons-react';
+    CircleUser,
+    CloudSun,
+    Bot,
+    Activity,
+    Coins,
+    FileSpreadsheet,
+    FileText,
+    GitPullRequest,
+    Headphones,
+    History,
+    LineChart,
+    Lock,
+    Mic,
+    Newspaper,
+    ScrollText,
+    Server,
+    Settings,
+    ShieldCheck,
+    Ticket,
+    Trophy,
+    UserPlus,
+    Users,
+    Waypoints,
+} from 'lucide-react';
 
 export interface NavItem {
     // path ของ route (หน้าของเซิร์ฟเวอร์มี $guildId — ใส่ params ตอนสร้างลิงก์)

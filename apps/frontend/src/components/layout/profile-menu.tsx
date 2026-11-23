@@ -2,11 +2,12 @@ import { replaceSession } from '@/lib/session';
 import { useT } from '@/lib/i18n';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ChevronsUpDown, CircleUser, LogOut } from '@/components/icons';
+import { ChevronDown, CircleUser, LogOut } from '@/components/icons';
 import { authApi } from '@/api/auth';
 import { useConfirm } from '@/components/confirm-dialog';
 import { RoleBadge } from '@/components/role-badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -15,7 +16,6 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { DEFAULT_AVATAR } from '@/lib/format';
 
@@ -39,49 +39,38 @@ export function useLogout(): () => Promise<void> {
     };
 }
 
-// การ์ดผู้ใช้ในเมนูซ้าย (รูป + ชื่อ + บัญชี) กดแล้วเปิดเมนูบัญชี/ออกจากระบบ
 export function ProfileMenu() {
     const { user } = useAuth();
     const logout = useLogout();
-    const { isMobile, setOpenMobile } = useSidebar();
     const t = useT();
 
     return (
-        <SidebarMenu>
-            <SidebarMenuItem>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton size="lg" tooltip={user.displayName} className="data-[state=open]:bg-sidebar-accent">
-                            <Avatar className="size-8 rounded-md">
-                                <AvatarImage src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" />
-                                <AvatarFallback className="rounded-md">{user.displayName.slice(0, 1)}</AvatarFallback>
-                            </Avatar>
-                            <div className="grid min-w-0 flex-1 text-left leading-tight">
-                                <span className="truncate font-semibold">{user.displayName}</span>
-                                <span className="truncate text-xs text-muted-foreground">{user.discordUsername ?? user.username ?? ' '}</span>
-                            </div>
-                            <ChevronsUpDown className="ml-auto size-4 text-muted-foreground" />
-                        </SidebarMenuButton>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" side={isMobile ? 'bottom' : 'right'} className="w-56">
-                        <DropdownMenuLabel className="flex items-center justify-between gap-2">
-                            <span className="truncate">{t('layout.shortcuts')}</span>
-                            <RoleBadge role={user.role} />
-                        </DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                            <Link to="/account" onClick={() => isMobile && setOpenMobile(false)}>
-                                <CircleUser />
-                                {t('common.myAccount')}
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>
-                            <LogOut />
-                            {t('layout.logOut2')}
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </SidebarMenuItem>
-        </SidebarMenu>
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-10 gap-2 px-2">
+                    <Avatar className="size-7">
+                        <AvatarImage src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" />
+                        <AvatarFallback>{user.displayName.slice(0, 1)}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden max-w-36 truncate text-sm font-medium sm:inline">{user.displayName}</span>
+                    <RoleBadge role={user.role} className="hidden sm:inline-flex" />
+                    <ChevronDown className="size-4 text-muted-foreground" />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuLabel className="truncate">{user.displayName}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link to="/account">
+                        <CircleUser />
+                        {t('common.myAccount')}
+                    </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem variant="destructive" onSelect={() => void logout()}>
+                    <LogOut />
+                    {t('layout.logOut2')}
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
     );
 }
