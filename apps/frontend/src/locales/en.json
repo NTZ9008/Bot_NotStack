@@ -1846,6 +1846,7 @@
     "login.byLoggingInYouAcceptThe": "By logging in you accept the",
     "login.loggedIn": "Logged in!",
     "login.loginFailed": "Login failed",
+    "login.mascotSay": "Welcome back! Log in and let's get your server sorted.",
     "login.loginFailed2": "Login failed",
     "login.logInToManageTheBot": "Log in to manage the bot",
     "login.logInWithDiscord": "Log in with Discord",

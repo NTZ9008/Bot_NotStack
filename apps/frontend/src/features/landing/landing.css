@@ -268,6 +268,50 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* ==========================================
+   🔀 landing ⇄ login (View Transitions ของ router): พื้นหลังเดียวกันค่อยๆ จางเข้าหากัน,
+   โลโก้ย้ายตำแหน่งเหมือนเป็นชิ้นเดียวกัน, การ์ด login ลอยขึ้นมา — ดูเหมือนอยู่หน้าเดียวกัน
+   ========================================== */
+.landing-brand {
+    view-transition-name: landing-brand;
+}
+
+.landing-login-card {
+    view-transition-name: landing-login-card;
+}
+
+::view-transition-group(landing-brand) {
+    animation-duration: 450ms;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 380ms;
+}
+
+@keyframes landing-card-in {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
+    }
+}
+
+@keyframes landing-card-out {
+    to {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
+    }
+}
+
+::view-transition-new(landing-login-card) {
+    animation: landing-card-in 520ms cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+::view-transition-old(landing-login-card) {
+    animation: landing-card-out 260ms ease-in both;
+}
+
 @media (prefers-reduced-motion: reduce) {
     .landing-marquee,
     .landing-float,
@@ -282,5 +326,10 @@
     .landing-progress {
         animation: none;
         transform: scaleX(1);
+    }
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none;
     }
 }

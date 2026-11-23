@@ -18,7 +18,8 @@ import { SplashScreen } from '@/components/splash-screen';
 export const Route = createFileRoute('/_app')({
     beforeLoad: async ({ context, location }) => {
         const me = await context.queryClient.ensureQueryData(meQuery);
-        if (!me) throw redirect({ to: '/login', search: { redirect: location.href } });
+        // viewTransition: มาจากหน้า landing แล้วค่อยๆ เปลี่ยนเป็นหน้า login (ดู landing.css)
+        if (!me) throw redirect({ to: '/login', search: { redirect: location.href }, viewTransition: true });
         return { me };
     },
     component: AppLayout,

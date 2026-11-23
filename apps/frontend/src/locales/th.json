@@ -1846,6 +1846,7 @@
     "login.byLoggingInYouAcceptThe": "การเข้าสู่ระบบถือว่าคุณยอมรับ",
     "login.loggedIn": "เข้าสู่ระบบสำเร็จ!",
     "login.loginFailed": "เข้าสู่ระบบไม่สำเร็จ",
+    "login.mascotSay": "ยินดีต้อนรับกลับมา! เข้าสู่ระบบแล้วไปจัดการเซิร์ฟกันต่อ",
     "login.loginFailed2": "เข้าสู่ระบบล้มเหลว",
     "login.logInToManageTheBot": "เข้าสู่ระบบเพื่อจัดการบอท",
     "login.logInWithDiscord": "เข้าสู่ระบบด้วย Discord",
