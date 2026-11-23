@@ -23,18 +23,18 @@ const Toaster = ({ ...props }: ToasterProps) => {
         unstyled: true,
         classNames: {
           toast:
-            "flex w-full items-start gap-3 rounded-lg border border-l-[3px] bg-popover py-3 pr-10 pl-3 font-sans text-sm text-popover-foreground shadow-lg",
+            "flex w-full items-start gap-3 rounded-2xl border border-l-[3px] bg-popover/95 py-3 pr-10 pl-3.5 backdrop-blur font-sans text-sm text-popover-foreground shadow-soft",
           icon: "mt-px flex shrink-0 text-muted-foreground",
           content: "flex min-w-0 flex-1 flex-col gap-0.5",
           title: "leading-snug font-semibold",
           description: "leading-snug text-muted-foreground",
           closeButton:
             // ! เพราะ sonner มีกฎ [data-sonner-theme] [data-close-button] ที่ใส่สีให้แม้ unstyled และ specificity สูงกว่า
-            "absolute top-2.5 right-2.5 grid size-6 place-items-center rounded-md border-0 bg-transparent! text-muted-foreground! transition-colors hover:bg-accent! hover:text-foreground! focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+            "absolute top-2.5 right-2.5 grid size-6 place-items-center rounded-full border-0 bg-transparent! text-muted-foreground! transition-colors hover:bg-accent! hover:text-foreground! focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
           actionButton:
-            "ml-auto shrink-0 self-center rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90",
+            "ml-auto shrink-0 self-center rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90",
           cancelButton:
-            "shrink-0 self-center rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground hover:bg-secondary/80",
+            "shrink-0 self-center rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground hover:bg-secondary/80",
           default: "border-l-foreground/30",
           success: "border-l-success [&_[data-icon]]:text-success",
           error: "border-l-destructive [&_[data-icon]]:text-destructive",
