@@ -104,7 +104,7 @@ function CreateUserForm() {
             <form.Field name="role">
                 {(field) => (
                     <Select value={field.state.value} onValueChange={(value) => field.handleChange(value as UserRole)}>
-                        <SelectTrigger className="w-full">
+                        <SelectTrigger className="w-full" aria-label="Role">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -316,7 +316,7 @@ function UsersPage() {
             header: 'Role',
             cell: ({ row: { original: u } }) => (
                 <Select value={u.role} disabled={u.isSelf} onValueChange={(role) => void changeRole(u, role as UserRole)}>
-                    <SelectTrigger size="sm" className="w-28" title={u.isSelf ? tr('users.youCantChangeYourOwnRole') : undefined}>
+                    <SelectTrigger size="sm" className="w-28" aria-label={`Role: ${u.username}`} title={u.isSelf ? tr('users.youCantChangeYourOwnRole') : undefined}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -332,7 +332,7 @@ function UsersPage() {
             header: tr('common.status'),
             cell: ({ row: { original: u } }) => (
                 <div className="flex items-center gap-2">
-                    <Switch checked={u.isActive} disabled={u.isSelf} onCheckedChange={(checked) => void toggleActive(u, checked)} />
+                    <Switch aria-label={`${tr('common.status')}: ${u.username}`} checked={u.isActive} disabled={u.isSelf} onCheckedChange={(checked) => void toggleActive(u, checked)} />
                     {u.lockedUntil && (
                         <Tooltip>
                             <TooltipTrigger asChild>
