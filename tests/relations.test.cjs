@@ -1,14 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const ts = require('../apps/backend/node_modules/typescript');
-require.extensions['.ts'] = (module, filename) => {
-    module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
-            .outputText,
-        filename,
-    );
-};
+require('./ts-loader.cjs');
 const { RelationsService } = require('../apps/backend/dist/relations/relations.service');
 const {
     buildVoiceSessions,

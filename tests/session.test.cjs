@@ -1,15 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const ts = require('../apps/backend/node_modules/typescript');
-// Only these dependency-free session helpers are loaded as TS for this Node test.
-require.extensions['.ts'] = (module, filename) => {
-    module._compile(
-        ts.transpileModule(fs.readFileSync(filename, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } })
-            .outputText,
-        filename,
-    );
-};
+require('./ts-loader.cjs');
 const { QueryClient, QueryObserver } = require('../apps/frontend/node_modules/@tanstack/react-query');
 const { replaceSession } = require('../apps/frontend/src/lib/session.ts');
 const { sessionRequests } = require('../apps/frontend/src/lib/session-state.ts');
