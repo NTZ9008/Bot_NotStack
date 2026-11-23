@@ -52,7 +52,7 @@ export function ProfileMenu() {
                         <AvatarImage src={user.avatarUrl ?? DEFAULT_AVATAR} alt="" />
                         <AvatarFallback>{user.displayName.slice(0, 1)}</AvatarFallback>
                     </Avatar>
-                    <span className="hidden max-w-36 truncate text-sm font-medium sm:inline">{user.displayName}</span>
+                    <span className="sr-only max-w-36 truncate text-sm font-medium sm:not-sr-only">{user.displayName}</span>
                     <RoleBadge role={user.role} className="hidden sm:inline-flex" />
                     <ChevronDown className="size-4 text-muted-foreground" />
                 </Button>
