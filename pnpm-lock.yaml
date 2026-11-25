@@ -13,7 +13,7 @@ overrides:
   undici@>=6.5.0 <6.29.1: 6.29.1
   multer@>=2.0.0 <2.5.0: 2.5.0
   fast-uri@>=3.0.0 <3.1.9: 3.1.9
-  qs@>=6.7.0 <6.16.1: 6.16.2
+  qs@>=6.7.0 <6.16.1: 6.17.1
   seroval@<1.6.11: 1.6.12
   seroval-plugins@<1.6.11: 1.6.12
   minimatch: ^11.0.3
@@ -4188,8 +4188,8 @@ packages:
   pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
 
-  qs@6.16.2:
-    resolution: {integrity: sha512-VYdnB5S7/0IeXzBacUtwNAaM6d7Y/PgYnNC7bJCI6meqA/OgnsQbZMtVW8Dt2D1PHgbHGtYmhSoEIgvt7xZ2ZA==}
+  qs@6.17.1:
+    resolution: {integrity: sha512-jd3COkaKVgGUW+ZHyEHCG9bH7RoaaiWuMgzsIBjUMVjLAaWGWpoUAVwljVvBHxRu/2qEHnadLGZrkutYUBPQJA==}
     engines: {node: '>=0.6'}
 
   radix-ui@1.6.7:
@@ -7325,7 +7325,7 @@ snapshots:
       http-errors: 2.0.1
       iconv-lite: 0.7.3
       on-finished: 2.4.1
-      qs: 6.16.2
+      qs: 6.17.1
       raw-body: 3.0.2
       type-is: 2.1.0
     transitivePeerDependencies:
@@ -7827,7 +7827,7 @@ snapshots:
       once: 1.4.0
       parseurl: 1.3.3
       proxy-addr: 2.0.8
-      qs: 6.16.2
+      qs: 6.17.1
       range-parser: 1.3.0
       router: 2.2.0
       send: 1.2.1
@@ -8604,7 +8604,7 @@ snapshots:
 
   pure-rand@6.1.0: {}
 
-  qs@6.16.2:
+  qs@6.17.1:
     dependencies:
       es-define-property: 1.0.1
       side-channel: 1.1.1
