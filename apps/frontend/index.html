@@ -90,7 +90,7 @@
       try {
         if (localStorage.getItem('lang') === 'en') document.documentElement.lang = 'en';
         var t = localStorage.getItem('theme');
-        if (t === 'classic') document.documentElement.classList.add('dark', 'classic');
+        if (t === 'classic' || t === 'christmas') document.documentElement.classList.add('dark', t);
         else if (t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark');
       } catch (e) {}
     </script>
@@ -159,6 +159,14 @@
       html.dark .app-splash {
         background: #060818;
         color: #ededed;
+      }
+      /* 🎄 ธีมคริสต์มาส (ชั่วคราว): พื้นเขียวสน ; body โปร่งให้เห็นหิมะ (body::before ใน index.css) ที่อยู่ระหว่างพื้นกับเนื้อหา */
+      html.christmas,
+      html.christmas .app-splash {
+        background: #05120d;
+      }
+      html.christmas body {
+        background: transparent;
       }
       html.dark .app-splash__label {
         color: #a3a3a3;

@@ -1,6 +1,7 @@
 import { cn } from 'cn';
-import { Moon, Palette, Sun } from '@/components/icons';
+import { Moon, Palette, Sun, Snowflake } from '@/components/icons';
 import { useTheme, type Theme } from '@/hooks/use-theme';
+import { isChristmasSeason } from '@/lib/christmas';
 import { useLang, useT, type Lang, tr } from '@/lib/i18n';
 
 // ปุ่มแบบแบ่งช่อง (segmented) ทรงแคปซูลบนแถบบน — เลือกธีม / ภาษา ; ช่องที่เลือกมีพื้นเลื่อนตามแบบนุ่มๆ
@@ -62,6 +63,10 @@ export function ThemeSwitcher({ iconOnly = false }: { iconOnly?: boolean }) {
                 { value: 'light', label: t('common.light'), icon: Sun },
                 { value: 'dark', label: t('common.dark'), icon: Moon },
                 { value: 'classic', label: t('layout.classic'), icon: Palette },
+                // 🎄 ชั่วคราว: มีให้เลือกเฉพาะช่วงเทศกาล (หรือคนที่เลือกค้างไว้ จะได้เห็นว่าใช้อยู่และเปลี่ยนกลับได้)
+                ...(isChristmasSeason() || theme === 'christmas'
+                    ? [{ value: 'christmas' as const, label: t('layout.christmas'), short: 'Xmas', icon: Snowflake }]
+                    : []),
             ]}
         />
     );
