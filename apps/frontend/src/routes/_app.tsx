@@ -9,6 +9,7 @@ import { TopBar } from '@/components/layout/top-bar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { ChevronRight } from '@/components/icons';
 import { SplashScreen } from '@/components/splash-screen';
+import { ChristmasThemePromo } from '@/components/layout/christmas-promo';
 
 // ==========================================
 // 🔐 Layout ของทุกหน้าที่ต้อง login — แถบบนลอย (โลโก้ / ลิงก์ด่วน / ⌘K / ภาษา / ธีม / โปรไฟล์)
@@ -55,6 +56,8 @@ function AppLayout() {
                 </div>
                 <footer className="px-6 pb-6 text-center text-xs text-muted-foreground">NotStackOverflow Server Bot · Developed by arlifzs © 2026</footer>
             </SidebarInset>
+            {/* 🎄 ชั่วคราว: ป้ายแนะนำธีมคริสต์มาส (ลบได้หลังปีใหม่) */}
+            <ChristmasThemePromo />
         </SidebarProvider>
     );
 }

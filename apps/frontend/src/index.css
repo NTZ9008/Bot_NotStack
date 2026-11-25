@@ -1,8 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "./styles/shadcn-tailwind.css";
-@import "@fontsource-variable/inter";
-@import "@fontsource-variable/noto-sans-thai";
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import './styles/shadcn-tailwind.css';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/noto-sans-thai';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -13,9 +13,43 @@
     color-scheme: light;
 
     /* สปริงยืดหยุ่น เลยเป้านิดเดียว (~6%) แล้วกลับเข้าที่ — hover / เลื่อน / popup ; ใช้คู่กับ duration ~500ms */
-    --spring: linear(0, 0.007, 0.029 2.2%, 0.118 4.6%, 0.625 14.2%, 0.826 19.6%, 0.896 22.2%, 0.951 24.8%, 0.997 27.6%, 1.033 30.6%, 1.055 33.8%, 1.064 37.4%, 1.062 41.4%, 1.049 46.2%, 1.011 59.2%, 0.998 71.6%, 1);
+    --spring: linear(
+        0,
+        0.007,
+        0.029 2.2%,
+        0.118 4.6%,
+        0.625 14.2%,
+        0.826 19.6%,
+        0.896 22.2%,
+        0.951 24.8%,
+        0.997 27.6%,
+        1.033 30.6%,
+        1.055 33.8%,
+        1.064 37.4%,
+        1.062 41.4%,
+        1.049 46.2%,
+        1.011 59.2%,
+        0.998 71.6%,
+        1
+    );
     /* สปริงนุ่มกว่า (เด้งน้อย) — ของชิ้นใหญ่ เช่น การ์ดลอยขึ้น */
-    --spring-soft: linear(0, 0.006, 0.025 2.8%, 0.101 6.1%, 0.539 18.9%, 0.721 25.3%, 0.849 31.5%, 0.937 38.1%, 0.968 41.8%, 0.991 45.7%, 1.006 50.1%, 1.015 55%, 1.017 63.9%, 1.001 85.9%, 1);
+    --spring-soft: linear(
+        0,
+        0.006,
+        0.025 2.8%,
+        0.101 6.1%,
+        0.539 18.9%,
+        0.721 25.3%,
+        0.849 31.5%,
+        0.937 38.1%,
+        0.968 41.8%,
+        0.991 45.7%,
+        1.006 50.1%,
+        1.015 55%,
+        1.017 63.9%,
+        1.001 85.9%,
+        1
+    );
 
     --background: oklch(0.975 0.008 272); /* #f5f6fd */
     --foreground: oklch(0.2 0.03 270);
@@ -159,6 +193,99 @@
     --sidebar-ring: oklch(0.585 0.233 277.117);
 }
 
+/* 🎄 ธีมคริสต์มาส (ชั่วคราวช่วงเทศกาล — ลบ block นี้กับ .christmas ด้านล่างได้หลังปีใหม่)
+   พื้นเขียวสนกลางคืน + สีหลักแดงคริสต์มาส (ตัวหนังสือขาวบนแดงคอนทราสต์ผ่าน) + ตัวเน้นสีทอง ; โทนเดียวกับหน้า landing ช่วงเทศกาล */
+.christmas {
+    color-scheme: dark;
+
+    --background: oklch(0.17 0.03 162); /* #05120d โดยประมาณ */
+    --foreground: oklch(0.97 0.01 150);
+    --card: oklch(0.22 0.04 160);
+    --card-foreground: oklch(0.97 0.01 150);
+    --popover: oklch(0.25 0.045 160);
+    --popover-foreground: oklch(0.97 0.01 150);
+    --primary: oklch(0.52 0.2 22); /* #c8102e แดงคริสต์มาส */
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.27 0.045 160);
+    --secondary-foreground: oklch(0.97 0.01 150);
+    --muted: oklch(0.25 0.04 160);
+    --muted-foreground: oklch(0.77 0.03 150);
+    --accent: oklch(0.52 0.2 22 / 20%);
+    --accent-foreground: oklch(0.86 0.13 88); /* ทอง */
+    --destructive: oklch(0.71 0.17 22);
+    --border: oklch(0.85 0.06 150 / 12%);
+    --input: oklch(0.85 0.06 150 / 18%);
+    --ring: oklch(0.84 0.14 88);
+    --brand: oklch(0.84 0.14 88);
+    --highlight: oklch(0.86 0.13 88);
+    --ink: oklch(0.86 0.13 88);
+    --soft-shadow: 0 1px 2px oklch(0 0 0 / 30%), 0 16px 40px -20px oklch(0.52 0.2 22 / 40%);
+
+    --success: oklch(0.74 0.17 150);
+    --warning: oklch(0.82 0.15 85);
+    --info: oklch(0.76 0.12 230);
+
+    --chart-1: oklch(0.62 0.21 25);
+    --chart-2: oklch(0.72 0.17 150);
+    --chart-3: oklch(0.84 0.14 88);
+    --chart-4: oklch(0.74 0.12 230);
+    --chart-5: oklch(0.72 0.16 350);
+
+    --sidebar: oklch(0.21 0.04 160);
+    --sidebar-foreground: oklch(0.9 0.02 150);
+    --sidebar-primary: oklch(0.52 0.2 22);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.52 0.2 22 / 20%);
+    --sidebar-accent-foreground: oklch(0.86 0.13 88);
+    --sidebar-border: oklch(0.85 0.06 150 / 10%);
+    --sidebar-ring: oklch(0.84 0.14 88);
+}
+
+/* ❄️ หิมะตกจางๆ หลังเนื้อหา: 2 ชั้น (::before เกล็ดเล็กตกช้า / ::after เกล็ดใหญ่ตกเร็วกว่า) ลายซ้ำคนละขนาด จะได้ไม่เห็นเป็นตาราง
+   แต่ละชั้นเลื่อนลงทีละ 1 ช่องลาย (= วนต่อได้เนียน) ด้วย transform จึงไม่ต้องวาดใหม่ทุกเฟรม ; body โปร่งไว้ใน index.html */
+.christmas body::before,
+.christmas body::after {
+    content: '';
+    position: fixed;
+    inset: calc(-1 * var(--snow-tile-h)) 0 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.5;
+    background-size: var(--snow-tile-w) var(--snow-tile-h);
+    animation: christmas-snow linear infinite;
+}
+
+.christmas body::before {
+    --snow-tile-w: 197px;
+    --snow-tile-h: 241px;
+    background-image:
+        radial-gradient(circle at 23px 31px, #fff 1.2px, transparent 2px), radial-gradient(circle at 121px 97px, #fff 1px, transparent 1.8px),
+        radial-gradient(circle at 162px 188px, #fff 1.5px, transparent 2.3px), radial-gradient(circle at 71px 214px, #fff 1px, transparent 1.8px);
+    animation-duration: 15s;
+}
+
+.christmas body::after {
+    --snow-tile-w: 283px;
+    --snow-tile-h: 337px;
+    background-image:
+        radial-gradient(circle at 41px 58px, #fff 2.2px, transparent 3px), radial-gradient(circle at 199px 141px, #fff 1.6px, transparent 2.4px),
+        radial-gradient(circle at 247px 290px, #fff 2px, transparent 2.8px), radial-gradient(circle at 110px 262px, #fff 1.3px, transparent 2px);
+    animation-duration: 12s;
+}
+
+@keyframes christmas-snow {
+    to {
+        transform: translateY(var(--snow-tile-h));
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .christmas body::before,
+    .christmas body::after {
+        animation: none;
+    }
+}
+
 @theme inline {
     --font-sans: 'Inter Variable', 'Noto Sans Thai Variable', ui-sans-serif, system-ui, sans-serif;
     --font-heading: var(--font-sans);
@@ -283,7 +410,6 @@
         @apply rounded bg-[#5865f2]/30 px-0.5 font-medium text-[#c9cdfb];
     }
 }
-
 
 /* ==========================================
    ✨ การเคลื่อนไหว — หน้าใหม่ค่อยๆ ลอยขึ้น (ใส่ key ตาม path ใน _app.tsx), เคารพ prefers-reduced-motion

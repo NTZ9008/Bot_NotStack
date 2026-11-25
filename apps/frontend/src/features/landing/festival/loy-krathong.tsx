@@ -15,7 +15,8 @@ const SHOW_FROM = '2026-11-17';
 const SHOW_UNTIL = '2026-11-27';
 
 function isFestival() {
-    if (new URLSearchParams(window.location.search).get('festival') === 'loy-krathong') return true;
+    const forced = new URLSearchParams(window.location.search).get('festival'); // ?festival=<ชื่อ> เลือกดูเทศกาลเดียว
+    if (forced) return forced === 'loy-krathong';
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Bangkok' }); // YYYY-MM-DD
     return today >= SHOW_FROM && today <= SHOW_UNTIL;
 }
