@@ -7,6 +7,16 @@ import { DiscordIcon } from '@/components/discord-icon';
 import { usePageMeta } from '@/hooks/use-page-meta';
 import { CommandSearch } from './command-search';
 import { LoyKrathong, LoyKrathongRaft, loyKrathongCrew } from './festival/loy-krathong'; // 🪷 ชั่วคราว: ลบได้หลังเทศกาล (ดู festival/loy-krathong.tsx)
+import {
+    Christmas,
+    ChristmasGiftRibbon,
+    ChristmasLights,
+    ChristmasSleigh,
+    ChristmasSnow,
+    ChristmasTree,
+    christmasCrew,
+    christmasTheme,
+} from './festival/christmas'; // 🎄 ชั่วคราว: ลบได้หลังปีใหม่ (ดู festival/christmas.tsx)
 import { FEATURE_GROUPS, TEAM } from './content';
 import { FeatureIllustration } from './feature-illustrations';
 import { GrowthSection } from './growth-chart';
@@ -157,6 +167,7 @@ function SectionHead({
             >
                 {eyebrow}
             </p>
+            <ChristmasTree className={`pointer-events-none absolute -top-4 hidden h-40 w-auto xl:block ${flip ? 'left-0' : 'right-0'}`} />
             <Reveal from={flip ? 'right' : 'left'} className="shrink-0">
                 <Mascot src={host} className="h-36 w-auto sm:h-48 lg:h-60" />
             </Reveal>
@@ -348,6 +359,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                     </div>
                 )}
 
+                <ChristmasLights className="absolute inset-x-6 -bottom-3 h-5" />
                 <div aria-hidden className="absolute inset-x-4 bottom-0 h-0.5 overflow-hidden rounded-full">
                     <div ref={progressRef} className="h-full origin-left scale-x-0 bg-gradient-to-r from-[var(--ld-blue)] to-[var(--ld-blue-ink)]" />
                 </div>
@@ -410,7 +422,7 @@ const HERO_CREW = byLang(() => [
 ]);
 
 function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
-    const festivalCrew = loyKrathongCrew(); // 🪷 ชั่วคราว: ชุดลอยกระทง (null นอกช่วงเทศกาล)
+    const festivalCrew = loyKrathongCrew() ?? christmasCrew(); // 🪷🎄 ชั่วคราว: ชุดเทศกาล (null นอกช่วงเทศกาล)
     return (
         <section className="landing-grain relative isolate flex min-h-svh flex-col overflow-hidden pt-24">
             {/* พื้นหลังแบบเวที: ไฟส่องจากบน + วงคลื่นรอบตัวมาสคอต + พื้นเวทีเส้นตารางแบบมีมุมมอง */}
@@ -422,6 +434,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
             <div aria-hidden className="landing-stage-floor absolute -inset-x-1/2 bottom-0 -z-10 h-[45%]" />
             {/* 🪷 ชั่วคราว: ลบได้หลังเทศกาล */}
             <LoyKrathong />
+            <Christmas />
             <div className="relative z-10 mx-auto max-w-4xl px-4 text-center">
                 <Reveal delay={100}>
                     <h1 className="text-[clamp(2.2rem,5.5vw,3.75rem)] leading-[1.1] font-black tracking-tight">
@@ -457,25 +470,27 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
 
                 {/* 🪷 ชั่วคราว: ช่วงลอยกระทงให้มาสคอตยืนบนกระทงยักษ์ — หลังเทศกาลถอด wrapper นี้ออก */}
                 <LoyKrathongRaft>
-                    <div className="flex items-end">
-                        {HERO_CREW().map((crew, index) => (
-                            <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
-                                {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
-                                <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
-                                    <Mascot
-                                        src={festivalCrew?.[index] ?? crew.src}
-                                        motion="none"
-                                        eager
-                                        className={`w-auto [aspect-ratio:auto_0.345] ${crew.mirror ? '-scale-x-100' : ''} ${
-                                            crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
-                                        }`}
-                                    />
-                                    {/* ช่วงลอยกระทงคนกลางถือโคมอยู่ ไม่ให้ป้ายบังโคม */}
-                                    {!(festivalCrew && crew.center) && <HeldCard {...crew.card} />}
-                                </div>
-                            </Reveal>
-                        ))}
-                    </div>
+                    <ChristmasSleigh>
+                        <div className="flex items-end">
+                            {HERO_CREW().map((crew, index) => (
+                                <Reveal key={crew.src} delay={crew.delay} className={crew.center ? 'z-10 -mx-1 sm:mx-2' : ''}>
+                                    {/* ขยับขึ้นลงทั้งตัวพร้อมการ์ด ให้ดูเหมือนถืออยู่จริง */}
+                                    <div className="landing-mascot-bob relative" style={{ animationDelay: `${crew.idle}ms` }}>
+                                        <Mascot
+                                            src={festivalCrew?.[index] ?? crew.src}
+                                            motion="none"
+                                            eager
+                                            className={`w-auto [aspect-ratio:auto_0.345] ${crew.mirror ? '-scale-x-100' : ''} ${
+                                                crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
+                                            }`}
+                                        />
+                                        {/* ช่วงเทศกาลคนกลางถือของอยู่ (โคม / สายบังเหียน) ไม่ให้ป้ายบัง */}
+                                        {!(festivalCrew && crew.center) && <HeldCard {...crew.card} />}
+                                    </div>
+                                </Reveal>
+                            ))}
+                        </div>
+                    </ChristmasSleigh>
                 </LoyKrathongRaft>
             </div>
         </section>
@@ -576,6 +591,7 @@ function Features({ botName, botAvatar }: { botName: string; botAvatar: string }
                     >
                         {/* แสงน้ำเงินมุมบนซ้าย */}
                         <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 size-64 rounded-full bg-[var(--ld-blue)]/25 blur-3xl" />
+                        <ChristmasGiftRibbon />
                         <div className="relative">
                             <span className="inline-flex rounded-full bg-[var(--ld-blue)] px-3 py-1 font-mono text-xs font-semibold text-white">
                                 {pad2(index + 1)}
@@ -727,7 +743,8 @@ export function LandingPage() {
     usePageMeta('/');
 
     return (
-        <div className="landing dark min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground">
+        <div className={`landing dark min-h-svh overflow-x-clip bg-[var(--ld-bg)] text-foreground ${christmasTheme()}`}>
+            <ChristmasSnow />
             <TopNav active={active} botName={bot.name} inviteUrl={inviteUrl} />
 
             <main id="top">
