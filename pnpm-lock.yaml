@@ -259,8 +259,8 @@ importers:
         specifier: ^2.0.8
         version: 2.0.8(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       three:
-        specifier: ^0.186.1
-        version: 0.186.1
+        specifier: ^0.187.0
+        version: 0.187.0
       topojson-client:
         specifier: ^3.1.0
         version: 3.1.0
@@ -4545,8 +4545,8 @@ packages:
     peerDependencies:
       three: '>=0.154'
 
-  three@0.186.1:
-    resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
+  three@0.187.0:
+    resolution: {integrity: sha512-Qiu7R+Cmh8CstZsY1uJOSWnVlfo7ZtNLV7mF8Jltk3LB3AtDu9cRZlcnRKkAk8Y4z6KKw35z7Y7Urd7jWY8etA==}
 
   tiny-invariant@1.3.3:
     resolution: {integrity: sha512-+FbBPE1o9QAYvviau/qC5SE3caw21q3xkvWKBtja5vgqOWIHHJ3ioaq1VPfn/Szqctz2bU/oYeKd9/z5BL+PVg==}
@@ -7993,9 +7993,9 @@ snapshots:
       '@tweenjs/tween.js': 25.0.0
       accessor-fn: 1.5.3
       kapsule: 1.16.3
-      three: 0.186.1
-      three-globe: 2.45.6(three@0.186.1)
-      three-render-objects: 1.43.0(three@0.186.1)
+      three: 0.187.0
+      three-globe: 2.45.6(three@0.187.0)
+      three-render-objects: 1.43.0(three@0.187.0)
     transitivePeerDependencies:
       - preact-render-to-string
 
@@ -9009,7 +9009,7 @@ snapshots:
     dependencies:
       bintrees: 1.0.2
 
-  three-conic-polygon-geometry@2.1.3(three@0.186.1):
+  three-conic-polygon-geometry@2.1.3(three@0.187.0):
     dependencies:
       '@turf/boolean-point-in-polygon': 7.4.0
       d3-array: 3.2.4
@@ -9018,16 +9018,16 @@ snapshots:
       d3-scale: 4.0.2
       delaunator: 5.1.0
       earcut: 3.2.4
-      three: 0.186.1
+      three: 0.187.0
 
-  three-geojson-geometry@2.1.1(three@0.186.1):
+  three-geojson-geometry@2.1.1(three@0.187.0):
     dependencies:
       d3-geo: 3.1.0
       d3-interpolate: 3.0.1
       earcut: 3.2.4
-      three: 0.186.1
+      three: 0.187.0
 
-  three-globe@2.45.6(three@0.186.1):
+  three-globe@2.45.6(three@0.187.0):
     dependencies:
       '@tweenjs/tween.js': 25.0.0
       accessor-fn: 1.5.3
@@ -9042,31 +9042,31 @@ snapshots:
       h3-js: 4.5.0
       index-array-by: 1.4.2
       kapsule: 1.16.3
-      three: 0.186.1
-      three-conic-polygon-geometry: 2.1.3(three@0.186.1)
-      three-geojson-geometry: 2.1.1(three@0.186.1)
-      three-slippy-map-globe: 1.0.6(three@0.186.1)
+      three: 0.187.0
+      three-conic-polygon-geometry: 2.1.3(three@0.187.0)
+      three-geojson-geometry: 2.1.1(three@0.187.0)
+      three-slippy-map-globe: 1.0.6(three@0.187.0)
       tinycolor2: 1.6.0
 
-  three-render-objects@1.43.0(three@0.186.1):
+  three-render-objects@1.43.0(three@0.187.0):
     dependencies:
       '@tweenjs/tween.js': 25.0.0
       accessor-fn: 1.5.3
       float-tooltip: 1.7.5
       kapsule: 1.16.3
       polished: 4.3.1
-      three: 0.186.1
+      three: 0.187.0
     transitivePeerDependencies:
       - preact-render-to-string
 
-  three-slippy-map-globe@1.0.6(three@0.186.1):
+  three-slippy-map-globe@1.0.6(three@0.187.0):
     dependencies:
       d3-geo: 3.1.0
       d3-octree: 1.1.0
       d3-scale: 4.0.2
-      three: 0.186.1
+      three: 0.187.0
 
-  three@0.186.1: {}
+  three@0.187.0: {}
 
   tiny-invariant@1.3.3: {}
 
