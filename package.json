@@ -25,9 +25,9 @@
     "test:integration": "turbo run build --filter=@notstack/backend... && node scripts/test-xp-postgres.mjs"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.5",
-    "eslint": "^9.39.5",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "@eslint/js": "^10.0.0",
+    "eslint": "^10.0.0",
+    "eslint-plugin-react-hooks": "^7.0.0",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "turbo": "^2.11.4",
