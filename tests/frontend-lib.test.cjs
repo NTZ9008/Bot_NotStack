@@ -594,8 +594,8 @@ test('christmas season follows the Bangkok date and ?festival= previews one fest
         t.mock.timers.enable({ apis: ['Date'], now: new Date(iso) });
         return isChristmasSeason();
     };
-    assert.equal(at('2026-11-30T16:59:00Z'), false); // 23:59 30 Nov in Bangkok
-    assert.equal(at('2026-11-30T17:00:00Z'), true); // 00:00 1 Dec in Bangkok
+    assert.equal(at('2026-11-24T16:59:00Z'), false); // 23:59 24 Nov in Bangkok
+    assert.equal(at('2026-11-24T17:00:00Z'), true); // 00:00 25 Nov in Bangkok
     assert.equal(at('2027-01-05T16:59:00Z'), true); // 23:59 5 Jan
     assert.equal(at('2027-01-05T17:00:00Z'), false); // 00:00 6 Jan
     assert.equal(at('2026-07-01T00:00:00Z', '?festival=christmas'), true);

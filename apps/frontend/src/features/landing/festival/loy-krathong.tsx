@@ -12,7 +12,7 @@ import lkWhite from './lk-white.webp';
 
 // วันลอยกระทง 2569 = 24 พ.ย. 2026 (ขึ้น 15 ค่ำ เดือน 12) — เผื่อก่อน/หลังไว้
 const SHOW_FROM = '2026-11-17';
-const SHOW_UNTIL = '2026-11-27';
+const SHOW_UNTIL = '2026-11-24'; // จบวันลอยกระทง ให้ธีมคริสต์มาสเริ่ม 25 พ.ย. ไม่ซ้อนกัน
 
 function isFestival() {
     const forced = new URLSearchParams(window.location.search).get('festival'); // ?festival=<ชื่อ> เลือกดูเทศกาลเดียว
