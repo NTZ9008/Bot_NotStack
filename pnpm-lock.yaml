@@ -15,7 +15,7 @@ overrides:
   fast-uri@>=3.0.0 <3.1.9: 3.1.9
   qs@>=6.7.0 <6.16.1: 6.17.1
   seroval@<1.6.11: 1.6.12
-  seroval-plugins@<1.6.11: 1.6.12
+  seroval-plugins@<1.6.11: 1.8.0
   minimatch: ^11.0.3
   effect@<3.22.1: 3.22.5
 
@@ -4360,11 +4360,11 @@ packages:
     resolution: {integrity: sha512-1gnZf7DFcoIcajTjTwjwuDjzuz4PPcY2StKPlsGAQ1+YH20IRVrBaXSWmdjowTJ6u8Rc01PoYOGHXfP1mYcZNQ==}
     engines: {node: '>= 18'}
 
-  seroval-plugins@1.6.12:
-    resolution: {integrity: sha512-+reiwp/lYxiyctSrdvX7OQ1YLrcbWYgBiZrhSFL+V43b0/DGRLNVSDyZINbQe+tWplPOI2fw2dPrdv6hcc09kQ==}
-    engines: {node: '>=10'}
+  seroval-plugins@1.8.0:
+    resolution: {integrity: sha512-96vBb12rDvPPwdKUgWw1op3fGq8AVBFOr0IllbnM72yR5J9WWXF18cQ4g1XfDO7HCyh2dt70P3XdtyRayP8FWg==}
+    engines: {node: '>=20'}
     peerDependencies:
-      seroval: 1.6.12
+      seroval: ^1.8.0
 
   seroval@1.6.12:
     resolution: {integrity: sha512-CqbIVfk/7GL3ITwZI55lcPbpQbjHZ2DD5cUj4iH7E9YsCfHNJV1mx7yNp86Z84w5IpmkZZS/2s5vPOWmVWSdQg==}
@@ -6792,7 +6792,7 @@ snapshots:
       '@tanstack/history': 1.162.4
       cookie-es: 3.1.1
       seroval: 1.6.12
-      seroval-plugins: 1.6.12(seroval@1.6.12)
+      seroval-plugins: 1.8.0(seroval@1.6.12)
 
   '@tanstack/router-generator@1.167.38':
     dependencies:
@@ -8845,7 +8845,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  seroval-plugins@1.6.12(seroval@1.6.12):
+  seroval-plugins@1.8.0(seroval@1.6.12):
     dependencies:
       seroval: 1.6.12
 
