@@ -466,7 +466,7 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                                         src={festivalCrew?.[index] ?? crew.src}
                                         motion="none"
                                         eager
-                                        className={`w-auto ${crew.mirror ? '-scale-x-100' : ''} ${
+                                        className={`w-auto [aspect-ratio:auto_0.345] ${crew.mirror ? '-scale-x-100' : ''} ${
                                             crew.center ? 'h-[clamp(16rem,56svh,40rem)]' : 'h-[clamp(14.5rem,51svh,36rem)]'
                                         }`}
                                     />
