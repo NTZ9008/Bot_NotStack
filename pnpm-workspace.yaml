@@ -11,7 +11,7 @@ onlyBuiltDependencies:
 overrides:
   deepmerge-ts: 8.0.2
   mysql2: 3.24.6
-  source-map-js: 1.2.2
+  source-map-js: 1.2.4
   'ip-address@<=10.7.3': 10.7.6
   'body-parser@>=2.0.0 <2.4.0': 2.4.0
   'undici@>=6.5.0 <6.29.1': 6.29.1
