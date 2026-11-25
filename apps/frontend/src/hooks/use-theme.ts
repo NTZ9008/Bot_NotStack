@@ -7,7 +7,7 @@ export type Theme = 'light' | 'dark' | 'classic' | 'christmas';
 const NAMED: Theme[] = ['classic', 'christmas'];
 
 const listeners = new Set<() => void>();
-const read = (): Theme => {
+export const readTheme = (): Theme => {
     const list = document.documentElement.classList;
     const named = NAMED.find((name) => list.contains(name));
     if (named) return named;
@@ -32,7 +32,7 @@ export function useTheme(): [Theme, (theme: Theme) => void] {
             listeners.add(fn);
             return () => listeners.delete(fn);
         },
-        read,
+        readTheme,
         () => 'light' as Theme,
     );
     return [theme, setTheme];

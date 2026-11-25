@@ -569,6 +569,39 @@ test('theme: setTheme toggles dark/classic classes and remembers the choice', (t
     );
 });
 
+test('theme: christmas is a dark named theme like classic and is read back from the page', (t) => {
+    const { setTheme, readTheme } = require('../apps/frontend/src/hooks/use-theme.ts');
+    const { classes, stored } = fakeBrowser(t);
+    setTheme('christmas');
+    assert.deepEqual([...classes].sort(), ['christmas', 'dark']);
+    assert.equal(readTheme(), 'christmas');
+    assert.equal(stored.theme, 'christmas');
+    setTheme('classic'); // switching named themes drops the other one
+    assert.deepEqual([...classes].sort(), ['classic', 'dark']);
+    assert.equal(readTheme(), 'classic');
+    setTheme('dark');
+    assert.equal(readTheme(), 'dark');
+    setTheme('light');
+    assert.equal(readTheme(), 'light');
+});
+
+test('christmas season follows the Bangkok date and ?festival= previews one festival', (t) => {
+    const { isChristmasSeason } = require('../apps/frontend/src/lib/christmas.ts');
+    t.after(() => delete globalThis.window);
+    const at = (iso, search = '') => {
+        globalThis.window = { location: { search } };
+        t.mock.timers.reset();
+        t.mock.timers.enable({ apis: ['Date'], now: new Date(iso) });
+        return isChristmasSeason();
+    };
+    assert.equal(at('2026-11-30T16:59:00Z'), false); // 23:59 30 Nov in Bangkok
+    assert.equal(at('2026-11-30T17:00:00Z'), true); // 00:00 1 Dec in Bangkok
+    assert.equal(at('2027-01-05T16:59:00Z'), true); // 23:59 5 Jan
+    assert.equal(at('2027-01-05T17:00:00Z'), false); // 00:00 6 Jan
+    assert.equal(at('2026-07-01T00:00:00Z', '?festival=christmas'), true);
+    assert.equal(at('2026-12-25T00:00:00Z', '?festival=loy-krathong'), false);
+});
+
 test('theme: setTheme still applies when localStorage is blocked', (t) => {
     const { setTheme } = require('../apps/frontend/src/hooks/use-theme.ts');
     const { classes } = fakeBrowser(t, { storageThrows: true });
