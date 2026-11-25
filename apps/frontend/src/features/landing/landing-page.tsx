@@ -265,7 +265,9 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
 
     const linkClass = (href: string, mobile = false) =>
         `${mobile ? 'rounded-xl px-4 py-3 font-semibold' : 'rounded-lg px-3.5 py-2'} text-sm transition-colors ${
-            active === href.slice(1) ? 'bg-[var(--ld-blue)] text-white shadow-lg shadow-[#2a45ff]/30' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+            active === href.slice(1)
+                ? 'bg-[var(--ld-blue)] text-white shadow-lg shadow-[var(--ld-blue)]/30'
+                : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
         }`;
 
     return (
@@ -278,7 +280,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
             >
                 <div className="flex h-16 items-center gap-2 px-2.5">
                     <a href="#top" onClick={closeMenu} className="landing-brand group flex shrink-0 items-center gap-2.5 rounded-xl pr-2">
-                        <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
+                        <span className="grid size-11 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[var(--ld-blue-hi)] to-[var(--ld-blue-deep)] ring-1 ring-white/20">
                             <img
                                 src={headWhite}
                                 alt=""
@@ -309,7 +311,7 @@ function TopNav({ active, botName, inviteUrl }: { active: string | null; botName
                             <InviteButton
                                 inviteUrl={inviteUrl}
                                 icon={<img src={headNavy} alt="" className="landing-nav-head size-7 rounded-full bg-white/20" />}
-                                className="group h-10 bg-[var(--ld-blue)] pr-4 pl-1.5 text-sm text-white hover:bg-[#3d56ff]"
+                                className="group h-10 bg-[var(--ld-blue)] pr-4 pl-1.5 text-sm text-white hover:bg-[var(--ld-blue-hi)]"
                             />
                         </span>
                         <button
@@ -432,7 +434,10 @@ function Hero({ inviteUrl }: { inviteUrl?: string | null }) {
                     </p>
                 </Reveal>
                 <Reveal delay={300} className="mt-6 flex flex-wrap justify-center gap-3">
-                    <InviteButton inviteUrl={inviteUrl} className="h-12 bg-[var(--ld-blue)] px-6 text-white shadow-lg shadow-[#2a45ff]/40 hover:bg-[#3d56ff]" />
+                    <InviteButton
+                        inviteUrl={inviteUrl}
+                        className="h-12 bg-[var(--ld-blue)] px-6 text-white shadow-lg shadow-[var(--ld-blue)]/40 hover:bg-[var(--ld-blue-hi)]"
+                    />
                     <DashboardLink className="h-12 px-6" />
                 </Reveal>
             </div>
@@ -684,7 +689,7 @@ function Steps({ botName, botAvatar }: { botName: string; botAvatar: string }) {
                     </li>
                 ))}
             </ol>
-            <div className="landing-grain relative isolate flex min-h-80 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] p-6 sm:p-10 sm:pl-40 lg:pl-48">
+            <div className="landing-grain relative isolate flex min-h-80 items-center justify-center overflow-hidden rounded-[1.75rem] bg-gradient-to-br from-[var(--ld-blue-hi)] to-[var(--ld-blue-deep)] p-6 sm:p-10 sm:pl-40 lg:pl-48">
                 {/* มาสคอตเปลี่ยนท่าตามขั้น (key ใหม่ = เล่นท่าโผล่ใหม่) */}
                 <Mascot
                     key={`mascot-${active}`}
@@ -694,7 +699,7 @@ function Steps({ botName, botAvatar }: { botName: string; botAvatar: string }) {
                 />
                 <p
                     aria-hidden
-                    className="landing-watermark absolute -right-4 -bottom-10 -z-10 text-[14rem] leading-none font-black [--outline-fill:#2238e6] [-webkit-text-stroke-color:rgb(255_255_255/0.25)]"
+                    className="landing-watermark absolute -right-4 -bottom-10 -z-10 text-[14rem] leading-none font-black [--outline-fill:var(--ld-blue-deep)] [-webkit-text-stroke-color:rgb(255_255_255/0.25)]"
                 >
                     {pad2(active + 1)}
                 </p>
@@ -857,7 +862,7 @@ export function LandingPage() {
             </main>
 
             {/* ปิดท้าย + footer ในบล็อกน้ำเงินเดียวกัน ขอบบนโค้ง */}
-            <footer className="landing-cta landing-grain relative isolate overflow-hidden bg-gradient-to-b from-[var(--ld-blue)] to-[#1726b8] px-4 pt-36 pb-10 text-white sm:px-8">
+            <footer className="landing-cta landing-grain relative isolate overflow-hidden bg-gradient-to-b from-[var(--ld-blue)] to-[var(--ld-blue-deep)] px-4 pt-36 pb-10 text-white sm:px-8">
                 {/* ลูกโลก (ข้อมูลจำลอง ไม่ใช่กิจกรรมจริง) */}
                 <Suspense fallback={null}>
                     <LandingGlobe className="absolute top-10 -right-[30vw] -z-10 aspect-square w-[80vw] opacity-30 [mask-image:radial-gradient(circle,black_50%,transparent_70%)] md:-right-[12vw] md:w-[min(60vw,48rem)] md:opacity-50" />
