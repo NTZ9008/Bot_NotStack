@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useGuildId } from '@/hooks/use-guild';
 import { fallbackAvatar } from '@/lib/format';
@@ -68,53 +69,65 @@ export function UserPicker({
 
     return (
         <div className={cn('space-y-2', className)}>
-            <Command shouldFilter={false} className="relative overflow-visible rounded-lg bg-transparent p-0">
-                <CommandInput
-                    value={text}
-                    onValueChange={(next) => {
-                        setText(next);
-                        setOpen(Boolean(next.trim()));
-                    }}
-                    onFocus={() => text.trim() && setOpen(true)}
-                    onBlur={() => setTimeout(() => setOpen(false), 150)}
-                    onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
-                    placeholder={placeholder}
-                />
-                {open && (
-                    <CommandList className="absolute top-full right-0 left-0 z-50 mt-1 max-h-72 rounded-lg border bg-popover p-1 shadow-lg">
-                        {waiting && results.length === 0 ? (
-                            <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                                <Loader2 className="size-4 animate-spin" /> {tr('common.searching')}
-                            </div>
-                        ) : (
-                            <>
-                                <CommandEmpty>{isError ? tr('common.searchFailedPleaseTryAgain') : tr('common.noMembersMatchThisSearch')}</CommandEmpty>
-                                <CommandGroup>
-                                    {results.map((member) => (
-                                        <CommandItem
-                                            key={member.userId}
-                                            value={member.userId}
-                                            onSelect={() => select(member)}
-                                            onMouseDown={(e) => e.preventDefault()}
-                                        >
-                                            <img src={member.avatar || fallbackAvatar(member.userId)} alt="" className="size-7 rounded-full" />
-                                            <div className="min-w-0">
-                                                <p className="truncate font-medium">
-                                                    {member.username}
-                                                    {member.nickname && <span className="text-muted-foreground"> ({member.nickname})</span>}
-                                                </p>
-                                                <p className="truncate text-xs text-muted-foreground">
-                                                    {member.raw ? tr('common.notInTheMemberList') : `@${member.tag}`}
-                                                </p>
-                                            </div>
-                                        </CommandItem>
-                                    ))}
-                                </CommandGroup>
-                            </>
-                        )}
-                    </CommandList>
-                )}
-            </Command>
+            <Popover open={open}>
+                <Command shouldFilter={false} className="overflow-visible rounded-lg bg-transparent p-0">
+                    <PopoverAnchor asChild>
+                        <div>
+                            <CommandInput
+                                value={text}
+                                onValueChange={(next) => {
+                                    setText(next);
+                                    setOpen(Boolean(next.trim()));
+                                }}
+                                onFocus={() => text.trim() && setOpen(true)}
+                                onBlur={() => setTimeout(() => setOpen(false), 150)}
+                                onKeyDown={(e) => e.key === 'Escape' && setOpen(false)}
+                                placeholder={placeholder}
+                            />
+                        </div>
+                    </PopoverAnchor>
+                    {/* portal: the list must escape parents with overflow-hidden (e.g. Card) */}
+                    <PopoverContent
+                        align="start"
+                        className="w-(--radix-popover-trigger-width) gap-0 p-1"
+                        onOpenAutoFocus={(e) => e.preventDefault()}
+                        onCloseAutoFocus={(e) => e.preventDefault()}
+                    >
+                        <CommandList className="max-h-72">
+                            {waiting && results.length === 0 ? (
+                                <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
+                                    <Loader2 className="size-4 animate-spin" /> {tr('common.searching')}
+                                </div>
+                            ) : (
+                                <>
+                                    <CommandEmpty>{isError ? tr('common.searchFailedPleaseTryAgain') : tr('common.noMembersMatchThisSearch')}</CommandEmpty>
+                                    <CommandGroup>
+                                        {results.map((member) => (
+                                            <CommandItem
+                                                key={member.userId}
+                                                value={member.userId}
+                                                onSelect={() => select(member)}
+                                                onMouseDown={(e) => e.preventDefault()}
+                                            >
+                                                <img src={member.avatar || fallbackAvatar(member.userId)} alt="" className="size-7 rounded-full" />
+                                                <div className="min-w-0">
+                                                    <p className="truncate font-medium">
+                                                        {member.username}
+                                                        {member.nickname && <span className="text-muted-foreground"> ({member.nickname})</span>}
+                                                    </p>
+                                                    <p className="truncate text-xs text-muted-foreground">
+                                                        {member.raw ? tr('common.notInTheMemberList') : `@${member.tag}`}
+                                                    </p>
+                                                </div>
+                                            </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </>
+                            )}
+                        </CommandList>
+                    </PopoverContent>
+                </Command>
+            </Popover>
 
             {keepSelection && value && (
                 <div className="flex items-center gap-3 rounded-lg border bg-muted/40 px-3 py-2">
