@@ -4,13 +4,13 @@ import { z } from 'zod';
 // 🧩 PLUGINS — แคตตาล็อกปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์ (Per-Guild)
 // ==========================================
 
-export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor'] as const;
+export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders'] as const;
 export type PluginId = (typeof PLUGIN_IDS)[number];
 
 export const PLUGIN_CATEGORIES = ['devops', 'productivity', 'finance', 'community'] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
-export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse';
+export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse' | 'CalendarClock';
 
 export const PLUGIN_NOT_INSTALLED_CODE = 'PLUGIN_NOT_INSTALLED' as const;
 export const PLUGIN_BOT_DISABLED_MESSAGE = 'ฟีเจอร์นี้ยังไม่ถูกเปิดใช้งาน กรุณาติดตั้งปลั๊กอินผ่าน Dashboard ก่อน';
@@ -20,7 +20,8 @@ export type PluginRoutePath =
     | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
     | '/servers/$guildId/funds'
-    | '/servers/$guildId/uptime';
+    | '/servers/$guildId/uptime'
+    | '/servers/$guildId/reminders';
 
 export interface PluginDefinition {
     id: PluginId;
@@ -77,6 +78,15 @@ export const PLUGIN_REGISTRY: readonly PluginDefinition[] = [
         category: 'devops',
         version: '1.0.0',
         routePath: '/servers/$guildId/uptime',
+    },
+    {
+        id: 'scheduled-reminders',
+        name: 'แจ้งเตือนและนัดหมายตามเวลา',
+        description: 'ตั้งเวลาส่งข้อความหรือ Embed แจ้งเตือนเข้าห้อง Discord ล่วงหน้า ทั้งแบบครั้งเดียว รายวัน รายสัปดาห์ หรือกำหนดเองด้วย Cron ตามเวลาไทย',
+        icon: 'CalendarClock',
+        category: 'productivity',
+        version: '1.0.0',
+        routePath: '/servers/$guildId/reminders',
     },
 ] as const;
 

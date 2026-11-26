@@ -47,6 +47,17 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.targetsSaveImmediatelyAndRunOn'),
                 tip: tr('common.discordAlertsOnlySendOnStatus'),
             },
+            reminders: {
+                title: tr('common.scheduledReminders'),
+                summary: tr('common.scheduleMessagesAndEmbedsToDiscord'),
+                steps: [
+                    tr('common.createReminderWithChannelAndMessage'),
+                    tr('common.chooseOnceDailyWeeklyOrCron'),
+                    tr('common.previewAndTestSendBeforeSaving'),
+                ],
+                saving: tr('common.remindersSaveImmediatelyAndRunIn'),
+                tip: tr('common.onceRemindersDisableAutomaticallyAfterSending'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

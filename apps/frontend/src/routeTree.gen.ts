@@ -38,6 +38,7 @@ import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_a
 import { Route as AppServersGuildIdManagePluginsRouteImport } from './routes/_app/servers/$guildId/_manage/plugins'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
 import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
+import { Route as AppServersGuildIdManageRemindersRouteImport } from './routes/_app/servers/$guildId/_manage/reminders'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
 import { Route as AppServersGuildIdManageUptimeRouteImport } from './routes/_app/servers/$guildId/_manage/uptime'
 import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/_app/servers/$guildId/_manage/voice-guard'
@@ -200,6 +201,12 @@ const AppServersGuildIdManageRelationsRoute =
     path: '/relations',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageRemindersRoute =
+  AppServersGuildIdManageRemindersRouteImport.update({
+    id: '/reminders',
+    path: '/reminders',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageRoomAccessRoute =
   AppServersGuildIdManageRoomAccessRouteImport.update({
     id: '/room-access',
@@ -264,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
@@ -297,6 +305,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
@@ -335,6 +344,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/_app/servers/$guildId/_manage/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
   '/_app/servers/$guildId/_manage/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/_app/servers/$guildId/_manage/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
     | '/servers/$guildId/relations'
+    | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
@@ -404,6 +415,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
     | '/servers/$guildId/relations'
+    | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
     | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
@@ -441,6 +453,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/plugins'
     | '/_app/servers/$guildId/_manage/pr-bot'
     | '/_app/servers/$guildId/_manage/relations'
+    | '/_app/servers/$guildId/_manage/reminders'
     | '/_app/servers/$guildId/_manage/room-access'
     | '/_app/servers/$guildId/_manage/uptime'
     | '/_app/servers/$guildId/_manage/voice-guard'
@@ -662,6 +675,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageRelationsRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/reminders': {
+      id: '/_app/servers/$guildId/_manage/reminders'
+      path: '/reminders'
+      fullPath: '/servers/$guildId/reminders'
+      preLoaderRoute: typeof AppServersGuildIdManageRemindersRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/room-access': {
       id: '/_app/servers/$guildId/_manage/room-access'
       path: '/room-access'
@@ -737,6 +757,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManagePluginsRoute: typeof AppServersGuildIdManagePluginsRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
   AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
+  AppServersGuildIdManageRemindersRoute: typeof AppServersGuildIdManageRemindersRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
   AppServersGuildIdManageUptimeRoute: typeof AppServersGuildIdManageUptimeRoute
   AppServersGuildIdManageVoiceGuardRoute: typeof AppServersGuildIdManageVoiceGuardRoute
@@ -765,6 +786,8 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
     AppServersGuildIdManageRelationsRoute:
       AppServersGuildIdManageRelationsRoute,
+    AppServersGuildIdManageRemindersRoute:
+      AppServersGuildIdManageRemindersRoute,
     AppServersGuildIdManageRoomAccessRoute:
       AppServersGuildIdManageRoomAccessRoute,
     AppServersGuildIdManageUptimeRoute: AppServersGuildIdManageUptimeRoute,

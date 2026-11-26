@@ -677,3 +677,32 @@ model UptimeCheckLog {
   @@index([checkedAt])
   @@map("uptime_check_logs")
 }
+
+// ==========================================
+// ⏰ SCHEDULED REMINDERS — ระบบแจ้งเตือนและนัดหมายตามเวลาแยกตามเซิร์ฟเวอร์
+// ==========================================
+model ScheduledReminder {
+  id             Int       @id @default(autoincrement())
+  guildId        String    @map("guild_id")
+  title          String
+  channelId      String    @map("channel_id")
+  message        String
+  useEmbed       Boolean   @default(true) @map("use_embed")
+  embedColor     String?   @map("embed_color")
+  mentionRoleId  String?   @map("mention_role_id")
+  scheduleType   String    @map("schedule_type")
+  cronExpression String?   @map("cron_expression")
+  runAt          DateTime? @map("run_at") @db.Timestamptz(3)
+  timezone       String    @default("Asia/Bangkok")
+  enabled        Boolean   @default(true)
+  nextRunAt      DateTime? @map("next_run_at") @db.Timestamptz(3)
+  lastRunAt      DateTime? @map("last_run_at") @db.Timestamptz(3)
+  lastError      String?   @map("last_error")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([guildId])
+  @@index([nextRunAt])
+  @@index([enabled, nextRunAt])
+  @@map("scheduled_reminders")
+}

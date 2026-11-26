@@ -35,6 +35,7 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     'audit-logs': AuditLogsPageSkeleton,
     'custom-summary': AuditLogsPageSkeleton,
     uptime: GenericPageSkeleton,
+    reminders: GenericPageSkeleton,
 };
 
 const APP_PAGES: Record<string, ComponentType> = {

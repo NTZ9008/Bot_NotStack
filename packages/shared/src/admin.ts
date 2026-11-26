@@ -129,6 +129,10 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'uptime.target_update': 'แก้ไขรายการตรวจสอบ Uptime',
     'uptime.target_delete': 'ลบรายการตรวจสอบ Uptime',
     'uptime.target_check': 'สั่งตรวจสอบสถานะทันที',
+    'reminder.create': 'สร้างรายการแจ้งเตือนตามเวลา',
+    'reminder.update': 'แก้ไขรายการแจ้งเตือนตามเวลา',
+    'reminder.delete': 'ลบรายการแจ้งเตือนตามเวลา',
+    'reminder.test_send': 'ทดสอบส่งแจ้งเตือนตามเวลา',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -149,6 +153,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     custom_summary: 'สร้างรายงานสรุป (Custom Summary)',
     plugin: 'ปลั๊กอิน',
     uptime: 'ตรวจสอบสถานะเว็บ & API',
+    reminder: 'แจ้งเตือนและนัดหมายตามเวลา',
 };
 
 export function auditLabel(action: string): string {

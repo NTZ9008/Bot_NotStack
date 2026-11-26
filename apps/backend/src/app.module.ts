@@ -35,6 +35,7 @@ import { PluginsModule } from './plugins/plugins.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RankModule } from './rank/rank.module';
+import { RemindersModule } from './reminders/reminders.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UptimeModule } from './uptime/uptime.module';
 import { UsersModule } from './users/users.module';
@@ -105,6 +106,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         JiraModule,
         FundModule,
         UptimeModule,
+        RemindersModule,
         ChatModule,
         CommandsModule,
     ],
