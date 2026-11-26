@@ -37,6 +37,7 @@ import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/s
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
 import { Route as AppServersGuildIdManagePluginsRouteImport } from './routes/_app/servers/$guildId/_manage/plugins'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
+import { Route as AppServersGuildIdManageReactionRolesRouteImport } from './routes/_app/servers/$guildId/_manage/reaction-roles'
 import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
 import { Route as AppServersGuildIdManageRemindersRouteImport } from './routes/_app/servers/$guildId/_manage/reminders'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
@@ -195,6 +196,12 @@ const AppServersGuildIdManagePrBotRoute =
     path: '/pr-bot',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageReactionRolesRoute =
+  AppServersGuildIdManageReactionRolesRouteImport.update({
+    id: '/reaction-roles',
+    path: '/reaction-roles',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageRelationsRoute =
   AppServersGuildIdManageRelationsRouteImport.update({
     id: '/relations',
@@ -270,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -304,6 +312,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
   '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -343,6 +352,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
   '/_app/servers/$guildId/_manage/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/_app/servers/$guildId/_manage/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
   '/_app/servers/$guildId/_manage/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -380,6 +390,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/overview'
     | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/reaction-roles'
     | '/servers/$guildId/relations'
     | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/overview'
     | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/reaction-roles'
     | '/servers/$guildId/relations'
     | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
@@ -452,6 +464,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/overview'
     | '/_app/servers/$guildId/_manage/plugins'
     | '/_app/servers/$guildId/_manage/pr-bot'
+    | '/_app/servers/$guildId/_manage/reaction-roles'
     | '/_app/servers/$guildId/_manage/relations'
     | '/_app/servers/$guildId/_manage/reminders'
     | '/_app/servers/$guildId/_manage/room-access'
@@ -668,6 +681,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManagePrBotRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/reaction-roles': {
+      id: '/_app/servers/$guildId/_manage/reaction-roles'
+      path: '/reaction-roles'
+      fullPath: '/servers/$guildId/reaction-roles'
+      preLoaderRoute: typeof AppServersGuildIdManageReactionRolesRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/relations': {
       id: '/_app/servers/$guildId/_manage/relations'
       path: '/relations'
@@ -756,6 +776,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
   AppServersGuildIdManagePluginsRoute: typeof AppServersGuildIdManagePluginsRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
+  AppServersGuildIdManageReactionRolesRoute: typeof AppServersGuildIdManageReactionRolesRoute
   AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
   AppServersGuildIdManageRemindersRoute: typeof AppServersGuildIdManageRemindersRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
@@ -784,6 +805,8 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
     AppServersGuildIdManageOverviewRoute: AppServersGuildIdManageOverviewRoute,
     AppServersGuildIdManagePluginsRoute: AppServersGuildIdManagePluginsRoute,
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
+    AppServersGuildIdManageReactionRolesRoute:
+      AppServersGuildIdManageReactionRolesRoute,
     AppServersGuildIdManageRelationsRoute:
       AppServersGuildIdManageRelationsRoute,
     AppServersGuildIdManageRemindersRoute:

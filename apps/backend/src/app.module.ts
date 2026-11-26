@@ -35,6 +35,7 @@ import { PluginsModule } from './plugins/plugins.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RankModule } from './rank/rank.module';
+import { ReactionRolesModule } from './reaction-roles/reaction-roles.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { RoomAccessModule } from './room-access/room-access.module';
 import { UptimeModule } from './uptime/uptime.module';
@@ -107,6 +108,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         FundModule,
         UptimeModule,
         RemindersModule,
+        ReactionRolesModule,
         ChatModule,
         CommandsModule,
     ],

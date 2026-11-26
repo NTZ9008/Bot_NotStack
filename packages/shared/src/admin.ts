@@ -133,6 +133,13 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'reminder.update': 'แก้ไขรายการแจ้งเตือนตามเวลา',
     'reminder.delete': 'ลบรายการแจ้งเตือนตามเวลา',
     'reminder.test_send': 'ทดสอบส่งแจ้งเตือนตามเวลา',
+    'reaction_roles.panel_create': 'สร้างแผงรับยศ',
+    'reaction_roles.panel_update': 'แก้ไขแผงรับยศ',
+    'reaction_roles.panel_delete': 'ลบแผงรับยศ',
+    'reaction_roles.panel_publish': 'ส่ง/อัปเดตแผงรับยศเข้า Discord',
+    'reaction_roles.item_create': 'เพิ่มยศในแผงรับยศ',
+    'reaction_roles.item_update': 'แก้ไขยศในแผงรับยศ',
+    'reaction_roles.item_delete': 'ลบยศออกจากแผงรับยศ',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -154,6 +161,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     plugin: 'ปลั๊กอิน',
     uptime: 'ตรวจสอบสถานะเว็บ & API',
     reminder: 'แจ้งเตือนและนัดหมายตามเวลา',
+    reaction_roles: 'รับยศด้วยปุ่มกด & เมนูเลือก',
 };
 
 export function auditLabel(action: string): string {

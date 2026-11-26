@@ -4,13 +4,13 @@ import { z } from 'zod';
 // 🧩 PLUGINS — แคตตาล็อกปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์ (Per-Guild)
 // ==========================================
 
-export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders'] as const;
+export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders', 'reaction-roles'] as const;
 export type PluginId = (typeof PLUGIN_IDS)[number];
 
 export const PLUGIN_CATEGORIES = ['devops', 'productivity', 'finance', 'community'] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
-export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse' | 'CalendarClock';
+export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse' | 'CalendarClock' | 'Sparkles';
 
 export const PLUGIN_NOT_INSTALLED_CODE = 'PLUGIN_NOT_INSTALLED' as const;
 export const PLUGIN_BOT_DISABLED_MESSAGE = 'ฟีเจอร์นี้ยังไม่ถูกเปิดใช้งาน กรุณาติดตั้งปลั๊กอินผ่าน Dashboard ก่อน';
@@ -21,7 +21,8 @@ export type PluginRoutePath =
     | '/servers/$guildId/jira'
     | '/servers/$guildId/funds'
     | '/servers/$guildId/uptime'
-    | '/servers/$guildId/reminders';
+    | '/servers/$guildId/reminders'
+    | '/servers/$guildId/reaction-roles';
 
 export interface PluginDefinition {
     id: PluginId;
@@ -87,6 +88,15 @@ export const PLUGIN_REGISTRY: readonly PluginDefinition[] = [
         category: 'productivity',
         version: '1.0.0',
         routePath: '/servers/$guildId/reminders',
+    },
+    {
+        id: 'reaction-roles',
+        name: 'รับยศด้วยปุ่มกด & เมนูเลือก',
+        description: 'สร้างแผงข้อความพร้อมปุ่มกดหรือเมนูเลือกยศส่งเข้าห้อง Discord ให้สมาชิกกดรับหรือถอดยศเองได้ทันที รองรับทั้งเลือกยศเดียวและหลายยศ',
+        icon: 'Sparkles',
+        category: 'community',
+        version: '1.0.0',
+        routePath: '/servers/$guildId/reaction-roles',
     },
 ] as const;
 

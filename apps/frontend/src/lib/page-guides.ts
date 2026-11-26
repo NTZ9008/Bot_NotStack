@@ -58,6 +58,17 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.remindersSaveImmediatelyAndRunIn'),
                 tip: tr('common.onceRemindersDisableAutomaticallyAfterSending'),
             },
+            reactionRoles: {
+                title: tr('common.reactionRoles'),
+                summary: tr('common.letMembersPickRolesWithButtonsOrMenus'),
+                steps: [
+                    tr('common.createPanelPickChannelAndMode'),
+                    tr('common.addRoleButtonsOrMenuOptions'),
+                    tr('common.pressPublishToSendOrSyncDiscord'),
+                ],
+                saving: tr('common.savePanelThenPressPublishToSync'),
+                tip: tr('common.botRoleMustBeAboveManagedRoles'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

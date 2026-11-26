@@ -706,3 +706,41 @@ model ScheduledReminder {
   @@index([enabled, nextRunAt])
   @@map("scheduled_reminders")
 }
+
+// ==========================================
+// 🎭 REACTION ROLES — แผงรับยศอัตโนมัติด้วยปุ่มกดและเมนูเลือกแยกตามเซิร์ฟเวอร์
+// ==========================================
+model ReactionRolePanel {
+  id            Int                @id @default(autoincrement())
+  guildId       String             @map("guild_id")
+  channelId     String             @map("channel_id")
+  messageId     String?            @map("message_id")
+  title         String
+  description   String             @default("")
+  embedColor    String             @default("#5865f2") @map("embed_color")
+  mode          String             @default("BUTTON")
+  allowMultiple Boolean            @default(true) @map("allow_multiple")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  items ReactionRoleItem[]
+
+  @@index([guildId])
+  @@index([channelId, messageId])
+  @@map("reaction_role_panels")
+}
+
+model ReactionRoleItem {
+  id          Int               @id @default(autoincrement())
+  panelId     Int               @map("panel_id")
+  roleId      String            @map("role_id")
+  label       String
+  emoji       String?
+  buttonStyle String            @default("PRIMARY") @map("button_style")
+  sortOrder   Int               @default(0) @map("sort_order")
+
+  panel ReactionRolePanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, sortOrder])
+  @@map("reaction_role_items")
+}
