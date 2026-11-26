@@ -1,5 +1,5 @@
 import { tr, byLang } from '../../../../../lib/i18n';
-import type { WelcomeCard, WelcomeVars } from '@notstack/shared';
+import type { WelcomeCard, WelcomeEvent, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from '@/components/icons';
@@ -47,7 +47,7 @@ const SECTIONS = byLang((): { value: Section; label: string }[] => [
     { value: 'texts', label: tr('welcome.textOnImage') },
 ]);
 
-const toDraft = (card: WelcomeCard): CardDraft => structuredClone({ ...pickDraft(card), id: card.id, enabled: card.enabled });
+const toDraft = (card: WelcomeCard): CardDraft => structuredClone({ ...pickDraft(card), id: card.id, enabled: card.enabled, event: card.event });
 
 // ==========================================
 // 🎉 WELCOME ANNOUNCEMENT — การ์ดต้อนรับแบบรูปภาพ
@@ -67,6 +67,7 @@ function WelcomePage() {
 
     const [saved, setSaved] = useState<CardDraft | null>(null);
     const [draft, setDraft] = useState<CardDraft | null>(null);
+    const [event, setEvent] = useState<WelcomeEvent>('join');
     const [section, setSection] = useState<Section>('general');
     const [openText, setOpenText] = useState(0);
     const [sample, setSample] = useState<PickedUser | null>(null);
@@ -92,9 +93,9 @@ function WelcomePage() {
         setOpenText(card?.design.texts.length ? 0 : -1);
     };
 
-    // เปิดหน้ามาครั้งแรก → เลือกการ์ดใบแรกให้
+    // เปิดหน้ามาครั้งแรก → เลือกการ์ดใบแรกของแท็บที่เปิดอยู่ให้
     useEffect(() => {
-        if (!saved && cards.data?.length) load(cards.data[0]);
+        if (!saved && cards.data?.length) load(cards.data.find((c) => c.event === event));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cards.data]);
 
@@ -112,6 +113,13 @@ function WelcomePage() {
     const select = async (id: number) => {
         if (id === draft?.id || !(await confirmDiscard())) return;
         load(cards.data?.find((card) => card.id === id));
+    };
+
+    // สลับแท็บ เข้า/ออก — ถ้ามีการแก้ค้างให้ถามก่อน แล้วเลือกการ์ดใบแรกของแท็บนั้น
+    const switchEvent = async (next: WelcomeEvent) => {
+        if (next === event || !(await confirmDiscard())) return;
+        setEvent(next);
+        load((cards.data ?? []).find((c) => c.event === next));
     };
 
     const save = async () => {
@@ -154,7 +162,7 @@ function WelcomePage() {
     const create = async (duplicateOf?: number) => {
         if (!(await confirmDiscard())) return;
         try {
-            const { card } = await welcomeApi.createCard(guildId, duplicateOf ? { duplicateOf } : {});
+            const { card } = await welcomeApi.createCard(guildId, duplicateOf ? { duplicateOf } : { event });
             setCards((list) => [...list, card]);
             load(card);
             toast.success(duplicateOf ? tr('welcome.cardCopied') : tr('welcome.newCardCreated'), {
@@ -178,7 +186,7 @@ function WelcomePage() {
             await welcomeApi.deleteCard(guildId, draft.id);
             const rest = (cards.data ?? []).filter((c) => c.id !== draft.id);
             setCards(() => rest);
-            load(rest[0]);
+            load(rest.find((c) => c.event === event));
             toast.success(tr('welcome.cardDeleted'));
         } catch (err) {
             toast.error(tr('welcome.failedToDeleteCard'), { description: errorMessage(err) });
@@ -232,14 +240,15 @@ function WelcomePage() {
     if (meta.error || cards.error || assets.error)
         return <ErrorState error={meta.error ?? cards.error ?? assets.error} title={tr('welcome.failedToLoadWelcomeData')} />;
     const cardList = cards.data ?? [];
-    const current = cardList.find((c) => c.id === draft?.id);
+    const visibleCards = cardList.filter((c) => c.event === event);
+    const current = visibleCards.find((c) => c.id === draft?.id);
 
     return (
         <>
             <PageHeader
                 help="welcome"
-                title={tr('common.welcomeNewMembers')}
-                description={tr('welcome.imageWelcomeCardsForNewMembers')}
+                title={tr('welcome.pageTitle')}
+                description={tr('welcome.pageDescription')}
                 actions={
                     <Button onClick={() => void create()}>
                         <Plus /> {tr('welcome.createNewCard')}
@@ -249,15 +258,25 @@ function WelcomePage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>{tr('welcome.welcomeCards')}</CardTitle>
-                    <CardDescription>{tr('welcome.severalCanBeOnAtOnce')}</CardDescription>
+                    <CardTitle>{event === 'leave' ? tr('welcome.leaveCards') : tr('welcome.welcomeCards')}</CardTitle>
+                    <CardDescription>{event === 'leave' ? tr('welcome.leaveSeveralCanBeOnAtOnce') : tr('welcome.severalCanBeOnAtOnce')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {cardList.length === 0 ? (
-                        <EmptyState>{tr('welcome.noWelcomeCardsYetPressCreate')}</EmptyState>
+                    <Tabs value={event} onValueChange={(value) => void switchEvent(value as WelcomeEvent)}>
+                        <TabsList>
+                            <TabsTrigger value="join">
+                                {tr('welcome.onJoin')} ({cardList.filter((c) => c.event === 'join').length})
+                            </TabsTrigger>
+                            <TabsTrigger value="leave">
+                                {tr('welcome.onLeave')} ({cardList.filter((c) => c.event === 'leave').length})
+                            </TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    {visibleCards.length === 0 ? (
+                        <EmptyState>{event === 'leave' ? tr('welcome.noLeaveCardsYetPressCreate') : tr('welcome.noWelcomeCardsYetPressCreate')}</EmptyState>
                     ) : (
-                        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                            {cardList.map((card) => (
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                            {visibleCards.map((card) => (
                                 <div
                                     key={card.id}
                                     role="button"
