@@ -300,6 +300,8 @@ model WelcomeCard {
   guildId      String   @map("guild_id")
   name         String
   enabled      Boolean  @default(false)
+  // ส่งตอนไหน: 'join' = สมาชิกเข้า, 'leave' = สมาชิกออก (ตรวจค่าใน packages/shared/src/welcome.ts)
+  event        String   @default("join")
   channelId    String   @default("") @map("channel_id")
   // ข้อความธรรมดาที่ส่งคู่กับรูป (รองรับตัวแปร {mention} {user} {server} ...) — ว่าง = ส่งแค่รูป
   content      String   @default("")
@@ -313,7 +315,7 @@ model WelcomeCard {
   background WelcomeAsset? @relation(fields: [backgroundId], references: [id], onDelete: SetNull)
 
   @@index([backgroundId])
-  @@index([guildId])
+  @@index([guildId, event])
   @@map("welcome_cards")
 }
 

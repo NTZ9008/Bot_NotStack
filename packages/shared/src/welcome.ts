@@ -30,6 +30,10 @@ export type BackgroundFit = (typeof FITS)[number];
 export type AvatarShape = (typeof SHAPES)[number];
 export type TextAlign = (typeof ALIGNS)[number];
 
+// การ์ดส่งตอนไหน — เปลี่ยนไม่ได้หลังสร้าง
+export const WELCOME_EVENTS = ['join', 'leave'] as const;
+export type WelcomeEvent = (typeof WELCOME_EVENTS)[number];
+
 // ฟอนต์ที่มีไฟล์มากับแพ็กเกจ @expo-google-fonts/* (ทุกฟอนต์มีครบทั้ง 4 น้ำหนัก)
 export const WELCOME_FONTS = [
     { id: 'kanit', label: 'Kanit' },
@@ -54,9 +58,12 @@ const WEIGHT_VALUES = new Set<number>(WELCOME_WEIGHTS.map((weight) => weight.val
 export const PLACEHOLDERS = [
     { key: 'user', label: 'ชื่อที่แสดงของสมาชิก (ชื่อเล่นในเซิร์ฟเวอร์ ถ้ามี)' },
     { key: 'username', label: 'username ของสมาชิก' },
-    { key: 'mention', label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ' },
+    {
+        key: 'mention',
+        label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ (การ์ดออก: คนที่ออกไปแล้วอาจแสดงเป็น @unknown — แนะนำใช้ {user})',
+    },
     { key: 'server', label: 'ชื่อเซิร์ฟเวอร์' },
-    { key: 'memberCount', label: 'จำนวนสมาชิกทั้งหมด (= สมาชิกคนที่เท่าไร)' },
+    { key: 'memberCount', label: 'จำนวนสมาชิกทั้งหมดตอนนี้ (การ์ดเข้า = สมาชิกคนที่เท่าไร, การ์ดออก = เหลือกี่คน)' },
     { key: 'id', label: 'User ID ของสมาชิก' },
 ] as const;
 
@@ -146,6 +153,18 @@ export function defaultDesign(): WelcomeDesign {
             defaultText({ text: 'สมาชิกคนที่ #{memberCount} ของ {server}', y: 407, font: 'noto-sans-thai', weight: 400, size: 24, color: '#e2e8f0' }),
         ],
     };
+}
+
+// ดีไซน์เริ่มต้นของการ์ดอำลา (โครงเดียวกับ defaultDesign ต่างแค่สีและข้อความ)
+export function defaultLeaveDesign(): WelcomeDesign {
+    const design = defaultDesign();
+    design.background.color = '#374151';
+    design.texts = [
+        defaultText({ text: 'GOODBYE', y: 297, weight: 900, size: 60, letterSpacing: 6 }),
+        defaultText({ text: '{user}', y: 355, size: 42, color: '#cbd5e1' }),
+        defaultText({ text: 'ตอนนี้ {server} เหลือสมาชิก {memberCount} คน', y: 407, font: 'noto-sans-thai', weight: 400, size: 24, color: '#e2e8f0' }),
+    ];
+    return design;
 }
 
 // ==========================================
@@ -256,6 +275,7 @@ export interface WelcomeCard {
     id: number;
     name: string;
     enabled: boolean;
+    event: WelcomeEvent;
     channelId: string;
     // ข้อความธรรมดาที่ส่งคู่กับรูป — ว่าง = ส่งแค่รูป
     content: string;
@@ -358,6 +378,8 @@ export type WelcomeCardData = z.output<typeof welcomeCardInputSchema>;
 export const welcomeCreateSchema = welcomeCardInputSchema.extend({
     // สร้างโดยคัดลอกจากการ์ดเดิม
     duplicateOf: z.unknown().optional(),
+    // ไม่ส่ง = 'join' (หรือชนิดเดียวกับการ์ดที่คัดลอก)
+    event: z.enum(WELCOME_EVENTS, { error: 'event ต้องเป็น join หรือ leave' }).optional(),
 });
 
 export const welcomePreviewSchema = z.object({
