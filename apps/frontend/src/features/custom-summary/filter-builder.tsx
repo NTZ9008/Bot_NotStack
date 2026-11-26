@@ -1,5 +1,5 @@
 import { tr, byLang } from '../../lib/i18n';
-import type { CustomSummaryChannelOption, CustomSummaryModule } from '@notstack/shared';
+import type { CustomSummaryChannelOption, CustomSummaryModule, PluginId } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,6 +10,7 @@ import {
     Filter,
     GitPullRequest,
     Loader2,
+    Lock,
     MessageSquareText,
     Play,
     RotateCcw,
@@ -20,6 +21,7 @@ import {
 } from '@/components/icons';
 import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { pluginCopy } from '@/lib/plugin-ui';
 import { cn } from '@/lib/utils';
 import { ChannelMultiSelect } from './channel-multi-select';
 
@@ -102,6 +106,7 @@ export interface FilterBuilderProps {
     draft: CustomSummaryDraftFilter;
     channels: CustomSummaryChannelOption[];
     channelsLoading?: boolean;
+    installedPlugins?: PluginId[];
     validationError: string | null;
     isProcessing: boolean;
     hasSummary: boolean;
@@ -118,6 +123,7 @@ export function FilterBuilder({
     draft,
     channels,
     channelsLoading,
+    installedPlugins,
     validationError,
     isProcessing,
     hasSummary,
@@ -129,6 +135,10 @@ export function FilterBuilder({
 }: FilterBuilderProps) {
     const [memberPopoverOpen, setMemberPopoverOpen] = useState(false);
     const [memberSearch, setMemberSearch] = useState('');
+    const installedSet = installedPlugins ? new Set(installedPlugins) : null;
+    const lockedSummaryPlugins: PluginId[] = installedSet
+        ? (['github-pr', 'grafana-alert', 'jira-card'] as const).filter((id) => !installedSet.has(id))
+        : [];
 
     const { data: foundMembers = [], isFetching: searchingMembers } = useQuery({
         ...searchMembersQuery(guildId, memberSearch.trim()),
@@ -136,9 +146,11 @@ export function FilterBuilder({
     });
 
     const toggleModule = (mod: CustomSummaryModule) => {
+        if (mod === 'githubPr' && installedSet && !installedSet.has('github-pr')) return;
         const exists = draft.modules.includes(mod);
         if (exists) {
-            if (draft.modules.length <= 1) return;
+            const activeCount = draft.modules.filter((m) => m !== 'githubPr' || !installedSet || installedSet.has('github-pr')).length;
+            if (activeCount <= 1) return;
             onUpdate({ modules: draft.modules.filter((m) => m !== mod) });
         } else {
             onUpdate({ modules: [...draft.modules, mod] });
@@ -363,37 +375,77 @@ export function FilterBuilder({
                     <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
                         {MODULE_OPTIONS().map((mod) => {
                             const Icon = mod.icon;
-                            const checked = draft.modules.includes(mod.key);
-                            return (
+                            const isPrLocked = mod.key === 'githubPr' && installedSet !== null && !installedSet.has('github-pr');
+                            const checked = !isPrLocked && draft.modules.includes(mod.key);
+                            const btn = (
                                 <button
                                     key={mod.key}
                                     type="button"
+                                    disabled={isPrLocked}
+                                    aria-disabled={isPrLocked || undefined}
                                     aria-pressed={checked}
                                     onClick={() => toggleModule(mod.key)}
                                     className={cn(
-                                        'flex items-start gap-2.5 rounded-xl border p-3 text-left transition-all',
-                                        checked
-                                            ? mod.activeClass
-                                            : 'border-border bg-background/70 text-muted-foreground hover:border-border hover:text-foreground',
+                                        'flex w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-all',
+                                        isPrLocked
+                                            ? 'cursor-not-allowed border-border/60 bg-muted/40 text-muted-foreground opacity-60'
+                                            : checked
+                                              ? mod.activeClass
+                                              : 'border-border bg-background/70 text-muted-foreground hover:border-border hover:text-foreground',
                                     )}
                                 >
-                                    <Checkbox
-                                        aria-hidden
-                                        tabIndex={-1}
-                                        checked={checked}
-                                        className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
-                                    />
+                                    {isPrLocked ? (
+                                        <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                                    ) : (
+                                        <Checkbox
+                                            aria-hidden
+                                            tabIndex={-1}
+                                            checked={checked}
+                                            className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
+                                        />
+                                    )}
                                     <div className="min-w-0 flex-1">
                                         <div className="flex items-center gap-1.5 text-xs font-semibold">
                                             <Icon className={cn('size-3.5 shrink-0', checked ? mod.iconClass : 'text-muted-foreground')} />
                                             <span>{mod.title}</span>
                                         </div>
-                                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{mod.hint}</p>
+                                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
+                                            {isPrLocked ? tr('plugins.requiresPluginShort', { 0: pluginCopy('github-pr').name }) : mod.hint}
+                                        </p>
                                     </div>
                                 </button>
                             );
+
+                            if (!isPrLocked) return btn;
+
+                            return (
+                                <Tooltip key={mod.key}>
+                                    <TooltipTrigger asChild>
+                                        <span className="flex">{btn}</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>{tr('plugins.requiresPluginTooltip', { 0: pluginCopy('github-pr').name })}</TooltipContent>
+                                </Tooltip>
+                            );
                         })}
                     </div>
+                    {lockedSummaryPlugins.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted-foreground">
+                            {lockedSummaryPlugins.map((pluginId) => {
+                                const name = pluginCopy(pluginId).name;
+                                return (
+                                    <Tooltip key={pluginId}>
+                                        <TooltipTrigger asChild>
+                                            <Badge variant="outline" className="cursor-help gap-1 border-dashed text-[11px] text-muted-foreground">
+                                                <Lock className="size-3" />
+                                                {tr('plugins.requiresPluginShort', { 0: name })}
+                                            </Badge>
+                                        </TooltipTrigger>
+                                        <TooltipContent>{tr('plugins.requiresPluginTooltip', { 0: name })}</TooltipContent>
+                                    </Tooltip>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* แถว Action + Validation */}

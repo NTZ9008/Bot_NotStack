@@ -4,6 +4,7 @@ import { Audit, AuditCtx } from '../../common/decorators/audit.decorator';
 import type { AuditContext } from '../../common/interfaces/app-request.interface';
 import { GuildId } from '../../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../../guilds/decorators/guild-route.decorator';
+import { RequirePlugin } from '../../plugins/decorators/require-plugin.decorator';
 import { PrBotStatsQueryDto } from '../dto/pr-bot-stats-query.dto';
 import { PrBotStatsService } from '../pr-bot-stats.service';
 import { UpdatePrBotDto } from '../dto/update-pr-bot.dto';
@@ -11,6 +12,7 @@ import { PrBotSettingsService } from '../pr-bot-settings.service';
 
 // ตั้งค่า PR Bot ของเซิร์ฟเวอร์ (ห้อง default / ห้องแยกตาม org / mention แยกตาม repo / webhook secret)
 @GuildRoute()
+@RequirePlugin('github-pr')
 @Controller('guilds/:guildId/pr-bot')
 export class PrBotSettingsController {
     constructor(

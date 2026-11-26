@@ -25,6 +25,17 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.changingTheTimeRangeAndFilters'),
                 tip: tr('common.ifTheChartsAreEmptyTry'),
             },
+            plugins: {
+                title: tr('common.plugins'),
+                summary: tr('common.installAndManageAddOnFeatures'),
+                steps: [
+                    tr('common.browseThePluginCatalogAndPick'),
+                    tr('common.pressInstallOnPluginsThis'),
+                    tr('common.installedPluginsAppearInThe'),
+                ],
+                saving: tr('common.installingOrUninstallingAppliesPer'),
+                tip: tr('common.uninstallingHidesTheFeatureAnd'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

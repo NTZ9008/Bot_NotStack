@@ -1,9 +1,10 @@
 import { tr, byLang } from '../../lib/i18n';
 import { PAGE_GUIDES, type PageGuideKey } from '../../lib/page-guides';
-import type { GuildSummary } from '@notstack/shared';
+import type { GuildSummary, PluginId } from '@notstack/shared';
 // import ตรงจาก lucide (ไม่ผ่าน alias @/) เพราะ tests/frontend-lib.test.cjs โหลดไฟล์นี้ด้วย Node
 import type { LucideIcon } from 'lucide-react';
 import {
+    Blocks,
     CircleUser,
     CloudSun,
     Bot,
@@ -40,6 +41,8 @@ export interface NavItem {
     // หน้าของเซิร์ฟเวอร์: ต้องมีสิทธิ์ระดับไหน (ไม่ระบุ = หน้าส่วนกลาง)
     guild?: 'manage' | 'view';
     adminOnly?: boolean;
+    // แสดงเมนูเฉพาะเมื่อเซิร์ฟเวอร์ติดตั้งปลั๊กอินนี้แล้ว
+    pluginId?: PluginId;
 }
 
 export interface NavGroup {
@@ -147,12 +150,26 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
                 guild: 'manage',
                 keywords: 'log management จัดการ log ตั้งค่าล็อก event ตัวกรอง',
             },
+        ],
+    },
+    {
+        label: tr('layout.pluginsGroup'),
+        items: [
+            {
+                to: '/servers/$guildId/plugins',
+                label: PAGE_GUIDES().plugins.title,
+                guide: 'plugins',
+                icon: Blocks,
+                guild: 'manage',
+                keywords: 'plugins store manager addons install uninstall ปลั๊กอิน ติดตั้ง ส่วนเสริม',
+            },
             {
                 to: '/servers/$guildId/pr-bot',
                 label: PAGE_GUIDES().prBot.title,
                 guide: 'prBot',
                 icon: GitPullRequest,
                 guild: 'manage',
+                pluginId: 'github-pr',
                 keywords: 'pr bot github pull request webhook',
             },
             {
@@ -161,6 +178,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
                 guide: 'grafanaAlerts',
                 icon: Activity,
                 guild: 'manage',
+                pluginId: 'grafana-alert',
                 keywords: 'grafana alertmanager monitoring firing resolved webhook ops observability',
             },
             {
@@ -169,6 +187,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
                 guide: 'jira',
                 icon: Ticket,
                 guild: 'manage',
+                pluginId: 'jira-card',
                 keywords: 'jira ticket card issue เปิดการ์ด แจ้งปัญหา bug task atlassian ห้องส่วนตัว',
             },
             {
@@ -177,6 +196,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
                 guide: 'funds',
                 icon: Coins,
                 guild: 'manage',
+                pluginId: 'savings-goal',
                 keywords: 'funds money เก็บเงิน ยอดเงิน ทุน หารเงิน ค่าห้อง เป้าหมาย report รายงาน',
             },
         ],
@@ -267,15 +287,17 @@ const GLOBAL_GROUPS = byLang((): NavGroup[] => [
     },
 ]);
 
-// เมนูที่ผู้ใช้เห็น — หน้าที่ไม่มีสิทธิ์เข้าจะไม่ขึ้นทั้งในเมนูและในผลการค้นหา
-export function visibleNavGroups(isAdmin: boolean, guild: Pick<GuildSummary, 'access'> | null): NavGroup[] {
+// เมนูที่ผู้ใช้เห็น — หน้าที่ไม่มีสิทธิ์เข้า หรือปลั๊กอินที่ยังไม่ได้ติดตั้งจะไม่ขึ้นทั้งในเมนูและในผลการค้นหา
+export function visibleNavGroups(isAdmin: boolean, guild: Pick<GuildSummary, 'access' | 'installedPlugins'> | null): NavGroup[] {
     const groups = [...(guild ? GUILD_GROUPS() : []), ...GLOBAL_GROUPS()];
+    const installed = guild?.installedPlugins ?? [];
     return groups
         .map((group) => ({
             ...group,
             items: group.items.filter((item) => {
                 if (item.adminOnly && !isAdmin) return false;
                 if (item.guild === 'manage' && guild?.access !== 'manage') return false;
+                if (item.pluginId && !installed.includes(item.pluginId)) return false;
                 return true;
             }),
         }))

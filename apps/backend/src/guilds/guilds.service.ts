@@ -3,6 +3,7 @@ import type { GuildAccessLevel, GuildListResponse, GuildSummary } from '@notstac
 import type { Guild } from 'discord.js';
 import { DiscordService } from '../discord/discord.service';
 import type { User } from '../generated/prisma/client';
+import { PluginsService } from '../plugins/plugins.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { GuildAccessService } from './guild-access.service';
@@ -22,6 +23,7 @@ export class GuildsService {
         private readonly discord: DiscordService,
         private readonly access: GuildAccessService,
         @Optional() private readonly users?: UsersService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
     // บอทอยู่ในเซิร์ฟเวอร์นี้ (ตอนออนไลน์ / ถูกเชิญ / เซิร์ฟเวอร์เปลี่ยนชื่อ-รูป)
@@ -120,9 +122,18 @@ export class GuildsService {
     // ข้อมูลเซิร์ฟเวอร์เดียว (ผ่าน GuildAccessGuard มาแล้ว)
     async detail(user: User, guildId: string): Promise<GuildSummary> {
         const level = (await this.access.resolve(user, guildId)) ?? 'view';
+        const installedPlugins = this.plugins ? await this.plugins.getInstalledIds(guildId) : undefined;
         const guild = this.discord.guild(guildId);
-        if (guild) return this.summary(guild, level);
+        if (guild) return { ...this.summary(guild, level), ...(installedPlugins ? { installedPlugins } : {}) };
         const row = await this.prisma.guild.findUnique({ where: { id: guildId } });
-        return { id: guildId, name: row?.name || guildId, iconUrl: row?.iconUrl ?? null, memberCount: 0, access: level, isHome: this.discord.isHome(guildId) };
+        return {
+            id: guildId,
+            name: row?.name || guildId,
+            iconUrl: row?.iconUrl ?? null,
+            memberCount: 0,
+            access: level,
+            isHome: this.discord.isHome(guildId),
+            ...(installedPlugins ? { installedPlugins } : {}),
+        };
     }
 }

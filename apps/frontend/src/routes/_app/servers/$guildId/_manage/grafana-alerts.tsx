@@ -12,6 +12,7 @@ import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
+import { PluginRouteGuard } from '@/components/plugin-gate';
 import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -23,11 +24,13 @@ import { useGuildId } from '@/hooks/use-guild';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/grafana-alerts')({
-    loader: ({ context, params }) =>
-        Promise.all([
+    loader: ({ context, params }) => {
+        if (!context.guild.installedPlugins?.includes('grafana-alert')) return;
+        return Promise.all([
             context.queryClient.ensureQueryData(grafanaQuery(params.guildId)),
             context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
-        ]),
+        ]);
+    },
     component: GrafanaAlertsPage,
 });
 
@@ -298,6 +301,19 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
 }
 
 function GrafanaAlertsPage() {
+    return (
+        <PluginRouteGuard
+            pluginId="grafana-alert"
+            help="grafanaAlerts"
+            title={tr('common.grafanaAlerts')}
+            description={tr('grafanaAlerts.receiveAlertmanagerStatusAndForwardIt')}
+        >
+            {() => <GrafanaAlertsPageContent />}
+        </PluginRouteGuard>
+    );
+}
+
+function GrafanaAlertsPageContent() {
     const guildId = useGuildId();
     const { data, isLoading, error } = useQuery(grafanaQuery(guildId));
     return (

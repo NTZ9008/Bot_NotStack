@@ -23,3 +23,4 @@ export * from './grafana';
 export * from './growth';
 export * from './live';
 export * from './custom-summary';
+export * from './plugins';

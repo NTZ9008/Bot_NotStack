@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { EmbedBuilder, SlashCommandBuilder, type ChatInputCommandInteraction } from 'discord.js';
 import { SlashCommand } from '../../discord/decorators/slash-command.decorator';
 import { DiscordExplorer } from '../../discord/discord.explorer';
 import { DiscordService } from '../../discord/discord.service';
 import type { SlashCommandHandler } from '../../discord/interfaces/slash-command.interface';
+import { PluginsService } from '../../plugins/plugins.service';
 
 // /gethelp — รายการคำสั่งที่ใช้ได้ในเซิร์ฟเวอร์นี้ (สร้างจากคำสั่งที่ลงทะเบียนจริง ไม่ต้องแก้มือเมื่อเพิ่มคำสั่งใหม่)
 @SlashCommand()
@@ -14,12 +15,14 @@ export class HelpCommand implements SlashCommandHandler {
     constructor(
         private readonly explorer: DiscordExplorer,
         private readonly discord: DiscordService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
     async execute(interaction: ChatInputCommandInteraction) {
         const home = this.discord.isHome(interaction.guildId);
+        const installed = interaction.guildId && this.plugins ? new Set(await this.plugins.getInstalledIds(interaction.guildId)) : null;
         const commands = [...this.explorer.commands.values()]
-            .filter((command) => home || !command.homeGuildOnly)
+            .filter((command) => (home || !command.homeGuildOnly) && (!command.pluginId || !installed || installed.has(command.pluginId)))
             .map((command) => command.data.toJSON())
             .sort((a, b) => a.name.localeCompare(b.name));
         const embed = new EmbedBuilder()

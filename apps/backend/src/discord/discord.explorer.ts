@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner } from '@nestjs/core';
+import type { PluginId } from '@notstack/shared';
 import { Collection } from 'discord.js';
 import { DISCORD_LISTENERS, type DiscordListenerMeta } from './decorators/on-discord.decorator';
 import { SlashCommand } from './decorators/slash-command.decorator';
@@ -9,6 +10,7 @@ import type { SlashCommandClass, SlashCommandDefinition, SlashCommandHandler } f
 export interface RegisteredCommand {
     handler: SlashCommandHandler;
     homeGuildOnly: boolean;
+    pluginId?: PluginId;
     data: SlashCommandDefinition;
 }
 
@@ -57,7 +59,12 @@ export class DiscordExplorer implements OnModuleInit {
             const handler = wrapper.instance as SlashCommandHandler | undefined;
             const metatype = wrapper.metatype as SlashCommandClass | null;
             if (!handler || !metatype?.data) continue;
-            this.commands.set(metatype.data.name, { handler, homeGuildOnly: Boolean(metatype.homeGuildOnly), data: metatype.data });
+            this.commands.set(metatype.data.name, {
+                handler,
+                homeGuildOnly: Boolean(metatype.homeGuildOnly),
+                pluginId: metatype.pluginId,
+                data: metatype.data,
+            });
         }
 
         this.logger.log(`ผูก event ${listenerCount} ตัว และคำสั่ง ${this.commands.size} คำสั่ง`);

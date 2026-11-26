@@ -123,6 +123,8 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'rank.level_up_update': 'ตั้งค่าประกาศเลเวลอัป / ยศรางวัล',
     'rank.rewards_sync': 'ปรับยศรางวัลให้สมาชิกเดิม',
     'custom_summary.export_pdf': 'ส่งออกรายงานสรุปเป็น PDF',
+    'plugin.install': 'ติดตั้งปลั๊กอิน',
+    'plugin.uninstall': 'ถอนการติดตั้งปลั๊กอิน',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -134,11 +136,14 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     voice_guard: 'Voice Guard',
     log_settings: 'Log Management',
     pr_bot: 'PR Bot',
+    grafana: 'Grafana Alert',
+    jira: 'เปิด Jira card',
     welcome: 'Welcome Announcement',
     weather: 'Weather',
     rank: 'การ์ด Rank & เลเวลอัป',
     fund: 'เก็บเงินตามเป้า',
     custom_summary: 'สร้างรายงานสรุป (Custom Summary)',
+    plugin: 'ปลั๊กอิน',
 };
 
 export function auditLabel(action: string): string {

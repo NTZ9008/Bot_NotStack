@@ -35,6 +35,7 @@ import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/s
 import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/_app/servers/$guildId/_manage/log-manager'
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
+import { Route as AppServersGuildIdManagePluginsRouteImport } from './routes/_app/servers/$guildId/_manage/plugins'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
 import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
@@ -180,6 +181,12 @@ const AppServersGuildIdManageOverviewRoute =
     path: '/overview',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManagePluginsRoute =
+  AppServersGuildIdManagePluginsRouteImport.update({
+    id: '/plugins',
+    path: '/plugins',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManagePrBotRoute =
   AppServersGuildIdManagePrBotRouteImport.update({
     id: '/pr-bot',
@@ -247,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -278,6 +286,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -314,6 +323,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/_app/servers/$guildId/_manage/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
   '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
@@ -348,6 +358,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
+    | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
     | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
+    | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
     | '/servers/$guildId/relations'
     | '/servers/$guildId/room-access'
@@ -414,6 +426,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/log-manager'
     | '/_app/servers/$guildId/_manage/news'
     | '/_app/servers/$guildId/_manage/overview'
+    | '/_app/servers/$guildId/_manage/plugins'
     | '/_app/servers/$guildId/_manage/pr-bot'
     | '/_app/servers/$guildId/_manage/relations'
     | '/_app/servers/$guildId/_manage/room-access'
@@ -615,6 +628,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageOverviewRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/plugins': {
+      id: '/_app/servers/$guildId/_manage/plugins'
+      path: '/plugins'
+      fullPath: '/servers/$guildId/plugins'
+      preLoaderRoute: typeof AppServersGuildIdManagePluginsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/pr-bot': {
       id: '/_app/servers/$guildId/_manage/pr-bot'
       path: '/pr-bot'
@@ -694,6 +714,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageLogManagerRoute: typeof AppServersGuildIdManageLogManagerRoute
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
+  AppServersGuildIdManagePluginsRoute: typeof AppServersGuildIdManagePluginsRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
   AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
@@ -719,6 +740,7 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
       AppServersGuildIdManageLogManagerRoute,
     AppServersGuildIdManageNewsRoute: AppServersGuildIdManageNewsRoute,
     AppServersGuildIdManageOverviewRoute: AppServersGuildIdManageOverviewRoute,
+    AppServersGuildIdManagePluginsRoute: AppServersGuildIdManagePluginsRoute,
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
     AppServersGuildIdManageRelationsRoute:
       AppServersGuildIdManageRelationsRoute,

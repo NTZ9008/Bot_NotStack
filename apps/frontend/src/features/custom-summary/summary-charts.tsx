@@ -1,5 +1,5 @@
 import { tr, byLang } from '../../lib/i18n';
-import type { CustomSummaryResponse } from '@notstack/shared';
+import type { CustomSummaryResponse, PluginId } from '@notstack/shared';
 import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Volume2 } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
@@ -47,11 +47,16 @@ const DEVOPS_CONFIG = byLang(
 );
 
 /** ชุดกราฟเปรียบเทียบกิจกรรมตามโมดูลที่เลือก */
-export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
+export function SummaryCharts({ summary, installedPlugins }: { summary: CustomSummaryResponse; installedPlugins?: PluginId[] }) {
     const [chartMode, setChartMode] = useState<'area' | 'bar'>('area');
     const [prMode, setPrMode] = useState<'repo' | 'channel'>('repo');
 
     const enabled = useMemo(() => new Set(summary.filters.modules), [summary.filters.modules]);
+    const pluginSource = installedPlugins ?? summary.installedPlugins;
+    const hasPlugin = (id: PluginId) => (pluginSource ? pluginSource.includes(id) : true);
+    const showPr = enabled.has('githubPr') && hasPlugin('github-pr');
+    const showGrafana = hasPlugin('grafana-alert');
+    const showJira = hasPlugin('jira-card');
 
     const timelineData = useMemo(
         () =>
@@ -173,9 +178,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                     {enabled.has('voice') && (
                                         <Area type="monotone" dataKey="voiceMinutes" stroke="#0ea5e9" strokeWidth={2} fill="url(#csFillVoice)" />
                                     )}
-                                    {enabled.has('githubPr') && (
-                                        <Area type="monotone" dataKey="prTotal" stroke="#a855f7" strokeWidth={2} fill="url(#csFillPr)" />
-                                    )}
+                                    {showPr && <Area type="monotone" dataKey="prTotal" stroke="#a855f7" strokeWidth={2} fill="url(#csFillPr)" />}
                                     {enabled.has('devopsOther') && (
                                         <Area type="monotone" dataKey="devopsTotal" stroke="#f59e0b" strokeWidth={2} fill="url(#csFillDevops)" />
                                     )}
@@ -201,7 +204,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                     <ChartLegend content={<ChartLegendContent />} />
                                     {enabled.has('messages') && <Bar dataKey="messages" fill="#10b981" radius={[4, 4, 0, 0]} />}
                                     {enabled.has('voice') && <Bar dataKey="voiceMinutes" fill="#0ea5e9" radius={[4, 4, 0, 0]} />}
-                                    {enabled.has('githubPr') && <Bar dataKey="prTotal" fill="#a855f7" radius={[4, 4, 0, 0]} />}
+                                    {showPr && <Bar dataKey="prTotal" fill="#a855f7" radius={[4, 4, 0, 0]} />}
                                     {enabled.has('devopsOther') && <Bar dataKey="devopsTotal" fill="#f59e0b" radius={[4, 4, 0, 0]} />}
                                 </BarChart>
                             )}
@@ -211,8 +214,8 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
             </Card>
 
             {/* 2. กราฟเปรียบเทียบห้องเสียง และ GitHub PR */}
-            {(enabled.has('voice') || enabled.has('githubPr')) && (
-                <div className={cn('grid gap-4', enabled.has('voice') && enabled.has('githubPr') ? 'lg:grid-cols-2' : 'grid-cols-1')}>
+            {(enabled.has('voice') || showPr) && (
+                <div className={cn('grid gap-4', enabled.has('voice') && showPr ? 'lg:grid-cols-2' : 'grid-cols-1')}>
                     {enabled.has('voice') && (
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader>
@@ -271,7 +274,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         </Card>
                     )}
 
-                    {enabled.has('githubPr') && (
+                    {showPr && (
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
@@ -382,8 +385,8 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                 />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <ChartLegend content={<ChartLegendContent />} />
-                                <Bar dataKey="grafanaAlerts" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="jiraCards" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+                                {showGrafana && <Bar dataKey="grafanaAlerts" fill="#0ea5e9" radius={[3, 3, 0, 0]} />}
+                                {showJira && <Bar dataKey="jiraCards" fill="#f59e0b" radius={[3, 3, 0, 0]} />}
                                 <Bar dataKey="memberJoin" fill="#10b981" radius={[3, 3, 0, 0]} />
                                 <Bar dataKey="memberLeave" fill="#ef4444" radius={[3, 3, 0, 0]} />
                             </BarChart>

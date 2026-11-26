@@ -21,6 +21,11 @@
       "source": "./src/text.ts",
       "types": "./dist/text.d.ts",
       "default": "./dist/text.js"
+    },
+    "./plugins": {
+      "source": "./src/plugins.ts",
+      "types": "./dist/plugins.d.ts",
+      "default": "./dist/plugins.js"
     }
   },
   "files": [

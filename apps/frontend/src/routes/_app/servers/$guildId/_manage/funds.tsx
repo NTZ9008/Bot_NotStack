@@ -6,6 +6,7 @@ import { Plus } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
+import { PluginRouteGuard } from '@/components/plugin-gate';
 import { SearchInput } from '@/components/search-input';
 import { FundsBodySkeleton } from '@/components/skeleton/editor-pages';
 import { ErrorState } from '@/components/states';
@@ -20,10 +21,11 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/funds')({
     validateSearch: (search: Record<string, unknown>): { topic?: number } => ({ topic: positiveSearchId(search.topic) }),
     // เริ่มโหลดรายการหัวข้อ (และหัวข้อที่เลือกอยู่ใน URL) พร้อมกับโค้ดของหน้า — ไม่รอให้หน้า render ก่อน
     loaderDeps: ({ search }) => ({ topic: search.topic }),
-    loader: ({ context: { queryClient }, params, deps, preload }) => {
+    loader: ({ context, params, deps, preload }) => {
+        if (!context.guild.installedPlugins?.includes('savings-goal')) return;
         const loading = Promise.all([
-            queryClient.prefetchQuery(fundsQuery(params.guildId)),
-            deps.topic ? queryClient.prefetchQuery(fundQuery(params.guildId, deps.topic)) : undefined,
+            context.queryClient.prefetchQuery(fundsQuery(params.guildId)),
+            deps.topic ? context.queryClient.prefetchQuery(fundQuery(params.guildId, deps.topic)) : undefined,
         ]);
         return preload ? loading : undefined;
     },
@@ -36,6 +38,19 @@ type TopicStatusFilter = 'all' | 'open' | 'closed';
 // 💰 เก็บเงินตามเป้า — รายการหัวข้อด้านซ้าย + แผงจัดการหัวข้อที่เลือก (?topic=id)
 // ==========================================
 function FundsPage() {
+    return (
+        <PluginRouteGuard
+            pluginId="savings-goal"
+            help="funds"
+            title={tr('common.fundCollection')}
+            description={tr('funds.createTopicsSetAFixedOr')}
+        >
+            {() => <FundsPageContent />}
+        </PluginRouteGuard>
+    );
+}
+
+function FundsPageContent() {
     const guildId = useGuildId();
     const { topic: selectedId } = Route.useSearch();
     const navigate = useNavigate();

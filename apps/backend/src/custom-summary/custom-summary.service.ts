@@ -1,5 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
+    PLUGIN_IDS,
     PR_CONFIG_KEYS,
     type CustomSummaryChannelGroup,
     type CustomSummaryChannelOption,
@@ -12,6 +13,7 @@ import {
     type CustomSummaryRequest,
     type CustomSummaryResponse,
     type CustomSummaryTimelinePoint,
+    type PluginId,
 } from '@notstack/shared';
 import { ChannelType } from 'discord.js';
 import { BotConfigService } from '../bot-config/bot-config.service';
@@ -19,6 +21,7 @@ import { DiscordService } from '../discord/discord.service';
 import { Prisma } from '../generated/prisma/client';
 import { activityEventLabel } from '../log-manager/utils/activity-humanize.util';
 import { SERVER_JOIN_KEYS, SERVER_LEAVE_KEYS } from '../log-manager/utils/activity-stats.util';
+import { PluginsService } from '../plugins/plugins.service';
 import { PrismaService } from '../prisma/prisma.service';
 import {
     VOICE_LIFECYCLE_EVENTS,
@@ -72,16 +75,20 @@ export class CustomSummaryService {
         private readonly prisma: PrismaService,
         private readonly discord: DiscordService,
         private readonly botConfig: BotConfigService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
-    private async loadDevopsConfig(guildId: string): Promise<DevopsChannelConfig> {
+    private async loadDevopsConfig(guildId: string, installedSet?: Set<PluginId>): Promise<DevopsChannelConfig> {
+        const hasPr = !installedSet || installedSet.has('github-pr');
+        const hasGrafana = !installedSet || installedSet.has('grafana-alert');
+        const hasJira = !installedSet || installedSet.has('jira-card');
         const [prDefault, prOrgMapRaw, grafanaDefault, grafanaMapRaw, jiraSetting, prMsgChannels] = await Promise.all([
-            this.botConfig.get(guildId, PR_CONFIG_KEYS.defaultChannel),
-            this.botConfig.get(guildId, PR_CONFIG_KEYS.orgChannelMap),
-            this.botConfig.get(guildId, 'GRAFANA_CHANNEL_ID'),
-            this.botConfig.get(guildId, 'GRAFANA_LABEL_CHANNEL_MAP'),
-            this.prisma.jiraSetting.findUnique({ where: { guildId }, select: { panelChannelId: true, logChannelId: true } }),
-            this.prisma.prMessage.findMany({ where: { guildId }, distinct: ['channelId'], select: { channelId: true } }),
+            hasPr ? this.botConfig.get(guildId, PR_CONFIG_KEYS.defaultChannel) : Promise.resolve(null),
+            hasPr ? this.botConfig.get(guildId, PR_CONFIG_KEYS.orgChannelMap) : Promise.resolve(null),
+            hasGrafana ? this.botConfig.get(guildId, 'GRAFANA_CHANNEL_ID') : Promise.resolve(null),
+            hasGrafana ? this.botConfig.get(guildId, 'GRAFANA_LABEL_CHANNEL_MAP') : Promise.resolve(null),
+            hasJira ? this.prisma.jiraSetting.findUnique({ where: { guildId }, select: { panelChannelId: true, logChannelId: true } }) : Promise.resolve(null),
+            hasPr ? this.prisma.prMessage.findMany({ where: { guildId }, distinct: ['channelId'], select: { channelId: true } }) : Promise.resolve([]),
         ]);
 
         const prOrgMap = safeJsonRecord(prOrgMapRaw);
@@ -124,7 +131,11 @@ export class CustomSummaryService {
     }
 
     async listChannels(guildId: string, devopsCfg?: DevopsChannelConfig): Promise<CustomSummaryChannelOption[]> {
-        const cfg = devopsCfg ?? (await this.loadDevopsConfig(guildId));
+        let cfg = devopsCfg;
+        if (!cfg) {
+            const installedSet = this.plugins ? new Set<PluginId>(await this.plugins.getInstalledIds(guildId)) : undefined;
+            cfg = await this.loadDevopsConfig(guildId, installedSet);
+        }
         const guild = this.discord.guild(guildId);
         const byId = new Map<string, CustomSummaryChannelOption & { position: number }>();
 
@@ -234,13 +245,17 @@ export class CustomSummaryService {
     async buildSummary(guildId: string, request: CustomSummaryRequest): Promise<CustomSummaryResponse> {
         const now = new Date();
         const { from, to, cutoff, interval } = this.resolveRange(request, now);
+        const installedIds = this.plugins ? await this.plugins.getInstalledIds(guildId) : [...PLUGIN_IDS];
+        const installedSet = new Set<PluginId>(installedIds);
         const moduleSet = new Set<CustomSummaryModule>(request.modules);
         const hasVoice = moduleSet.has('voice');
         const hasMessages = moduleSet.has('messages');
-        const hasPr = moduleSet.has('githubPr');
+        const hasPr = moduleSet.has('githubPr') && installedSet.has('github-pr');
         const hasDevops = moduleSet.has('devopsOther');
+        const hasGrafana = hasDevops && installedSet.has('grafana-alert');
+        const hasJira = hasDevops && installedSet.has('jira-card');
 
-        const [guildInfo, devopsCfg] = await Promise.all([this.guildInfo(guildId), this.loadDevopsConfig(guildId)]);
+        const [guildInfo, devopsCfg] = await Promise.all([this.guildInfo(guildId), this.loadDevopsConfig(guildId, installedSet)]);
         const availableChannels = await this.listChannels(guildId, devopsCfg);
         const channelMetaById = new Map(availableChannels.map((ch) => [ch.id, ch]));
 
@@ -419,8 +434,8 @@ export class CustomSummaryService {
                 ORDER BY pn.created_at DESC`
             : Promise.resolve([]);
 
-        // 4) Grafana Alerts + Jira Tickets (when devopsOther enabled)
-        const grafanaRowsPromise = hasDevops
+        // 4) Grafana Alerts + Jira Tickets (when devopsOther enabled and corresponding plugin installed)
+        const grafanaRowsPromise = hasGrafana
             ? this.prisma.$queryRaw<{ message_id: string; kind: string; created_at: Date }[]>`
                 SELECT message_id, kind, created_at
                 FROM pr_notifications
@@ -431,7 +446,7 @@ export class CustomSummaryService {
                 ORDER BY created_at DESC`
             : Promise.resolve([]);
 
-        const jiraRowsPromise = hasDevops
+        const jiraRowsPromise = hasJira
             ? this.prisma.jiraTicket.findMany({
                   where: {
                       guildId,
@@ -1032,6 +1047,7 @@ export class CustomSummaryService {
             topContributors,
             detailedLogs,
             detailedLogsTruncated,
+            installedPlugins: installedIds,
             generatedAt: now.toISOString(),
         };
     }

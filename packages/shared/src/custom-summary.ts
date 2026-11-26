@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { SNOWFLAKE_RE, optionalDate, optionalText } from './common';
+import type { PluginId } from './plugins';
 
 // ==========================================
 // 📊 CUSTOM LOG SUMMARY & REPORT BUILDER
@@ -255,5 +256,6 @@ export interface CustomSummaryResponse {
     topContributors: CustomSummaryContributorRow[];
     detailedLogs: CustomSummaryLogRow[];
     detailedLogsTruncated: boolean;
+    installedPlugins?: PluginId[];
     generatedAt: string;
 }

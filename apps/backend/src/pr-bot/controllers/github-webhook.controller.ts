@@ -1,8 +1,10 @@
-import { Body, Controller, Headers, HttpStatus, Logger, Param, Post, Res } from '@nestjs/common';
-import { isSnowflake } from '@notstack/shared';
+import { Body, Controller, Headers, HttpStatus, Logger, Optional, Param, Post, Res } from '@nestjs/common';
+import { isSnowflake, PLUGIN_NOT_INSTALLED_CODE } from '@notstack/shared';
 import type { Response } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
 import { SignedWebhook } from '../../auth/guards/csrf.guard';
+import { RequirePlugin } from '../../plugins/decorators/require-plugin.decorator';
+import { PluginsService } from '../../plugins/plugins.service';
 import { WebhookQueueService } from '../webhook-queue.service';
 import { PrBotService } from '../pr-bot.service';
 
@@ -14,6 +16,7 @@ import { PrBotService } from '../pr-bot.service';
 // ==========================================
 @Public()
 @SignedWebhook()
+@RequirePlugin('github-pr')
 @Controller('webhook/github')
 export class GithubWebhookController {
     private readonly logger = new Logger('PrBot');
@@ -21,6 +24,7 @@ export class GithubWebhookController {
     constructor(
         private readonly prBot: PrBotService,
         private readonly queue: WebhookQueueService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
     @Post()
@@ -56,6 +60,14 @@ export class GithubWebhookController {
         delivery: unknown,
         res: Response,
     ): Promise<void> {
+        if (this.plugins && !(await this.plugins.isInstalled(guildId, 'github-pr'))) {
+            res.status(HttpStatus.FORBIDDEN).json({
+                error: 'ต้องติดตั้งปลั๊กอิน "แจ้งเตือน GitHub PR" ก่อนจึงจะใช้งานฟีเจอร์นี้ได้',
+                code: PLUGIN_NOT_INSTALLED_CODE,
+                pluginId: 'github-pr',
+            });
+            return;
+        }
         if (!Buffer.isBuffer(rawBody) || !(await this.prBot.verifySignature(guildId, rawBody, signature, legacy))) {
             this.logger.warn(JSON.stringify({ event: 'webhook_signature_rejected', guildId }));
             res.sendStatus(HttpStatus.UNAUTHORIZED);

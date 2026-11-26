@@ -618,3 +618,19 @@ model WebhookDelivery {
   @@index([status, availableAt])
   @@map("webhook_deliveries")
 }
+
+// ==========================================
+// 🧩 PLUGINS — สถานะการติดตั้งปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์
+// ==========================================
+model GuildPlugin {
+  guildId     String   @map("guild_id")
+  pluginId    String   @map("plugin_id")
+  enabled     Boolean  @default(true)
+  installedBy String?  @map("installed_by")
+  installedAt DateTime @default(now()) @map("installed_at") @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([guildId, pluginId])
+  @@index([guildId, enabled])
+  @@map("guild_plugins")
+}
