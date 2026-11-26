@@ -1,6 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { fillPlaceholders, isSnowflake, type WelcomeDesign, type WelcomeVars } from '@notstack/shared';
-import { AttachmentBuilder, PermissionFlagsBits, type Guild, type GuildMember, type MessageCreateOptions, type SendableChannels, type User } from 'discord.js';
+import {
+    AttachmentBuilder,
+    PermissionFlagsBits,
+    type Guild,
+    type GuildMember,
+    type MessageCreateOptions,
+    type PartialGuildMember,
+    type SendableChannels,
+    type User,
+} from 'discord.js';
 import { DiscordService } from '../discord/discord.service';
 import { WelcomeRenderer } from './welcome.renderer';
 import { WelcomeStore } from './welcome.store';
@@ -8,7 +17,7 @@ import { WelcomeStore } from './welcome.store';
 const REQUIRED_PERMISSIONS = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.AttachFiles];
 
 export interface WelcomeTarget {
-    member?: GuildMember | null;
+    member?: GuildMember | PartialGuildMember | null;
     user?: User | null;
     guild?: Guild | null;
 }
@@ -36,8 +45,9 @@ export function buildVars({ member, user, guild }: WelcomeTarget): { vars: Welco
 }
 
 // ==========================================
-// 🎉 WELCOME ANNOUNCEMENT — วาด/ส่งการ์ดต้อนรับแบบรูปภาพ (ตัวรับสมาชิกใหม่อยู่ที่ MemberJoinListener)
-// ทำงานแยกจาก Welcome ข้อความเดิม (WELCOME_CHANNEL_ID) — ทั้งสองระบบทำงานคู่กันได้
+// 🎉 WELCOME ANNOUNCEMENT — วาด/ส่งการ์ดต้อนรับ-อำลาแบบรูปภาพ
+// ตัวรับสมาชิกใหม่อยู่ที่ MemberJoinListener, ตัวรับสมาชิกออกอยู่ที่ MemberLeaveListener
+// ทำงานแยกจาก Welcome/Goodbye ข้อความเดิม (WELCOME_CHANNEL_ID / GOODBYE_CHANNEL_ID) — ทั้งสองระบบทำงานคู่กันได้
 // ==========================================
 @Injectable()
 export class WelcomeService {

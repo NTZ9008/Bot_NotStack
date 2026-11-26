@@ -19,7 +19,7 @@ export class MemberJoinListener {
         // บอทที่ถูกเชิญเข้ามาไม่ต้องได้การ์ดต้อนรับ
         if (member.user.bot) return;
 
-        for (const card of await this.store.listEnabledCards(member.guild.id)) {
+        for (const card of await this.store.listEnabledCards(member.guild.id, 'join')) {
             try {
                 const { channel, error } = await this.welcome.resolveTargetChannel(member.guild, card.channelId);
                 if (!channel) {
