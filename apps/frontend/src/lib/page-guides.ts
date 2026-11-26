@@ -36,6 +36,17 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.installingOrUninstallingAppliesPer'),
                 tip: tr('common.uninstallingHidesTheFeatureAnd'),
             },
+            uptime: {
+                title: tr('common.uptimeMonitor'),
+                summary: tr('common.monitorHttpUrlsAndSendDiscord'),
+                steps: [
+                    tr('common.addYourWebOrApiEndpoint'),
+                    tr('common.pickAnAlertChannelAndCheck'),
+                    tr('common.checkLatencyAndUptimeChartsBelow'),
+                ],
+                saving: tr('common.targetsSaveImmediatelyAndRunOn'),
+                tip: tr('common.discordAlertsOnlySendOnStatus'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { PluginCategory, PluginIconName, PluginId } from '@notstack/shared';
-import { Activity, Coins, GitPullRequest, Ticket } from '@/components/icons';
+import { Activity, Coins, GitPullRequest, HeartPulse, Ticket } from '@/components/icons';
 import { tr } from '@/lib/i18n';
 
 const ICON_BY_NAME: Record<PluginIconName, LucideIcon> = {
@@ -8,6 +8,7 @@ const ICON_BY_NAME: Record<PluginIconName, LucideIcon> = {
     Activity,
     Ticket,
     Coins,
+    HeartPulse,
 };
 
 const ICON_BY_ID: Record<PluginId, LucideIcon> = {
@@ -15,6 +16,7 @@ const ICON_BY_ID: Record<PluginId, LucideIcon> = {
     'grafana-alert': Activity,
     'jira-card': Ticket,
     'savings-goal': Coins,
+    'uptime-monitor': HeartPulse,
 };
 
 export interface PluginAccentStyle {
@@ -44,6 +46,11 @@ const ACCENT_BY_ID: Record<PluginId, PluginAccentStyle> = {
         iconText: 'text-emerald-500 dark:text-emerald-400',
         borderHover: 'hover:border-emerald-500/40',
     },
+    'uptime-monitor': {
+        badgeBg: 'bg-rose-500/12 border-rose-500/25',
+        iconText: 'text-rose-500 dark:text-rose-400',
+        borderHover: 'hover:border-rose-500/40',
+    },
 };
 
 export function pluginIcon(idOrIcon: PluginId | PluginIconName): LucideIcon {
@@ -65,6 +72,8 @@ export function pluginCopy(id: PluginId): { name: string; description: string } 
             return { name: tr('plugins.featureJiraCardName'), description: tr('plugins.featureJiraCardDesc') };
         case 'savings-goal':
             return { name: tr('plugins.featureSavingsGoalName'), description: tr('plugins.featureSavingsGoalDesc') };
+        case 'uptime-monitor':
+            return { name: tr('plugins.featureUptimeMonitorName'), description: tr('plugins.featureUptimeMonitorDesc') };
     }
 }
 
@@ -76,5 +85,7 @@ export function pluginCategoryLabel(category: PluginCategory): string {
             return tr('plugins.categoryProductivity');
         case 'finance':
             return tr('plugins.categoryFinance');
+        case 'community':
+            return tr('plugins.categoryCommunity');
     }
 }

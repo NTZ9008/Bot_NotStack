@@ -36,6 +36,7 @@ import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RankModule } from './rank/rank.module';
 import { RoomAccessModule } from './room-access/room-access.module';
+import { UptimeModule } from './uptime/uptime.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
 import { VoiceListenModule } from './voice-listen/voice-listen.module';
@@ -103,6 +104,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         GrafanaModule,
         JiraModule,
         FundModule,
+        UptimeModule,
         ChatModule,
         CommandsModule,
     ],

@@ -26,6 +26,11 @@
       "source": "./src/plugins.ts",
       "types": "./dist/plugins.d.ts",
       "default": "./dist/plugins.js"
+    },
+    "./uptime": {
+      "source": "./src/uptime.ts",
+      "types": "./dist/uptime.d.ts",
+      "default": "./dist/uptime.js"
     }
   },
   "files": [

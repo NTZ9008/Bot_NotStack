@@ -125,6 +125,10 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'custom_summary.export_pdf': 'ส่งออกรายงานสรุปเป็น PDF',
     'plugin.install': 'ติดตั้งปลั๊กอิน',
     'plugin.uninstall': 'ถอนการติดตั้งปลั๊กอิน',
+    'uptime.target_create': 'เพิ่มรายการตรวจสอบ Uptime',
+    'uptime.target_update': 'แก้ไขรายการตรวจสอบ Uptime',
+    'uptime.target_delete': 'ลบรายการตรวจสอบ Uptime',
+    'uptime.target_check': 'สั่งตรวจสอบสถานะทันที',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -144,6 +148,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     fund: 'เก็บเงินตามเป้า',
     custom_summary: 'สร้างรายงานสรุป (Custom Summary)',
     plugin: 'ปลั๊กอิน',
+    uptime: 'ตรวจสอบสถานะเว็บ & API',
 };
 
 export function auditLabel(action: string): string {

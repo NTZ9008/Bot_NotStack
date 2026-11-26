@@ -34,6 +34,7 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     funds: FundsPageSkeleton,
     'audit-logs': AuditLogsPageSkeleton,
     'custom-summary': AuditLogsPageSkeleton,
+    uptime: GenericPageSkeleton,
 };
 
 const APP_PAGES: Record<string, ComponentType> = {

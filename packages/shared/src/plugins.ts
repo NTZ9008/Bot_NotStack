@@ -4,13 +4,13 @@ import { z } from 'zod';
 // 🧩 PLUGINS — แคตตาล็อกปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์ (Per-Guild)
 // ==========================================
 
-export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal'] as const;
+export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor'] as const;
 export type PluginId = (typeof PLUGIN_IDS)[number];
 
-export const PLUGIN_CATEGORIES = ['devops', 'productivity', 'finance'] as const;
+export const PLUGIN_CATEGORIES = ['devops', 'productivity', 'finance', 'community'] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
-export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins';
+export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse';
 
 export const PLUGIN_NOT_INSTALLED_CODE = 'PLUGIN_NOT_INSTALLED' as const;
 export const PLUGIN_BOT_DISABLED_MESSAGE = 'ฟีเจอร์นี้ยังไม่ถูกเปิดใช้งาน กรุณาติดตั้งปลั๊กอินผ่าน Dashboard ก่อน';
@@ -19,7 +19,8 @@ export type PluginRoutePath =
     | '/servers/$guildId/pr-bot'
     | '/servers/$guildId/grafana-alerts'
     | '/servers/$guildId/jira'
-    | '/servers/$guildId/funds';
+    | '/servers/$guildId/funds'
+    | '/servers/$guildId/uptime';
 
 export interface PluginDefinition {
     id: PluginId;
@@ -67,6 +68,15 @@ export const PLUGIN_REGISTRY: readonly PluginDefinition[] = [
         category: 'finance',
         version: '1.0.0',
         routePath: '/servers/$guildId/funds',
+    },
+    {
+        id: 'uptime-monitor',
+        name: 'ตรวจสอบสถานะเว็บ & API',
+        description: 'ตรวจสอบสถานะความพร้อมใช้งานของเว็บไซต์หรือ API ตามช่วงเวลา แจ้งเตือนเข้าห้อง Discord เมื่อระบบล่มหรือกลับมาออนไลน์ พร้อมกราฟ Latency ย้อนหลัง 24 ชั่วโมง',
+        icon: 'HeartPulse',
+        category: 'devops',
+        version: '1.0.0',
+        routePath: '/servers/$guildId/uptime',
     },
 ] as const;
 

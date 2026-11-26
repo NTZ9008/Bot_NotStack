@@ -634,3 +634,46 @@ model GuildPlugin {
   @@index([guildId, enabled])
   @@map("guild_plugins")
 }
+
+// ==========================================
+// 💓 UPTIME MONITOR — ตรวจสอบสถานะเว็บไซต์ / API อัตโนมัติ
+// ==========================================
+model UptimeTarget {
+  id              Int              @id @default(autoincrement())
+  guildId         String           @map("guild_id")
+  name            String
+  url             String
+  intervalMinutes Int              @map("interval_minutes")
+  channelId       String           @map("channel_id")
+  mentionRoleId   String?          @map("mention_role_id")
+  enabled         Boolean          @default(true)
+  lastStatus      String           @default("UNKNOWN") @map("last_status")
+  lastStatusCode  Int?             @map("last_status_code")
+  lastLatencyMs   Int?             @map("last_latency_ms")
+  lastCheckedAt   DateTime?        @map("last_checked_at") @db.Timestamptz(3)
+  nextCheckAt     DateTime         @default(now()) @map("next_check_at") @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  logs UptimeCheckLog[]
+
+  @@index([guildId])
+  @@index([enabled, nextCheckAt])
+  @@map("uptime_targets")
+}
+
+model UptimeCheckLog {
+  id         Int          @id @default(autoincrement())
+  targetId   Int          @map("target_id")
+  status     String
+  statusCode Int?         @map("status_code")
+  latencyMs  Int?         @map("latency_ms")
+  error      String?
+  checkedAt  DateTime     @default(now()) @map("checked_at") @db.Timestamptz(3)
+
+  target UptimeTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId, checkedAt])
+  @@index([checkedAt])
+  @@map("uptime_check_logs")
+}
