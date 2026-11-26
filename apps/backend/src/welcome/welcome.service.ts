@@ -1,15 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { fillPlaceholders, isSnowflake, type WelcomeDesign, type WelcomeVars } from '@notstack/shared';
-import {
-    AttachmentBuilder,
-    PermissionFlagsBits,
-    type Guild,
-    type GuildMember,
-    type MessageCreateOptions,
-    type PartialGuildMember,
-    type SendableChannels,
-    type User,
-} from 'discord.js';
+import { fillPlaceholders, isSnowflake, type WelcomeDesign, type WelcomeEvent, type WelcomeVars } from '@notstack/shared';
+import { AttachmentBuilder, PermissionFlagsBits, type Guild, type GuildMember, type MessageCreateOptions, type SendableChannels, type User } from 'discord.js';
+import type { PartialGuildMember } from 'discord.js';
 import { DiscordService } from '../discord/discord.service';
 import { WelcomeRenderer } from './welcome.renderer';
 import { WelcomeStore } from './welcome.store';
@@ -46,7 +38,7 @@ export function buildVars({ member, user, guild }: WelcomeTarget): { vars: Welco
 
 // ==========================================
 // 🎉 WELCOME ANNOUNCEMENT — วาด/ส่งการ์ดต้อนรับ-อำลาแบบรูปภาพ
-// ตัวรับสมาชิกใหม่อยู่ที่ MemberJoinListener, ตัวรับสมาชิกออกอยู่ที่ MemberLeaveListener
+// ตัวรับ event สมาชิกเข้า/ออกอยู่ที่ MemberAnnounceListener
 // ทำงานแยกจาก Welcome/Goodbye ข้อความเดิม (WELCOME_CHANNEL_ID / GOODBYE_CHANNEL_ID) — ทั้งสองระบบทำงานคู่กันได้
 // ==========================================
 @Injectable()
@@ -58,6 +50,25 @@ export class WelcomeService {
         private readonly renderer: WelcomeRenderer,
         private readonly discord: DiscordService,
     ) {}
+
+    // ส่งการ์ดทุกใบที่เปิดอยู่ของชนิดนั้นให้สมาชิก 1 คน — ใบไหนส่งไม่ได้ข้ามไป ไม่ให้ใบอื่นพลาดตาม
+    async announce(member: GuildMember | PartialGuildMember, event: WelcomeEvent): Promise<void> {
+        // บอทเข้า/ออกไม่ต้องมีการ์ด
+        if (member.user.bot) return;
+
+        for (const card of await this.store.listEnabledCards(member.guild.id, event)) {
+            try {
+                const { channel, error } = await this.resolveTargetChannel(member.guild, card.channelId);
+                if (!channel) {
+                    this.logger.warn(`ข้ามการ์ด "${card.name}" (${member.guild.name}): ${error}`);
+                    continue;
+                }
+                await channel.send(await this.buildPayload(card, { member }));
+            } catch (err) {
+                this.logger.error(`ส่งการ์ด "${card.name}" (${event}) ของ ${member.user.tag} ไม่สำเร็จ: ${(err as Error).message}`);
+            }
+        }
+    }
 
     // ห้องต้องเป็นห้องข้อความของเซิร์ฟเวอร์เดียวกับสมาชิก และบอทต้องมีสิทธิ์ส่งไฟล์ — คืนข้อความ error ภาษาไทยถ้าส่งไม่ได้
     async resolveTargetChannel(

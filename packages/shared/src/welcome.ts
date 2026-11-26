@@ -30,9 +30,8 @@ export type BackgroundFit = (typeof FITS)[number];
 export type AvatarShape = (typeof SHAPES)[number];
 export type TextAlign = (typeof ALIGNS)[number];
 
-// การ์ดส่งตอนไหน — เปลี่ยนไม่ได้หลังสร้าง
 export const WELCOME_EVENTS = ['join', 'leave'] as const;
-export type WelcomeEvent = (typeof WELCOME_EVENTS)[number];
+export type WelcomeEvent = (typeof WELCOME_EVENTS)[number]; // การ์ดส่งตอนไหน — เปลี่ยนไม่ได้หลังสร้าง
 
 // ฟอนต์ที่มีไฟล์มากับแพ็กเกจ @expo-google-fonts/* (ทุกฟอนต์มีครบทั้ง 4 น้ำหนัก)
 export const WELCOME_FONTS = [
@@ -58,12 +57,9 @@ const WEIGHT_VALUES = new Set<number>(WELCOME_WEIGHTS.map((weight) => weight.val
 export const PLACEHOLDERS = [
     { key: 'user', label: 'ชื่อที่แสดงของสมาชิก (ชื่อเล่นในเซิร์ฟเวอร์ ถ้ามี)' },
     { key: 'username', label: 'username ของสมาชิก' },
-    {
-        key: 'mention',
-        label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ (การ์ดออก: คนที่ออกไปแล้วอาจแสดงเป็น @unknown — แนะนำใช้ {user})',
-    },
+    { key: 'mention', label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ (การ์ดออก แนะนำ {user})' },
     { key: 'server', label: 'ชื่อเซิร์ฟเวอร์' },
-    { key: 'memberCount', label: 'จำนวนสมาชิกทั้งหมดตอนนี้ (การ์ดเข้า = สมาชิกคนที่เท่าไร, การ์ดออก = เหลือกี่คน)' },
+    { key: 'memberCount', label: 'จำนวนสมาชิกตอนนี้ (การ์ดเข้า = คนที่เท่าไร, การ์ดออก = เหลือกี่คน)' },
     { key: 'id', label: 'User ID ของสมาชิก' },
 ] as const;
 
@@ -235,9 +231,7 @@ export function normalizeDesign(input: unknown): WelcomeDesign {
             borderWidth: int(av.borderWidth, 0, 40, def.avatar.borderWidth),
             borderColor: color(av.borderColor, def.avatar.borderColor),
         },
-        texts: (Array.isArray(src.texts) ? src.texts : def.texts)
-            .slice(0, WELCOME_LIMITS.maxTexts)
-            .map((text) => normalizeText(text, width, height)),
+        texts: (Array.isArray(src.texts) ? src.texts : def.texts).slice(0, WELCOME_LIMITS.maxTexts).map((text) => normalizeText(text, width, height)),
     };
 }
 
@@ -256,12 +250,7 @@ export interface WelcomeVars {
  * @param target ข้อความบนรูปแท็กคนไม่ได้ → {mention} กลายเป็น @ชื่อ
  * @param mentionId User ID ที่จะแท็กจริงในข้อความ (เฉพาะ target = 'message')
  */
-export function fillPlaceholders(
-    template: string,
-    vars: WelcomeVars,
-    target: 'image' | 'message' = 'image',
-    mentionId: string | null = null,
-): string {
+export function fillPlaceholders(template: string, vars: WelcomeVars, target: 'image' | 'message' = 'image', mentionId: string | null = null): string {
     return String(template || '').replace(/\{(\w+)\}/g, (match, key: string) => {
         if (key === 'mention') return target === 'message' && mentionId ? `<@${mentionId}>` : `@${vars.user}`;
         return Object.prototype.hasOwnProperty.call(vars, key) ? vars[key as keyof WelcomeVars] : match;
@@ -405,7 +394,9 @@ export const welcomeRenameAssetSchema = z.object({
         .unknown()
         .optional()
         .transform((value, ctx) => {
-            const name = String(value ?? '').trim().slice(0, WELCOME_LIMITS.maxNameLength);
+            const name = String(value ?? '')
+                .trim()
+                .slice(0, WELCOME_LIMITS.maxNameLength);
             if (!name) {
                 ctx.addIssue({ code: 'custom', message: 'กรุณาตั้งชื่อรูป' });
                 return z.NEVER;
