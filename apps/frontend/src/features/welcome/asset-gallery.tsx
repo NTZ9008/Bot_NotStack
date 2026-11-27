@@ -1,7 +1,8 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { WELCOME_UPLOAD_TYPES, type WelcomeAsset, type WelcomeCard, type WelcomeMeta } from '@notstack/shared';
 import { useQueryClient } from '@tanstack/react-query';
-import { Loader2, Pencil, Trash2, Upload } from '@/components/icons';
+import { Pencil, Trash2, Upload } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { assetImageUrl, welcomeApi, welcomeAssetsQuery, welcomeCardsQuery } from '@/api/welcome';
@@ -151,7 +152,7 @@ export function AssetGallery({
                     onClick={() => fileInput.current?.click()}
                     disabled={uploading}
                 >
-                    {uploading ? <Loader2 className="size-5 animate-spin" /> : <Upload className="size-5" />}
+                    {uploading ? <Spinner className="size-5" /> : <Upload className="size-5" />}
                     <span className="text-xs font-medium">{tr('welcome.uploadImage')}</span>
                     <span className="text-[11px] text-muted-foreground">
                         {tr('welcome.pngJpgWebpGifUpTo')} {formatBytes(maxBytes)}

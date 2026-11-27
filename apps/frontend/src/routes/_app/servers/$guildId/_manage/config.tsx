@@ -1,8 +1,8 @@
 import { tr, byLang, trText } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { CONFIG_GROUPS, type ConfigRow } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2 } from '@/components/icons';
 import { toast } from 'sonner';
 import { configQuery, updateConfig } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';
@@ -55,7 +55,7 @@ function ConfigField({ row }: { row: ConfigRow }) {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {mutation.isPending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
+                    {mutation.isPending && <Spinner className="size-4 text-muted-foreground" />}
                     <span className="text-xs text-muted-foreground">{value === 'true' ? tr('common.on') : tr('common.off')}</span>
                     <Switch
                         aria-describedby={`${row.key}-hint`}
@@ -84,7 +84,7 @@ function ConfigField({ row }: { row: ConfigRow }) {
                     disabled={mutation.isPending}
                     onChange={(channelId) => mutation.mutate(channelId)}
                 />
-                {mutation.isPending && <Loader2 className="size-4 shrink-0 animate-spin text-muted-foreground" />}
+                {mutation.isPending && <Spinner className="size-4 shrink-0 text-muted-foreground" />}
             </div>
         </div>
     );

@@ -1,6 +1,7 @@
 import type { FundTopicDetail } from '@notstack/shared';
+import { Spinner } from '@/components/ui/spinner';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bell, Eye, EyeOff, Image as ImageIcon, Loader2, MessageSquareShare, Send } from '@/components/icons';
+import { Bell, Eye, EyeOff, Image as ImageIcon, MessageSquareShare, Send } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -54,6 +55,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                         </div>
                         <div className="w-full min-w-0 sm:w-64">
                             <ChannelSelect
+                                aria-label={tr('funds.pickReportChannel')}
                                 channels={textChannels}
                                 value={topic.reportChannelId}
                                 onChange={(id) => saveChannel.mutate(id)}
@@ -84,7 +86,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                             </Button>
 
                             <Button size="sm" onClick={() => send.mutate()} disabled={send.isPending || !topic.reportChannelId}>
-                                {send.isPending ? <Loader2 className="animate-spin" /> : <Send />}
+                                {send.isPending ? <Spinner /> : <Send />}
                                 {send.isPending ? tr('funds.sending') : tr('funds.sendReport')}
                             </Button>
                         </div>

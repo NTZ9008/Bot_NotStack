@@ -10,9 +10,9 @@ const VARIANTS = {
 
 const TONES = {
     default: 'border-border',
-    emerald: 'border-emerald-500/25 bg-emerald-500/5',
-    amber: 'border-amber-500/25 bg-amber-500/5',
-    sky: 'border-sky-500/25 bg-sky-500/5',
+    emerald: 'border-success/25 bg-success/5',
+    amber: 'border-warning/25 bg-warning/5',
+    sky: 'border-info/25 bg-info/5',
 } as const;
 
 export function StatTile({

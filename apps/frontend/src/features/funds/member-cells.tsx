@@ -181,7 +181,7 @@ export function PaidCell({
     if (topic.closed) {
         return (
             <div className={cn('inline-flex flex-col gap-1', align === 'right' ? 'items-end' : 'items-start')}>
-                <span className="tabular-nums font-medium text-emerald-700 dark:text-emerald-400">{formatBaht(member.paid)}</span>
+                <span className="tabular-nums font-medium text-success">{formatBaht(member.paid)}</span>
                 {showProgress && (
                     <div className="flex items-center gap-1.5">
                         <ProgressBar value={pct} className="h-1 w-16" />
@@ -199,11 +199,11 @@ export function PaidCell({
                 editing={editing}
                 onEditingChange={setEditing}
                 align={align}
-                buttonClassName="font-medium text-emerald-700 dark:text-emerald-400"
+                buttonClassName="font-medium text-success"
                 pending={update.isPending}
                 onSave={(paidAmount) => update.mutate({ paidAmount })}
             >
-                <span className="border-b border-dashed border-emerald-400/40">{formatBaht(member.paid)}</span>
+                <span className="border-b border-dashed border-success/40">{formatBaht(member.paid)}</span>
                 <Pencil className="size-3 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" />
             </InlineAmountEditor>
             {!editing && showProgress && (

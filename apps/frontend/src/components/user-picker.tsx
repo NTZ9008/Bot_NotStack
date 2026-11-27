@@ -1,8 +1,9 @@
 import { tr } from '../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { MemberSearchResult } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, X } from '@/components/icons';
-import { useState } from 'react';
+import { X } from '@/components/icons';
+import { useEffect, useRef, useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -42,6 +43,16 @@ export function UserPicker({
 }) {
     const [text, setText] = useState('');
     const [open, setOpen] = useState(false);
+    // cmdk ตั้ง aria-expanded=true + aria-controls ตายตัว แต่ list อยู่ใน popover ที่ยังไม่ render ตอนปิด → ซิงก์ตามสถานะจริง
+    const inputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        const input = inputRef.current;
+        if (!input) return;
+        input.dataset.listId ??= input.getAttribute('aria-controls') ?? '';
+        input.setAttribute('aria-expanded', String(open));
+        if (open) input.setAttribute('aria-controls', input.dataset.listId);
+        else input.removeAttribute('aria-controls');
+    }, [open]);
     const query = useDebouncedValue(text.trim(), 280);
     const guildId = useGuildId();
     const { data = [], isFetching, isError } = useQuery(searchMembersQuery(guildId, query));
@@ -74,6 +85,7 @@ export function UserPicker({
                     <PopoverAnchor asChild>
                         <div>
                             <CommandInput
+                                ref={inputRef}
                                 value={text}
                                 onValueChange={(next) => {
                                     setText(next);
@@ -96,7 +108,7 @@ export function UserPicker({
                         <CommandList className="max-h-72">
                             {waiting && results.length === 0 ? (
                                 <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                                    <Loader2 className="size-4 animate-spin" /> {tr('common.searching')}
+                                    <Spinner className="size-4" /> {tr('common.searching')}
                                 </div>
                             ) : (
                                 <>

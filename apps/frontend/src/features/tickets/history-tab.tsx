@@ -1,25 +1,14 @@
 import { useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { TICKET_LIMITS, formatTicketNumber, type TicketItemDto, type TicketStatus } from '@notstack/shared';
+import { formatTicketNumber, type TicketItemDto, type TicketStatus } from '@notstack/shared';
 import { toast } from 'sonner';
 import { guildKey } from '@/api/guilds';
 import { ticketDetailQuery, ticketsApi, ticketsListQuery } from '@/api/tickets';
 import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
-import {
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    Copy,
-    Download,
-    ExternalLink,
-    Eye,
-    Loader2,
-    Lock,
-    RefreshCw,
-    Search,
-} from '@/components/icons';
+import { Check, Copy, Download, ExternalLink, Eye, Lock, RefreshCw, Search } from '@/components/icons';
 import { JiraTicketsBodySkeleton } from '@/components/skeleton/editor-pages';
 import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
@@ -27,7 +16,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { PAGE_SIZE, Pagination } from '@/components/pagination';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime, formatNumber } from '@/lib/format';
@@ -42,7 +32,7 @@ const STATUS_FILTERS = byLang((): { value: 'ALL' | TicketStatus; label: string }
 function TicketStatusBadge({ status }: { status: TicketStatus }) {
     const t = useT();
     if (status === 'OPEN') {
-        return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{t('tickets.statusOpen')}</Badge>;
+        return <Badge className="bg-success/15 text-success">{t('tickets.statusOpen')}</Badge>;
     }
     return <Badge variant="secondary">{t('tickets.statusClosed')}</Badge>;
 }
@@ -54,6 +44,7 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
 
     const [status, setStatus] = useState<'ALL' | TicketStatus>('ALL');
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE);
     const [searchText, setSearchText] = useState('');
     const debouncedSearch = useDebouncedValue(searchText, 300);
 
@@ -62,11 +53,11 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
     const [previewTicketId, setPreviewTicketId] = useState<number | null>(null);
     const [copied, setCopied] = useState(false);
 
-    const listQuery = useQuery(ticketsListQuery(guildId, page, status, debouncedSearch));
+    const listQuery = useQuery(ticketsListQuery(guildId, page, status, debouncedSearch, pageSize));
     const detailQuery = useQuery(ticketDetailQuery(guildId, previewTicketId));
 
     const data = listQuery.data;
-    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? TICKET_LIMITS.pageSize)));
+    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / (data?.pageSize ?? pageSize)));
 
     const handleClose = async (ticket: TicketItemDto) => {
         const num = formatTicketNumber(ticket.ticketNumber);
@@ -184,24 +175,14 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                     <div className="flex flex-wrap justify-end gap-1.5 whitespace-nowrap">
                         {ticket.status === 'OPEN' && ticket.channelId && (
                             <Button variant="outline" size="xs" asChild>
-                                <a
-                                    href={`https://discord.com/channels/${guildId}/${ticket.channelId}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                >
+                                <a href={`https://discord.com/channels/${guildId}/${ticket.channelId}`} target="_blank" rel="noreferrer">
                                     <ExternalLink className="size-3.5" /> {t('tickets.openInDiscord')}
                                 </a>
                             </Button>
                         )}
                         {ticket.status === 'OPEN' && (
-                            <Button
-                                variant="outline"
-                                size="xs"
-                                disabled={closingId === ticket.id}
-                                onClick={() => void handleClose(ticket)}
-                            >
-                                {closingId === ticket.id ? <Loader2 className="size-3.5 animate-spin" /> : <Lock className="size-3.5" />}{' '}
-                                {t('tickets.closeTicketAction')}
+                            <Button variant="outline" size="xs" disabled={closingId === ticket.id} onClick={() => void handleClose(ticket)}>
+                                {closingId === ticket.id ? <Spinner className="size-3.5" /> : <Lock className="size-3.5" />} {t('tickets.closeTicketAction')}
                             </Button>
                         )}
                         {ticket.hasTranscript && (
@@ -216,12 +197,7 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                                     onClick={() => void handleDownload(ticket, 'md')}
                                     title={t('tickets.downloadMd')}
                                 >
-                                    {downloadingKey === `${ticket.id}:md` ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Download className="size-3.5" />
-                                    )}{' '}
-                                    .md
+                                    {downloadingKey === `${ticket.id}:md` ? <Spinner className="size-3.5" /> : <Download className="size-3.5" />} .md
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -230,12 +206,7 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                                     onClick={() => void handleDownload(ticket, 'html')}
                                     title={t('tickets.downloadHtml')}
                                 >
-                                    {downloadingKey === `${ticket.id}:html` ? (
-                                        <Loader2 className="size-3.5 animate-spin" />
-                                    ) : (
-                                        <Download className="size-3.5" />
-                                    )}{' '}
-                                    .html
+                                    {downloadingKey === `${ticket.id}:html` ? <Spinner className="size-3.5" /> : <Download className="size-3.5" />} .html
                                 </Button>
                             </>
                         )}
@@ -271,21 +242,24 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                        <Tabs
+                        <ToggleGroup
+                            type="single"
+                            variant="outline"
+                            className="flex-wrap"
+                            aria-label={t('common.status')}
                             value={status}
                             onValueChange={(value) => {
+                                if (!value) return;
                                 setStatus(value as typeof status);
                                 setPage(1);
                             }}
                         >
-                            <TabsList className="h-auto flex-wrap">
-                                {STATUS_FILTERS().map((filter) => (
-                                    <TabsTrigger key={filter.value} value={filter.value}>
-                                        {filter.label}
-                                    </TabsTrigger>
-                                ))}
-                            </TabsList>
-                        </Tabs>
+                            {STATUS_FILTERS().map((filter) => (
+                                <ToggleGroupItem key={filter.value} value={filter.value}>
+                                    {filter.label}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
 
                         <div className="relative w-full sm:w-64">
                             <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -311,34 +285,21 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                             data={data?.items ?? []}
                             empty={t('tickets.noTicketsYet')}
                             label={t('tickets.historyTitle')}
+                            paginate={false}
                         />
                     )}
 
-                    {pages > 1 && (
-                        <div className="flex items-center justify-end gap-2 text-sm">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label={t('jira.previousPage')}
-                                disabled={page <= 1}
-                                onClick={() => setPage((p) => p - 1)}
-                            >
-                                <ChevronLeft />
-                            </Button>
-                            <span>
-                                {t('common.pages')} {page} / {pages}
-                            </span>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                aria-label={t('jira.nextPage')}
-                                disabled={page >= pages}
-                                onClick={() => setPage((p) => p + 1)}
-                            >
-                                <ChevronRight />
-                            </Button>
-                        </div>
-                    )}
+                    <Pagination
+                        page={page}
+                        pageCount={pages}
+                        total={data?.total}
+                        pageSize={pageSize}
+                        onPageChange={setPage}
+                        onPageSizeChange={(size) => {
+                            setPageSize(size);
+                            setPage(1);
+                        }}
+                    />
                 </CardContent>
             </Card>
 
@@ -362,7 +323,7 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
 
                     {detailQuery.isLoading ? (
                         <div className="flex items-center justify-center py-12 text-muted-foreground">
-                            <Loader2 className="mr-2 size-4 animate-spin" /> {t('common.loadingData2')}
+                            <Spinner className="mr-2 size-4" /> {t('common.loadingData2')}
                         </div>
                     ) : detailQuery.error ? (
                         <ErrorState error={detailQuery.error} />
@@ -370,11 +331,7 @@ export function TicketHistoryTab({ guildId }: { guildId: string }) {
                         <div className="space-y-3">
                             <div className="flex flex-wrap justify-end gap-2">
                                 {detailQuery.data.transcriptMarkdown && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => void handleCopy(detailQuery.data!.transcriptMarkdown!)}
-                                    >
+                                    <Button variant="outline" size="sm" onClick={() => void handleCopy(detailQuery.data!.transcriptMarkdown!)}>
                                         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}{' '}
                                         {copied ? t('tickets.copiedTranscript') : t('tickets.copyMarkdown')}
                                     </Button>

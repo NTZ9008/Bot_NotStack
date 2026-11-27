@@ -1,8 +1,8 @@
 import { tr, byLang } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { useObjectUrl } from '@/hooks/use-object-url';
 import type { GuildChannel, GuildRole, WelcomeVars } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@/components/icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { welcomeApi, type PreviewInput } from '@/api/welcome';
 import { DiscordMessage } from '@/components/discord-message';
@@ -204,7 +204,7 @@ export function WelcomePreview({
                         {preview.error ? tr('welcome.failedToRenderPreview', { 0: errorMessage(preview.error) }) : tr('welcome.renderingPreview')}
                     </div>
                 )}
-                {preview.isFetching && preview.data && <Loader2 className="absolute top-2 right-2 size-4 animate-spin text-white/80" />}
+                {preview.isFetching && preview.data && <Spinner className="absolute top-2 right-2 size-4 text-white/80" />}
             </div>
         </DiscordMessage>
     );

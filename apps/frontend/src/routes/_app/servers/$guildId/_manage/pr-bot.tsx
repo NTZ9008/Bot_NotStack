@@ -1,15 +1,17 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { PrBotSettings, UpdatePrBotInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, X } from '@/components/icons';
-import { useEffect, useState } from 'react';
+import { Copy, Eye, EyeOff, Plus, RefreshCw, X } from '@/components/icons';
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { prBotQuery, rotatePrBotSecret, updatePrBot } from '@/api/bot';
 import { guildChannelsQuery } from '@/api/guilds';
 import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
+import { SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { PluginRouteGuard } from '@/components/plugin-gate';
 import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
@@ -20,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { API_BASE, errorMessage } from '@/lib/api';
 import { PrBotStatsCard } from '@/features/pr-bot/stats-card';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/pr-bot')({
     loader: ({ context, params }) => {
@@ -52,30 +55,24 @@ function useSavePrBot(successMessage: string) {
     });
 }
 
-// แถว key → value ที่เพิ่ม/ลบได้ (แทนการพิมพ์ JSON ดิบ)
+// แถว key → value ที่เพิ่ม/ลบได้ (แทนการพิมพ์ JSON ดิบ) — บันทึกพร้อมกันทั้งหน้าผ่าน SaveBar
 function MapEditor({
     title,
     description,
-    initial,
+    rows,
+    setRows,
     keyPlaceholder,
     valuePlaceholder,
     addLabel,
-    saveLabel,
-    onSave,
-    saving,
 }: {
     title: string;
     description: string;
-    initial: Record<string, string>;
+    rows: Row[];
+    setRows: (update: (rows: Row[]) => Row[]) => void;
     keyPlaceholder: string;
     valuePlaceholder: string;
     addLabel: string;
-    saveLabel: string;
-    onSave: (map: Record<string, string>) => void;
-    saving: boolean;
 }) {
-    const [rows, setRows] = useState<Row[]>(() => toRows(initial));
-    useEffect(() => setRows(toRows(initial)), [initial]);
     const update = (index: number, patch: Partial<Row>) => setRows((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
 
     return (
@@ -87,8 +84,18 @@ function MapEditor({
             <CardContent className="space-y-3">
                 {rows.map((row, index) => (
                     <div key={index} className="flex gap-2">
-                        <Input placeholder={keyPlaceholder} value={row.key} onChange={(e) => update(index, { key: e.target.value })} />
-                        <Input placeholder={valuePlaceholder} value={row.value} onChange={(e) => update(index, { value: e.target.value })} />
+                        <Input
+                            aria-label={keyPlaceholder}
+                            placeholder={keyPlaceholder}
+                            value={row.key}
+                            onChange={(e) => update(index, { key: e.target.value })}
+                        />
+                        <Input
+                            aria-label={valuePlaceholder}
+                            placeholder={valuePlaceholder}
+                            value={row.value}
+                            onChange={(e) => update(index, { value: e.target.value })}
+                        />
                         <Button
                             variant="ghost"
                             size="icon"
@@ -99,26 +106,34 @@ function MapEditor({
                         </Button>
                     </div>
                 ))}
-                <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" onClick={() => setRows((prev) => [...prev, { key: '', value: '' }])}>
-                        <Plus /> {addLabel}
-                    </Button>
-                    <Button onClick={() => onSave(toMap(rows))} disabled={saving}>
-                        {saving ? <Loader2 className="animate-spin" /> : <Save />} {saveLabel}
-                    </Button>
-                </div>
+                <Button variant="outline" onClick={() => setRows((prev) => [...prev, { key: '', value: '' }])}>
+                    <Plus /> {addLabel}
+                </Button>
             </CardContent>
         </Card>
     );
 }
 
+const toDraft = (settings: PrBotSettings) => ({
+    defaultChannel: settings.defaultChannelId,
+    orgRows: toRows(settings.orgChannels),
+    mentionRows: toRows(settings.repoMentions),
+});
+const toInput = (draft: ReturnType<typeof toDraft>): UpdatePrBotInput => ({
+    defaultChannelId: draft.defaultChannel.trim(),
+    orgChannels: toMap(draft.orgRows),
+    repoMentions: toMap(draft.mentionRows),
+});
+
 function PrBotForm({ settings }: { settings: PrBotSettings }) {
     const guildId = useGuildId();
     const { data: channels = [] } = useQuery(guildChannelsQuery(guildId));
-    const [defaultChannel, setDefaultChannel] = useState(settings.defaultChannelId);
-    const saveDefault = useSavePrBot(tr('prBot.defaultChannelSaved'));
-    const saveOrgs = useSavePrBot(tr('prBot.organizationMappingSaved'));
-    const saveMentions = useSavePrBot(tr('prBot.mentionMappingSaved'));
+    const [draft, setDraft] = useState(() => toDraft(settings));
+    const save = useSavePrBot(tr('common.saved'));
+    const dirty = JSON.stringify(toInput(draft)) !== JSON.stringify(toInput(toDraft(settings)));
+    useUnsavedChangesGuard(dirty, { title: tr('common.discardChanges'), destructive: true });
+    const setOrgRows = (update: (rows: Row[]) => Row[]) => setDraft((d) => ({ ...d, orgRows: update(d.orgRows) }));
+    const setMentionRows = (update: (rows: Row[]) => Row[]) => setDraft((d) => ({ ...d, mentionRows: update(d.mentionRows) }));
 
     return (
         <>
@@ -129,23 +144,13 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                 </CardHeader>
                 <CardContent>
                     <Field hint={tr('prBot.pickDontSendTurnOffAlerts')}>
-                        <form
-                            className="flex gap-2"
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                saveDefault.mutate({ defaultChannelId: defaultChannel.trim() });
-                            }}
-                        >
-                            <ChannelSelect
-                                channels={channels.filter((channel) => channel.sendable)}
-                                value={defaultChannel}
-                                onChange={setDefaultChannel}
-                                noneLabel={tr('common.dontSend')}
-                            />
-                            <Button type="submit" disabled={saveDefault.isPending}>
-                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
-                            </Button>
-                        </form>
+                        <ChannelSelect
+                            aria-label={tr('common.defaultChannel')}
+                            channels={channels.filter((channel) => channel.sendable)}
+                            value={draft.defaultChannel}
+                            onChange={(defaultChannel) => setDraft((d) => ({ ...d, defaultChannel }))}
+                            noneLabel={tr('common.dontSend')}
+                        />
                     </Field>
                 </CardContent>
             </Card>
@@ -153,25 +158,28 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
             <MapEditor
                 title={tr('prBot.channelsByOrganization')}
                 description={tr('prBot.whichChannelEachOrganizationsPrsGo')}
-                initial={settings.orgChannels}
+                rows={draft.orgRows}
+                setRows={setOrgRows}
                 keyPlaceholder={tr('prBot.eGMudst2026Pegasus')}
                 valuePlaceholder="Channel ID"
                 addLabel={tr('prBot.addOrganization')}
-                saveLabel={tr('prBot.saveOrganizationMapping')}
-                onSave={(orgChannels) => saveOrgs.mutate({ orgChannels })}
-                saving={saveOrgs.isPending}
             />
 
             <MapEditor
                 title={tr('prBot.mentionsByRepo')}
                 description={tr('prBot.whichRoleToMentionWhenA')}
-                initial={settings.repoMentions}
+                rows={draft.mentionRows}
+                setRows={setMentionRows}
                 keyPlaceholder={tr('prBot.eGMudst2026PegasusPegasus')}
                 valuePlaceholder={tr('prBot.roleNameOrRoleId')}
                 addLabel={tr('prBot.addRepo')}
-                saveLabel={tr('prBot.saveMentionMapping')}
-                onSave={(repoMentions) => saveMentions.mutate({ repoMentions })}
-                saving={saveMentions.isPending}
+            />
+
+            <SaveBar
+                dirty={dirty}
+                saving={save.isPending}
+                onSave={() => save.mutate(toInput(draft), { onSuccess: (data) => setDraft(toDraft(data)) })}
+                onReset={() => setDraft(toDraft(settings))}
             />
         </>
     );
@@ -255,7 +263,7 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                                 if (ok) rotate.mutate();
                             }}
                         >
-                            {rotate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} {tr('common.createNew')}
+                            {rotate.isPending ? <Spinner /> : <RefreshCw />} {tr('common.createNew')}
                         </Button>
                     </div>
                 </Field>

@@ -21,12 +21,12 @@ export const ticketConfigQuery = (guildId: string) =>
         queryFn: () => api<TicketConfigDto>(g(guildId, '/config')),
     });
 
-export const ticketsListQuery = (guildId: string, page: number, status: 'ALL' | TicketStatus, q = '') =>
+export const ticketsListQuery = (guildId: string, page: number, status: 'ALL' | TicketStatus, q = '', pageSize = 20) =>
     queryOptions({
-        queryKey: [...guildKey(guildId), 'tickets', 'list', status, page, q],
+        queryKey: [...guildKey(guildId), 'tickets', 'list', status, page, q, pageSize],
         queryFn: ({ signal }) =>
             api<TicketListResponse>(g(guildId, ''), {
-                query: { page, status, q: q.trim() || undefined },
+                query: { page, pageSize, status, q: q.trim() || undefined },
                 signal,
             }),
         placeholderData: keepPreviousData,
@@ -41,12 +41,9 @@ export const ticketDetailQuery = (guildId: string, ticketId: number | null) =>
     });
 
 export const ticketsApi = {
-    saveConfig: (guildId: string, body: UpdateTicketConfigInput) =>
-        api<TicketSaveConfigResponse>(g(guildId, '/config'), { method: 'POST', body }),
-    publishPanel: (guildId: string) =>
-        api<PublishTicketPanelResponse>(g(guildId, '/panel'), { method: 'POST' }),
-    closeTicket: (guildId: string, ticketId: number) =>
-        api<TicketItemDto>(g(guildId, `/${ticketId}/close`), { method: 'POST' }),
+    saveConfig: (guildId: string, body: UpdateTicketConfigInput) => api<TicketSaveConfigResponse>(g(guildId, '/config'), { method: 'POST', body }),
+    publishPanel: (guildId: string) => api<PublishTicketPanelResponse>(g(guildId, '/panel'), { method: 'POST' }),
+    closeTicket: (guildId: string, ticketId: number) => api<TicketItemDto>(g(guildId, `/${ticketId}/close`), { method: 'POST' }),
     downloadTranscript: async (guildId: string, ticketId: number, ticketNumber: number, format: 'md' | 'html') => {
         const { blob, filename } = await api<ApiBlobResponse>(g(guildId, `/${ticketId}/transcript`), {
             query: { format },

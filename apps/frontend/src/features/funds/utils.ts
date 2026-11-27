@@ -16,8 +16,8 @@ import { errorMessage } from '@/lib/api';
 import { toLocalInput } from '@/lib/format';
 
 export const STATUS_LABEL = byLang((): Record<FundMemberStatus, { text: string; className: string; color: string }> => ({
-    paid: { text: tr('funds.paidInFull'), className: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400', color: '#10b981' },
-    partial: { text: tr('funds.partiallyPaid'), className: 'border-amber-500/40 bg-amber-500/10 text-amber-400', color: '#f59e0b' },
+    paid: { text: tr('funds.paidInFull'), className: 'border-success/40 bg-success/10 text-success', color: '#10b981' },
+    partial: { text: tr('funds.partiallyPaid'), className: 'border-warning/40 bg-warning/10 text-warning', color: '#f59e0b' },
     unpaid: { text: tr('funds.unpaid'), className: 'border-destructive/40 bg-destructive/10 text-destructive', color: '#ef4444' },
 }));
 

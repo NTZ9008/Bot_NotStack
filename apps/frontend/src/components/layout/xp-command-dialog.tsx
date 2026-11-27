@@ -1,6 +1,7 @@
 import { tr, byLang } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Loader2 } from '@/components/icons';
+import { ArrowRight } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { levelsQuery } from '@/api/bot';
@@ -85,7 +86,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                         </div>
                         <div className="flex items-center gap-2 font-mono text-sm tabular-nums">
                             {current.isLoading ? (
-                                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+                                <Spinner className="size-4 text-muted-foreground" />
                             ) : current.isError ? (
                                 <span className="font-sans text-xs text-muted-foreground">{tr('layout.cantLoadCurrentXp')}</span>
                             ) : (
@@ -145,7 +146,7 @@ export function XpCommandDialog({ guildId, request, onClose }: { guildId: string
                             disabled={!valid || !reason.trim() || mutation.isPending}
                             variant={action === 'reset' ? 'destructive' : 'default'}
                         >
-                            {mutation.isPending && <Loader2 className="animate-spin" />}
+                            {mutation.isPending && <Spinner />}
 
                             {tr('common.confirm')}
                         </Button>

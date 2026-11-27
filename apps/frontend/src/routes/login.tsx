@@ -1,11 +1,12 @@
 import { tr, trText } from '../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { LOGIN_ERRORS, loginSchema, type MeResponse } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Loader2 } from '@/components/icons';
+import { ArrowLeft } from '@/components/icons';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { appInfoQuery, DEFAULT_BOT } from '@/api/app';
@@ -86,7 +87,11 @@ function LoginPage() {
             <header className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2 px-3 pt-3 sm:px-6">
                 <Link to="/" viewTransition className="landing-brand group flex min-w-0 items-center gap-2.5 rounded-xl pr-2">
                     <span className="grid size-11 shrink-0 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
-                        <img src={headWhite} alt="" className="size-11 translate-y-1 transition-transform duration-300 group-hover:translate-y-0 group-hover:scale-110" />
+                        <img
+                            src={headWhite}
+                            alt=""
+                            className="size-11 translate-y-1 transition-transform duration-300 group-hover:translate-y-0 group-hover:scale-110"
+                        />
                     </span>
                     <span className="min-w-0 leading-none">
                         <span className="block truncate text-[15px] font-black tracking-tight">{botName}</span>
@@ -131,10 +136,7 @@ function LoginPage() {
 
                 <div className="landing-login-card relative isolate mt-10 lg:mt-0">
                     {/* วงคลื่นรอบการ์ด (ชุดเดียวกับรอบมาสคอตใน hero) + แสงเรือง */}
-                    <div
-                        aria-hidden
-                        className="landing-stage-rings absolute top-1/2 left-1/2 -z-10 aspect-square w-[150%] -translate-x-1/2 -translate-y-1/2"
-                    />
+                    <div aria-hidden className="landing-stage-rings absolute top-1/2 left-1/2 -z-10 aspect-square w-[150%] -translate-x-1/2 -translate-y-1/2" />
                     <div aria-hidden className="absolute -inset-6 -z-10 rounded-full bg-[var(--ld-blue)]/25 blur-3xl" />
                     {/* การ์ดหัวโดม (โค้งแบบเดียวกับ footer ของ landing) */}
                     <div className="relative rounded-[50%_50%_2.5rem_2.5rem/6rem_6rem_2.5rem_2.5rem] border border-white/12 bg-[var(--ld-card)]/85 px-6 pt-14 pb-7 shadow-2xl shadow-black/50 backdrop-blur-xl sm:px-9">
@@ -186,7 +188,7 @@ function LoginPage() {
                                         className="h-12 w-full rounded-full bg-[var(--ld-blue)] font-semibold text-white shadow-lg shadow-[#2a45ff]/40 hover:bg-[#3d56ff] active:scale-[0.98]"
                                         disabled={isSubmitting}
                                     >
-                                        {isSubmitting && <Loader2 className="animate-spin" />}
+                                        {isSubmitting && <Spinner />}
                                         Login
                                     </Button>
                                 )}
@@ -198,7 +200,10 @@ function LoginPage() {
                                 <div className="my-5 flex items-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-white/12 after:h-px after:flex-1 after:bg-white/12">
                                     {tr('login.or')}
                                 </div>
-                                <Button asChild className="h-12 w-full rounded-full bg-[#5865F2] font-semibold text-white hover:bg-[#4752C4] active:scale-[0.98]">
+                                <Button
+                                    asChild
+                                    className="h-12 w-full rounded-full bg-[#5865F2] font-semibold text-white hover:bg-[#4752C4] active:scale-[0.98]"
+                                >
                                     {/* ลิงก์ธรรมดา (ไม่ใช่ SPA) เพราะต้องออกไปหน้า Discord แล้วกลับมาที่ callback ของ API */}
                                     <a href={apiUrl('/auth/discord')}>
                                         <DiscordIcon />

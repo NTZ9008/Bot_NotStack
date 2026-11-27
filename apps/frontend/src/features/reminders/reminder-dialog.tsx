@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import {
     HEX_COLOR_RE,
     REMINDER_DAYS,
@@ -24,7 +25,7 @@ import { ColorField } from '@/components/color-field';
 import { DateTimeInput } from '@/components/date-time-input';
 import { DiscordMessage } from '@/components/discord-message';
 import { Field } from '@/components/field';
-import { Loader2 } from '@/components/icons';
+import {} from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -256,11 +257,7 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
                                 </Field>
 
                                 <Field label={t('reminders.mentionRole')} hint={t('reminders.mentionRoleHint')}>
-                                    <Select
-                                        value={mentionRoleId || NO_ROLE}
-                                        onValueChange={(v) => setMentionRoleId(v === NO_ROLE ? '' : v)}
-                                        disabled={busy}
-                                    >
+                                    <Select value={mentionRoleId || NO_ROLE} onValueChange={(v) => setMentionRoleId(v === NO_ROLE ? '' : v)} disabled={busy}>
                                         <SelectTrigger className="w-full">
                                             <SelectValue />
                                         </SelectTrigger>
@@ -282,11 +279,7 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
                             <div className="space-y-3 rounded-lg border border-border/80 bg-muted/20 p-3.5">
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <Field label={t('reminders.scheduleType')}>
-                                        <Select
-                                            value={scheduleType}
-                                            onValueChange={(v) => setScheduleType(v as ReminderScheduleType)}
-                                            disabled={busy}
-                                        >
+                                        <Select value={scheduleType} onValueChange={(v) => setScheduleType(v as ReminderScheduleType)} disabled={busy}>
                                             <SelectTrigger className="w-full">
                                                 <SelectValue />
                                             </SelectTrigger>
@@ -302,34 +295,19 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
 
                                     {scheduleType === 'ONCE' && (
                                         <Field label={t('reminders.onceDateTime')} hint={t('reminders.onceDateTimeHint')}>
-                                            <DateTimeInput
-                                                mode="datetime"
-                                                value={onceDateTime}
-                                                onValueChange={setOnceDateTime}
-                                                disabled={busy}
-                                            />
+                                            <DateTimeInput mode="datetime" value={onceDateTime} onValueChange={setOnceDateTime} disabled={busy} />
                                         </Field>
                                     )}
 
                                     {scheduleType === 'DAILY' && (
                                         <Field label={t('reminders.scheduleTime')} hint={t('reminders.timezoneNote')}>
-                                            <DateTimeInput
-                                                mode="time"
-                                                value={dailyTime}
-                                                onValueChange={setDailyTime}
-                                                disabled={busy}
-                                            />
+                                            <DateTimeInput mode="time" value={dailyTime} onValueChange={setDailyTime} disabled={busy} />
                                         </Field>
                                     )}
 
                                     {scheduleType === 'WEEKLY' && (
                                         <Field label={t('reminders.scheduleTime')} hint={t('reminders.timezoneNote')}>
-                                            <DateTimeInput
-                                                mode="time"
-                                                value={weeklyTime}
-                                                onValueChange={setWeeklyTime}
-                                                disabled={busy}
-                                            />
+                                            <DateTimeInput mode="time" value={weeklyTime} onValueChange={setWeeklyTime} disabled={busy} />
                                         </Field>
                                     )}
                                 </div>
@@ -360,11 +338,7 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
 
                                 {scheduleType === 'CRON' && (
                                     <div className="space-y-2">
-                                        <Field
-                                            label={t('reminders.cronExpression')}
-                                            htmlFor="reminder-cron"
-                                            hint={t('reminders.cronHint')}
-                                        >
+                                        <Field label={t('reminders.cronExpression')} htmlFor="reminder-cron" hint={t('reminders.cronHint')}>
                                             <Input
                                                 id="reminder-cron"
                                                 value={cronExpression}
@@ -462,16 +436,10 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
                                     </div>
                                 )}
                                 {useEmbed ? (
-                                    <div
-                                        className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3"
-                                        style={{ borderLeftColor: previewColor }}
-                                    >
+                                    <div className="dark max-w-lg rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderLeftColor: previewColor }}>
                                         {title.trim() && <p className="mb-1 font-semibold text-white">{title.trim()}</p>}
                                         {message.trim() ? (
-                                            <div
-                                                className="discord-md text-sm"
-                                                dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(message) }}
-                                            />
+                                            <div className="discord-md text-sm" dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(message) }} />
                                         ) : (
                                             <p className="text-sm text-[#949ba4] italic">{t('reminders.previewEmptyMessage')}</p>
                                         )}
@@ -481,10 +449,7 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
                                     <div className="space-y-1 text-sm">
                                         {title.trim() && <p className="font-semibold text-white">{title.trim()}</p>}
                                         {message.trim() ? (
-                                            <div
-                                                className="discord-md"
-                                                dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(message) }}
-                                            />
+                                            <div className="discord-md" dangerouslySetInnerHTML={{ __html: renderDiscordMarkdown(message) }} />
                                         ) : (
                                             <p className="text-[#949ba4] italic">{t('reminders.previewEmptyMessage')}</p>
                                         )}
@@ -502,7 +467,7 @@ export function ReminderDialog({ open, onOpenChange, reminder, channels, roles, 
                             {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={busy}>
-                            {busy && <Loader2 className="mr-1.5 size-4 animate-spin" />}
+                            {busy && <Spinner className="mr-1.5 size-4" />}
                             {reminder ? t('common.save') : t('reminders.addReminder')}
                         </Button>
                     </DialogFooter>

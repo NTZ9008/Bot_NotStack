@@ -17,7 +17,7 @@ const GROUP_META = byLang((): Record<CustomSummaryChannelGroup, { label: string;
     },
     voice: {
         label: tr('common.voiceChannels'),
-        badgeClass: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
+        badgeClass: 'bg-info/15 text-info border-info/30',
     },
     devops: {
         label: tr('customSummary.devopsAlertChannels'),
@@ -26,7 +26,7 @@ const GROUP_META = byLang((): Record<CustomSummaryChannelGroup, { label: string;
 }));
 
 function GroupIcon({ group }: { group: CustomSummaryChannelGroup }) {
-    if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-sky-700 dark:text-sky-400" />;
+    if (group === 'voice') return <Volume2 className="size-3.5 shrink-0 text-info" />;
     if (group === 'devops') return <GitPullRequest className="size-3.5 shrink-0 text-purple-700 dark:text-purple-400" />;
     return <Hash className="size-3.5 shrink-0 text-highlight" />;
 }

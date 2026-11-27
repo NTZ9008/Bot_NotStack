@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import {
     UPTIME_INTERVAL_MINUTES,
     UPTIME_LIMITS,
@@ -10,7 +11,7 @@ import {
     type UptimeIntervalMinutes,
     type UptimeTargetSummary,
 } from '@notstack/shared';
-import { Loader2 } from '@/components/icons';
+import {} from '@/components/icons';
 import { ChannelSelect } from '@/components/channel-select';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
@@ -118,7 +119,11 @@ export function UptimeTargetDialog({ open, onOpenChange, target, channels, roles
 
                     <div className="grid gap-4 sm:grid-cols-2">
                         <Field label={t('uptime.checkInterval')}>
-                            <Select value={String(intervalMinutes)} onValueChange={(v) => setIntervalMinutes(Number(v) as UptimeIntervalMinutes)} disabled={busy}>
+                            <Select
+                                value={String(intervalMinutes)}
+                                onValueChange={(v) => setIntervalMinutes(Number(v) as UptimeIntervalMinutes)}
+                                disabled={busy}
+                            >
                                 <SelectTrigger className="w-full">
                                     <SelectValue />
                                 </SelectTrigger>
@@ -149,9 +154,7 @@ export function UptimeTargetDialog({ open, onOpenChange, target, channels, roles
                                         @{role.name}
                                     </SelectItem>
                                 ))}
-                                {roleMissing && (
-                                    <SelectItem value={mentionRoleId}>{t('common.notFoundInDiscord', { 0: mentionRoleId })}</SelectItem>
-                                )}
+                                {roleMissing && <SelectItem value={mentionRoleId}>{t('common.notFoundInDiscord', { 0: mentionRoleId })}</SelectItem>}
                             </SelectContent>
                         </Select>
                     </Field>
@@ -171,7 +174,7 @@ export function UptimeTargetDialog({ open, onOpenChange, target, channels, roles
                             {t('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={busy}>
-                            {busy && <Loader2 className="mr-1.5 size-4 animate-spin" />}
+                            {busy && <Spinner className="mr-1.5 size-4" />}
                             {target ? t('common.save') : t('uptime.addTarget')}
                         </Button>
                     </DialogFooter>

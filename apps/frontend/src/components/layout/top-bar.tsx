@@ -60,7 +60,6 @@ export function TopBar() {
                 <SidebarTrigger className="size-9 rounded-full" />
                 <Link
                     to="/servers"
-                    aria-label={bot.name}
                     className="landing-brand group flex shrink-0 items-center gap-2.5 rounded-xl pr-2 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                     <span className="grid size-10 place-items-end overflow-hidden rounded-xl bg-gradient-to-br from-[#3a55ff] to-[#1c2fd6] ring-1 ring-white/20">
@@ -72,7 +71,7 @@ export function TopBar() {
                             className="size-10 translate-y-1 transition-transform duration-300 group-hover:translate-y-0 group-hover:scale-110"
                         />
                     </span>
-                    <span className="hidden leading-none sm:block">
+                    <span className="sr-only leading-none sm:not-sr-only sm:block">
                         <span className="block max-w-36 truncate text-[15px] font-black tracking-tight">{bot.name}</span>
                         <span className="mt-1 block font-mono text-[10px] tracking-[0.25em] text-ink uppercase">Dashboard</span>
                     </span>

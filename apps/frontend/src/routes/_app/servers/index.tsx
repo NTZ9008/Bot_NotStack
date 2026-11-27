@@ -1,4 +1,6 @@
 import { tr } from '../../../lib/i18n';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import type { GuildSummary } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -75,7 +77,7 @@ function GuildCard({ guild }: { guild: GuildSummary }) {
                         )}
                         {guild.isHome && <Badge variant="secondary">{tr('servers.homeServer')}</Badge>}
                         {manage ? (
-                            <Badge className="bg-success/15 text-success">
+                            <Badge variant="success">
                                 <ShieldCheck /> {tr('common.canManage')}
                             </Badge>
                         ) : (
@@ -110,6 +112,7 @@ function ServersPage() {
     const { denied } = Route.useSearch();
     const { discordEnabled } = useAuth();
     const { data, isLoading, error, refetch, isFetching } = useQuery(guildsQuery);
+    const guildPage = usePagedItems(data?.guilds ?? [], { pageSize: 10 });
 
     return (
         <>
@@ -124,10 +127,10 @@ function ServersPage() {
             />
 
             {denied && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                    <p>{tr('servers.youDontHaveAccessToThat')}</p>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>{tr('servers.youDontHaveAccessToThat')}</AlertDescription>
+                </Alert>
             )}
 
             {data?.needsDiscordLink && (
@@ -151,10 +154,10 @@ function ServersPage() {
             )}
 
             {data && !data.botOnline && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
-                    <p>{tr('servers.theBotIsntOnlineYetThe')}</p>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>{tr('servers.theBotIsntOnlineYetThe')}</AlertDescription>
+                </Alert>
             )}
 
             {data && (
@@ -192,7 +195,7 @@ function ServersPage() {
                 <ErrorState error={error} />
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {data?.guilds.map((guild) => (
+                    {guildPage.pageItems.map((guild) => (
                         <GuildCard key={guild.id} guild={guild} />
                     ))}
 
@@ -216,6 +219,7 @@ function ServersPage() {
                             </Button>
                         )}
                     </div>
+                    <Pagination {...guildPage.pagination} className="md:col-span-2" />
                 </div>
             )}
 

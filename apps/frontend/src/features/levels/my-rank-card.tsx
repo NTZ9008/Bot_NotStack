@@ -1,12 +1,13 @@
 import { tr } from '../../lib/i18n';
 import type { MyRankCardResponse, RankBackgroundType, RankCardMeta, RankMemberStyle, RankPreviewKind } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, Info, RotateCcw, Save } from '@/components/icons';
+import { Check, Info, RotateCcw } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { memberBackgroundUrl, myRankCardQuery, rankCardApi, rankCardKey, rankMetaQuery } from '@/api/rank-card';
 import { ColorField } from '@/components/color-field';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SaveBar } from '@/components/page-controls';
 import { Field } from '@/components/field';
 import { RankEditorSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
@@ -91,27 +92,7 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
 
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('levels.yourCardInThisServerShown')}</p>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        disabled={busy || !Object.keys(saved.style).length}
-                        onClick={async () => {
-                            if (await confirm({ title: tr('levels.useTheServerThemeAgain'), description: tr('levels.allYourCustomizationsWillBeRemoved') }))
-                                reset.mutate();
-                        }}
-                    >
-                        <RotateCcw />
-
-                        {tr('levels.useServerTheme')}
-                    </Button>
-                    <Button disabled={!dirty || busy} onClick={() => save.mutate()}>
-                        <Save />
-                        {save.isPending ? tr('levels.saving') : tr('common.save')}
-                    </Button>
-                </div>
-            </div>
+            <p className="text-sm text-muted-foreground">{tr('levels.yourCardInThisServerShown')}</p>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <fieldset disabled={busy} className="min-w-0 space-y-5">
@@ -262,6 +243,18 @@ function MyCardEditor({ guildId, meta, initial }: { guildId: string; meta: RankC
                     />
                 </div>
             </div>
+            <SaveBar dirty={dirty} saving={busy} onSave={() => save.mutate()} onReset={() => setDraft(saved.style)}>
+                <Button
+                    variant="outline"
+                    disabled={busy || !Object.keys(saved.style).length}
+                    onClick={async () => {
+                        if (await confirm({ title: tr('levels.useTheServerThemeAgain'), description: tr('levels.allYourCustomizationsWillBeRemoved') }))
+                            reset.mutate();
+                    }}
+                >
+                    <RotateCcw /> {tr('levels.useServerTheme')}
+                </Button>
+            </SaveBar>
         </div>
     );
 }

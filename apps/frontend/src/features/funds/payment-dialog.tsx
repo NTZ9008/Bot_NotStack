@@ -1,9 +1,10 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowRight, Calendar, CheckCircle2, Loader2 } from '@/components/icons';
+import { ArrowRight, Calendar, CheckCircle2 } from '@/components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -278,20 +279,20 @@ export function PaymentDialog({
                     </Field>
 
                     {balancePreview && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-xs">
                             <div className="flex items-center gap-1.5 tabular-nums">
                                 <span className="text-muted-foreground">
                                     {tr('funds.paidSoFar')} {formatBaht(balancePreview.basePaid)}
                                 </span>
                                 <ArrowRight className="size-3 text-muted-foreground" />
-                                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
+                                <span className="font-semibold text-success">{formatBaht(balancePreview.nextPaid)}</span>
                             </div>
                             {balancePreview.willComplete ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-400">
+                                <Badge variant="outline" className="border-success/40 bg-success/15 text-[11px] text-success">
                                     <CheckCircle2 className="size-3" /> {tr('funds.targetReached2')}
                                 </Badge>
                             ) : (
-                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                                <span className="font-medium text-warning tabular-nums">
                                     {tr('funds.stillOutstanding')} {formatBaht(balancePreview.nextRemaining)}
                                 </span>
                             )}
@@ -316,7 +317,7 @@ export function PaymentDialog({
                         {tr('common.cancel')}
                     </Button>
                     <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(numAmount > 0) || invalidPeriod}>
-                        {save.isPending && <Loader2 className="animate-spin" />}
+                        {save.isPending && <Spinner />}
                         {payment ? tr('funds.saveChanges') : tr('funds.recordPayment')}
                     </Button>
                 </DialogFooter>

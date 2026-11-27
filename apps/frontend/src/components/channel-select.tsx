@@ -20,6 +20,7 @@ export function ChannelSelect({
     className,
     id,
     disabled,
+    'aria-label': ariaLabel,
 }: {
     channels: GuildChannel[];
     value: string;
@@ -32,6 +33,7 @@ export function ChannelSelect({
     className?: string;
     id?: string;
     disabled?: boolean;
+    'aria-label'?: string;
 }) {
     const byCategory = new Map<string, GuildChannel[]>();
     for (const channel of channels) {
@@ -43,7 +45,7 @@ export function ChannelSelect({
 
     return (
         <Select value={value || (noneLabel ? NONE : '')} onValueChange={(next) => onChange(next === NONE ? '' : next)} disabled={disabled}>
-            <SelectTrigger id={id} className={cn('w-full', className)}>
+            <SelectTrigger id={id} aria-label={ariaLabel} className={cn('w-full', className)}>
                 <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent className="max-h-80">

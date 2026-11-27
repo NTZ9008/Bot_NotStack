@@ -26,7 +26,7 @@ function RootError({ error, reset }: ErrorComponentProps) {
                 <Card className="w-full max-w-md">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                            <Unplug className="size-5 text-amber-700 dark:text-amber-400" /> {tr('root.cantReachTheApi')}
+                            <Unplug className="size-5 text-warning" /> {tr('root.cantReachTheApi')}
                         </CardTitle>
                         <CardDescription>{tr('root.theBackendIsntUpYetIs')}</CardDescription>
                     </CardHeader>

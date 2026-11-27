@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
+import { SaveBar } from '@/components/page-controls';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Spinner } from '@/components/ui/spinner';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-    TICKET_LIMITS,
-    type GuildChannel,
-    type GuildRole,
-    type TicketConfigDto,
-    type UpdateTicketConfigInput,
-} from '@notstack/shared';
+import { TICKET_LIMITS, type GuildChannel, type GuildRole, type TicketConfigDto, type UpdateTicketConfigInput } from '@notstack/shared';
 import { toast } from 'sonner';
 import { ticketConfigQuery, ticketsApi } from '@/api/tickets';
 import { ChannelSelect, channelLabel } from '@/components/channel-select';
@@ -15,7 +12,7 @@ import { useConfirm } from '@/components/confirm-dialog';
 import { DiscordMessage } from '@/components/discord-message';
 import { Field } from '@/components/field';
 import { IdChoices } from '@/components/id-choices';
-import { AlertTriangle, Loader2, RotateCcw, Save, Send } from '@/components/icons';
+import { AlertTriangle, Send } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 import { useT } from '@/lib/i18n';
 
@@ -140,8 +137,6 @@ export function TicketSettingsTab({
         }
     };
 
-    useSaveShortcut(() => void save());
-
     const publish = async () => {
         if (!draft.panelChannelId) {
             toast.error(t('tickets.cantPublishYet'), { description: t('tickets.pickPanelChannelFirst') });
@@ -177,9 +172,7 @@ export function TicketSettingsTab({
                     <div className="text-sm text-muted-foreground">
                         {config.panelMessageId && config.panelChannelId ? (
                             <>
-                                <Badge className="mr-2 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
-                                    {t('tickets.panelActive')}
-                                </Badge>
+                                <Badge className="mr-2 bg-success/15 text-success">{t('tickets.panelActive')}</Badge>
                                 {t('tickets.panelIsIn', { 0: channelLabel(allChannels, config.panelChannelId) ?? '-' })}
                             </>
                         ) : (
@@ -191,22 +184,15 @@ export function TicketSettingsTab({
                             </>
                         )}
                     </div>
-                    {dirty && (
-                        <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">
-                            {t('common.youHaveUnsavedChanges')}
-                        </Badge>
-                    )}
                 </CardHeader>
             </Card>
 
             {config.warning && (
-                <div className="flex items-start gap-2.5 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    <div>
-                        <p className="font-semibold">{t('tickets.permissionWarningTitle')}</p>
-                        <p className="mt-0.5">{config.warning}</p>
-                    </div>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertTitle>{t('tickets.permissionWarningTitle')}</AlertTitle>
+                    <AlertDescription>{config.warning}</AlertDescription>
+                </Alert>
             )}
 
             <div className="grid gap-4 xl:grid-cols-2">
@@ -272,11 +258,7 @@ export function TicketSettingsTab({
                                     </Label>
                                     <p className="text-xs text-muted-foreground">{t('tickets.dmTranscriptHint')}</p>
                                 </div>
-                                <Switch
-                                    id="ticket-dm-transcript"
-                                    checked={draft.dmTranscript}
-                                    onCheckedChange={(dmTranscript) => patch({ dmTranscript })}
-                                />
+                                <Switch id="ticket-dm-transcript" checked={draft.dmTranscript} onCheckedChange={(dmTranscript) => patch({ dmTranscript })} />
                             </div>
                         </div>
 
@@ -326,9 +308,7 @@ export function TicketSettingsTab({
                         <DiscordMessage>
                             <div className="dark max-w-md rounded border-l-4 bg-[#2b2d31] p-3" style={{ borderColor: draft.panelColor }}>
                                 {draft.panelTitle && <div className="font-semibold text-white">{draft.panelTitle}</div>}
-                                {draft.panelDescription && (
-                                    <div className="mt-1 text-sm whitespace-pre-wrap text-[#dbdee1]">{draft.panelDescription}</div>
-                                )}
+                                {draft.panelDescription && <div className="mt-1 text-sm whitespace-pre-wrap text-[#dbdee1]">{draft.panelDescription}</div>}
                             </div>
                             <span className="mt-2 inline-flex items-center gap-1.5 rounded bg-[#5865f2] px-4 py-1.5 text-sm font-medium text-white">
                                 🎫 {t('tickets.openTicketButton')}
@@ -338,18 +318,11 @@ export function TicketSettingsTab({
                 </Card>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-                <Button onClick={() => void save()} disabled={!dirty || busy !== null} title="Ctrl/⌘ + S">
-                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {t('common.save')}
-                </Button>
-                <Button variant="outline" disabled={!dirty || busy !== null} onClick={() => setDraft(structuredClone(saved))}>
-                    <RotateCcw /> {t('common.cancelChanges')}
-                </Button>
+            <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => setDraft(structuredClone(saved))}>
                 <Button variant="secondary" onClick={() => void publish()} disabled={busy !== null}>
-                    {busy === 'publish' ? <Loader2 className="animate-spin" /> : <Send />}{' '}
-                    {config.panelMessageId ? t('tickets.updatePanel') : t('tickets.publishPanel')}
+                    {busy === 'publish' ? <Spinner /> : <Send />} {config.panelMessageId ? t('tickets.updatePanel') : t('tickets.publishPanel')}
                 </Button>
-            </div>
+            </SaveBar>
         </div>
     );
 }

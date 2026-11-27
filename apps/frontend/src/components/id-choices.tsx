@@ -1,4 +1,6 @@
 import { tr } from '../lib/i18n';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -26,59 +28,62 @@ export function IdChoices({
         ...values.filter((id) => !options.some((o) => o.id === id)).map((id) => ({ id, name: tr('common.notFoundInDiscord', { 0: id }) })),
     ];
     return (
-        <details className="rounded-md border p-3">
-            <summary className="cursor-pointer text-sm">
-                {title} {tr('common.select')} {values.length}
-            </summary>
-            <div className="my-2 flex flex-wrap gap-2">
-                {voiceIds && (
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={!voiceIds.length || voiceIds.every((id) => values.includes(id))}
-                        onClick={() => {
-                            const next = [...new Set([...values, ...voiceIds])];
-                            if (next.length > 100) {
-                                toast.error(tr('common.upTo100Items'), {
-                                    description: tr('common.toApplyTheVoiceRuleTo'),
-                                });
-                                return;
-                            }
-                            onChange(next);
-                        }}
-                    >
-                        {tr('common.selectAllVoiceChannels')}
-                    </Button>
-                )}
-                <Button type="button" size="sm" variant="ghost" disabled={!values.length} onClick={() => onChange([])}>
-                    {tr('common.clearSelection')}
-                </Button>
-            </div>
-            {emptyHint && <p className="mb-2 text-xs text-muted-foreground">{emptyHint}</p>}
-            <Input
-                aria-label={tr('common.search2', { 0: title })}
-                placeholder={tr('common.searchNameOrId')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="my-2"
-            />
-            <div className="grid max-h-48 gap-2 overflow-y-auto">
-                {all
-                    .filter((o) => `${o.name} ${o.id}`.toLowerCase().includes(search.toLowerCase()))
-                    .map((o) => (
-                        <label key={o.id} className="flex items-center gap-2 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={values.includes(o.id)}
-                                disabled={!values.includes(o.id) && values.length >= 100}
-                                onChange={(e) => onChange(e.target.checked ? [...values, o.id] : values.filter((id) => id !== o.id))}
-                            />
-                            {o.name}
-                        </label>
-                    ))}
-                {!all.length && <p className="text-xs text-muted-foreground">{tr('common.nothingToChooseYet')}</p>}
-            </div>
-        </details>
+        <Accordion type="single" collapsible className="rounded-md border px-3">
+            <AccordionItem value="choices" className="border-none">
+                <AccordionTrigger className="font-normal">
+                    {title} {tr('common.select')} {values.length}
+                </AccordionTrigger>
+                <AccordionContent>
+                    <div className="my-2 flex flex-wrap gap-2">
+                        {voiceIds && (
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={!voiceIds.length || voiceIds.every((id) => values.includes(id))}
+                                onClick={() => {
+                                    const next = [...new Set([...values, ...voiceIds])];
+                                    if (next.length > 100) {
+                                        toast.error(tr('common.upTo100Items'), {
+                                            description: tr('common.toApplyTheVoiceRuleTo'),
+                                        });
+                                        return;
+                                    }
+                                    onChange(next);
+                                }}
+                            >
+                                {tr('common.selectAllVoiceChannels')}
+                            </Button>
+                        )}
+                        <Button type="button" size="sm" variant="ghost" disabled={!values.length} onClick={() => onChange([])}>
+                            {tr('common.clearSelection')}
+                        </Button>
+                    </div>
+                    {emptyHint && <p className="mb-2 text-xs text-muted-foreground">{emptyHint}</p>}
+                    <Input
+                        aria-label={tr('common.search2', { 0: title })}
+                        placeholder={tr('common.searchNameOrId')}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        className="my-2"
+                    />
+                    <div className="grid max-h-48 gap-2 overflow-y-auto">
+                        {all
+                            .filter((o) => `${o.name} ${o.id}`.toLowerCase().includes(search.toLowerCase()))
+                            .map((o) => (
+                                <label key={o.id} className="flex items-center gap-2 text-sm">
+                                    <Checkbox
+                                        checked={values.includes(o.id)}
+                                        disabled={!values.includes(o.id) && values.length >= 100}
+                                        onCheckedChange={(checked) => onChange(checked === true ? [...values, o.id] : values.filter((id) => id !== o.id))}
+                                    />
+                                    {o.name}
+                                </label>
+                            ))}
+                        {!all.length && <p className="text-xs text-muted-foreground">{tr('common.nothingToChooseYet')}</p>}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
     );
 }

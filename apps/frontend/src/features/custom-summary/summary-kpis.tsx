@@ -29,11 +29,11 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                     <CardContent className="pt-5">
                         <div className="flex items-start justify-between gap-2">
                             <span className="text-xs font-medium text-muted-foreground">{tr('customSummary.totalTimeInSelectedVoiceChannels')}</span>
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-info/15 text-info">
                                 <Volume2 className="size-4" />
                             </span>
                         </div>
-                        <div className="mt-2 text-3xl font-bold tracking-tight text-sky-700 dark:text-sky-400">
+                        <div className="mt-2 text-3xl font-bold tracking-tight text-info">
                             {enabled.has('voice') ? formatThaiDuration(voice.totalSeconds) : tr('customSummary.notSelected')}
                         </div>
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -41,17 +41,17 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                                 <>
                                     <span>
                                         {tr('common.joins')}{' '}
-                                        <strong className="text-emerald-700 dark:text-emerald-400">{voice.joins.toLocaleString('en-US')}</strong>
+                                        <strong className="text-success">{voice.joins.toLocaleString('en-US')}</strong>
                                     </span>
                                     <span>
                                         {tr('customSummary.leaves2')}{' '}
-                                        <strong className="text-amber-700 dark:text-amber-400">{voice.leaves.toLocaleString('en-US')}</strong>
+                                        <strong className="text-warning">{voice.leaves.toLocaleString('en-US')}</strong>
                                     </span>
                                     <span>
                                         {tr('customSummary.avg2')} {voice.avgSessionMinutes} {tr('customSummary.minSession')}
                                     </span>
                                     {voice.activeAtCutoffCount > 0 && (
-                                        <Badge className="border-sky-500/30 bg-sky-500/15 text-[10px] text-sky-700 dark:text-sky-300" variant="outline">
+                                        <Badge className="border-info/30 bg-info/15 text-[10px] text-info" variant="outline">
                                             {tr('customSummary.stillInChannel')} {voice.activeAtCutoffCount} {tr('common.people')}
                                         </Badge>
                                     )}
@@ -68,7 +68,7 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                     <CardContent className="pt-5">
                         <div className="flex items-start justify-between gap-2">
                             <span className="text-xs font-medium text-muted-foreground">{tr('customSummary.messagesInSelectedChannels')}</span>
-                            <span className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-success/15 text-success">
                                 <MessageSquareText className="size-4" />
                             </span>
                         </div>
@@ -81,7 +81,7 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                                     {messages.busiestChannel ? (
                                         <span className="truncate">
                                             {tr('customSummary.busiest')}{' '}
-                                            <strong className="text-emerald-700 dark:text-emerald-400">#{messages.busiestChannel.channelName}</strong> (
+                                            <strong className="text-success">#{messages.busiestChannel.channelName}</strong> (
                                             {messages.busiestChannel.count.toLocaleString('en-US')})
                                         </span>
                                     ) : (
@@ -109,9 +109,9 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                         {enabled.has('server') ? (
                             <div className="mt-2 flex items-baseline gap-2.5">
                                 <span className="text-3xl font-bold tracking-tight">
-                                    <span className="text-emerald-700 dark:text-emerald-400">+{server.memberJoin}</span>
+                                    <span className="text-success">+{server.memberJoin}</span>
                                     <span className="mx-1 text-muted-foreground">/</span>
-                                    <span className="text-red-700 dark:text-red-400">-{server.memberLeave}</span>
+                                    <span className="text-destructive">-{server.memberLeave}</span>
                                 </span>
                                 <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">
                                     {tr('customSummary.net')} {server.netMembers >= 0 ? `+${server.netMembers}` : server.netMembers}
@@ -189,7 +189,7 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                                         Merge <strong className="text-purple-700 dark:text-purple-400">{githubPr.merged}</strong>
                                     </span>
                                     <span>
-                                        {tr('customSummary.closedPrs')} <strong className="text-amber-700 dark:text-amber-400">{githubPr.closed}</strong>
+                                        {tr('customSummary.closedPrs')} <strong className="text-warning">{githubPr.closed}</strong>
                                     </span>
                                 </div>
                             </CardContent>
@@ -201,15 +201,15 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                             <CardContent className="flex items-center justify-between pt-5">
                                 <div>
                                     <div className="text-xs font-medium text-muted-foreground">Grafana Alerts</div>
-                                    <div className="mt-1 text-2xl font-bold text-sky-700 dark:text-sky-400">
+                                    <div className="mt-1 text-2xl font-bold text-info">
                                         {devops.grafanaSent.toLocaleString('en-US')}
                                     </div>
                                     <div className="mt-1 text-xs text-muted-foreground">
-                                        <span className="text-red-700 dark:text-red-400">Firing {devops.grafanaFiring}</span> •{' '}
-                                        <span className="text-emerald-700 dark:text-emerald-400">Resolved {devops.grafanaResolved}</span>
+                                        <span className="text-destructive">Firing {devops.grafanaFiring}</span> •{' '}
+                                        <span className="text-success">Resolved {devops.grafanaResolved}</span>
                                     </div>
                                 </div>
-                                <span className="flex size-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400">
+                                <span className="flex size-8 items-center justify-center rounded-lg bg-info/15 text-info">
                                     <AlertTriangle className="size-4" />
                                 </span>
                             </CardContent>
@@ -221,7 +221,7 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                             <CardContent className="flex items-center justify-between pt-5">
                                 <div>
                                     <div className="text-xs font-medium text-muted-foreground">Jira Card & Issues</div>
-                                    <div className="mt-1 text-2xl font-bold text-amber-700 dark:text-amber-400">
+                                    <div className="mt-1 text-2xl font-bold text-warning">
                                         {(devops.jiraCreated + devops.jiraIssueCreated).toLocaleString('en-US')}
                                     </div>
                                     <div className="mt-1 text-xs text-muted-foreground">
@@ -229,7 +229,7 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                                         {tr('customSummary.closed')} {devops.jiraClosed}
                                     </div>
                                 </div>
-                                <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                                <span className="flex size-8 items-center justify-center rounded-lg bg-warning/15 text-warning">
                                     <Activity className="size-4" />
                                 </span>
                             </CardContent>

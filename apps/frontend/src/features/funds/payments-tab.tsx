@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
 import { useConfirm } from '@/components/confirm-dialog';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import { SearchInput } from '@/components/search-input';
 import { EmptyState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
@@ -77,6 +78,7 @@ export function PaymentsTab({
             return sortBy === 'oldest' ? tA - tB : tB - tA;
         });
     }, [topic.payments, memberFilter, search, sortBy]);
+    const paymentPage = usePagedItems(filteredPayments, { resetKey: `${search}:${sortBy}` });
 
     const filteredTotal = useMemo(() => roundMoney(filteredPayments.reduce((acc, p) => acc + p.amount, 0)), [filteredPayments]);
     const activeMember = useMemo(() => (memberFilter !== null ? topic.members.find((m) => m.id === memberFilter) : undefined), [topic.members, memberFilter]);
@@ -89,7 +91,7 @@ export function PaymentsTab({
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs text-muted-foreground">
                         {tr('funds.showing')} <span className="font-semibold text-foreground">{filteredPayments.length}</span> {tr('funds.entriesTotal')}{' '}
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(filteredTotal)}</span>
+                        <span className="font-semibold text-success tabular-nums">{formatBaht(filteredTotal)}</span>
                     </p>
                     {activeMember && onMemberFilterChange && (
                         <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 text-primary">
@@ -116,7 +118,7 @@ export function PaymentsTab({
                                 value={memberFilter !== null ? String(memberFilter) : 'all'}
                                 onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
                             >
-                                <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
+                                <SelectTrigger aria-label={tr('common.member')} className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
                                     <SelectValue placeholder={tr('funds.allMembers')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-72">
@@ -134,7 +136,7 @@ export function PaymentsTab({
                         )}
 
                         <Select value={sortBy} onValueChange={(v) => setSortBy(v as PaymentSort)}>
-                            <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
+                            <SelectTrigger aria-label={tr('common.sortBy')} className="h-8 w-full min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
                                 <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                 <SelectValue />
                             </SelectTrigger>
@@ -151,79 +153,79 @@ export function PaymentsTab({
             {filteredPayments.length === 0 ? (
                 <EmptyState>{tr('funds.noPaymentsMatchYourFilters')}</EmptyState>
             ) : (
-                <ul className="divide-y rounded-xl border">
-                    {filteredPayments.map((p) => {
-                        const days = p.periodStart && p.periodEnd ? calculateDays(p.periodStart, p.periodEnd) : 0;
-                        const avatar = avatarByMemberId.get(p.memberId);
-                        return (
-                            <li
-                                key={p.id}
-                                className="flex items-start gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-muted/20 sm:items-center sm:gap-3 sm:px-3.5"
-                            >
-                                {avatar ? (
-                                    <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
-                                ) : (
-                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-700 dark:text-emerald-400 sm:mt-0">
-                                        {tr('funds.currencySymbol')}
-                                    </div>
-                                )}
+                <>
+                    <ul className="divide-y rounded-xl border">
+                        {paymentPage.pageItems.map((p) => {
+                            const days = p.periodStart && p.periodEnd ? calculateDays(p.periodStart, p.periodEnd) : 0;
+                            const avatar = avatarByMemberId.get(p.memberId);
+                            return (
+                                <li
+                                    key={p.id}
+                                    className="flex items-start gap-2.5 px-3 py-2.5 text-sm transition-colors hover:bg-muted/20 sm:items-center sm:gap-3 sm:px-3.5"
+                                >
+                                    {avatar ? (
+                                        <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
+                                    ) : (
+                                        <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-xs font-bold text-success sm:mt-0">
+                                            {tr('funds.currencySymbol')}
+                                        </div>
+                                    )}
 
-                                <div className="min-w-0 flex-1 space-y-0.5">
-                                    <div className="flex flex-wrap items-center gap-1.5 font-medium sm:gap-2">
-                                        <span className="truncate">{p.memberName}</span>
-                                        <Badge
-                                            variant="outline"
-                                            className="border-emerald-500/35 bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums"
-                                        >
-                                            +{formatBaht(p.amount)}
-                                        </Badge>
-                                        {p.periodStart && p.periodEnd && (
-                                            <Badge
-                                                variant="outline"
-                                                className="max-w-full gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary"
-                                            >
-                                                <Calendar className="size-3 shrink-0" />
-                                                <span className="truncate">
-                                                    {tr('funds.period')} {new Date(p.periodStart).toLocaleDateString(dateLocale())} –{' '}
-                                                    {new Date(p.periodEnd).toLocaleDateString(dateLocale())}
-                                                    {days > 0 && tr('funds.days', { 0: days })}
-                                                </span>
+                                    <div className="min-w-0 flex-1 space-y-0.5">
+                                        <div className="flex flex-wrap items-center gap-1.5 font-medium sm:gap-2">
+                                            <span className="truncate">{p.memberName}</span>
+                                            <Badge variant="outline" className="border-success/35 bg-success/10 font-semibold text-success tabular-nums">
+                                                +{formatBaht(p.amount)}
                                             </Badge>
-                                        )}
+                                            {p.periodStart && p.periodEnd && (
+                                                <Badge
+                                                    variant="outline"
+                                                    className="max-w-full gap-1 border-primary/30 bg-primary/5 text-[11px] font-normal text-primary"
+                                                >
+                                                    <Calendar className="size-3 shrink-0" />
+                                                    <span className="truncate">
+                                                        {tr('funds.period')} {new Date(p.periodStart).toLocaleDateString(dateLocale())} –{' '}
+                                                        {new Date(p.periodEnd).toLocaleDateString(dateLocale())}
+                                                        {days > 0 && tr('funds.days', { 0: days })}
+                                                    </span>
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <p className="break-words text-xs text-muted-foreground sm:truncate">
+                                            {formatDateTime(p.paidAt)}
+                                            {p.note && <span className="text-foreground/80"> · “{p.note}”</span>}
+                                            {p.recordedBy && tr('funds.recordedBy', { 0: p.recordedBy })}
+                                        </p>
                                     </div>
-                                    <p className="break-words text-xs text-muted-foreground sm:truncate">
-                                        {formatDateTime(p.paidAt)}
-                                        {p.note && <span className="text-foreground/80"> · “{p.note}”</span>}
-                                        {p.recordedBy && tr('funds.recordedBy', { 0: p.recordedBy })}
-                                    </p>
-                                </div>
 
-                                <div className="flex shrink-0 items-center gap-1">
-                                    <Button
-                                        size="icon-xs"
-                                        variant="ghost"
-                                        aria-label={tr('funds.editEntry')}
-                                        title={tr('funds.editPayment')}
-                                        disabled={topic.closed}
-                                        onClick={() => onEditPayment(p)}
-                                    >
-                                        <Pencil />
-                                    </Button>
-                                    <Button
-                                        size="icon-xs"
-                                        variant="ghost"
-                                        aria-label={tr('funds.delete')}
-                                        title={tr('funds.deletePayment')}
-                                        disabled={topic.closed}
-                                        onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}
-                                    >
-                                        <Trash2 className="text-destructive" />
-                                    </Button>
-                                </div>
-                            </li>
-                        );
-                    })}
-                </ul>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                        <Button
+                                            size="icon-xs"
+                                            variant="ghost"
+                                            aria-label={tr('funds.editEntry')}
+                                            title={tr('funds.editPayment')}
+                                            disabled={topic.closed}
+                                            onClick={() => onEditPayment(p)}
+                                        >
+                                            <Pencil />
+                                        </Button>
+                                        <Button
+                                            size="icon-xs"
+                                            variant="ghost"
+                                            aria-label={tr('funds.delete')}
+                                            title={tr('funds.deletePayment')}
+                                            disabled={topic.closed}
+                                            onClick={() => void remove(p.id, `${p.memberName} ${formatBaht(p.amount)} (${formatDateTime(p.paidAt)})`)}
+                                        >
+                                            <Trash2 className="text-destructive" />
+                                        </Button>
+                                    </div>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                    <Pagination {...paymentPage.pagination} />
+                </>
             )}
         </div>
     );

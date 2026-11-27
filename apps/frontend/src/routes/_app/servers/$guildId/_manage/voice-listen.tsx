@@ -118,7 +118,7 @@ function VoiceListenPage() {
                 <Card>
                     <CardHeader className="flex-row items-center justify-between gap-2">
                         <CardTitle>{tr('voiceListen.listen')}</CardTitle>
-                        <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
+                        <Badge variant={stream.status === 'live' ? 'success' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {stream.status === 'stopped' ? (
@@ -167,11 +167,11 @@ function VoiceListenPage() {
                                     <img
                                         src={member.avatar}
                                         alt=""
-                                        className={cn('size-8 rounded-full ring-2 ring-transparent transition-shadow', member.speaking && 'ring-green-500')}
+                                        className={cn('size-8 rounded-full ring-2 ring-transparent transition-shadow', member.speaking && 'ring-success')}
                                     />
                                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{member.name}</span>
                                     {member.bot && <Badge variant="secondary">BOT</Badge>}
-                                    {member.speaking && <span className="text-xs text-green-700 dark:text-green-400">{tr('voiceListen.speaking')}</span>}
+                                    {member.speaking && <span className="text-xs text-success">{tr('voiceListen.speaking')}</span>}
                                 </li>
                             ))}
                         </ul>

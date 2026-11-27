@@ -1,8 +1,9 @@
 import { tr, byLang } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { WelcomeCard, WelcomeEvent, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Loader2, Plus, RotateCcw, Save, Send, Trash2 } from '@/components/icons';
+import { Copy, Plus, Send, Trash2 } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -10,6 +11,7 @@ import { welcomeApi, welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } f
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
+import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { WelcomePageSkeleton } from '@/components/skeleton/editor-pages';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -17,16 +19,15 @@ import { UserPicker, type PickedUser } from '@/components/user-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EditorForm, type PatchDraft } from '@/features/welcome/editor-form';
 import { WelcomePreview, type Handle } from '@/features/welcome/preview';
 import { isDirty, pickDraft, type CardDraft, type Section } from '@/features/welcome/types';
 import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { useGuildId } from '@/hooks/use-guild';
-import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/welcome')({
     loader: ({ context, params }) =>
@@ -139,8 +140,6 @@ function WelcomePage() {
             setBusy(null);
         }
     };
-
-    useSaveShortcut(() => void save());
 
     // เปิด/ปิดบันทึกทันที (ทั้งสวิตช์ในรายการและบนหัวตัวแก้ไข) — ไม่กระทบการแก้ไขอื่นที่ค้างอยู่
     const toggle = async (card: WelcomeCard, enabled: boolean) => {
@@ -279,33 +278,33 @@ function WelcomePage() {
                             {visibleCards.map((card) => (
                                 <div
                                     key={card.id}
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => void select(card.id)}
-                                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && void select(card.id)}
                                     className={cn(
                                         'flex items-center gap-3 rounded-lg border p-3 transition-colors hover:border-primary/60',
                                         card.id === draft?.id && 'border-primary bg-primary/10',
                                     )}
                                 >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate font-medium">{card.name}</p>
-                                        <p className="truncate text-xs">
+                                    <button
+                                        type="button"
+                                        aria-pressed={card.id === draft?.id}
+                                        onClick={() => void select(card.id)}
+                                        className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <span className="block truncate font-medium">{card.name}</span>
+                                        <span className="block truncate text-xs">
                                             {card.channelId ? (
                                                 <span className="text-muted-foreground">{channelLabel(allChannels, card.channelId)}</span>
                                             ) : (
-                                                <span className="text-amber-700 dark:text-amber-400">{tr('common.noChannelSelected')}</span>
+                                                <span className="text-warning">{tr('common.noChannelSelected')}</span>
                                             )}
-                                        </p>
-                                    </div>
-                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? tr('common.on') : tr('common.off')}</Badge>
-                                    <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                                        <Switch
-                                            checked={card.enabled}
-                                            onCheckedChange={(checked) => void toggle(card, checked)}
-                                            title={tr('welcome.turnThisCardOnOffSaved')}
-                                        />
-                                    </span>
+                                        </span>
+                                    </button>
+                                    <Badge variant={card.enabled ? 'success' : 'secondary'}>{card.enabled ? tr('common.on') : tr('common.off')}</Badge>
+                                    <Switch
+                                        checked={card.enabled}
+                                        onCheckedChange={(checked) => void toggle(card, checked)}
+                                        aria-label={`${tr('common.enabled')}: ${card.name}`}
+                                        title={tr('welcome.turnThisCardOnOffSaved')}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -316,18 +315,24 @@ function WelcomePage() {
             {draft && meta.data && current && (
                 <Card>
                     <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
-                        <div className="flex min-w-0 items-center gap-2">
-                            <CardTitle className="truncate text-lg">{draft.name || tr('welcome.untitled')}</CardTitle>
-                            {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('common.youHaveUnsavedChanges')}</Badge>}
+                        <CardTitle className="min-w-0 truncate text-lg">{draft.name || tr('welcome.untitled')}</CardTitle>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <FeatureSwitch
+                                checked={draft.enabled}
+                                onCheckedChange={(checked) => void toggle(current, checked)}
+                                title={tr('welcome.turnThisCardOnOffSaved')}
+                            />
+                            <Button variant="outline" onClick={() => void create(draft.id)}>
+                                <Copy /> {tr('welcome.copyThisCard')}
+                            </Button>
+                            <Button variant="destructive" onClick={() => void remove()}>
+                                <Trash2 /> {tr('welcome.deleteCard')}
+                            </Button>
                         </div>
-                        <Label className="flex items-center gap-2" title={tr('welcome.turnThisCardOnOffSaved')}>
-                            {tr('common.enabled')}
-                            <Switch checked={draft.enabled} onCheckedChange={(checked) => void toggle(current, checked)} />
-                        </Label>
                     </CardHeader>
                     <CardContent className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
                         <div className="space-y-4">
-                            <Tabs value={section} onValueChange={(value) => setSection(value as Section)}>
+                            <Tabs value={section} onValueChange={(value) => setSection(value as Section)} className="gap-4">
                                 <TabsList className="w-full">
                                     {SECTIONS().map((s) => (
                                         <TabsTrigger key={s.value} value={s.value} className="flex-1">
@@ -335,19 +340,21 @@ function WelcomePage() {
                                         </TabsTrigger>
                                     ))}
                                 </TabsList>
+                                <TabsContent value={section}>
+                                    <EditorForm
+                                        section={section}
+                                        meta={meta.data}
+                                        draft={draft}
+                                        patch={patch}
+                                        channels={channels}
+                                        assets={assets.data ?? []}
+                                        cards={cardList}
+                                        openText={openText}
+                                        setOpenText={setOpenText}
+                                        onAssetDeleted={onAssetDeleted}
+                                    />
+                                </TabsContent>
                             </Tabs>
-                            <EditorForm
-                                section={section}
-                                meta={meta.data}
-                                draft={draft}
-                                patch={patch}
-                                channels={channels}
-                                assets={assets.data ?? []}
-                                cards={cardList}
-                                openText={openText}
-                                setOpenText={setOpenText}
-                                onAssetDeleted={onAssetDeleted}
-                            />
                         </div>
 
                         <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
@@ -370,33 +377,17 @@ function WelcomePage() {
                                     placeholder={tr('welcome.typeAMemberNameToPreview')}
                                 />
                             </Field>
-                            <div className="flex flex-wrap gap-2">
-                                <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
-                                </Button>
-                                <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                                    <RotateCcw /> {tr('common.cancelChanges')}
-                                </Button>
-                                <Button
-                                    variant="secondary"
-                                    className="text-amber-700 dark:text-amber-300"
-                                    onClick={() => void testSend()}
-                                    disabled={busy === 'test'}
-                                >
-                                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
-                                </Button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                <Button variant="outline" onClick={() => void create(draft.id)}>
-                                    <Copy /> {tr('welcome.copyThisCard')}
-                                </Button>
-                                <Button variant="destructive" onClick={() => void remove()}>
-                                    <Trash2 /> {tr('welcome.deleteCard')}
-                                </Button>
-                            </div>
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {draft && meta.data && current && (
+                <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
+                    <Button variant="secondary" onClick={() => void testSend()} disabled={busy === 'test'}>
+                        {busy === 'test' ? <Spinner /> : <Send />} {tr('common.sendTest')}
+                    </Button>
+                </SaveBar>
             )}
         </>
     );

@@ -58,6 +58,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 />
             </div>
             <ChannelSelect
+                aria-label={tr('logManager.pickATargetChannel')}
                 channels={channels.filter((ch) => ch.sendable)}
                 disabled={mutation.isPending}
                 value={event.channelId}
@@ -75,7 +76,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                     onChange={setColor}
                 />
                 <span className="font-mono">{color.toUpperCase()}</span>
-                <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-amber-700 dark:text-amber-400' : ''}`}>
+                <span className={`ml-auto ${event.enabled && !event.channelId ? 'text-warning' : ''}`}>
                     {mutation.isPending
                         ? tr('logManager.saving')
                         : !event.enabled

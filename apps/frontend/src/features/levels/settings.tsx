@@ -1,4 +1,5 @@
 import { tr, trText } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
 import {
     defaultXpRule,
     defaultXpSettings,
@@ -10,12 +11,13 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Plus, Save, Trash2 } from '@/components/icons';
+import { Copy, Plus, Trash2 } from '@/components/icons';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { xpApi, xpKey, xpSettingsQuery } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SaveBar } from '@/components/page-controls';
 import { XpSettingsSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -26,7 +28,6 @@ import { IdChoices } from '@/components/id-choices';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
-const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
 export function NumberField({
     label,
     value,
@@ -96,32 +97,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const voiceIds = (channels.data ?? []).filter((c) => c.isVoice).map((c) => c.id);
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        disabled={save.isPending}
-                        onClick={async () => {
-                            if (dirty && !(await confirm({ title: tr('levels.discardChangesAndReloadTheLatest'), destructive: true }))) return;
-                            try {
-                                const latest = await client.fetchQuery({ ...xpSettingsQuery(guildId), staleTime: 0 });
-                                setSaved(latest);
-                                setDraft(latest.settings);
-                                setCommandText({});
-                            } catch (err) {
-                                toast.error(errorMessage(err));
-                            }
-                        }}
-                    >
-                        {tr('levels.reload')}
-                    </Button>
-                    <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
-                        <Save />
-                        {save.isPending ? tr('levels.saving') : tr('levels.saveAll')}
-                    </Button>
-                </div>
-            </div>
+            <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
             {!parsed.success && (
                 <p role="alert" className="text-sm text-destructive">
                     {parsed.error.issues[0]?.path.join('.')} — {parsed.error.issues[0]?.message}
@@ -287,8 +263,8 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                 </label>
                                 <label className="grid gap-1.5 text-sm">
                                     {tr('levels.activity')}
-                                    <select
-                                        className={selectClass}
+                                    <NativeSelect
+                                        className="w-full"
                                         value={rule.source}
                                         onChange={(e) => patchRule(rule.id, { source: e.target.value as XpRule['source'] })}
                                     >
@@ -297,7 +273,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                                 {trText(XP_SOURCE_LABELS[v])}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </label>
                                 <NumberField
                                     label={tr('levels.minXpPerEvent')}
@@ -447,11 +423,35 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                     </Button>
                 </div>
             </fieldset>
-            <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
-                <Save />
-
-                {tr('levels.saveAll')}
-            </Button>
+            <SaveBar
+                dirty={dirty}
+                saving={save.isPending}
+                invalid={!parsed.success}
+                saveLabel={tr('levels.saveAll')}
+                onSave={() => save.mutate()}
+                onReset={() => {
+                    setDraft(saved.settings);
+                    setCommandText({});
+                }}
+            >
+                <Button
+                    variant="outline"
+                    disabled={save.isPending}
+                    onClick={async () => {
+                        if (dirty && !(await confirm({ title: tr('levels.discardChangesAndReloadTheLatest'), destructive: true }))) return;
+                        try {
+                            const latest = await client.fetchQuery({ ...xpSettingsQuery(guildId), staleTime: 0 });
+                            setSaved(latest);
+                            setDraft(latest.settings);
+                            setCommandText({});
+                        } catch (err) {
+                            toast.error(errorMessage(err));
+                        }
+                    }}
+                >
+                    {tr('levels.reload')}
+                </Button>
+            </SaveBar>
         </div>
     );
 }

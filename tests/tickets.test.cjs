@@ -4,16 +4,16 @@ const { createRequire } = require('node:module');
 const req = createRequire(require('node:path').resolve('apps/backend/package.json'));
 req('reflect-metadata');
 const { ChannelType, MessageFlags, OverwriteType, PermissionFlagsBits, PermissionsBitField } = req('discord.js');
-const {
-    PLUGIN_BOT_DISABLED_MESSAGE,
-    formatTicketNumber,
-    normalizeStaffRoleIds,
-    ticketListQuerySchema,
-    ticketTranscriptQuerySchema,
-    updateTicketConfigSchema,
-} = req('@notstack/shared');
+const { PLUGIN_BOT_DISABLED_MESSAGE, formatTicketNumber, normalizeStaffRoleIds, ticketListQuerySchema, ticketTranscriptQuerySchema, updateTicketConfigSchema } =
+    req('@notstack/shared');
 
-const { TICKET_IDS, parseTicketCustomId, ticketChannelName, ticketPanelMessage, ticketWelcomeMessage } = require('../apps/backend/dist/tickets/utils/tickets.messages');
+const {
+    TICKET_IDS,
+    parseTicketCustomId,
+    ticketChannelName,
+    ticketPanelMessage,
+    ticketWelcomeMessage,
+} = require('../apps/backend/dist/tickets/utils/tickets.messages');
 const {
     buildTranscriptHtml,
     buildTranscriptMarkdown,
@@ -298,7 +298,7 @@ function createMockDiscord({ messagesForTicket = [], dmThrows = false } = {}) {
         guildChannels,
         guild: (id) => (id === GUILD_ID ? guild : null),
         requireReady: () => ({ guilds: { cache: new Map([[GUILD_ID, guild]]) } }),
-        fetchGuildChannel: async (gid, cid) => (gid === GUILD_ID ? guildChannels.get(cid) ?? null : null),
+        fetchGuildChannel: async (gid, cid) => (gid === GUILD_ID ? (guildChannels.get(cid) ?? null) : null),
         cacheMembers: async () => {},
         displayName: async (uid) => usersCache.get(uid)?.globalName ?? usersCache.get(uid)?.username ?? null,
         fetchUser: async (uid) => ({
@@ -341,6 +341,8 @@ test('shared ticket Zod schemas, custom IDs, and helper formatting validate prop
     assert.equal(updateTicketConfigSchema.safeParse({ maxOpenPerUser: 11 }).success, false);
     assert.equal(updateTicketConfigSchema.safeParse({ panelColor: 'blue' }).success, false);
     assert.equal(ticketListQuerySchema.parse({}).status, 'ALL');
+    assert.equal(ticketListQuerySchema.parse({}).pageSize, 20);
+    assert.equal(ticketListQuerySchema.safeParse({ pageSize: '101' }).success, false);
     assert.equal(ticketTranscriptQuerySchema.parse({}).format, 'md');
 
     assert.deepEqual(parseTicketCustomId(TICKET_IDS.open), { action: 'open' });
@@ -367,7 +369,13 @@ test('fetchAllChannelMessages paginates >100 messages and transcript generators 
         createdTimestamp: 1700000000000 + idx * 1000,
         content: idx === 0 ? '<script>alert(1)</script>' : `Message ${idx}`,
         author: { id: OPENER_ID, username: 'alice', globalName: 'Alice', bot: false },
-        attachments: idx === 1 ? [{ name: 'log.txt', url: 'https://cdn.example.com/log.txt' }, { name: 'xss.txt', url: 'javascript:alert(1)' }] : [],
+        attachments:
+            idx === 1
+                ? [
+                      { name: 'log.txt', url: 'https://cdn.example.com/log.txt' },
+                      { name: 'xss.txt', url: 'javascript:alert(1)' },
+                  ]
+                : [],
         embeds: idx === 2 ? [{ title: '<b>Embed</b>', description: 'Details' }] : [],
     }));
 

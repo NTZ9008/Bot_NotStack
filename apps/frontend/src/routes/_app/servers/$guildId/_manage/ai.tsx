@@ -1,17 +1,22 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, Save, ShieldAlert, Trash2 } from '@/components/icons';
+import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, RefreshCw, ShieldAlert, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { aiSettingsQuery, testAiKey, updateAiSettings } from '@/api/ai';
+import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useGuildId } from '@/hooks/use-guild';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/ai')({ component: AiSettingsPage });
@@ -22,14 +27,12 @@ function compact(value: number): string {
     return String(value);
 }
 
-function Progress({ current, limit, cooldown }: { current: number; limit: number; cooldown: boolean }) {
+function UsageBar({ label, current, limit, cooldown }: { label: string; current: number; limit: number; cooldown: boolean }) {
     const ratio = Math.min(100, (current / Math.max(1, limit)) * 100);
-    const color = cooldown || ratio >= 100 ? '#ef4444' : ratio > 70 ? '#f59e0b' : '#cbd5e1';
+    const color = cooldown || ratio >= 100 ? 'bg-destructive' : ratio > 70 ? 'bg-warning' : 'bg-muted-foreground/40';
     return (
         <div className="space-y-1.5">
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full transition-all" style={{ width: `${ratio}%`, backgroundColor: color }} />
-            </div>
+            <Progress aria-label={label} value={ratio} className="h-1.5" indicatorClassName={color} />
             <div className="text-xs tabular-nums text-muted-foreground">
                 {compact(current)} / {compact(limit)}
             </div>
@@ -48,6 +51,8 @@ function AiSettingsPage() {
     const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
     const canEnable = Boolean(data?.hasKey || data?.hasFallbackHomeKey);
     const savedDailyLimit = data?.dailyLimit;
+    const dirty = Boolean(apiKey.trim()) || (savedDailyLimit !== undefined && Number(dailyLimit) !== savedDailyLimit);
+    useUnsavedChangesGuard(dirty, { title: tr('common.discardChanges'), destructive: true });
 
     useEffect(() => {
         if (savedDailyLimit !== undefined) setDailyLimit(String(savedDailyLimit));
@@ -94,8 +99,21 @@ function AiSettingsPage() {
     });
 
     return (
-        <div className="space-y-6">
-            <PageHeader title={tr('common.aiChatSettings')} description={tr('ai.manageTheGeminiApiKeyAnd')} />
+        <>
+            <PageHeader
+                help="ai"
+                title={tr('common.aiChatSettings')}
+                description={tr('ai.manageTheGeminiApiKeyAnd')}
+                actions={
+                    !isLoading && (
+                        <FeatureSwitch
+                            checked={Boolean(data?.aiEnabled)}
+                            disabled={toggle.isPending || (!data?.aiEnabled && !canEnable)}
+                            onCheckedChange={(checked) => toggle.mutate(checked)}
+                        />
+                    )
+                }
+            />
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -107,39 +125,28 @@ function AiSettingsPage() {
                 <CardContent className="space-y-5">
                     {isLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="size-4 animate-spin" />
+                            <Spinner className="size-4" />
                             {tr('ai.loadingSettings')}
                         </div>
                     ) : (
                         <>
-                            <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
-                                <div className="space-y-1">
-                                    <div className="font-medium">
-                                        {tr('ai.aiSystem')} {data?.aiEnabled ? tr('common.enabled') : tr('common.disable')}
-                                    </div>
-                                    <p className="max-w-2xl text-sm text-muted-foreground">
-                                        {data?.aiEnabled ? tr('ai.theBotRepliesWhenMentionedAnd') : tr('ai.whenOffTheBotWontReply')}
-                                    </p>
+                            <div className="space-y-1 rounded-lg border p-4">
+                                <div className="flex items-center gap-2 font-medium">
+                                    {tr('ai.aiSystem')}
+                                    <Badge variant={data?.aiEnabled ? 'success' : 'secondary'}>{data?.aiEnabled ? tr('common.on') : tr('common.off')}</Badge>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={data?.aiEnabled ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-muted-foreground'}>
-                                        {data?.aiEnabled ? tr('ai.on') : tr('common.close')}
-                                    </span>
-                                    <Switch
-                                        checked={Boolean(data?.aiEnabled)}
-                                        disabled={toggle.isPending || (!data?.aiEnabled && !canEnable)}
-                                        onCheckedChange={(checked) => toggle.mutate(checked)}
-                                    />
-                                </div>
-                            </div>
-                            {!data?.aiEnabled && !canEnable && (
-                                <p className="-mt-2 text-sm text-amber-700 dark:text-amber-400">{tr('ai.saveAGeminiApiKeyFirst')}</p>
-                            )}
-                            {data?.isUsingFallbackHomeKey && (
-                                <p className="rounded-md border border-highlight/30 bg-highlight/5 p-3 text-sm text-highlight">
-                                    {tr('ai.theHomeServerIsUsingThe')}
-                                    {data.maskedKey ?? 'GEMINI_KEY'})
+                                <p className="max-w-2xl text-sm text-muted-foreground">
+                                    {data?.aiEnabled ? tr('ai.theBotRepliesWhenMentionedAnd') : tr('ai.whenOffTheBotWontReply')}
                                 </p>
+                            </div>
+                            {!data?.aiEnabled && !canEnable && <p className="-mt-2 text-sm text-warning">{tr('ai.saveAGeminiApiKeyFirst')}</p>}
+                            {data?.isUsingFallbackHomeKey && (
+                                <Alert variant="info">
+                                    <AlertDescription>
+                                        {tr('ai.theHomeServerIsUsingThe')}
+                                        {data.maskedKey ?? 'GEMINI_KEY'})
+                                    </AlertDescription>
+                                </Alert>
                             )}
                             <div className="grid gap-2">
                                 <Label htmlFor="gemini-key">Gemini API Key</Label>
@@ -171,25 +178,17 @@ function AiSettingsPage() {
                                     disabled={test.isPending || (!apiKey.trim() && !data?.hasKey && !data?.isUsingFallbackHomeKey)}
                                     onClick={() => test.mutate()}
                                 >
-                                    {test.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
+                                    {test.isPending ? <Spinner /> : <CheckCircle2 />}
                                     {tr('ai.testKey')}
-                                </Button>
-                                <Button disabled={save.isPending || (!apiKey.trim() && Number(dailyLimit) === data?.dailyLimit)} onClick={() => save.mutate()}>
-                                    {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
-                                    {tr('ai.saveSettings')}
                                 </Button>
                                 {data?.hasKey && (
                                     <Button variant="destructive" disabled={removeKey.isPending} onClick={() => removeKey.mutate()}>
-                                        {removeKey.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                                        {removeKey.isPending ? <Spinner /> : <Trash2 />}
                                         {tr('ai.removeKey')}
                                     </Button>
                                 )}
                                 {testResult && (
-                                    <span
-                                        className={testResult.ok ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-red-700 dark:text-red-400'}
-                                    >
-                                        {testResult.message}
-                                    </span>
+                                    <span className={testResult.ok ? 'text-sm text-success' : 'text-sm text-destructive'}>{testResult.message}</span>
                                 )}
                             </div>
                             <div className="grid max-w-sm gap-2">
@@ -229,7 +228,7 @@ function AiSettingsPage() {
                             </CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
-                            {isFetching ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                            {isFetching ? <Spinner /> : <RefreshCw />}
                             {tr('common.refresh')}
                         </Button>
                     </div>
@@ -258,11 +257,11 @@ function AiSettingsPage() {
                                         <tr key={model.name} className="border-b last:border-0">
                                             <td className="px-3 py-4">
                                                 <div className="flex items-center gap-2 font-medium">
-                                                    <span className={`size-2 rounded-full ${model.status === 'cooldown' ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                                                    <span className={`size-2 rounded-full ${model.status === 'cooldown' ? 'bg-destructive' : 'bg-success'}`} />
                                                     {modelLabel}
                                                 </div>
                                                 {cooldownSeconds > 0 && (
-                                                    <div className="mt-1 flex items-center gap-1 text-xs text-red-700 dark:text-red-400">
+                                                    <div className="mt-1 flex items-center gap-1 text-xs text-destructive">
                                                         <ShieldAlert className="size-3" />
                                                         {tr('ai.coolingDown')} {cooldownSeconds} {tr('ai.seconds')}
                                                     </div>
@@ -270,13 +269,28 @@ function AiSettingsPage() {
                                             </td>
                                             <td className="px-3 py-4 text-muted-foreground">{model.category}</td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.rpm.current} limit={model.rpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="RPM"
+                                                    current={model.rpm.current}
+                                                    limit={model.rpm.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.tpm.current} limit={model.tpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="TPM"
+                                                    current={model.tpm.current}
+                                                    limit={model.tpm.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.rpd.current} limit={model.rpd.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="RPD"
+                                                    current={model.rpd.current}
+                                                    limit={model.rpd.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                         </tr>
                                     );
@@ -286,6 +300,16 @@ function AiSettingsPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+            <SaveBar
+                dirty={dirty}
+                saving={save.isPending}
+                saveLabel={tr('ai.saveSettings')}
+                onSave={() => save.mutate()}
+                onReset={() => {
+                    setApiKey('');
+                    if (savedDailyLimit !== undefined) setDailyLimit(String(savedDailyLimit));
+                }}
+            />
+        </>
     );
 }

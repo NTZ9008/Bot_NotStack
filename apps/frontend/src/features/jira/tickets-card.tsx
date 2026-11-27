@@ -1,7 +1,10 @@
 import { tr, byLang } from '../../lib/i18n';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Spinner } from '@/components/ui/spinner';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from '@/components/icons';
+import { ExternalLink, Lock } from '@/components/icons';
+import { PAGE_SIZE, Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';
@@ -13,11 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime, formatNumber } from '@/lib/format';
-
-const PAGE_SIZE = 20;
 
 const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] => [
     { value: 'all', label: tr('common.total') },
@@ -27,8 +27,8 @@ const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] 
 ]);
 
 function StatusBadge({ status }: { status: JiraTicketStatus }) {
-    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('jira.cardCreated')}</Badge>;
-    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('jira.waitingForCard')}</Badge>;
+    if (status === 'created') return <Badge variant="success">{tr('jira.cardCreated')}</Badge>;
+    if (status === 'open') return <Badge variant="warning">{tr('jira.waitingForCard')}</Badge>;
     return <Badge variant="secondary">{tr('jira.channelClosed')}</Badge>;
 }
 
@@ -38,9 +38,10 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
     const confirm = useConfirm();
     const [status, setStatus] = useState<'all' | JiraTicketStatus>('all');
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE);
     const [closing, setClosing] = useState<number | null>(null);
-    const { data, isLoading, error } = useQuery(jiraTicketsQuery(guildId, page, status));
-    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+    const { data, isLoading, error } = useQuery(jiraTicketsQuery(guildId, page, status, pageSize));
+    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize));
 
     const close = async (ticket: JiraTicket) => {
         const ok = await confirm({
@@ -72,21 +73,24 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <Tabs
+                <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    className="flex-wrap"
+                    aria-label={tr('common.status')}
                     value={status}
                     onValueChange={(value) => {
+                        if (!value) return;
                         setStatus(value as typeof status);
                         setPage(1);
                     }}
                 >
-                    <TabsList className="h-auto flex-wrap">
-                        {FILTERS().map((filter) => (
-                            <TabsTrigger key={filter.value} value={filter.value}>
-                                {filter.label}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                </Tabs>
+                    {FILTERS().map((filter) => (
+                        <ToggleGroupItem key={filter.value} value={filter.value}>
+                            {filter.label}
+                        </ToggleGroupItem>
+                    ))}
+                </ToggleGroup>
 
                 {isLoading ? (
                     <JiraTicketsBodySkeleton />
@@ -119,7 +123,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                     href={ticket.issueUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex items-center gap-1 font-medium text-sky-700 dark:text-sky-400 hover:underline"
+                                                    className="inline-flex items-center gap-1 font-medium text-info hover:underline"
                                                 >
                                                     {ticket.issueKey} <ExternalLink className="size-3" />
                                                 </a>
@@ -146,7 +150,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                         </a>
                                                     </Button>
                                                     <Button variant="outline" size="sm" disabled={closing === ticket.id} onClick={() => void close(ticket)}>
-                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} {tr('jira.closeChannel')}
+                                                        {closing === ticket.id ? <Spinner /> : <Lock />} {tr('jira.closeChannel')}
                                                     </Button>
                                                 </div>
                                             )}
@@ -158,19 +162,17 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                     </div>
                 )}
 
-                {pages > 1 && (
-                    <div className="flex items-center justify-end gap-2 text-sm">
-                        <Button variant="outline" size="icon" aria-label={tr('jira.previousPage')} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                            <ChevronLeft />
-                        </Button>
-                        <span>
-                            {tr('common.pages')} {page} / {pages}
-                        </span>
-                        <Button variant="outline" size="icon" aria-label={tr('jira.nextPage')} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
-                            <ChevronRight />
-                        </Button>
-                    </div>
-                )}
+                <Pagination
+                    page={page}
+                    pageCount={pages}
+                    total={data?.total}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPage(1);
+                    }}
+                />
             </CardContent>
         </Card>
     );

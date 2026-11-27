@@ -167,7 +167,7 @@ function ReactionRolesPageContent() {
             ) : (
                 <div className="space-y-5">
                     {warnings.length > 0 && (
-                        <div className="space-y-1 rounded-xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-xs text-amber-800 dark:text-amber-300">
+                        <div className="space-y-1 rounded-xl border border-warning/35 bg-warning/10 px-4 py-3 text-xs text-warning">
                             <div className="flex items-center gap-1.5 font-semibold">
                                 <AlertTriangle className="size-4 shrink-0" />
                                 {t('reactionRoles.permissionWarningsTitle')}
@@ -208,10 +208,7 @@ function ReactionRolesPageContent() {
                                                         : 'border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground',
                                                 )}
                                             >
-                                                <span
-                                                    className="size-2.5 rounded-full"
-                                                    style={{ backgroundColor: p.embedColor }}
-                                                />
+                                                <span className="size-2.5 rounded-full" style={{ backgroundColor: p.embedColor }} />
                                                 <span className="max-w-44 truncate">{p.title}</span>
                                                 <Badge variant="secondary" className="px-1.5 py-0 text-[10px]">
                                                     {p.items.length}

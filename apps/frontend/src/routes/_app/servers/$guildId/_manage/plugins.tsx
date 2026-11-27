@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { Link, createFileRoute } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { PLUGIN_CATEGORIES, type GuildPluginState, type PluginCategory, type PluginId } from '@notstack/shared';
 import { toast } from 'sonner';
 import { guildPluginsQuery, usePluginMutations } from '@/api/plugins';
 import { useConfirm } from '@/components/confirm-dialog';
-import { Blocks, CheckCircle2, Loader2, PlugZap, Settings, Trash2 } from '@/components/icons';
+import { Blocks, CheckCircle2, PlugZap, Settings, Trash2 } from '@/components/icons';
 import { PageHeader } from '@/components/page-header';
 import { SearchInput } from '@/components/search-input';
 import { EmptyState, ErrorState } from '@/components/states';
@@ -95,7 +96,7 @@ function PluginCard({
                     </div>
 
                     {plugin.installed ? (
-                        <Badge className="shrink-0 gap-1 border border-emerald-500/30 bg-emerald-500/12 text-emerald-600 hover:bg-emerald-500/15 dark:text-emerald-400">
+                        <Badge className="shrink-0 gap-1 border border-success/30 bg-success/12 text-success hover:bg-success/15">
                             <CheckCircle2 className="size-3" />
                             {t('plugins.statusInstalled')}
                         </Badge>
@@ -142,13 +143,13 @@ function PluginCard({
                                 onClick={() => onUninstall(plugin)}
                                 className="h-8 gap-1.5 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
-                                {busy ? <Loader2 className="size-3.5 animate-spin" /> : <Trash2 className="size-3.5" />}
+                                {busy ? <Spinner className="size-3.5" /> : <Trash2 className="size-3.5" />}
                                 {busy ? t('plugins.uninstalling') : t('plugins.uninstall')}
                             </Button>
                         </>
                     ) : (
                         <Button type="button" size="sm" disabled={busy} onClick={() => onInstall(plugin)} className="h-8 gap-1.5 text-xs">
-                            {busy ? <Loader2 className="size-3.5 animate-spin" /> : <PlugZap className="size-3.5" />}
+                            {busy ? <Spinner className="size-3.5" /> : <PlugZap className="size-3.5" />}
                             {busy ? t('plugins.installing') : t('plugins.install')}
                         </Button>
                     )}
@@ -183,7 +184,8 @@ function PluginsPage() {
             if (status === 'not-installed' && plugin.installed) return false;
             if (!q) return true;
             const copy = pluginCopy(plugin.id);
-            const hay = `${plugin.id} ${plugin.name} ${plugin.description} ${copy.name} ${copy.description} ${pluginCategoryLabel(plugin.category)}`.toLowerCase();
+            const hay =
+                `${plugin.id} ${plugin.name} ${plugin.description} ${copy.name} ${copy.description} ${pluginCategoryLabel(plugin.category)}`.toLowerCase();
             return hay.includes(q);
         });
     }, [plugins, category, status, search]);

@@ -1,10 +1,12 @@
 import { tr, byLang } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
 import { xpMemberMutationSchema, type XpMemberMutation, type XpMemberMutationResult, type XpResetGuildResult } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { xpApi, xpHistoryQuery, xpKey } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
+import { Pagination } from '@/components/pagination';
 import { XpHistoryTableSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
@@ -84,17 +86,13 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                             <UserPicker value={user} onSelect={setUser} onClear={() => setUser(null)} />
                             <label className="grid gap-1.5 text-sm">
                                 {tr('levels.action')}
-                                <select
-                                    className="h-9 rounded-md border bg-background px-3"
-                                    value={action}
-                                    onChange={(e) => setAction(e.target.value as XpMemberMutation['action'])}
-                                >
+                                <NativeSelect value={action} onChange={(e) => setAction(e.target.value as XpMemberMutation['action'])}>
                                     {Object.entries(ACTIONS()).map(([key, label]) => (
                                         <option value={key} key={key}>
                                             {label}
                                         </option>
                                     ))}
-                                </select>
+                                </NativeSelect>
                             </label>
                             {!['reset', 'delete'].includes(action) && (
                                 <NumberField label={tr('common.xpAmount')} value={amount} max={2000000000} onChange={setAmount} />
@@ -181,9 +179,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                 </div>
                                 <div className="flex flex-wrap justify-between gap-2">
                                     <dt>{tr('levels.change')}</dt>
-                                    <dd
-                                        className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-emerald-700 dark:text-emerald-400'}`}
-                                    >
+                                    <dd className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-success'}`}>
                                         {completed.data.delta > 0 ? '+' : ''}
                                         {completed.data.delta.toLocaleString()} XP
                                     </dd>
@@ -260,7 +256,7 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                                             <p>{row.reason}</p>
                                             <p className="text-xs text-muted-foreground">{row.source}</p>
                                         </td>
-                                        <td className={`p-3 font-semibold ${row.delta >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'}`}>
+                                        <td className={`p-3 font-semibold ${row.delta >= 0 ? 'text-success' : 'text-destructive'}`}>
                                             {row.delta > 0 ? '+' : ''}
                                             {row.delta.toLocaleString()}
                                         </td>
@@ -279,18 +275,13 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                         </table>
                     </div>
                 )}
-                <div className="flex gap-2">
-                    <Button variant="outline" disabled={cursors.length === 1 || query.isFetching} onClick={() => setCursors((old) => old.slice(0, -1))}>
-                        {tr('levels.previous')}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        disabled={!query.data?.nextCursor || query.isFetching}
-                        onClick={() => setCursors((old) => [...old, query.data!.nextCursor!])}
-                    >
-                        {tr('levels.next')}
-                    </Button>
-                </div>
+                <Pagination
+                    page={cursors.length}
+                    pageCount={cursors.length}
+                    hasMore={Boolean(query.data?.nextCursor)}
+                    busy={query.isFetching}
+                    onPageChange={(page) => setCursors((old) => (page > old.length ? [...old, query.data!.nextCursor!] : old.slice(0, Math.max(1, page))))}
+                />
             </CardContent>
         </Card>
     );

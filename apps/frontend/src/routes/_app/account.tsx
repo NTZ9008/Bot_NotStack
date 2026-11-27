@@ -1,11 +1,12 @@
 import { tr, byLang, trText } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { stringSearch } from '@/lib/search-params';
 import { replaceSession } from '@/lib/session';
 import { DISCORD_LINK_ERRORS, passwordFieldSchema } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { KeyRound, Loader2, LogOut, Unlink } from '@/components/icons';
+import { KeyRound, LogOut, Unlink } from '@/components/icons';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -86,7 +87,7 @@ function PasswordForm() {
             <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <KeyRound />} {tr('account.changePassword')}
+                        {isSubmitting ? <Spinner /> : <KeyRound />} {tr('account.changePassword')}
                     </Button>
                 )}
             </form.Subscribe>

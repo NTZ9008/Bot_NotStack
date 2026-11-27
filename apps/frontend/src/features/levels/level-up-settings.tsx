@@ -1,4 +1,6 @@
 import { tr } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     fillLevelUpMessage,
     type LevelUpDestination,
@@ -8,7 +10,7 @@ import {
     type RankCardTheme,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, Plus, RefreshCw, Save, Trash2 } from '@/components/icons';
+import { AlertTriangle, Plus, RefreshCw, Trash2 } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -16,6 +18,7 @@ import { levelUpQuery, rankCardApi, rankCardKey, rankMetaQuery, rankThemeQuery }
 import { ChannelSelect } from '@/components/channel-select';
 import { DiscordMessage } from '@/components/discord-message';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SaveBar } from '@/components/page-controls';
 import { Field } from '@/components/field';
 import { RankEditorSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
@@ -29,7 +32,6 @@ import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 import { renderDiscordMarkdown } from '@/lib/discord-markdown';
 import { RankPreview } from './rank-preview';
-import { selectClass } from './rank-theme-editor';
 
 export function LevelUpPanel({ guildId }: { guildId: string }) {
     const meta = useQuery(rankMetaQuery(guildId));
@@ -96,23 +98,17 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
 
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('levels.announceLevelUpsFromChatVoice')}</p>
-                <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
-                    <Save />
-                    {save.isPending ? tr('levels.saving') : tr('common.save')}
-                </Button>
-            </div>
+            <p className="text-sm text-muted-foreground">{tr('levels.announceLevelUpsFromChatVoice')}</p>
 
             {saved.warnings.length > 0 && (
-                <div role="alert" className="space-y-1 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-800 dark:text-amber-200">
-                    {saved.warnings.map((warning) => (
-                        <p key={warning} className="flex gap-2">
-                            <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                            {warning}
-                        </p>
-                    ))}
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>
+                        {saved.warnings.map((warning) => (
+                            <p key={warning}>{warning}</p>
+                        ))}
+                    </AlertDescription>
+                </Alert>
             )}
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -191,14 +187,14 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                         />
                                     </Field>
                                     <Field label={index === 0 ? tr('levels.roleGiven') : undefined} className="min-w-0 flex-1">
-                                        <select className={selectClass} value={reward.roleId} onChange={(e) => patchReward(index, { roleId: e.target.value })}>
+                                        <NativeSelect className="w-full" value={reward.roleId} onChange={(e) => patchReward(index, { roleId: e.target.value })}>
                                             <option value="">{tr('levels.pickARole')}</option>
                                             {roles.map((role) => (
                                                 <option key={role.id} value={role.id} disabled={role.id !== reward.roleId && usedRoles.has(role.id)}>
                                                     {role.name}
                                                 </option>
                                             ))}
-                                        </select>
+                                        </NativeSelect>
                                     </Field>
                                     <Button
                                         type="button"
@@ -224,7 +220,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                                 {tr('levels.addRewardRole')}
                             </Button>
                             {draft.rewards.some((reward) => !reward.roleId) && (
-                                <p className="text-xs text-amber-700 dark:text-amber-400">{tr('levels.rowsWithoutARoleAreDropped')}</p>
+                                <p className="text-xs text-warning">{tr('levels.rowsWithoutARoleAreDropped')}</p>
                             )}
                             <Field label={tr('levels.whenReachingAHigherLevelsRole')}>
                                 <Segmented
@@ -284,6 +280,7 @@ function LevelUpEditor({ guildId, meta, initial, theme }: { guildId: string; met
                     <p className="mt-2 text-xs text-muted-foreground">{tr('levels.thePreviewUsesTheServerTheme')}</p>
                 </div>
             </div>
+            <SaveBar dirty={dirty} saving={save.isPending} onSave={() => save.mutate()} onReset={() => setDraft(saved.settings)} />
         </div>
     );
 }

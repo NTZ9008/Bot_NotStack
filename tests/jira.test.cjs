@@ -35,6 +35,8 @@ test('settings only accept Jira Cloud sites and normalise pasted URLs', () => {
     assert.equal(updateJiraSchema.safeParse({ panelChannelId: '<#123>' }).success, false);
     assert.deepEqual(updateJiraSchema.parse({}), {});
     assert.equal(jiraTicketQuerySchema.parse({}).page, 1);
+    assert.equal(jiraTicketQuerySchema.parse({}).pageSize, 20);
+    assert.equal(jiraTicketQuerySchema.safeParse({ pageSize: '101' }).success, false);
     assert.equal(jiraTicketQuerySchema.safeParse({ status: 'deleted' }).success, false);
 });
 

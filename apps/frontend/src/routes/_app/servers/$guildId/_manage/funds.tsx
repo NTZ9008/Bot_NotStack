@@ -6,6 +6,7 @@ import { Plus } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { fundQuery, fundsQuery } from '@/api/fund';
 import { PageHeader } from '@/components/page-header';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import { PluginRouteGuard } from '@/components/plugin-gate';
 import { SearchInput } from '@/components/search-input';
 import { FundsBodySkeleton } from '@/components/skeleton/editor-pages';
@@ -75,6 +76,7 @@ function FundsPageContent() {
             return true;
         });
     }, [topics, topicSearch, topicFilter]);
+    const topicPage = usePagedItems(filteredTopics, { pageSize: 10, resetKey: `${topicFilter}:${topicSearch}` });
 
     const current = topics.find((t) => t.id === selectedId) ?? filteredTopics[0] ?? topics[0];
 
@@ -149,11 +151,12 @@ function FundsPageContent() {
                                         {tr('funds.noTopicsMatchTheSelectedFilters')}
                                     </div>
                                 ) : (
-                                    filteredTopics.map((topic) => (
+                                    topicPage.pageItems.map((topic) => (
                                         <TopicListItem key={topic.id} topic={topic} active={topic.id === current?.id} onSelect={() => select(topic.id)} />
                                     ))
                                 )}
                             </div>
+                            <Pagination {...topicPage.pagination} />
                         </aside>
                         {current && <TopicPanel key={current.id} topicId={current.id} onDeleted={() => select(undefined)} />}
                     </div>

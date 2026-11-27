@@ -22,15 +22,15 @@ import { formatBangkokShortTime, formatThaiDuration } from './timezone';
 
 const KIND_BADGE = byLang((): Record<CustomSummaryChannelGroup, { label: string; className: string }> => ({
     text: { label: tr('common.messages'), className: 'border-highlight/30 bg-highlight/15 text-highlight' },
-    voice: { label: tr('common.voiceChannels'), className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
+    voice: { label: tr('common.voiceChannels'), className: 'border-info/30 bg-info/15 text-info' },
     devops: { label: 'DevOps', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
 }));
 
 const SOURCE_BADGE: Record<CustomSummaryLogRow['source'], { label: string; className: string }> = {
-    activity: { label: 'Discord', className: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' },
+    activity: { label: 'Discord', className: 'border-success/30 bg-success/15 text-success' },
     pr: { label: 'GitHub PR', className: 'border-purple-500/30 bg-purple-500/15 text-purple-700 dark:text-purple-300' },
-    grafana: { label: 'Grafana', className: 'border-sky-500/30 bg-sky-500/15 text-sky-700 dark:text-sky-300' },
-    jira: { label: 'Jira', className: 'border-amber-500/30 bg-amber-500/15 text-amber-700 dark:text-amber-300' },
+    grafana: { label: 'Grafana', className: 'border-info/30 bg-info/15 text-info' },
+    jira: { label: 'Jira', className: 'border-warning/30 bg-warning/15 text-warning' },
 };
 
 /** ตารางสรุปแยกตามห้อง, อันดับผู้ใช้งานสูงสุด และตัวอย่างรายการ Log รายบรรทัด */
@@ -99,7 +99,7 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                 header: tr('customSummary.totalTalkTime'),
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
-                        <span className="inline-flex items-center gap-1.5 font-medium text-sky-700 dark:text-sky-400">
+                        <span className="inline-flex items-center gap-1.5 font-medium text-info">
                             <Volume2 className="size-3.5 shrink-0" />
                             {formatThaiDuration(row.original.voiceSeconds)}
                         </span>
@@ -128,10 +128,10 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                                 <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">PR {prCount}</span>
                             )}
                             {grafanaCount > 0 && (
-                                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-sky-700 dark:text-sky-300">Alert {grafanaCount}</span>
+                                <span className="rounded bg-info/15 px-1.5 py-0.5 text-info">Alert {grafanaCount}</span>
                             )}
                             {jiraCount > 0 && (
-                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">Jira {jiraCount}</span>
+                                <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">Jira {jiraCount}</span>
                             )}
                             {r.otherEvents > 0 && (
                                 <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
@@ -177,7 +177,7 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                 cell: ({ row }) =>
                     row.original.voiceSeconds > 0 ? (
                         <div>
-                            <div className="font-medium text-sky-700 dark:text-sky-400">{formatThaiDuration(row.original.voiceSeconds)}</div>
+                            <div className="font-medium text-info">{formatThaiDuration(row.original.voiceSeconds)}</div>
                             <div className="text-[11px] text-muted-foreground">
                                 {row.original.voiceSessions} {tr('customSummary.sessions')}
                             </div>
@@ -222,7 +222,7 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                                           </span>
                                       )}
                                       {jiraTickets > 0 && (
-                                          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">
+                                          <span className="rounded bg-warning/15 px-1.5 py-0.5 text-warning">
                                               {jiraTickets} Jira
                                           </span>
                                       )}
@@ -286,7 +286,7 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                            <FileSpreadsheet className="size-4 text-emerald-700 dark:text-emerald-400" />
+                            <FileSpreadsheet className="size-4 text-success" />
 
                             {tr('customSummary.table1SummaryByChannel')}
                         </CardTitle>
@@ -324,7 +324,7 @@ export function SummaryTables({ summary, installedPlugins }: { summary: CustomSu
                 <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                            <Trophy className="size-4 text-amber-700 dark:text-amber-400" />
+                            <Trophy className="size-4 text-warning" />
 
                             {tr('customSummary.table2TopUsers')}
                         </CardTitle>

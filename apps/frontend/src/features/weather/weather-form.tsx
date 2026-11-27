@@ -1,7 +1,8 @@
 import { tr, byLang } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
-import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
+import { ArrowDown, ArrowUp, MapPin, Search } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { weatherApi } from '@/api/weather';
@@ -170,7 +171,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                     patch((d) => void (d.content = (d.content ? `${d.content.trimEnd()} ${tag}` : tag).slice(0, meta.limits.maxContentLength)));
                 }}
             >
-                <SelectTrigger className="w-full max-w-sm">
+                <SelectTrigger className="w-full max-w-sm" aria-label={tr('weather.mentionARoleInTheMessage')}>
                     <SelectValue placeholder={tr('weather.mentionARoleInTheMessage')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">
@@ -225,7 +226,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                <MapPin className="size-6 shrink-0 text-rose-700 dark:text-rose-400" />
+                <MapPin className="size-6 shrink-0 text-destructive" />
                 <div className="min-w-0">
                     <p className="truncate font-medium">{location.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">
@@ -258,7 +259,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     <Button type="submit" disabled={searching || !query.trim()}>
-                        {searching ? <Loader2 className="animate-spin" /> : <Search />} {tr('common.search')}
+                        {searching ? <Spinner /> : <Search />} {tr('common.search')}
                     </Button>
                 </form>
             </Field>

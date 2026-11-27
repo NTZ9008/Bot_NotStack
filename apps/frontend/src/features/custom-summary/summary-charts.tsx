@@ -250,7 +250,7 @@ export function SummaryCharts({ summary, installedPlugins }: { summary: CustomSu
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                                    <Volume2 className="size-4 text-sky-700 dark:text-sky-400" />
+                                    <Volume2 className="size-4 text-info" />
 
                                     {tr('customSummary.voiceTimeShare')}
                                 </CardTitle>
@@ -281,7 +281,7 @@ export function SummaryCharts({ summary, installedPlugins }: { summary: CustomSu
                                                             const payload = item?.payload as (typeof voiceData)[number] | undefined;
                                                             return (
                                                                 <div className="space-y-0.5 text-xs">
-                                                                    <div className="font-semibold text-sky-700 dark:text-sky-400">
+                                                                    <div className="font-semibold text-info">
                                                                         {payload?.durationText ?? tr('common.min', { 0: value })}
                                                                     </div>
                                                                     {payload && (
@@ -430,7 +430,7 @@ export function SummaryCharts({ summary, installedPlugins }: { summary: CustomSu
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                                    <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400" />
+                                    <ShieldAlert className="size-4 text-warning" />
                                     {tr('customSummary.devopsStatistics')}
                                 </CardTitle>
                                 <CardDescription className="text-xs text-muted-foreground">

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +10,7 @@ import { uptimeOverviewQuery, useUptimeMutations } from '@/api/uptime';
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
-import { Activity, BarChart3, CheckCircle2, Clock, ExternalLink, Loader2, Pencil, Play, Plus, RefreshCw, Trash2, XCircle } from '@/components/icons';
+import { Activity, BarChart3, CheckCircle2, Clock, ExternalLink, Pencil, Play, Plus, RefreshCw, Trash2, XCircle } from '@/components/icons';
 import { PageHeader } from '@/components/page-header';
 import { PluginRouteGuard } from '@/components/plugin-gate';
 import { SearchInput } from '@/components/search-input';
@@ -40,12 +41,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/uptime')({
 
 function UptimePage() {
     return (
-        <PluginRouteGuard
-            pluginId="uptime-monitor"
-            help="uptime"
-            title={tr('common.uptimeMonitor')}
-            description={tr('common.monitorHttpUrlsAndSendDiscord')}
-        >
+        <PluginRouteGuard pluginId="uptime-monitor" help="uptime" title={tr('common.uptimeMonitor')} description={tr('common.monitorHttpUrlsAndSendDiscord')}>
             {() => <UptimePageContent />}
         </PluginRouteGuard>
     );
@@ -55,7 +51,7 @@ function StatusBadge({ target }: { target: UptimeTargetSummary }) {
     const t = useT();
     if (target.lastStatus === 'UP') {
         return (
-            <Badge className="gap-1 border border-emerald-500/30 bg-emerald-500/12 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-400">
+            <Badge className="gap-1 border border-success/30 bg-success/12 text-success hover:bg-success/15">
                 <CheckCircle2 className="size-3" />
                 {t('uptime.statusUp')}
                 {target.lastStatusCode ? ` (${target.lastStatusCode})` : ''}
@@ -197,9 +193,7 @@ function UptimePageContent() {
             cell: ({ row }) => (
                 <div className="text-xs tabular-nums">
                     <div className="font-medium text-foreground">{row.original.lastLatencyMs !== null ? `${row.original.lastLatencyMs} ms` : '—'}</div>
-                    {row.original.lastCheckedAt && (
-                        <div className="text-[11px] text-muted-foreground">{formatTimeAgo(row.original.lastCheckedAt)}</div>
-                    )}
+                    {row.original.lastCheckedAt && <div className="text-[11px] text-muted-foreground">{formatTimeAgo(row.original.lastCheckedAt)}</div>}
                 </div>
             ),
         },
@@ -208,9 +202,7 @@ function UptimePageContent() {
             header: t('uptime.uptime24h'),
             cell: ({ row }) => (
                 <div className="text-xs tabular-nums">
-                    <div className="font-semibold text-foreground">
-                        {row.original.uptime24hPercent !== null ? `${row.original.uptime24hPercent}%` : '—'}
-                    </div>
+                    <div className="font-semibold text-foreground">{row.original.uptime24hPercent !== null ? `${row.original.uptime24hPercent}%` : '—'}</div>
                     <div className="text-[11px] text-muted-foreground">
                         {row.original.up24hCount}/{row.original.checks24hCount}
                     </div>
@@ -247,7 +239,7 @@ function UptimePageContent() {
         },
         {
             id: 'actions',
-            header: '',
+            header: () => <span className="sr-only">{t('common.actions')}</span>,
             enableSorting: false,
             cell: ({ row }) => {
                 const item = row.original;
@@ -263,7 +255,7 @@ function UptimePageContent() {
                             disabled={isChecking}
                             onClick={() => void handleCheckNow(item)}
                         >
-                            {isChecking ? <Loader2 className="size-4 animate-spin" /> : <Play className="size-4" />}
+                            {isChecking ? <Spinner className="size-4" /> : <Play className="size-4" />}
                         </Button>
                         <Button
                             type="button"
@@ -312,7 +304,14 @@ function UptimePageContent() {
                 description={t('common.monitorHttpUrlsAndSendDiscord')}
                 actions={
                     <div className="flex items-center gap-2">
-                        <Button type="button" variant="outline" size="icon" aria-label={t('common.refresh')} disabled={isFetching} onClick={() => void refetch()}>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            aria-label={t('common.refresh')}
+                            disabled={isFetching}
+                            onClick={() => void refetch()}
+                        >
                             <RefreshCw className={isFetching ? 'size-4 animate-spin' : 'size-4'} />
                         </Button>
                         <Button type="button" onClick={openCreate} className="gap-1.5">
@@ -345,7 +344,7 @@ function UptimePageContent() {
                             <Card>
                                 <CardContent className="pt-4">
                                     <div className="text-xs font-medium text-muted-foreground">{t('uptime.statusUp')}</div>
-                                    <div className="mt-1 text-2xl font-bold text-emerald-600 tabular-nums dark:text-emerald-400">{summary.upCount}</div>
+                                    <div className="mt-1 text-2xl font-bold text-success tabular-nums">{summary.upCount}</div>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -358,7 +357,7 @@ function UptimePageContent() {
                                 <CardContent className="pt-4">
                                     <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
                                         <span>{t('uptime.overallUptime24h')}</span>
-                                        <Activity className="size-3.5 text-rose-500" />
+                                        <Activity className="size-3.5 text-destructive" />
                                     </div>
                                     <div className="mt-1 text-2xl font-bold tabular-nums">
                                         {summary.overallUptime24hPercent !== null ? `${summary.overallUptime24hPercent}%` : '—'}
@@ -380,25 +379,10 @@ function UptimePageContent() {
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <SearchInput
-                                    value={search}
-                                    onChange={setSearch}
-                                    placeholder={t('uptime.searchPlaceholder')}
-                                    className="w-full sm:w-72"
-                                />
+                                <SearchInput value={search} onChange={setSearch} placeholder={t('uptime.searchPlaceholder')} className="w-full sm:w-72" />
                             </div>
-                            <DataTable
-                                label={t('common.uptimeMonitor')}
-                                columns={columns}
-                                data={targets}
-                                globalFilter={search}
-                            />
-                            <LatencyChartCard
-                                guildId={guildId}
-                                targets={targets}
-                                selectedTargetId={selectedTargetId}
-                                onSelectTarget={setSelectedTargetId}
-                            />
+                            <DataTable label={t('common.uptimeMonitor')} columns={columns} data={targets} globalFilter={search} />
+                            <LatencyChartCard guildId={guildId} targets={targets} selectedTargetId={selectedTargetId} onSelectTarget={setSelectedTargetId} />
                         </>
                     )}
                 </div>

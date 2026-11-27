@@ -1,8 +1,10 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import { roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Loader2, Trash2, Users, X } from '@/components/icons';
+import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Trash2, Users, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -149,6 +151,7 @@ export function MembersTab({
         }
         return filtered;
     }, [topic.members, search, statusFilter, sortBy]);
+    const memberPage = usePagedItems(filteredMembers, { resetKey: `${search}:${statusFilter}:${sortBy}` });
 
     const validSelectedIds = useMemo(() => {
         const memberIdSet = new Set(topic.members.map((m) => m.id));
@@ -218,7 +221,7 @@ export function MembersTab({
                                 disabled={!roleId || add.isPending}
                                 onClick={() => add.mutate({ roleId })}
                             >
-                                {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} {tr('funds.addWholeRole')}
+                                {add.isPending ? <Spinner /> : <Users />} {tr('funds.addWholeRole')}
                             </Button>
                         </div>
                     </Field>
@@ -255,7 +258,7 @@ export function MembersTab({
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                             <SearchInput value={search} onChange={setSearch} placeholder={tr('funds.searchNameOrUserId')} className="w-full sm:w-56" />
                             <Select value={sortBy} onValueChange={(v) => setSortBy(v as MemberSort)}>
-                                <SelectTrigger className="h-8 w-full text-xs sm:w-40">
+                                <SelectTrigger aria-label={tr('common.sortBy')} className="h-8 w-full text-xs sm:w-40">
                                     <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                     <SelectValue />
                                 </SelectTrigger>
@@ -278,14 +281,14 @@ export function MembersTab({
                                 {selectedUnpaidMembers.length > 0 && (
                                     <span className="text-muted-foreground tabular-nums">
                                         {tr('funds.outstanding')} {selectedUnpaidMembers.length} {tr('funds.peopleTotal')}{' '}
-                                        <span className="font-semibold text-amber-700 dark:text-amber-400">{formatBaht(selectedRemainingTotal)}</span>)
+                                        <span className="font-semibold text-warning">{formatBaht(selectedRemainingTotal)}</span>)
                                     </span>
                                 )}
                             </div>
                             <div className="flex flex-wrap items-center gap-1.5">
                                 {selectedUnpaidMembers.length > 0 && (
                                     <Button type="button" size="xs" disabled={bulkPayFull.isPending} onClick={() => void handleBulkPayFull()}>
-                                        {bulkPayFull.isPending ? <Loader2 className="animate-spin" /> : <CheckCheck />}
+                                        {bulkPayFull.isPending ? <Spinner /> : <CheckCheck />}
                                         {tr('funds.markEveryoneSelectedAsPaid')}
                                         {formatBaht(selectedRemainingTotal)})
                                     </Button>
@@ -330,7 +333,7 @@ export function MembersTab({
                                     </div>
                                 )}
 
-                                {filteredMembers.map((m) => {
+                                {memberPage.pageItems.map((m) => {
                                     const isPayingThis = payingMemberId === m.id;
                                     const isSelected = validSelectedIds.includes(m.id);
                                     const payCount = paymentCountByMember.get(m.id) ?? 0;
@@ -394,7 +397,7 @@ export function MembersTab({
                                                     <p
                                                         className={cn(
                                                             'py-0.5 text-xs tabular-nums',
-                                                            m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
+                                                            m.remaining > 0 ? 'font-semibold text-warning' : 'text-muted-foreground',
                                                         )}
                                                     >
                                                         {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
@@ -416,12 +419,12 @@ export function MembersTab({
                                                         <Button
                                                             size="xs"
                                                             variant="secondary"
-                                                            className="flex-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                            className="flex-1 border-success/30 bg-success/10 text-success hover:bg-success/20"
                                                             disabled={topic.closed || payFull.isPending}
                                                             onClick={() => payFull.mutate(m)}
                                                             title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}
                                                         >
-                                                            {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} {tr('funds.paidInFull')}
+                                                            {isPayingThis ? <Spinner /> : <CheckCheck />} {tr('funds.paidInFull')}
                                                         </Button>
                                                     )}
                                                     <Button
@@ -464,7 +467,7 @@ export function MembersTab({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredMembers.map((m) => {
+                                        {memberPage.pageItems.map((m) => {
                                             const isPayingThis = payingMemberId === m.id;
                                             const isSelected = validSelectedIds.includes(m.id);
                                             const payCount = paymentCountByMember.get(m.id) ?? 0;
@@ -510,7 +513,7 @@ export function MembersTab({
                                                     <td
                                                         className={cn(
                                                             'px-3 py-2.5 text-right tabular-nums',
-                                                            m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
+                                                            m.remaining > 0 ? 'font-semibold text-warning' : 'text-muted-foreground',
                                                         )}
                                                     >
                                                         {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
@@ -529,13 +532,12 @@ export function MembersTab({
                                                                 <Button
                                                                     size="xs"
                                                                     variant="secondary"
-                                                                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                                    className="border-success/30 bg-success/10 text-success hover:bg-success/20"
                                                                     disabled={topic.closed || payFull.isPending}
                                                                     onClick={() => payFull.mutate(m)}
                                                                     title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}
                                                                 >
-                                                                    {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />}{' '}
-                                                                    {tr('funds.paidInFull')}
+                                                                    {isPayingThis ? <Spinner /> : <CheckCheck />} {tr('funds.paidInFull')}
                                                                 </Button>
                                                             )}
                                                             <Button
@@ -556,6 +558,7 @@ export function MembersTab({
                                     </tbody>
                                 </table>
                             </div>
+                            <Pagination {...memberPage.pagination} />
                         </>
                     )}
                 </>
