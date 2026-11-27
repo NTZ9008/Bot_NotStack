@@ -1,11 +1,12 @@
 import crypto from 'node:crypto';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Guild } from 'discord.js';
 import type { Env } from '../config/env.validation';
 import { DiscordService } from '../discord/discord.service';
 import { GITHUB_POINT } from '../live/live-geo.util';
 import { LiveService } from '../live/live.service';
+import { PluginsService } from '../plugins/plugins.service';
 import { PrismaService } from '../prisma/prisma.service';
 import type {
     CheckRunEvent,
@@ -40,6 +41,7 @@ export class PrBotService {
         config: ConfigService<Env, true>,
         private readonly stats: PrBotStatsService,
         private readonly live: LiveService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {
         this.legacySecret = config.get('GITHUB_WEBHOOK_SECRET', { infer: true }) ?? '';
     }
@@ -65,6 +67,7 @@ export class PrBotService {
     // event ที่ต้องเลือกใน GitHub webhook: Pull requests, Pull request reviews, Pull request review comments,
     // Issue comments, Check runs, Statuses — event อื่น (เช่น ping) ไม่ทำอะไร
     async handle(guildId: string, event: string, payload: unknown, deliveryKey?: string): Promise<void> {
+        if (this.plugins && !(await this.plugins.isInstalled(guildId, 'github-pr'))) return;
         if (deliveryKey && !this.discord.ready) throw new Error('Discord unavailable; retry webhook');
         switch (event) {
             case 'pull_request':

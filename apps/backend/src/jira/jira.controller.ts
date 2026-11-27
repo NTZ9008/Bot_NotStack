@@ -5,6 +5,7 @@ import type { AuditContext } from '../common/interfaces/app-request.interface';
 import { requireId } from '../common/utils/parse.util';
 import { GuildId } from '../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../guilds/decorators/guild-route.decorator';
+import { RequirePlugin } from '../plugins/decorators/require-plugin.decorator';
 import { JiraTicketQueryDto } from './dto/jira-ticket-query.dto';
 import { TestJiraDto } from './dto/test-jira.dto';
 import { UpdateJiraDto } from './dto/update-jira.dto';
@@ -20,6 +21,7 @@ import { JiraService } from './jira.service';
 // POST tickets/:id/close     ปิดห้องส่วนตัวจากหน้าเว็บ
 // ==========================================
 @GuildRoute()
+@RequirePlugin('jira-card')
 @Controller('guilds/:guildId/jira')
 export class JiraController {
     constructor(private readonly jira: JiraService) {}

@@ -37,10 +37,11 @@ export function AppSidebar() {
     const { isMobile, setOpenMobile } = useSidebar();
     const bot = info?.bot ?? DEFAULT_BOT;
     const access = guild?.access;
+    const installedPlugins = guild?.installedPlugins;
 
     const tasks = useMemo(
         () =>
-            visibleNavGroups(isAdmin, guildId && access ? { access } : null)
+            visibleNavGroups(isAdmin, guildId && access ? { access, installedPlugins } : null)
                 .flatMap((group) => group.items)
                 .map((item) => ({
                     key: `${guildId ?? ''}:${item.to}`,
@@ -49,7 +50,7 @@ export function AppSidebar() {
                         if (active !== item.to) await router.preloadRoute({ to: item.to, params: item.guild ? { guildId } : {}, search: {} });
                     },
                 })),
-        [router, isAdmin, guildId, access],
+        [router, isAdmin, guildId, access, installedPlugins],
     );
     const prioritize = usePreloadTasks(tasks);
 

@@ -1,16 +1,22 @@
-import { Body, Controller, Headers, HttpStatus, Logger, Param, Post, Res } from '@nestjs/common';
-import { isSnowflake } from '@notstack/shared';
+import { Body, Controller, Headers, HttpStatus, Logger, Optional, Param, Post, Res } from '@nestjs/common';
+import { isSnowflake, PLUGIN_NOT_INSTALLED_CODE } from '@notstack/shared';
 import type { Response } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 import { SignedWebhook } from '../auth/guards/csrf.guard';
+import { RequirePlugin } from '../plugins/decorators/require-plugin.decorator';
+import { PluginsService } from '../plugins/plugins.service';
 import { GrafanaService } from './grafana.service';
 
 @Public()
 @SignedWebhook()
+@RequirePlugin('grafana-alert')
 @Controller('webhook/grafana')
 export class GrafanaWebhookController {
     private readonly logger = new Logger('GrafanaWebhook');
-    constructor(private readonly grafana: GrafanaService) {}
+    constructor(
+        private readonly grafana: GrafanaService,
+        @Optional() private readonly plugins?: PluginsService,
+    ) {}
 
     @Post()
     async legacy(@Body() rawBody: unknown, @Headers('authorization') authorization: unknown, @Res() response: Response): Promise<void> {
@@ -31,6 +37,14 @@ export class GrafanaWebhookController {
     }
 
     private async receive(guildId: string, rawBody: unknown, authorization: unknown, response: Response): Promise<void> {
+        if (this.plugins && !(await this.plugins.isInstalled(guildId, 'grafana-alert'))) {
+            response.status(HttpStatus.FORBIDDEN).json({
+                error: 'ต้องติดตั้งปลั๊กอิน "แจ้งเตือน Grafana Alert" ก่อนจึงจะใช้งานฟีเจอร์นี้ได้',
+                code: PLUGIN_NOT_INSTALLED_CODE,
+                pluginId: 'grafana-alert',
+            });
+            return;
+        }
         if (!(await this.grafana.verifyWebhookAuthorization(guildId, authorization))) {
             this.logger.warn(`Rejected Grafana webhook with invalid authorization for guild ${guildId}`);
             response.sendStatus(HttpStatus.UNAUTHORIZED);

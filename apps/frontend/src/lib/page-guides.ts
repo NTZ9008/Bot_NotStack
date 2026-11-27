@@ -25,6 +25,57 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.changingTheTimeRangeAndFilters'),
                 tip: tr('common.ifTheChartsAreEmptyTry'),
             },
+            plugins: {
+                title: tr('common.plugins'),
+                summary: tr('common.installAndManageAddOnFeatures'),
+                steps: [
+                    tr('common.browseThePluginCatalogAndPick'),
+                    tr('common.pressInstallOnPluginsThis'),
+                    tr('common.installedPluginsAppearInThe'),
+                ],
+                saving: tr('common.installingOrUninstallingAppliesPer'),
+                tip: tr('common.uninstallingHidesTheFeatureAnd'),
+            },
+            uptime: {
+                title: tr('common.uptimeMonitor'),
+                summary: tr('common.monitorHttpUrlsAndSendDiscord'),
+                steps: [
+                    tr('common.addYourWebOrApiEndpoint'),
+                    tr('common.pickAnAlertChannelAndCheck'),
+                    tr('common.checkLatencyAndUptimeChartsBelow'),
+                ],
+                saving: tr('common.targetsSaveImmediatelyAndRunOn'),
+                tip: tr('common.discordAlertsOnlySendOnStatus'),
+            },
+            reminders: {
+                title: tr('common.scheduledReminders'),
+                summary: tr('common.scheduleMessagesAndEmbedsToDiscord'),
+                steps: [
+                    tr('common.createReminderWithChannelAndMessage'),
+                    tr('common.chooseOnceDailyWeeklyOrCron'),
+                    tr('common.previewAndTestSendBeforeSaving'),
+                ],
+                saving: tr('common.remindersSaveImmediatelyAndRunIn'),
+                tip: tr('common.onceRemindersDisableAutomaticallyAfterSending'),
+            },
+            reactionRoles: {
+                title: tr('common.reactionRoles'),
+                summary: tr('common.letMembersPickRolesWithButtonsOrMenus'),
+                steps: [
+                    tr('common.createPanelPickChannelAndMode'),
+                    tr('common.addRoleButtonsOrMenuOptions'),
+                    tr('common.pressPublishToSendOrSyncDiscord'),
+                ],
+                saving: tr('common.savePanelThenPressPublishToSync'),
+                tip: tr('common.botRoleMustBeAboveManagedRoles'),
+            },
+            tickets: {
+                title: tr('common.ticketSystem'),
+                summary: tr('tickets.pageDescription'),
+                steps: [tr('tickets.guideStep1'), tr('tickets.guideStep2'), tr('tickets.guideStep3')],
+                saving: tr('tickets.guideSaving'),
+                tip: tr('tickets.guideTip'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

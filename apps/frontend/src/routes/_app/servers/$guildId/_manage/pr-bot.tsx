@@ -11,6 +11,7 @@ import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
 import { PageHeader } from '@/components/page-header';
+import { PluginRouteGuard } from '@/components/plugin-gate';
 import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -21,11 +22,13 @@ import { PrBotStatsCard } from '@/features/pr-bot/stats-card';
 import { useGuild, useGuildId } from '@/hooks/use-guild';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/pr-bot')({
-    loader: ({ context, params }) =>
-        Promise.all([
+    loader: ({ context, params }) => {
+        if (!context.guild.installedPlugins?.includes('github-pr')) return;
+        return Promise.all([
             context.queryClient.ensureQueryData(prBotQuery(params.guildId)),
             context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
-        ]),
+        ]);
+    },
     component: PrBotPage,
 });
 
@@ -267,6 +270,19 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
 }
 
 function PrBotPage() {
+    return (
+        <PluginRouteGuard
+            pluginId="github-pr"
+            help="prBot"
+            title={tr('common.githubPrAlerts')}
+            description={tr('prBot.setThePullRequestAlertChannel')}
+        >
+            {() => <PrBotPageContent />}
+        </PluginRouteGuard>
+    );
+}
+
+function PrBotPageContent() {
     const guildId = useGuildId();
     const { data, isLoading, error } = useQuery(prBotQuery(guildId));
     return (

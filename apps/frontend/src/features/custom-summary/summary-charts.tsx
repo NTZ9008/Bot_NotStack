@@ -1,6 +1,6 @@
 import { tr, byLang } from '../../lib/i18n';
-import type { CustomSummaryResponse } from '@notstack/shared';
-import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Volume2 } from '@/components/icons';
+import type { CustomSummaryResponse, PluginId } from '@notstack/shared';
+import { BarChart3, GitPullRequest, ShieldAlert, TrendingUp, Users, Volume2 } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { EmptyState } from '@/components/states';
@@ -9,16 +9,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { cn } from '@/lib/utils';
 import { formatThaiDuration } from './timezone';
-
-const TIMELINE_CONFIG = byLang(
-    () =>
-        ({
-            messages: { label: tr('common.messagesSent'), color: '#10b981' },
-            voiceMinutes: { label: tr('customSummary.voiceTimeMinutes'), color: '#0ea5e9' },
-            prTotal: { label: 'GitHub PR', color: '#a855f7' },
-            devopsTotal: { label: tr('customSummary.devopsMembers'), color: '#f59e0b' },
-        }) satisfies ChartConfig,
-);
 
 const VOICE_CONFIG = byLang(
     () =>
@@ -36,31 +26,66 @@ const PR_CONFIG = byLang(
         }) satisfies ChartConfig,
 );
 
-const DEVOPS_CONFIG = byLang(
+const SERVER_JOIN_LEAVE_CONFIG = byLang(
     () =>
         ({
-            grafanaAlerts: { label: 'Grafana Alert', color: '#0ea5e9' },
-            jiraCards: { label: 'Jira Card', color: '#f59e0b' },
             memberJoin: { label: tr('common.joinedServer'), color: '#10b981' },
             memberLeave: { label: tr('common.leftServer'), color: '#ef4444' },
         }) satisfies ChartConfig,
 );
 
-/** ชุดกราฟเปรียบเทียบกิจกรรมตามโมดูลที่เลือก */
-export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
+/** ชุดกราฟเปรียบเทียบกิจกรรมตามโมดูล Core และปลั๊กอินที่ติดตั้งจริง */
+export function SummaryCharts({ summary, installedPlugins }: { summary: CustomSummaryResponse; installedPlugins?: PluginId[] }) {
     const [chartMode, setChartMode] = useState<'area' | 'bar'>('area');
     const [prMode, setPrMode] = useState<'repo' | 'channel'>('repo');
 
     const enabled = useMemo(() => new Set(summary.filters.modules), [summary.filters.modules]);
+    const pluginSource = installedPlugins ?? summary.installedPlugins;
+    const hasPlugin = (id: PluginId) => (pluginSource ? pluginSource.includes(id) : true);
+    const showVoice = enabled.has('voice');
+    const showMessages = enabled.has('messages');
+    const showServer = enabled.has('server');
+    const prInstalled = hasPlugin('github-pr');
+    const grafanaInstalled = hasPlugin('grafana-alert');
+    const jiraInstalled = hasPlugin('jira-card');
+    const showPr = enabled.has('githubPr') && prInstalled;
+    const showGrafana = enabled.has('devops') && grafanaInstalled;
+    const showJira = enabled.has('devops') && jiraInstalled;
+    const showDevops = showGrafana || showJira;
+    const anyPluginInstalled = prInstalled || grafanaInstalled || jiraInstalled;
+
+    const timelineConfig = useMemo<ChartConfig>(() => {
+        const cfg: ChartConfig = {
+            messages: { label: tr('common.messagesSent'), color: '#10b981' },
+            voiceMinutes: { label: tr('customSummary.voiceTimeMinutes'), color: '#0ea5e9' },
+            serverTotal: { label: tr('customSummary.membersJoiningLeaving'), color: '#6366f1' },
+        };
+        if (showPr) cfg.prTotal = { label: 'GitHub PR', color: '#a855f7' };
+        if (showDevops) {
+            cfg.devopsTotal = {
+                label: showGrafana && showJira ? 'DevOps' : showGrafana ? 'Grafana Alert' : 'Jira Card',
+                color: '#f59e0b',
+            };
+        }
+        return cfg;
+    }, [showPr, showDevops, showGrafana, showJira]);
+
+    const devopsConfig = useMemo<ChartConfig>(() => {
+        const cfg: ChartConfig = {};
+        if (showGrafana) cfg.grafanaAlerts = { label: 'Grafana Alert', color: '#0ea5e9' };
+        if (showJira) cfg.jiraCards = { label: 'Jira Card', color: '#f59e0b' };
+        return cfg;
+    }, [showGrafana, showJira]);
 
     const timelineData = useMemo(
         () =>
             summary.timeline.map((pt) => ({
                 ...pt,
+                serverTotal: pt.memberJoin + pt.memberLeave,
                 prTotal: pt.prSent + pt.prMerged + pt.prClosed,
-                devopsTotal: pt.grafanaAlerts + pt.jiraCards + pt.memberJoin + pt.memberLeave,
+                devopsTotal: (showGrafana ? pt.grafanaAlerts : 0) + (showJira ? pt.jiraCards : 0),
             })),
-        [summary.timeline],
+        [summary.timeline, showGrafana, showJira],
     );
 
     const voiceData = useMemo(
@@ -92,7 +117,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                             {tr('customSummary.activityTrendOverTime')}
                             {summary.range.interval === 'hour' ? tr('common.hourly') : tr('common.daily')})
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.compareMessageVolumeVoiceTimeGithub')}</CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">
+                            {anyPluginInstalled ? tr('customSummary.compareMessageVolumeVoiceTimeGithub') : tr('customSummary.compareCoreTrendDesc')}
+                        </CardDescription>
                     </div>
                     <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
                         <Button
@@ -129,7 +156,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                     {timelineData.length === 0 ? (
                         <EmptyState>{tr('customSummary.noDataPointsInTheSelected')}</EmptyState>
                     ) : (
-                        <ChartContainer config={TIMELINE_CONFIG()} className="h-[280px] w-full">
+                        <ChartContainer config={timelineConfig} className="h-[280px] w-full">
                             {chartMode === 'area' ? (
                                 <AreaChart data={timelineData} margin={{ left: -12, right: 10, top: 8 }}>
                                     <defs>
@@ -140,6 +167,10 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                         <linearGradient id="csFillVoice" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.35} />
                                             <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.02} />
+                                        </linearGradient>
+                                        <linearGradient id="csFillServer" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.35} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
                                         </linearGradient>
                                         <linearGradient id="csFillPr" x1="0" y1="0" x2="0" y2="1">
                                             <stop offset="5%" stopColor="#a855f7" stopOpacity={0.35} />
@@ -167,16 +198,17 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                     />
                                     <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                     <ChartLegend content={<ChartLegendContent />} />
-                                    {enabled.has('messages') && (
+                                    {showMessages && (
                                         <Area type="monotone" dataKey="messages" stroke="#10b981" strokeWidth={2} fill="url(#csFillMsg)" />
                                     )}
-                                    {enabled.has('voice') && (
+                                    {showVoice && (
                                         <Area type="monotone" dataKey="voiceMinutes" stroke="#0ea5e9" strokeWidth={2} fill="url(#csFillVoice)" />
                                     )}
-                                    {enabled.has('githubPr') && (
-                                        <Area type="monotone" dataKey="prTotal" stroke="#a855f7" strokeWidth={2} fill="url(#csFillPr)" />
+                                    {showServer && (
+                                        <Area type="monotone" dataKey="serverTotal" stroke="#6366f1" strokeWidth={2} fill="url(#csFillServer)" />
                                     )}
-                                    {enabled.has('devopsOther') && (
+                                    {showPr && <Area type="monotone" dataKey="prTotal" stroke="#a855f7" strokeWidth={2} fill="url(#csFillPr)" />}
+                                    {showDevops && (
                                         <Area type="monotone" dataKey="devopsTotal" stroke="#f59e0b" strokeWidth={2} fill="url(#csFillDevops)" />
                                     )}
                                 </AreaChart>
@@ -199,10 +231,11 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                                     />
                                     <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                     <ChartLegend content={<ChartLegendContent />} />
-                                    {enabled.has('messages') && <Bar dataKey="messages" fill="#10b981" radius={[4, 4, 0, 0]} />}
-                                    {enabled.has('voice') && <Bar dataKey="voiceMinutes" fill="#0ea5e9" radius={[4, 4, 0, 0]} />}
-                                    {enabled.has('githubPr') && <Bar dataKey="prTotal" fill="#a855f7" radius={[4, 4, 0, 0]} />}
-                                    {enabled.has('devopsOther') && <Bar dataKey="devopsTotal" fill="#f59e0b" radius={[4, 4, 0, 0]} />}
+                                    {showMessages && <Bar dataKey="messages" fill="#10b981" radius={[4, 4, 0, 0]} />}
+                                    {showVoice && <Bar dataKey="voiceMinutes" fill="#0ea5e9" radius={[4, 4, 0, 0]} />}
+                                    {showServer && <Bar dataKey="serverTotal" fill="#6366f1" radius={[4, 4, 0, 0]} />}
+                                    {showPr && <Bar dataKey="prTotal" fill="#a855f7" radius={[4, 4, 0, 0]} />}
+                                    {showDevops && <Bar dataKey="devopsTotal" fill="#f59e0b" radius={[4, 4, 0, 0]} />}
                                 </BarChart>
                             )}
                         </ChartContainer>
@@ -211,9 +244,9 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
             </Card>
 
             {/* 2. กราฟเปรียบเทียบห้องเสียง และ GitHub PR */}
-            {(enabled.has('voice') || enabled.has('githubPr')) && (
-                <div className={cn('grid gap-4', enabled.has('voice') && enabled.has('githubPr') ? 'lg:grid-cols-2' : 'grid-cols-1')}>
-                    {enabled.has('voice') && (
+            {(showVoice || showPr) && (
+                <div className={cn('grid gap-4', showVoice && showPr ? 'lg:grid-cols-2' : 'grid-cols-1')}>
+                    {showVoice && (
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base text-foreground">
@@ -271,7 +304,7 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                         </Card>
                     )}
 
-                    {enabled.has('githubPr') && (
+                    {showPr && (
                         <Card className="rounded-xl border-border bg-card">
                             <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
@@ -351,45 +384,91 @@ export function SummaryCharts({ summary }: { summary: CustomSummaryResponse }) {
                 </div>
             )}
 
-            {/* 3. กราฟ DevOps & สมาชิกเข้า/ออก (เมื่อเปิด devopsOther) */}
-            {enabled.has('devopsOther') && timelineData.length > 0 && (
-                <Card className="rounded-xl border-border bg-card">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base text-foreground">
-                            <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400" />
+            {/* 3. กราฟสมาชิกเข้า/ออกเซิร์ฟเวอร์ (Core) และกราฟ DevOps (Plugin) แยกออกจากกัน */}
+            {(showServer || showDevops) && timelineData.length > 0 && (
+                <div className={cn('grid gap-4', showServer && showDevops ? 'lg:grid-cols-2' : 'grid-cols-1')}>
+                    {showServer && (
+                        <Card className="rounded-xl border-border bg-card">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                                    <Users className="size-4 text-indigo-700 dark:text-indigo-400" />
+                                    {tr('customSummary.serverJoinLeaveTrend')}
+                                </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    {tr('customSummary.serverJoinLeaveTrendDesc')}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer config={SERVER_JOIN_LEAVE_CONFIG()} className="h-[220px] w-full">
+                                    <BarChart data={timelineData} margin={{ left: -12, right: 10 }}>
+                                        <CartesianGrid vertical={false} stroke="var(--border)" />
+                                        <XAxis
+                                            dataKey="label"
+                                            tickLine={false}
+                                            axisLine={false}
+                                            minTickGap={20}
+                                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                                        />
+                                        <YAxis
+                                            tickLine={false}
+                                            axisLine={false}
+                                            width={36}
+                                            allowDecimals={false}
+                                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                                        />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartLegend content={<ChartLegendContent />} />
+                                        <Bar dataKey="memberJoin" fill="#10b981" radius={[3, 3, 0, 0]} />
+                                        <Bar dataKey="memberLeave" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                            {tr('customSummary.devopsServerJoinLeaveStatistics')}
-                        </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.grafanaAlertJiraCardAndMember')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ChartContainer config={DEVOPS_CONFIG()} className="h-[220px] w-full">
-                            <BarChart data={timelineData} margin={{ left: -12, right: 10 }}>
-                                <CartesianGrid vertical={false} stroke="var(--border)" />
-                                <XAxis
-                                    dataKey="label"
-                                    tickLine={false}
-                                    axisLine={false}
-                                    minTickGap={20}
-                                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                                />
-                                <YAxis
-                                    tickLine={false}
-                                    axisLine={false}
-                                    width={36}
-                                    allowDecimals={false}
-                                    tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
-                                />
-                                <ChartTooltip content={<ChartTooltipContent />} />
-                                <ChartLegend content={<ChartLegendContent />} />
-                                <Bar dataKey="grafanaAlerts" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="jiraCards" fill="#f59e0b" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="memberJoin" fill="#10b981" radius={[3, 3, 0, 0]} />
-                                <Bar dataKey="memberLeave" fill="#ef4444" radius={[3, 3, 0, 0]} />
-                            </BarChart>
-                        </ChartContainer>
-                    </CardContent>
-                </Card>
+                    {showDevops && (
+                        <Card className="rounded-xl border-border bg-card">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base text-foreground">
+                                    <ShieldAlert className="size-4 text-amber-700 dark:text-amber-400" />
+                                    {tr('customSummary.devopsStatistics')}
+                                </CardTitle>
+                                <CardDescription className="text-xs text-muted-foreground">
+                                    {showGrafana && showJira
+                                        ? tr('customSummary.devopsChartDescBoth')
+                                        : showGrafana
+                                          ? tr('customSummary.devopsChartDescGrafana')
+                                          : tr('customSummary.devopsChartDescJira')}
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ChartContainer config={devopsConfig} className="h-[220px] w-full">
+                                    <BarChart data={timelineData} margin={{ left: -12, right: 10 }}>
+                                        <CartesianGrid vertical={false} stroke="var(--border)" />
+                                        <XAxis
+                                            dataKey="label"
+                                            tickLine={false}
+                                            axisLine={false}
+                                            minTickGap={20}
+                                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                                        />
+                                        <YAxis
+                                            tickLine={false}
+                                            axisLine={false}
+                                            width={36}
+                                            allowDecimals={false}
+                                            tick={{ fill: 'var(--muted-foreground)', fontSize: 11 }}
+                                        />
+                                        <ChartTooltip content={<ChartTooltipContent />} />
+                                        <ChartLegend content={<ChartLegendContent />} />
+                                        {showGrafana && <Bar dataKey="grafanaAlerts" fill="#0ea5e9" radius={[3, 3, 0, 0]} />}
+                                        {showJira && <Bar dataKey="jiraCards" fill="#f59e0b" radius={[3, 3, 0, 0]} />}
+                                    </BarChart>
+                                </ChartContainer>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             )}
         </div>
     );

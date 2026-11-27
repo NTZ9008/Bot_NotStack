@@ -620,3 +620,170 @@ model WebhookDelivery {
   @@index([status, availableAt])
   @@map("webhook_deliveries")
 }
+
+// ==========================================
+// 🧩 PLUGINS — สถานะการติดตั้งปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์
+// ==========================================
+model GuildPlugin {
+  guildId     String   @map("guild_id")
+  pluginId    String   @map("plugin_id")
+  enabled     Boolean  @default(true)
+  installedBy String?  @map("installed_by")
+  installedAt DateTime @default(now()) @map("installed_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@id([guildId, pluginId])
+  @@index([guildId, enabled])
+  @@map("guild_plugins")
+}
+
+// ==========================================
+// 💓 UPTIME MONITOR — ตรวจสอบสถานะเว็บไซต์ / API อัตโนมัติ
+// ==========================================
+model UptimeTarget {
+  id              Int              @id @default(autoincrement())
+  guildId         String           @map("guild_id")
+  name            String
+  url             String
+  intervalMinutes Int              @map("interval_minutes")
+  channelId       String           @map("channel_id")
+  mentionRoleId   String?          @map("mention_role_id")
+  enabled         Boolean          @default(true)
+  lastStatus      String           @default("UNKNOWN") @map("last_status")
+  lastStatusCode  Int?             @map("last_status_code")
+  lastLatencyMs   Int?             @map("last_latency_ms")
+  lastCheckedAt   DateTime?        @map("last_checked_at") @db.Timestamptz(3)
+  nextCheckAt     DateTime         @default(now()) @map("next_check_at") @db.Timestamptz(3)
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  logs UptimeCheckLog[]
+
+  @@index([guildId])
+  @@index([enabled, nextCheckAt])
+  @@map("uptime_targets")
+}
+
+model UptimeCheckLog {
+  id         Int          @id @default(autoincrement())
+  targetId   Int          @map("target_id")
+  status     String
+  statusCode Int?         @map("status_code")
+  latencyMs  Int?         @map("latency_ms")
+  error      String?
+  checkedAt  DateTime     @default(now()) @map("checked_at") @db.Timestamptz(3)
+
+  target UptimeTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+
+  @@index([targetId, checkedAt])
+  @@index([checkedAt])
+  @@map("uptime_check_logs")
+}
+
+// ==========================================
+// ⏰ SCHEDULED REMINDERS — ระบบแจ้งเตือนและนัดหมายตามเวลาแยกตามเซิร์ฟเวอร์
+// ==========================================
+model ScheduledReminder {
+  id             Int       @id @default(autoincrement())
+  guildId        String    @map("guild_id")
+  title          String
+  channelId      String    @map("channel_id")
+  message        String
+  useEmbed       Boolean   @default(true) @map("use_embed")
+  embedColor     String?   @map("embed_color")
+  mentionRoleId  String?   @map("mention_role_id")
+  scheduleType   String    @map("schedule_type")
+  cronExpression String?   @map("cron_expression")
+  runAt          DateTime? @map("run_at") @db.Timestamptz(3)
+  timezone       String    @default("Asia/Bangkok")
+  enabled        Boolean   @default(true)
+  nextRunAt      DateTime? @map("next_run_at") @db.Timestamptz(3)
+  lastRunAt      DateTime? @map("last_run_at") @db.Timestamptz(3)
+  lastError      String?   @map("last_error")
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@index([guildId])
+  @@index([nextRunAt])
+  @@index([enabled, nextRunAt])
+  @@map("scheduled_reminders")
+}
+
+// ==========================================
+// 🎭 REACTION ROLES — แผงรับยศอัตโนมัติด้วยปุ่มกดและเมนูเลือกแยกตามเซิร์ฟเวอร์
+// ==========================================
+model ReactionRolePanel {
+  id            Int                @id @default(autoincrement())
+  guildId       String             @map("guild_id")
+  channelId     String             @map("channel_id")
+  messageId     String?            @map("message_id")
+  title         String
+  description   String             @default("")
+  embedColor    String             @default("#5865f2") @map("embed_color")
+  mode          String             @default("BUTTON")
+  allowMultiple Boolean            @default(true) @map("allow_multiple")
+  createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  items ReactionRoleItem[]
+
+  @@index([guildId])
+  @@index([channelId, messageId])
+  @@map("reaction_role_panels")
+}
+
+model ReactionRoleItem {
+  id          Int               @id @default(autoincrement())
+  panelId     Int               @map("panel_id")
+  roleId      String            @map("role_id")
+  label       String
+  emoji       String?
+  buttonStyle String            @default("PRIMARY") @map("button_style")
+  sortOrder   Int               @default(0) @map("sort_order")
+
+  panel ReactionRolePanel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, sortOrder])
+  @@map("reaction_role_items")
+}
+
+// ==========================================
+// 🎟️ TICKET SYSTEM — ระบบเปิดห้อง Ticket แจ้งปัญหาและบันทึก Transcript แยกตามเซิร์ฟเวอร์
+// ==========================================
+model TicketConfig {
+  guildId          String   @id @map("guild_id")
+  categoryId       String   @default("") @map("category_id")
+  logChannelId     String?  @map("log_channel_id")
+  panelChannelId   String?  @map("panel_channel_id")
+  panelMessageId   String?  @map("panel_message_id")
+  staffRoleIds     Json     @default("[]") @map("staff_role_ids")
+  panelTitle       String   @default("🎫 ติดต่อทีมงาน / แจ้งปัญหา") @map("panel_title")
+  panelDescription String   @default("กดปุ่มด้านล่างเพื่อเปิดห้อง Ticket ส่วนตัว ทีมงานจะเข้ามาดูแลโดยเร็วที่สุด") @map("panel_description")
+  panelColor       String   @default("#5865F2") @map("panel_color")
+  dmTranscript     Boolean  @default(true) @map("dm_transcript")
+  maxOpenPerUser   Int      @default(1) @map("max_open_per_user")
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("ticket_configs")
+}
+
+model Ticket {
+  id                 Int       @id @default(autoincrement())
+  guildId            String    @map("guild_id")
+  ticketNumber       Int       @map("ticket_number")
+  channelId          String?   @map("channel_id")
+  openerId           String    @map("opener_id")
+  claimedById        String?   @map("claimed_by_id")
+  status             String    @default("OPEN")
+  subject            String?
+  transcriptMarkdown String?   @map("transcript_markdown") @db.Text
+  closedById         String?   @map("closed_by_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  closedAt           DateTime? @map("closed_at") @db.Timestamptz(3)
+
+  @@unique([guildId, ticketNumber])
+  @@index([guildId, status, createdAt])
+  @@index([guildId, openerId, status])
+  @@index([channelId])
+  @@map("tickets")
+}

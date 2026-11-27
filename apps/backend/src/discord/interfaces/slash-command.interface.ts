@@ -1,3 +1,4 @@
+import type { PluginId } from '@notstack/shared';
 import type {
     ButtonInteraction,
     ChatInputCommandInteraction,
@@ -18,6 +19,8 @@ export interface SlashCommandClass {
     readonly data: SlashCommandDefinition;
     // true = คำสั่งเฉพาะของเซิร์ฟเวอร์หลัก (DISCORD_GUILD_ID) — ลงทะเบียนแบบ guild command ที่เซิร์ฟเวอร์นั้นที่เดียว
     readonly homeGuildOnly?: boolean;
+    // ปลั๊กอินที่ต้องติดตั้งก่อนจึงจะใช้คำสั่งนี้ได้
+    readonly pluginId?: PluginId;
     new (...args: never[]): SlashCommandHandler;
 }
 

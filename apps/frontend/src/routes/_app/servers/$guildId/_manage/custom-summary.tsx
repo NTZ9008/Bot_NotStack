@@ -1,4 +1,4 @@
-import { CUSTOM_SUMMARY_MODULES, type CustomSummaryRequestInput } from '@notstack/shared';
+import { CUSTOM_SUMMARY_MODULES, filterActiveSummaryModules, type CustomSummaryModule, type CustomSummaryRequestInput, type PluginId } from '@notstack/shared';
 import { useT, tr } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -23,15 +23,16 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/custom-summ
     component: CustomLogSummaryPage,
 });
 
-function createDefaultDraft(): { draft: CustomSummaryDraftFilter; payload: CustomSummaryRequestInput } {
+function createDefaultDraft(installedPlugins?: readonly PluginId[]): { draft: CustomSummaryDraftFilter; payload: CustomSummaryRequestInput } {
     const { fromInput, toInput, fromIso, toIso } = bangkokPresetInputs(24 * 7);
+    const defaultModules = filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, installedPlugins);
     const draft: CustomSummaryDraftFilter = {
         preset: '7d',
         fromInput,
         toInput,
         interval: 'auto',
         channelIds: [],
-        modules: [...CUSTOM_SUMMARY_MODULES],
+        modules: defaultModules,
         userId: null,
         userQuery: '',
         selectedUserLabel: null,
@@ -42,7 +43,7 @@ function createDefaultDraft(): { draft: CustomSummaryDraftFilter; payload: Custo
         to: toIso,
         interval: 'auto',
         channelIds: [],
-        modules: [...CUSTOM_SUMMARY_MODULES],
+        modules: defaultModules,
         includeBots: false,
         includeDetailedLogs: true,
         detailedLogLimit: 200,
@@ -77,7 +78,7 @@ function CustomLogSummaryPage() {
     const { user } = useAuth();
     const adminName = user.displayName || user.username || tr('customSummary.systemAdmin');
 
-    const initial = useMemo(() => createDefaultDraft(), []);
+    const initial = useMemo(() => createDefaultDraft(guild.installedPlugins), [guild.installedPlugins]);
     const [draft, setDraft] = useState<CustomSummaryDraftFilter>(initial.draft);
     const [appliedQuery, setAppliedQuery] = useState<{ payload: CustomSummaryRequestInput; nonce: number }>({
         payload: initial.payload,
@@ -86,15 +87,6 @@ function CustomLogSummaryPage() {
     const [pdfOpen, setPdfOpen] = useState(false);
 
     const { data: channels = [], isLoading: channelsLoading } = useQuery(customSummaryChannelsQuery(guildId));
-
-    const validationError = useMemo(() => {
-        const fromDate = fromBangkokInput(draft.fromInput);
-        const toDate = fromBangkokInput(draft.toInput);
-        if (!fromDate || !toDate) return tr('customSummary.pleaseFillInBothTheStart');
-        if (fromDate.getTime() > toDate.getTime()) return tr('customSummary.theStartCantBeAfterThe');
-        if (draft.modules.length === 0) return tr('customSummary.pleasePickAtLeast1Activity');
-        return null;
-    }, [draft.fromInput, draft.toInput, draft.modules.length]);
 
     const {
         data: summary,
@@ -105,6 +97,28 @@ function CustomLogSummaryPage() {
         queryKey: ['guilds', guildId, 'custom-summary', 'report', appliedQuery.payload, appliedQuery.nonce],
         queryFn: ({ signal }) => fetchCustomSummary(guildId, appliedQuery.payload, signal),
     });
+
+    const installedPlugins = useMemo(
+        () => summary?.installedPlugins ?? guild.installedPlugins ?? [],
+        [summary?.installedPlugins, guild.installedPlugins],
+    );
+    const selectedActiveModules = useMemo(
+        () => filterActiveSummaryModules(draft.modules, installedPlugins),
+        [draft.modules, installedPlugins],
+    );
+    const anySummaryPluginInstalled = useMemo(
+        () => installedPlugins.some((id) => id === 'github-pr' || id === 'grafana-alert' || id === 'jira-card'),
+        [installedPlugins],
+    );
+
+    const validationError = useMemo(() => {
+        const fromDate = fromBangkokInput(draft.fromInput);
+        const toDate = fromBangkokInput(draft.toInput);
+        if (!fromDate || !toDate) return tr('customSummary.pleaseFillInBothTheStart');
+        if (fromDate.getTime() > toDate.getTime()) return tr('customSummary.theStartCantBeAfterThe');
+        if (selectedActiveModules.length === 0) return tr('customSummary.pleasePickAtLeast1Activity');
+        return null;
+    }, [draft.fromInput, draft.toInput, selectedActiveModules.length]);
 
     const handleSelectPreset = useCallback((preset: DatePresetKey, hours?: number) => {
         if (preset === 'custom' || !hours) {
@@ -120,10 +134,10 @@ function CustomLogSummaryPage() {
     }, []);
 
     const handleReset = useCallback(() => {
-        const next = createDefaultDraft();
+        const next = createDefaultDraft(installedPlugins);
         setDraft(next.draft);
         setAppliedQuery((prev) => ({ payload: next.payload, nonce: prev.nonce + 1 }));
-    }, []);
+    }, [installedPlugins]);
 
     const handleRunSummary = useCallback(() => {
         if (validationError) return;
@@ -152,7 +166,7 @@ function CustomLogSummaryPage() {
             to: toDate.toISOString(),
             interval: draft.interval,
             channelIds: draft.channelIds,
-            modules: draft.modules,
+            modules: selectedActiveModules,
             ...(draft.userId ? { userId: draft.userId } : {}),
             ...(!draft.userId && draft.userQuery.trim() ? { userQuery: draft.userQuery.trim() } : {}),
             includeBots: draft.includeBots,
@@ -161,14 +175,16 @@ function CustomLogSummaryPage() {
         };
 
         setAppliedQuery((prev) => ({ payload, nonce: prev.nonce + 1 }));
-    }, [draft, validationError]);
+    }, [draft, selectedActiveModules, validationError]);
 
     return (
         <>
             <PageHeader
                 help="customSummary"
                 title={tr('common.summaryReport')}
-                description={t('customSummary.customVoiceMessageGithubPrAnd', { name: guild.name })}
+                description={t(anySummaryPluginInstalled ? 'customSummary.customVoiceMessageGithubPrAnd' : 'customSummary.pageDescriptionCore', {
+                    name: guild.name,
+                })}
             />
 
             <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
@@ -177,6 +193,7 @@ function CustomLogSummaryPage() {
                     draft={draft}
                     channels={channels}
                     channelsLoading={channelsLoading}
+                    installedPlugins={installedPlugins}
                     validationError={validationError}
                     isProcessing={isFetching}
                     hasSummary={Boolean(summary)}
@@ -217,9 +234,9 @@ function CustomLogSummaryPage() {
                             </div>
                         </div>
 
-                        <SummaryKpis summary={summary} />
-                        <SummaryCharts summary={summary} />
-                        <SummaryTables summary={summary} />
+                        <SummaryKpis summary={summary} installedPlugins={installedPlugins} />
+                        <SummaryCharts summary={summary} installedPlugins={installedPlugins} />
+                        <SummaryTables summary={summary} installedPlugins={installedPlugins} />
 
                         <PdfExportModal
                             open={pdfOpen}
@@ -229,6 +246,10 @@ function CustomLogSummaryPage() {
                             summary={summary}
                             queryPayload={{
                                 ...appliedQuery.payload,
+                                modules: filterActiveSummaryModules(
+                                    (appliedQuery.payload.modules ?? selectedActiveModules).filter((m): m is CustomSummaryModule => m !== 'devopsOther'),
+                                    installedPlugins,
+                                ),
                                 title: tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name }),
                                 theme: 'dark',
                                 detailMode: 'executive',

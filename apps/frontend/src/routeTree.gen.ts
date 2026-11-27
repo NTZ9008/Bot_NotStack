@@ -35,9 +35,14 @@ import { Route as AppServersGuildIdManageJiraRouteImport } from './routes/_app/s
 import { Route as AppServersGuildIdManageLogManagerRouteImport } from './routes/_app/servers/$guildId/_manage/log-manager'
 import { Route as AppServersGuildIdManageNewsRouteImport } from './routes/_app/servers/$guildId/_manage/news'
 import { Route as AppServersGuildIdManageOverviewRouteImport } from './routes/_app/servers/$guildId/_manage/overview'
+import { Route as AppServersGuildIdManagePluginsRouteImport } from './routes/_app/servers/$guildId/_manage/plugins'
 import { Route as AppServersGuildIdManagePrBotRouteImport } from './routes/_app/servers/$guildId/_manage/pr-bot'
+import { Route as AppServersGuildIdManageReactionRolesRouteImport } from './routes/_app/servers/$guildId/_manage/reaction-roles'
 import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
+import { Route as AppServersGuildIdManageRemindersRouteImport } from './routes/_app/servers/$guildId/_manage/reminders'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
+import { Route as AppServersGuildIdManageTicketsRouteImport } from './routes/_app/servers/$guildId/_manage/tickets'
+import { Route as AppServersGuildIdManageUptimeRouteImport } from './routes/_app/servers/$guildId/_manage/uptime'
 import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/_app/servers/$guildId/_manage/voice-guard'
 import { Route as AppServersGuildIdManageVoiceListenRouteImport } from './routes/_app/servers/$guildId/_manage/voice-listen'
 import { Route as AppServersGuildIdManageWeatherRouteImport } from './routes/_app/servers/$guildId/_manage/weather'
@@ -180,10 +185,22 @@ const AppServersGuildIdManageOverviewRoute =
     path: '/overview',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManagePluginsRoute =
+  AppServersGuildIdManagePluginsRouteImport.update({
+    id: '/plugins',
+    path: '/plugins',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManagePrBotRoute =
   AppServersGuildIdManagePrBotRouteImport.update({
     id: '/pr-bot',
     path: '/pr-bot',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
+const AppServersGuildIdManageReactionRolesRoute =
+  AppServersGuildIdManageReactionRolesRouteImport.update({
+    id: '/reaction-roles',
+    path: '/reaction-roles',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
 const AppServersGuildIdManageRelationsRoute =
@@ -192,10 +209,28 @@ const AppServersGuildIdManageRelationsRoute =
     path: '/relations',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageRemindersRoute =
+  AppServersGuildIdManageRemindersRouteImport.update({
+    id: '/reminders',
+    path: '/reminders',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageRoomAccessRoute =
   AppServersGuildIdManageRoomAccessRouteImport.update({
     id: '/room-access',
     path: '/room-access',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
+const AppServersGuildIdManageTicketsRoute =
+  AppServersGuildIdManageTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
+const AppServersGuildIdManageUptimeRoute =
+  AppServersGuildIdManageUptimeRouteImport.update({
+    id: '/uptime',
+    path: '/uptime',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
 const AppServersGuildIdManageVoiceGuardRoute =
@@ -247,9 +282,14 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/servers/$guildId/tickets': typeof AppServersGuildIdManageTicketsRoute
+  '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -278,9 +318,14 @@ export interface FileRoutesByTo {
   '/servers/$guildId/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/servers/$guildId/news': typeof AppServersGuildIdManageNewsRoute
   '/servers/$guildId/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/servers/$guildId/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/servers/$guildId/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/servers/$guildId/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/servers/$guildId/tickets': typeof AppServersGuildIdManageTicketsRoute
+  '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/servers/$guildId/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -314,9 +359,14 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/log-manager': typeof AppServersGuildIdManageLogManagerRoute
   '/_app/servers/$guildId/_manage/news': typeof AppServersGuildIdManageNewsRoute
   '/_app/servers/$guildId/_manage/overview': typeof AppServersGuildIdManageOverviewRoute
+  '/_app/servers/$guildId/_manage/plugins': typeof AppServersGuildIdManagePluginsRoute
   '/_app/servers/$guildId/_manage/pr-bot': typeof AppServersGuildIdManagePrBotRoute
+  '/_app/servers/$guildId/_manage/reaction-roles': typeof AppServersGuildIdManageReactionRolesRoute
   '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
+  '/_app/servers/$guildId/_manage/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/_app/servers/$guildId/_manage/tickets': typeof AppServersGuildIdManageTicketsRoute
+  '/_app/servers/$guildId/_manage/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/_app/servers/$guildId/_manage/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/_app/servers/$guildId/_manage/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
   '/_app/servers/$guildId/_manage/weather': typeof AppServersGuildIdManageWeatherRoute
@@ -348,9 +398,14 @@ export interface FileRouteTypes {
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
+    | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/reaction-roles'
     | '/servers/$guildId/relations'
+    | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
+    | '/servers/$guildId/tickets'
+    | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/voice-listen'
     | '/servers/$guildId/weather'
@@ -379,9 +434,14 @@ export interface FileRouteTypes {
     | '/servers/$guildId/log-manager'
     | '/servers/$guildId/news'
     | '/servers/$guildId/overview'
+    | '/servers/$guildId/plugins'
     | '/servers/$guildId/pr-bot'
+    | '/servers/$guildId/reaction-roles'
     | '/servers/$guildId/relations'
+    | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
+    | '/servers/$guildId/tickets'
+    | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/voice-listen'
     | '/servers/$guildId/weather'
@@ -414,9 +474,14 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/log-manager'
     | '/_app/servers/$guildId/_manage/news'
     | '/_app/servers/$guildId/_manage/overview'
+    | '/_app/servers/$guildId/_manage/plugins'
     | '/_app/servers/$guildId/_manage/pr-bot'
+    | '/_app/servers/$guildId/_manage/reaction-roles'
     | '/_app/servers/$guildId/_manage/relations'
+    | '/_app/servers/$guildId/_manage/reminders'
     | '/_app/servers/$guildId/_manage/room-access'
+    | '/_app/servers/$guildId/_manage/tickets'
+    | '/_app/servers/$guildId/_manage/uptime'
     | '/_app/servers/$guildId/_manage/voice-guard'
     | '/_app/servers/$guildId/_manage/voice-listen'
     | '/_app/servers/$guildId/_manage/weather'
@@ -615,11 +680,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageOverviewRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/plugins': {
+      id: '/_app/servers/$guildId/_manage/plugins'
+      path: '/plugins'
+      fullPath: '/servers/$guildId/plugins'
+      preLoaderRoute: typeof AppServersGuildIdManagePluginsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/pr-bot': {
       id: '/_app/servers/$guildId/_manage/pr-bot'
       path: '/pr-bot'
       fullPath: '/servers/$guildId/pr-bot'
       preLoaderRoute: typeof AppServersGuildIdManagePrBotRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
+    '/_app/servers/$guildId/_manage/reaction-roles': {
+      id: '/_app/servers/$guildId/_manage/reaction-roles'
+      path: '/reaction-roles'
+      fullPath: '/servers/$guildId/reaction-roles'
+      preLoaderRoute: typeof AppServersGuildIdManageReactionRolesRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
     '/_app/servers/$guildId/_manage/relations': {
@@ -629,11 +708,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageRelationsRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/reminders': {
+      id: '/_app/servers/$guildId/_manage/reminders'
+      path: '/reminders'
+      fullPath: '/servers/$guildId/reminders'
+      preLoaderRoute: typeof AppServersGuildIdManageRemindersRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/room-access': {
       id: '/_app/servers/$guildId/_manage/room-access'
       path: '/room-access'
       fullPath: '/servers/$guildId/room-access'
       preLoaderRoute: typeof AppServersGuildIdManageRoomAccessRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
+    '/_app/servers/$guildId/_manage/tickets': {
+      id: '/_app/servers/$guildId/_manage/tickets'
+      path: '/tickets'
+      fullPath: '/servers/$guildId/tickets'
+      preLoaderRoute: typeof AppServersGuildIdManageTicketsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
+    '/_app/servers/$guildId/_manage/uptime': {
+      id: '/_app/servers/$guildId/_manage/uptime'
+      path: '/uptime'
+      fullPath: '/servers/$guildId/uptime'
+      preLoaderRoute: typeof AppServersGuildIdManageUptimeRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
     '/_app/servers/$guildId/_manage/voice-guard': {
@@ -694,9 +794,14 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageLogManagerRoute: typeof AppServersGuildIdManageLogManagerRoute
   AppServersGuildIdManageNewsRoute: typeof AppServersGuildIdManageNewsRoute
   AppServersGuildIdManageOverviewRoute: typeof AppServersGuildIdManageOverviewRoute
+  AppServersGuildIdManagePluginsRoute: typeof AppServersGuildIdManagePluginsRoute
   AppServersGuildIdManagePrBotRoute: typeof AppServersGuildIdManagePrBotRoute
+  AppServersGuildIdManageReactionRolesRoute: typeof AppServersGuildIdManageReactionRolesRoute
   AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
+  AppServersGuildIdManageRemindersRoute: typeof AppServersGuildIdManageRemindersRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
+  AppServersGuildIdManageTicketsRoute: typeof AppServersGuildIdManageTicketsRoute
+  AppServersGuildIdManageUptimeRoute: typeof AppServersGuildIdManageUptimeRoute
   AppServersGuildIdManageVoiceGuardRoute: typeof AppServersGuildIdManageVoiceGuardRoute
   AppServersGuildIdManageVoiceListenRoute: typeof AppServersGuildIdManageVoiceListenRoute
   AppServersGuildIdManageWeatherRoute: typeof AppServersGuildIdManageWeatherRoute
@@ -719,11 +824,18 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
       AppServersGuildIdManageLogManagerRoute,
     AppServersGuildIdManageNewsRoute: AppServersGuildIdManageNewsRoute,
     AppServersGuildIdManageOverviewRoute: AppServersGuildIdManageOverviewRoute,
+    AppServersGuildIdManagePluginsRoute: AppServersGuildIdManagePluginsRoute,
     AppServersGuildIdManagePrBotRoute: AppServersGuildIdManagePrBotRoute,
+    AppServersGuildIdManageReactionRolesRoute:
+      AppServersGuildIdManageReactionRolesRoute,
     AppServersGuildIdManageRelationsRoute:
       AppServersGuildIdManageRelationsRoute,
+    AppServersGuildIdManageRemindersRoute:
+      AppServersGuildIdManageRemindersRoute,
     AppServersGuildIdManageRoomAccessRoute:
       AppServersGuildIdManageRoomAccessRoute,
+    AppServersGuildIdManageTicketsRoute: AppServersGuildIdManageTicketsRoute,
+    AppServersGuildIdManageUptimeRoute: AppServersGuildIdManageUptimeRoute,
     AppServersGuildIdManageVoiceGuardRoute:
       AppServersGuildIdManageVoiceGuardRoute,
     AppServersGuildIdManageVoiceListenRoute:

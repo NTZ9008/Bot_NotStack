@@ -34,45 +34,67 @@ test('activity bucket labels are shortened for chart axes and highlights', () =>
 });
 
 const { visibleNavGroups, findNavItem } = require('../apps/frontend/src/components/layout/nav-items.ts');
-const navItems = (admin, access) => visibleNavGroups(admin, access ? { access } : null).flatMap((group) => group.items);
+const { pluginIcon, pluginAccent, pluginCopy, pluginCategoryLabel } = require('../apps/frontend/src/lib/plugin-ui.ts');
+const { PLUGIN_CATEGORIES, PLUGIN_IDS, PLUGIN_REGISTRY } = require('../packages/shared/src/plugins.ts');
+const navItems = (admin, access, installedPlugins) =>
+    visibleNavGroups(admin, access ? { access, installedPlugins } : null).flatMap((group) => group.items);
 
-test('navigation keeps all existing features available to server managers and system admins', () => {
-    const manager = navItems(false, 'manage');
+const CORE_GUILD_SLUGS = [
+    'ai',
+    'audit-logs',
+    'config',
+    'custom-summary',
+    'levels',
+    'log-manager',
+    'news',
+    'overview',
+    'plugins',
+    'relations',
+    'room-access',
+    'voice-guard',
+    'voice-listen',
+    'weather',
+    'welcome',
+];
+
+const PLUGIN_GUILD_SLUGS = ['funds', 'grafana-alerts', 'jira', 'pr-bot', 'reaction-roles', 'reminders', 'tickets', 'uptime'];
+
+test('navigation keeps core features always visible and reveals plugin routes only when installed', () => {
+    const withoutPlugins = navItems(false, 'manage', []);
     assert.deepEqual(
-        manager
+        withoutPlugins
             .filter((item) => item.guild)
             .map((item) => item.to.split('/').pop())
             .sort(),
-        [
-            'ai',
-            'audit-logs',
-            'config',
-            'custom-summary',
-            'funds',
-            'grafana-alerts',
-            'jira',
-            'levels',
-            'log-manager',
-            'news',
-            'overview',
-            'pr-bot',
-            'relations',
-            'room-access',
-            'voice-guard',
-            'voice-listen',
-            'weather',
-            'welcome',
-        ],
+        CORE_GUILD_SLUGS,
+    );
+
+    const partialPlugins = navItems(false, 'manage', ['github-pr', 'savings-goal']);
+    assert.deepEqual(
+        partialPlugins
+            .filter((item) => item.guild)
+            .map((item) => item.to.split('/').pop())
+            .sort(),
+        [...CORE_GUILD_SLUGS, 'funds', 'pr-bot'].sort(),
+    );
+
+    const allPlugins = navItems(false, 'manage', [...PLUGIN_IDS]);
+    assert.deepEqual(
+        allPlugins
+            .filter((item) => item.guild)
+            .map((item) => item.to.split('/').pop())
+            .sort(),
+        [...CORE_GUILD_SLUGS, ...PLUGIN_GUILD_SLUGS].sort(),
     );
     assert.deepEqual(
-        manager
+        allPlugins
             .filter((item) => !item.guild)
             .map((item) => item.to)
             .sort(),
         ['/account', '/servers'],
     );
     assert.deepEqual(
-        navItems(true, 'manage')
+        navItems(true, 'manage', [...PLUGIN_IDS])
             .filter((item) => item.adminOnly)
             .map((item) => item.to)
             .sort(),
@@ -83,7 +105,7 @@ test('navigation keeps all existing features available to server managers and sy
 test('navigation, search and feature shortcuts cannot expose management links to viewers', () => {
     for (const admin of [false, true]) {
         assert.deepEqual(
-            navItems(admin, 'view')
+            navItems(admin, 'view', [...PLUGIN_IDS])
                 .filter((item) => item.guild)
                 .map((item) => item.to),
             ['/servers/$guildId/levels'],
@@ -104,6 +126,28 @@ test('Thai labels retain English search terms and breadcrumb matching', () => {
     assert.match(findNavItem('/servers/$guildId/voice-guard').keywords, /whitelist blacklist/);
     assert.equal(findNavItem('/servers/$guildId/config').label, 'ตั้งค่าบอท');
     assert.equal(findNavItem('/missing'), undefined);
+});
+
+test('plugin-ui helpers resolve icons, accents, localized copy, and category labels for every plugin', () => {
+    for (const def of PLUGIN_REGISTRY) {
+        const byId = pluginIcon(def.id);
+        const byIconName = pluginIcon(def.icon);
+        assert.ok(byId, `expected icon for plugin id ${def.id}`);
+        assert.equal(byId, byIconName);
+
+        const accent = pluginAccent(def.id);
+        assert.ok(accent.badgeBg.length > 0);
+        assert.ok(accent.iconText.length > 0);
+        assert.ok(accent.borderHover.length > 0);
+
+        const copy = pluginCopy(def.id);
+        assert.ok(copy.name.length > 0);
+        assert.ok(copy.description.length > 0);
+    }
+
+    for (const category of PLUGIN_CATEGORIES) {
+        assert.ok(pluginCategoryLabel(category).length > 0);
+    }
 });
 
 const { PreloadQueue, canPreloadInBackground } = require('../apps/frontend/src/lib/background-preload.ts');

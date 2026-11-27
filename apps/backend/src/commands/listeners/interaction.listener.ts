@@ -1,10 +1,12 @@
 import { LevelsService } from '../../levels/levels.service';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { PLUGIN_BOT_DISABLED_MESSAGE } from '@notstack/shared';
 import { Events, MessageFlags, type Interaction } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import { DiscordExplorer } from '../../discord/discord.explorer';
 import { DiscordService } from '../../discord/discord.service';
 import { LogDispatcher } from '../../log-manager/services/log-dispatcher.service';
+import { PluginsService } from '../../plugins/plugins.service';
 
 // ==========================================
 // ⌨️ INTERACTIONS — ส่งคำสั่ง / ไปยังคลาส @SlashCommand ที่ตรงชื่อ
@@ -20,6 +22,7 @@ export class InteractionListener {
         private readonly discord: DiscordService,
         private readonly logs: LogDispatcher,
         private readonly levels: LevelsService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
     @OnDiscord(Events.InteractionCreate)
@@ -31,6 +34,12 @@ export class InteractionListener {
                 if (command.homeGuildOnly && !this.discord.isHome(interaction.guildId)) {
                     await interaction.reply({ content: '❌ คำสั่งนี้ใช้ได้เฉพาะในเซิร์ฟเวอร์ NotStack', flags: MessageFlags.Ephemeral });
                     return;
+                }
+                if (command.pluginId && this.plugins) {
+                    if (!interaction.guildId || !(await this.plugins.isInstalled(interaction.guildId, command.pluginId))) {
+                        await interaction.reply({ content: PLUGIN_BOT_DISABLED_MESSAGE, flags: MessageFlags.Ephemeral });
+                        return;
+                    }
                 }
                 // บันทึกการใช้คำสั่งลง Activity Log (ใช้ดูว่าใครใช้บอทบ่อยแค่ไหนในหน้า Dashboard)
                 this.logs.recordActivity(interaction.guildId, 'commandUsed', {
@@ -70,6 +79,9 @@ export class InteractionListener {
             if (interaction.isStringSelectMenu() || interaction.isModalSubmit() || interaction.isButton()) {
                 for (const command of this.explorer.commands.values()) {
                     if (command.homeGuildOnly && !this.discord.isHome(interaction.guildId)) continue;
+                    if (command.pluginId && this.plugins) {
+                        if (!interaction.guildId || !(await this.plugins.isInstalled(interaction.guildId, command.pluginId))) continue;
+                    }
                     if (command.handler.handleComponent) await command.handler.handleComponent(interaction);
                 }
             }

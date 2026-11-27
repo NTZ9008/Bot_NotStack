@@ -10,6 +10,7 @@ import { jiraApi, jiraSettingsQuery } from '@/api/jira';
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { PageHeader } from '@/components/page-header';
+import { PluginRouteGuard } from '@/components/plugin-gate';
 import { JiraPageSkeleton } from '@/components/skeleton/editor-pages';
 import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
@@ -28,12 +29,14 @@ import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-cha
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/jira')({
-    loader: ({ context, params }) =>
-        Promise.all([
+    loader: ({ context, params }) => {
+        if (!context.guild.installedPlugins?.includes('jira-card')) return;
+        return Promise.all([
             context.queryClient.ensureQueryData(jiraSettingsQuery(params.guildId)),
             context.queryClient.ensureQueryData(guildChannelsQuery(params.guildId)).catch(() => undefined),
             context.queryClient.ensureQueryData(guildRolesQuery(params.guildId)).catch(() => undefined),
-        ]),
+        ]);
+    },
     component: JiraPage,
 });
 
@@ -42,6 +45,19 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/jira')({
 // แก้ค่าแล้วกด "บันทึก" (Ctrl/⌘ + S) · สวิตช์เปิด/ปิดบันทึกทันที · ส่งแผงใช้ค่าที่บันทึกแล้ว
 // ==========================================
 function JiraPage() {
+    return (
+        <PluginRouteGuard
+            pluginId="jira-card"
+            help="jira"
+            title={tr('common.jiraCards')}
+            description={tr('jira.letMembersOpenJiraCardsFrom')}
+        >
+            {() => <JiraPageContent />}
+        </PluginRouteGuard>
+    );
+}
+
+function JiraPageContent() {
     const guildId = useGuildId();
     const queryClient = useQueryClient();
     const confirm = useConfirm();

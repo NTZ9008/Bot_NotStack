@@ -1,5 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { JIRA_LIMITS } from '@notstack/shared';
+import { Injectable, Logger, Optional } from '@nestjs/common';
+import { JIRA_LIMITS, PLUGIN_BOT_DISABLED_MESSAGE } from '@notstack/shared';
 import {
     ActionRowBuilder,
     ButtonBuilder,
@@ -18,6 +18,7 @@ import {
 } from 'discord.js';
 import { OnDiscord } from '../../discord/decorators/on-discord.decorator';
 import type { JiraTicket } from '../../generated/prisma/client';
+import { PluginsService } from '../../plugins/plugins.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { JiraApiError, JiraClient, type UploadFile } from '../clients/jira.client';
 import { JiraService, type StoredJiraSettings } from '../jira.service';
@@ -65,6 +66,7 @@ export class JiraInteractionListener {
         private readonly jira: JiraService,
         private readonly client: JiraClient,
         private readonly prisma: PrismaService,
+        @Optional() private readonly plugins?: PluginsService,
     ) {}
 
     @OnDiscord(Events.InteractionCreate)
@@ -74,6 +76,12 @@ export class JiraInteractionListener {
         if (!id) return;
         if (!interaction.inCachedGuild()) {
             if (interaction.isRepliable()) await interaction.reply({ content: '❌ ใช้ได้เฉพาะในเซิร์ฟเวอร์', flags: ephemeral }).catch(() => {});
+            return;
+        }
+        if (this.plugins && !(await this.plugins.isInstalled(interaction.guildId, 'jira-card'))) {
+            if (interaction.isRepliable()) {
+                await interaction.reply({ content: PLUGIN_BOT_DISABLED_MESSAGE, flags: ephemeral }).catch(() => {});
+            }
             return;
         }
 

@@ -27,12 +27,17 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     'room-access': RoomAccessPageSkeleton,
     'voice-guard': VoiceGuardPageSkeleton,
     'log-manager': LogManagerPageSkeleton,
+    plugins: GenericPageSkeleton,
     'pr-bot': PrBotPageSkeleton,
     'grafana-alerts': PrBotPageSkeleton,
     jira: JiraPageSkeleton,
     funds: FundsPageSkeleton,
     'audit-logs': AuditLogsPageSkeleton,
     'custom-summary': AuditLogsPageSkeleton,
+    uptime: GenericPageSkeleton,
+    reminders: GenericPageSkeleton,
+    'reaction-roles': GenericPageSkeleton,
+    tickets: JiraPageSkeleton,
 };
 
 const APP_PAGES: Record<string, ComponentType> = {

@@ -1,10 +1,12 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Query } from '@nestjs/common';
 import { GuildId } from '../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../guilds/decorators/guild-route.decorator';
+import { RequirePlugin } from '../plugins/decorators/require-plugin.decorator';
 import { GrafanaService } from './grafana.service';
 import { GrafanaStatsQueryDto, UpdateGrafanaSettingsDto } from './dto/grafana-settings.dto';
 
 @GuildRoute()
+@RequirePlugin('grafana-alert')
 @Controller('guilds/:guildId/grafana')
 export class GrafanaSettingsController {
     constructor(private readonly grafana: GrafanaService) {}

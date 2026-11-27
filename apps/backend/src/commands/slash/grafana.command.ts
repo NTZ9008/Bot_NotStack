@@ -7,6 +7,7 @@ import { GrafanaService } from '../../grafana/grafana.service';
 @SlashCommand()
 @Injectable()
 export class GrafanaCommand implements SlashCommandHandler {
+    static readonly pluginId = 'grafana-alert' as const;
     static readonly data = new SlashCommandBuilder().setName('grafana').setDescription('ตรวจสอบสถานะ Grafana');
 
     constructor(private readonly grafana: GrafanaService) {}

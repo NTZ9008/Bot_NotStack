@@ -21,6 +21,31 @@
       "source": "./src/text.ts",
       "types": "./dist/text.d.ts",
       "default": "./dist/text.js"
+    },
+    "./plugins": {
+      "source": "./src/plugins.ts",
+      "types": "./dist/plugins.d.ts",
+      "default": "./dist/plugins.js"
+    },
+    "./uptime": {
+      "source": "./src/uptime.ts",
+      "types": "./dist/uptime.d.ts",
+      "default": "./dist/uptime.js"
+    },
+    "./reminders": {
+      "source": "./src/reminders.ts",
+      "types": "./dist/reminders.d.ts",
+      "default": "./dist/reminders.js"
+    },
+    "./reaction-roles": {
+      "source": "./src/reaction-roles.ts",
+      "types": "./dist/reaction-roles.d.ts",
+      "default": "./dist/reaction-roles.js"
+    },
+    "./tickets": {
+      "source": "./src/tickets.ts",
+      "types": "./dist/tickets.d.ts",
+      "default": "./dist/tickets.js"
     }
   },
   "files": [

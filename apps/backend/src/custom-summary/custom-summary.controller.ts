@@ -71,7 +71,7 @@ export class CustomSummaryController {
             detailMode: body.detailMode,
             maskIds: body.maskIds,
             channelCount: body.channelIds.length,
-            modules: body.modules,
+            modules: summary.filters.modules,
         };
 
         const { ascii, utf8 } = buildPdfFilename(guildId, body.title);

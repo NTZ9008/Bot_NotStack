@@ -23,3 +23,8 @@ export * from './grafana';
 export * from './growth';
 export * from './live';
 export * from './custom-summary';
+export * from './plugins';
+export * from './uptime';
+export * from './reminders';
+export * from './reaction-roles';
+export * from './tickets';

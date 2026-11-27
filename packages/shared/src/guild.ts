@@ -1,3 +1,5 @@
+import type { PluginId } from './plugins';
+
 // ==========================================
 // 🏰 GUILD — เซิร์ฟเวอร์ Discord ที่บอทอยู่ (multi-server) + ข้อมูลที่หน้าเว็บใช้ทำ dropdown / ค้นหาสมาชิก
 // ==========================================
@@ -15,6 +17,8 @@ export interface GuildSummary {
     access: GuildAccessLevel;
     // เซิร์ฟเวอร์หลักของบอท (DISCORD_GUILD_ID) — มีคำสั่งเฉพาะของ NotStack (/verify /addroles ...)
     isHome: boolean;
+    // รายการปลั๊กอินที่เปิดใช้งานอยู่ในเซิร์ฟเวอร์นี้
+    installedPlugins?: PluginId[];
 }
 
 export interface GuildListResponse {

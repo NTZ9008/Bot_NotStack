@@ -31,10 +31,15 @@ import { CustomSummaryModule } from './custom-summary/custom-summary.module';
 import { RelationsModule } from './relations/relations.module';
 import { MetricsService } from './monitoring/metrics.service';
 import { NewsModule } from './news/news.module';
+import { PluginsModule } from './plugins/plugins.module';
 import { PrBotModule } from './pr-bot/pr-bot.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RankModule } from './rank/rank.module';
+import { ReactionRolesModule } from './reaction-roles/reaction-roles.module';
+import { RemindersModule } from './reminders/reminders.module';
 import { RoomAccessModule } from './room-access/room-access.module';
+import { TicketsModule } from './tickets/tickets.module';
+import { UptimeModule } from './uptime/uptime.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
 import { VoiceListenModule } from './voice-listen/voice-listen.module';
@@ -82,6 +87,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         AuthModule,
         UsersModule,
         GuildsModule,
+        PluginsModule,
         BotConfigModule,
         LogFilesModule,
         LiveModule,
@@ -101,6 +107,10 @@ import { WelcomeModule } from './welcome/welcome.module';
         GrafanaModule,
         JiraModule,
         FundModule,
+        UptimeModule,
+        RemindersModule,
+        ReactionRolesModule,
+        TicketsModule,
         ChatModule,
         CommandsModule,
     ],

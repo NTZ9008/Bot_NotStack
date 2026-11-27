@@ -8,6 +8,7 @@ import { requireId } from '../common/utils/parse.util';
 import type { User } from '../generated/prisma/client';
 import { GuildId } from '../guilds/decorators/guild-id.decorator';
 import { GuildRoute } from '../guilds/decorators/guild-route.decorator';
+import { RequirePlugin } from '../plugins/decorators/require-plugin.decorator';
 import { AddFundMembersDto } from './dto/add-fund-members.dto';
 import { BatchFundPaymentDto } from './dto/batch-fund-payment.dto';
 import { CreateFundPaymentDto } from './dto/create-fund-payment.dto';
@@ -43,6 +44,7 @@ const recorderName = (user: User | undefined) => user?.displayName || user?.disc
 // POST /:id/report                        ส่งรายงานเข้าห้อง
 // ==========================================
 @GuildRoute()
+@RequirePlugin('savings-goal')
 @Controller('guilds/:guildId/funds')
 export class FundController {
     constructor(private readonly fund: FundService) {}
