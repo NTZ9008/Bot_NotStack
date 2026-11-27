@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cn } from "cn"
+import { useFieldLabelledBy } from "@/components/ui/field-label"
 import { Select as SelectPrimitive } from "radix-ui"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from '@/components/icons'
 
@@ -38,8 +39,10 @@ function SelectTrigger({
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
 }) {
+  const labelledBy = useFieldLabelledBy(props)
   return (
     <SelectPrimitive.Trigger
+      aria-labelledby={labelledBy}
       data-slot="select-trigger"
       data-size={size}
       className={cn(

@@ -23,7 +23,7 @@ export function JiraConnectionCard({
                 <CardDescription>
                     {tr('jira.supportsJiraCloudCardsAreCreated')}{' '}
                     <a
-                        className="text-info hover:underline"
+                        className="text-info underline underline-offset-4"
                         href="https://id.atlassian.com/manage-profile/security/api-tokens"
                         target="_blank"
                         rel="noreferrer"

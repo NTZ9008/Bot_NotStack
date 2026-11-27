@@ -170,7 +170,7 @@ function ScheduleSection({ meta, draft, patch, channels, roles }: FormProps & { 
                     patch((d) => void (d.content = (d.content ? `${d.content.trimEnd()} ${tag}` : tag).slice(0, meta.limits.maxContentLength)));
                 }}
             >
-                <SelectTrigger className="w-full max-w-sm">
+                <SelectTrigger className="w-full max-w-sm" aria-label={tr('weather.mentionARoleInTheMessage')}>
                     <SelectValue placeholder={tr('weather.mentionARoleInTheMessage')} />
                 </SelectTrigger>
                 <SelectContent className="max-h-72">

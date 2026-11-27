@@ -1,9 +1,12 @@
 import * as React from "react"
 import { cn } from "cn"
+import { useFieldLabelledBy } from "@/components/ui/field-label"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  const labelledBy = useFieldLabelledBy(props)
   return (
     <input
+      aria-labelledby={labelledBy}
       type={type}
       data-slot="input"
       className={cn(
