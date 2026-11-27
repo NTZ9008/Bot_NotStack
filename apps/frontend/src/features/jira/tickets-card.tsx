@@ -27,8 +27,8 @@ const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] 
 ]);
 
 function StatusBadge({ status }: { status: JiraTicketStatus }) {
-    if (status === 'created') return <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('jira.cardCreated')}</Badge>;
-    if (status === 'open') return <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('jira.waitingForCard')}</Badge>;
+    if (status === 'created') return <Badge variant="success">{tr('jira.cardCreated')}</Badge>;
+    if (status === 'open') return <Badge variant="warning">{tr('jira.waitingForCard')}</Badge>;
     return <Badge variant="secondary">{tr('jira.channelClosed')}</Badge>;
 }
 
@@ -119,7 +119,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                     href={ticket.issueUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex items-center gap-1 font-medium text-sky-700 dark:text-sky-400 hover:underline"
+                                                    className="inline-flex items-center gap-1 font-medium text-info hover:underline"
                                                 >
                                                     {ticket.issueKey} <ExternalLink className="size-3" />
                                                 </a>

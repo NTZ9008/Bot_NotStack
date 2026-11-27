@@ -225,7 +225,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
-                <MapPin className="size-6 shrink-0 text-rose-700 dark:text-rose-400" />
+                <MapPin className="size-6 shrink-0 text-destructive" />
                 <div className="min-w-0">
                     <p className="truncate font-medium">{location.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">

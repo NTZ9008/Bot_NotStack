@@ -2,7 +2,8 @@ import { tr } from '../../../../../lib/i18n';
 import type { JiraConnectionResult, JiraOptions, JiraSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2, RotateCcw, Save, Send } from '@/components/icons';
+import { Loader2, Send } from '@/components/icons';
+import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -16,8 +17,6 @@ import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { JiraConnectionCard } from '@/features/jira/connection-card';
 import { toJiraDraft, type JiraDraft } from '@/features/jira/draft';
 import { JiraIssueTypesCard } from '@/features/jira/issue-types-card';
@@ -25,7 +24,7 @@ import { JiraPanelCard } from '@/features/jira/panel-card';
 import { JiraRoomsCard } from '@/features/jira/rooms-card';
 import { JiraTicketsCard } from '@/features/jira/tickets-card';
 import { useGuildId } from '@/hooks/use-guild';
-import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/jira')({
@@ -109,8 +108,6 @@ function JiraPageContent() {
         }
     };
 
-    useSaveShortcut(() => void save());
-
     // สวิตช์บันทึกทันทีด้วยค่าที่บันทึกไว้ (การแก้ไขที่ค้างอยู่ไม่ถูกบันทึกไปด้วย)
     const toggle = async (enabled: boolean) => {
         setBusy('toggle');
@@ -171,13 +168,27 @@ function JiraPageContent() {
 
     return (
         <>
-            <PageHeader help="jira" title={tr('common.jiraCards')} description={tr('jira.letMembersOpenJiraCardsFrom')} />
+            <PageHeader
+                help="jira"
+                title={tr('common.jiraCards')}
+                description={tr('jira.letMembersOpenJiraCardsFrom')}
+                actions={
+                    <FeatureSwitch
+                        checked={current.enabled}
+                        disabled={busy === 'toggle'}
+                        onCheckedChange={(checked) => void toggle(checked)}
+                        title={tr('jira.turnOpeningCardsFromDiscordOn')}
+                    />
+                }
+            />
 
             <Card>
                 <CardHeader className="flex-row flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
                         {current.enabled ? (
-                            <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('common.on')}</Badge>
+                            <Badge variant="success" className="mr-1.5">
+                                {tr('common.on')}
+                            </Badge>
                         ) : (
                             <Badge variant="secondary" className="mr-1.5">
                                 {tr('common.off')}
@@ -186,13 +197,6 @@ function JiraPageContent() {
                         {current.panelMessageId
                             ? tr('jira.panelIsIn', { 0: channelLabel(allChannels, current.panelChannelId) ?? '-' })
                             : tr('jira.panelNotSentToAChannel')}
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('common.youHaveUnsavedChanges')}</Badge>}
-                        <Label className="flex items-center gap-2" title={tr('jira.turnOpeningCardsFromDiscordOn')}>
-                            {tr('common.enabled')}
-                            <Switch checked={current.enabled} disabled={busy === 'toggle'} onCheckedChange={(checked) => void toggle(checked)} />
-                        </Label>
                     </div>
                 </CardHeader>
             </Card>
@@ -211,20 +215,14 @@ function JiraPageContent() {
                 <JiraPanelCard draft={draft} patchOptions={patchOptions} />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-                <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                    {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
-                </Button>
-                <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                    <RotateCcw /> {tr('common.cancelChanges')}
-                </Button>
+            <JiraTicketsCard guildId={guildId} />
+
+            <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
                 <Button variant="secondary" onClick={() => void sendPanel()} disabled={busy === 'panel'}>
                     {busy === 'panel' ? <Loader2 className="animate-spin" /> : <Send />}{' '}
                     {current.panelMessageId ? tr('jira.updatePanel') : tr('jira.sendPanelToChannel')}
                 </Button>
-            </div>
-
-            <JiraTicketsCard guildId={guildId} />
+            </SaveBar>
         </>
     );
 }

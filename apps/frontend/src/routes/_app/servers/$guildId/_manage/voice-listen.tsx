@@ -167,11 +167,11 @@ function VoiceListenPage() {
                                     <img
                                         src={member.avatar}
                                         alt=""
-                                        className={cn('size-8 rounded-full ring-2 ring-transparent transition-shadow', member.speaking && 'ring-green-500')}
+                                        className={cn('size-8 rounded-full ring-2 ring-transparent transition-shadow', member.speaking && 'ring-success')}
                                     />
                                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{member.name}</span>
                                     {member.bot && <Badge variant="secondary">BOT</Badge>}
-                                    {member.speaking && <span className="text-xs text-green-700 dark:text-green-400">{tr('voiceListen.speaking')}</span>}
+                                    {member.speaking && <span className="text-xs text-success">{tr('voiceListen.speaking')}</span>}
                                 </li>
                             ))}
                         </ul>

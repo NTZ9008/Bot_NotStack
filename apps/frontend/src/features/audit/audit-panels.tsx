@@ -27,10 +27,10 @@ const ALL = '__all__';
 // สีของป้าย action ตามหมวด
 const GROUP_TONE: Record<string, string> = {
     auth: 'bg-highlight/15 text-highlight',
-    user: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-    config: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    news: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
-    room_access: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
+    user: 'bg-success/15 text-success',
+    config: 'bg-warning/15 text-warning',
+    news: 'bg-destructive/15 text-destructive',
+    room_access: 'bg-info/15 text-info',
     voice_guard: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
     log_settings: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
     pr_bot: 'bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300',
@@ -46,12 +46,12 @@ const GROUP_TONE: Record<string, string> = {
 
 // สีของป้ายชนิดเหตุการณ์ อิงจากหมวดของ Log Manager
 const ACTIVITY_TONE: Record<string, string> = {
-    สมาชิก: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
+    สมาชิก: 'bg-success/15 text-success',
     ข้อความ: 'bg-highlight/15 text-highlight',
-    'ช่อง & เธรด': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    'บทบาท & เซิร์ฟเวอร์': 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    ห้องเสียง: 'bg-sky-500/15 text-sky-700 dark:text-sky-300',
-    'ความปลอดภัย & AutoMod': 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
+    'ช่อง & เธรด': 'bg-warning/15 text-warning',
+    'บทบาท & เซิร์ฟเวอร์': 'bg-warning/15 text-warning',
+    ห้องเสียง: 'bg-info/15 text-info',
+    'ความปลอดภัย & AutoMod': 'bg-destructive/15 text-destructive',
 };
 
 function ActionBadge({ tone, label, code }: { tone?: string; label: string; code: string }) {
@@ -140,11 +140,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             accessorKey: 'success',
             header: tr('audit.result'),
             cell: ({ row }) =>
-                row.original.success ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('audit.success')}</Badge>
-                ) : (
-                    <Badge variant="destructive">{tr('common.failed')}</Badge>
-                ),
+                row.original.success ? <Badge variant="success">{tr('audit.success')}</Badge> : <Badge variant="destructive">{tr('common.failed')}</Badge>,
         },
         {
             id: 'view',

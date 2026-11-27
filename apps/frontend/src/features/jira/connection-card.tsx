@@ -23,7 +23,7 @@ export function JiraConnectionCard({
                 <CardDescription>
                     {tr('jira.supportsJiraCloudCardsAreCreated')}{' '}
                     <a
-                        className="text-sky-700 dark:text-sky-400 hover:underline"
+                        className="text-info hover:underline"
                         href="https://id.atlassian.com/manage-profile/security/api-tokens"
                         target="_blank"
                         rel="noreferrer"
@@ -68,7 +68,7 @@ export function JiraConnectionCard({
                         {testing ? <Loader2 className="animate-spin" /> : <PlugZap />} {tr('jira.testConnection')}
                     </Button>
                     {connection && (
-                        <span className="text-sm text-emerald-700 dark:text-emerald-400">
+                        <span className="text-sm text-success">
                             ✓ {connection.accountName} · {connection.projectName}
                         </span>
                     )}

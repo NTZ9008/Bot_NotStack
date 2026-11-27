@@ -4,12 +4,11 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { logSettingsApi, logSettingsQuery } from '@/api/bot';
+import { FeatureSwitch } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { LogManagerBodySkeleton } from '@/components/skeleton/editor-pages';
 import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppearanceEditor } from '@/features/log-manager/appearance-editor';
 import { EventsTab } from '@/features/log-manager/events-tab';
@@ -57,14 +56,12 @@ function LogManagerPage() {
                 description={tr('logManager.trackImportantEventsDesignReadableMessages')}
                 actions={
                     data && (
-                        <Label className="flex items-center gap-3 rounded-lg border px-3 py-2">
-                            {tr('logManager.wholeLogSystem')}
-                            <Switch
-                                disabled={toggleSystem.isPending}
-                                checked={data.systemEnabled}
-                                onCheckedChange={(enabled) => toggleSystem.mutate(enabled)}
-                            />
-                        </Label>
+                        <FeatureSwitch
+                            label={tr('logManager.wholeLogSystem')}
+                            disabled={toggleSystem.isPending}
+                            checked={data.systemEnabled}
+                            onCheckedChange={(enabled) => toggleSystem.mutate(enabled)}
+                        />
                     )
                 }
             />
@@ -83,7 +80,7 @@ function LogManagerPage() {
                                 {tr('logManager.readyToSend')} {ready} / {data.events.length} {tr('common.type')}
                             </span>
                             {unconfigured > 0 && (
-                                <Badge variant="outline" className="text-amber-700 dark:text-amber-400">
+                                <Badge variant="outline" className="text-warning">
                                     {tr('logManager.waitingForAChannel')} {unconfigured} {tr('common.type')}
                                 </Badge>
                             )}

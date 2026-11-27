@@ -25,9 +25,9 @@ import { fallbackAvatar, formatDateTime, formatMinutes } from '@/lib/format';
 
 const KIND_ICON: Record<RelationKind, LucideIcon> = { voice: Mic, chat: MessagesSquare, mod: ShieldAlert };
 const KIND_TEXT: Record<RelationKind, string> = {
-    voice: 'text-sky-700 dark:text-sky-400',
-    chat: 'text-amber-700 dark:text-amber-400',
-    mod: 'text-rose-700 dark:text-rose-400',
+    voice: 'text-info',
+    chat: 'text-warning',
+    mod: 'text-destructive',
 };
 const TIER_LABELS = byLang(() => ['', tr('relations.faint'), tr('relations.acquainted'), tr('relations.close'), tr('relations.veryClose')]);
 
@@ -46,14 +46,14 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 
 function VoiceStat({ label, minutes, days }: { label: string; minutes: number; days?: number }) {
     return (
-        <div className="flex items-center gap-3 rounded-lg border border-sky-400/40 bg-sky-400/10 p-3">
-            <Mic className="size-5 shrink-0 text-sky-700 dark:text-sky-400" aria-hidden="true" />
+        <div className="flex items-center gap-3 rounded-lg border border-info/40 bg-info/10 p-3">
+            <Mic className="size-5 shrink-0 text-info" aria-hidden="true" />
             <div className="min-w-0">
                 <div className="text-xs text-muted-foreground">
                     {label}
                     {days ? tr('relations.lastDays', { 0: days }) : ''}
                 </div>
-                <div className="text-xl font-bold text-sky-700 dark:text-sky-300">{formatMinutes(minutes)}</div>
+                <div className="text-xl font-bold text-info">{formatMinutes(minutes)}</div>
             </div>
         </div>
     );
@@ -173,7 +173,7 @@ export function PersonSheet({
                                                         <span className="block text-xs text-muted-foreground">
                                                             {TIER_LABELS()[link.tier]} · {trText(RELATION_KIND_LABELS[link.kind])}
                                                             {link.voiceMinutes > 0 && (
-                                                                <span className="text-sky-700 dark:text-sky-400">
+                                                                <span className="text-info">
                                                                     {' '}
                                                                     {tr('relations.voice2')} {formatMinutes(link.voiceMinutes)}
                                                                 </span>
@@ -242,7 +242,7 @@ function TimelineRow({ item }: { item: RelationTimelineItem }) {
     if (item.type === 'voice') {
         title = (
             <>
-                {tr('relations.inVoiceTogether')} <span className="text-sky-700 dark:text-sky-400">{formatMinutes(item.minutes)}</span>
+                {tr('relations.inVoiceTogether')} <span className="text-info">{formatMinutes(item.minutes)}</span>
             </>
         );
         detail = item.channelName ? tr('relations.channel', { 0: item.channelName }) : null;

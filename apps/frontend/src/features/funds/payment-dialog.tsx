@@ -278,20 +278,20 @@ export function PaymentDialog({
                     </Field>
 
                     {balancePreview && (
-                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-xs">
+                        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-success/25 bg-success/5 px-3 py-2 text-xs">
                             <div className="flex items-center gap-1.5 tabular-nums">
                                 <span className="text-muted-foreground">
                                     {tr('funds.paidSoFar')} {formatBaht(balancePreview.basePaid)}
                                 </span>
                                 <ArrowRight className="size-3 text-muted-foreground" />
-                                <span className="font-semibold text-emerald-700 dark:text-emerald-400">{formatBaht(balancePreview.nextPaid)}</span>
+                                <span className="font-semibold text-success">{formatBaht(balancePreview.nextPaid)}</span>
                             </div>
                             {balancePreview.willComplete ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-400">
+                                <Badge variant="outline" className="border-success/40 bg-success/15 text-[11px] text-success">
                                     <CheckCircle2 className="size-3" /> {tr('funds.targetReached2')}
                                 </Badge>
                             ) : (
-                                <span className="font-medium text-amber-700 dark:text-amber-400 tabular-nums">
+                                <span className="font-medium text-warning tabular-nums">
                                     {tr('funds.stillOutstanding')} {formatBaht(balancePreview.nextRemaining)}
                                 </span>
                             )}

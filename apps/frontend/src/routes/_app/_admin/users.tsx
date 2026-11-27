@@ -316,7 +316,12 @@ function UsersPage() {
             header: 'Role',
             cell: ({ row: { original: u } }) => (
                 <Select value={u.role} disabled={u.isSelf} onValueChange={(role) => void changeRole(u, role as UserRole)}>
-                    <SelectTrigger size="sm" className="w-28" aria-label={`Role: ${u.username}`} title={u.isSelf ? tr('users.youCantChangeYourOwnRole') : undefined}>
+                    <SelectTrigger
+                        size="sm"
+                        className="w-28"
+                        aria-label={`Role: ${u.username}`}
+                        title={u.isSelf ? tr('users.youCantChangeYourOwnRole') : undefined}
+                    >
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -332,7 +337,12 @@ function UsersPage() {
             header: tr('common.status'),
             cell: ({ row: { original: u } }) => (
                 <div className="flex items-center gap-2">
-                    <Switch aria-label={`${tr('common.status')}: ${u.username}`} checked={u.isActive} disabled={u.isSelf} onCheckedChange={(checked) => void toggleActive(u, checked)} />
+                    <Switch
+                        aria-label={`${tr('common.status')}: ${u.username}`}
+                        checked={u.isActive}
+                        disabled={u.isSelf}
+                        onCheckedChange={(checked) => void toggleActive(u, checked)}
+                    />
                     {u.lockedUntil && (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -375,7 +385,7 @@ function UsersPage() {
                             <LockOpen /> {tr('users.unlock')}
                         </Button>
                     )}
-                    <Button size="xs" variant="outline" className="text-amber-700 dark:text-amber-300" onClick={() => void revokeSessions(u)}>
+                    <Button size="xs" variant="outline" className="text-warning" onClick={() => void revokeSessions(u)}>
                         <LogOut /> {tr('users.kickFromAllDevices')}
                     </Button>
                     {!u.isSelf && (

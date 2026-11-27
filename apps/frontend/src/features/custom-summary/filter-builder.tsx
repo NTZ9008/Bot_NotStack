@@ -76,16 +76,16 @@ const CORE_MODULE_OPTIONS = byLang(
             title: tr('customSummary.voiceStatistics'),
             hint: tr('customSummary.voicejoinVoiceleaveTotalAverageTimePer'),
             icon: Volume2,
-            activeClass: 'border-sky-500/50 bg-sky-500/10 text-sky-900 dark:text-sky-100',
-            iconClass: 'text-sky-700 dark:text-sky-400',
+            activeClass: 'border-info/50 bg-info/10 text-info',
+            iconClass: 'text-info',
         },
         {
             key: 'messages',
             title: tr('customSummary.messageStatistics'),
             hint: tr('customSummary.messagesentDeletesEditsBusiestChannels'),
             icon: MessageSquareText,
-            activeClass: 'border-emerald-500/50 bg-emerald-500/10 text-emerald-900 dark:text-emerald-100',
-            iconClass: 'text-emerald-700 dark:text-emerald-400',
+            activeClass: 'border-success/50 bg-success/10 text-success',
+            iconClass: 'text-success',
         },
         {
             key: 'server',
@@ -226,8 +226,8 @@ export function FilterBuilder({
             title: tr('customSummary.devopsStatistics'),
             hint: devopsHint,
             icon: ShieldAlert,
-            activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
-            iconClass: 'text-amber-700 dark:text-amber-400',
+            activeClass: 'border-warning/50 bg-warning/10 text-warning',
+            iconClass: 'text-warning',
             locked: !hasDevops,
             lockedHint: tr('customSummary.requiresDevopsPlugins', {
                 0: pluginCopy('grafana-alert').name,
@@ -505,7 +505,7 @@ export function FilterBuilder({
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                     <div className="text-xs">
                         {validationError ? (
-                            <span className="font-medium text-red-700 dark:text-red-400">{validationError}</span>
+                            <span className="font-medium text-destructive">{validationError}</span>
                         ) : (
                             <span className="text-muted-foreground">
                                 {tr('customSummary.allTimesUseThaiTime')} <span className="font-medium text-foreground">Asia/Bangkok (+07:00)</span>

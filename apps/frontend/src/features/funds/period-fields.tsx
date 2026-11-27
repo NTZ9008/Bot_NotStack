@@ -82,7 +82,7 @@ export function PeriodFields({
                                 <span>
                                     {' '}
                                     {tr('funds.perDay')} {formatBaht(dailyRate)} ={' '}
-                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                                    <span className="font-semibold text-success">
                                         {formatBaht(days * dailyRate)}
                                         {amountSuffix}
                                     </span>

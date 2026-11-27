@@ -89,7 +89,7 @@ export function PaymentsTab({
                 <div className="flex flex-wrap items-center gap-2">
                     <p className="text-xs text-muted-foreground">
                         {tr('funds.showing')} <span className="font-semibold text-foreground">{filteredPayments.length}</span> {tr('funds.entriesTotal')}{' '}
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(filteredTotal)}</span>
+                        <span className="font-semibold text-success tabular-nums">{formatBaht(filteredTotal)}</span>
                     </p>
                     {activeMember && onMemberFilterChange && (
                         <Badge variant="secondary" className="max-w-full gap-1 border-primary/30 bg-primary/10 text-primary">
@@ -163,7 +163,7 @@ export function PaymentsTab({
                                 {avatar ? (
                                     <img src={avatar} alt="" className="mt-0.5 size-8 shrink-0 rounded-full object-cover ring-1 ring-border sm:mt-0" />
                                 ) : (
-                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-xs font-bold text-emerald-700 dark:text-emerald-400 sm:mt-0">
+                                    <div className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-xs font-bold text-success sm:mt-0">
                                         {tr('funds.currencySymbol')}
                                     </div>
                                 )}
@@ -171,10 +171,7 @@ export function PaymentsTab({
                                 <div className="min-w-0 flex-1 space-y-0.5">
                                     <div className="flex flex-wrap items-center gap-1.5 font-medium sm:gap-2">
                                         <span className="truncate">{p.memberName}</span>
-                                        <Badge
-                                            variant="outline"
-                                            className="border-emerald-500/35 bg-emerald-500/10 font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums"
-                                        >
+                                        <Badge variant="outline" className="border-success/35 bg-success/10 font-semibold text-success tabular-nums">
                                             +{formatBaht(p.amount)}
                                         </Badge>
                                         {p.periodStart && p.periodEnd && (

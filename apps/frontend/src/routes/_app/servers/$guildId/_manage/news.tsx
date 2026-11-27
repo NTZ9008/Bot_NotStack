@@ -218,7 +218,7 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                 </div>
                             </div>
                         </details>
-                        <Button className="w-full bg-amber-500 text-amber-950 hover:bg-amber-400" onClick={() => void send()} disabled={mutation.isPending}>
+                        <Button className="w-full" onClick={() => void send()} disabled={mutation.isPending}>
                             {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('news.postAnnouncementToDiscord')}
                         </Button>
                     </CardContent>

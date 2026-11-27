@@ -75,7 +75,7 @@ function GuildCard({ guild }: { guild: GuildSummary }) {
                         )}
                         {guild.isHome && <Badge variant="secondary">{tr('servers.homeServer')}</Badge>}
                         {manage ? (
-                            <Badge className="bg-success/15 text-success">
+                            <Badge variant="success">
                                 <ShieldCheck /> {tr('common.canManage')}
                             </Badge>
                         ) : (
@@ -124,8 +124,8 @@ function ServersPage() {
             />
 
             {denied && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
                     <p>{tr('servers.youDontHaveAccessToThat')}</p>
                 </div>
             )}
@@ -151,8 +151,8 @@ function ServersPage() {
             )}
 
             {data && !data.botOnline && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
                     <p>{tr('servers.theBotIsntOnlineYetThe')}</p>
                 </div>
             )}

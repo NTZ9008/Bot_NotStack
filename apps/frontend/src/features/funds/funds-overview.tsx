@@ -98,7 +98,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                             {tr('common.total')} {topics.length} {tr('funds.topicsOpen')} {totals.activeCount}
                         </Badge>
                         {totals.completedCount > 0 && (
-                            <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-[11px] text-emerald-700 dark:text-emerald-400">
+                            <Badge variant="outline" className="border-success/30 bg-success/10 text-[11px] text-success">
                                 <CheckCircle2 className="size-3" /> {tr('funds.goalReached')} {totals.completedCount} {tr('common.topics')}
                             </Badge>
                         )}
@@ -114,15 +114,15 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label={tr('funds.totalTargetAcrossTopics')}
                         value={formatBaht(totals.target)}
                         subtext={tr('funds.fromFundTopics', { 0: topics.length })}
-                        icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
+                        icon={<Target className="size-3.5 text-destructive" />}
                         variant="overview"
                     />
                     <StatTile
                         label={tr('funds.totalCollected')}
                         value={formatBaht(totals.collected)}
                         subtext={tr('funds.overallProgress2', { 0: totals.pct })}
-                        icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
-                        valueClassName="text-emerald-700 dark:text-emerald-400"
+                        icon={<Banknote className="size-3.5 text-success" />}
+                        valueClassName="text-success"
                         tone="emerald"
                         variant="overview"
                     />
@@ -130,8 +130,8 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label={tr('funds.totalOutstanding2')}
                         value={formatBaht(totals.remaining)}
                         subtext={totals.remaining > 0 ? tr('funds.stillToCollect') : tr('funds.everyTopicIsFullyCollected')}
-                        icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
-                        valueClassName={totals.remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
+                        icon={<Clock className="size-3.5 text-warning" />}
+                        valueClassName={totals.remaining > 0 ? 'text-warning' : 'text-muted-foreground'}
                         tone={totals.remaining > 0 ? 'amber' : 'default'}
                         variant="overview"
                     />
@@ -139,7 +139,7 @@ export function FundsOverviewSummary({ topics }: { topics: FundTopicSummary[] })
                         label={tr('funds.overallProgress')}
                         value={`${totals.pct}%`}
                         subtext={tr('funds.ofPeopleFullyPaid', { 0: totals.memberPaid, 1: totals.memberTotal })}
-                        icon={<TrendingUp className="size-3.5 text-sky-700 dark:text-sky-400" />}
+                        icon={<TrendingUp className="size-3.5 text-info" />}
                         tone="sky"
                         variant="overview"
                     />
@@ -193,10 +193,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <Lock className="size-2.5" /> {tr('common.close')}
                     </Badge>
                 ) : isCompleted ? (
-                    <Badge
-                        variant="outline"
-                        className="h-5 shrink-0 gap-1 border-emerald-500/40 bg-emerald-500/10 px-1.5 text-[10px] text-emerald-700 dark:text-emerald-400"
-                    >
+                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-success/40 bg-success/10 px-1.5 text-[10px] text-success">
                         <CheckCircle2 className="size-2.5" /> {tr('funds.goalReached')}
                     </Badge>
                 ) : due?.tone === 'overdue' ? (
@@ -204,10 +201,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
                         <AlertTriangle className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : due?.tone === 'soon' ? (
-                    <Badge
-                        variant="outline"
-                        className="h-5 shrink-0 gap-1 border-amber-500/40 bg-amber-500/10 px-1.5 text-[10px] text-amber-700 dark:text-amber-400"
-                    >
+                    <Badge variant="outline" className="h-5 shrink-0 gap-1 border-warning/40 bg-warning/10 px-1.5 text-[10px] text-warning">
                         <Clock className="size-2.5" /> {due.shortLabel}
                     </Badge>
                 ) : null}
@@ -230,7 +224,7 @@ export function TopicListItem({ topic, active, onSelect }: { topic: FundTopicSum
 
             <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground tabular-nums">
                 <span className="truncate">
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">{formatBaht(topic.collected)}</span> / {formatBaht(topic.target)}
+                    <span className="font-medium text-success">{formatBaht(topic.collected)}</span> / {formatBaht(topic.target)}
                 </span>
                 <span className="shrink-0">
                     {tr('funds.complete')} {topic.paidCount}/{topic.memberCount} {tr('common.people')}

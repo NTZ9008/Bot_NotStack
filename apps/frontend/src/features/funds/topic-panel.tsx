@@ -159,7 +159,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     <Lock /> {tr('funds.closed')}
                                 </Badge>
                             ) : isCompleted ? (
-                                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                                <Badge variant="outline" className="border-success/40 bg-success/10 text-success">
                                     <CheckCircle2 /> {tr('funds.targetReached')}
                                 </Badge>
                             ) : null}
@@ -188,7 +188,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         due.tone === 'overdue'
                                             ? 'border-destructive/40 bg-destructive/10 font-normal text-destructive'
                                             : due.tone === 'soon'
-                                              ? 'border-amber-500/40 bg-amber-500/10 font-normal text-amber-700 dark:text-amber-400'
+                                              ? 'border-warning/40 bg-warning/10 font-normal text-warning'
                                               : 'font-normal text-muted-foreground'
                                     }
                                 >
@@ -216,11 +216,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                                 )
                                             }
                                         >
-                                            {copiedKey === 'account' ? (
-                                                <Check className="size-3 text-emerald-700 dark:text-emerald-400" />
-                                            ) : (
-                                                <Copy className="size-3" />
-                                            )}
+                                            {copiedKey === 'account' ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
                                             {tr('funds.copyNumber')} {accountDigits}
                                         </Button>
                                     )}
@@ -231,11 +227,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                         className="h-6 text-[11px]"
                                         onClick={() => void copyText(topic.description, 'desc', tr('funds.transferDetails'))}
                                     >
-                                        {copiedKey === 'desc' ? (
-                                            <Check className="size-3 text-emerald-700 dark:text-emerald-400" />
-                                        ) : (
-                                            <Copy className="size-3" />
-                                        )}
+                                        {copiedKey === 'desc' ? <Check className="size-3 text-success" /> : <Copy className="size-3" />}
 
                                         {tr('funds.copyText')}
                                     </Button>
@@ -288,7 +280,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                 <CardContent className="space-y-3">
                     {topic.closed && (
-                        <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300 sm:flex-row sm:items-center">
+                        <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning sm:flex-row sm:items-center">
                             <div className="flex items-start gap-2 sm:items-center">
                                 <Lock className="mt-0.5 size-4 shrink-0 sm:mt-0" />
                                 <span>{tr('funds.thisTopicIsClosedPressReopen')}</span>
@@ -296,7 +288,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             <Button
                                 size="xs"
                                 variant="outline"
-                                className="w-full shrink-0 border-amber-500/40 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20 sm:w-auto"
+                                className="w-full shrink-0 border-warning/40 text-warning hover:bg-warning/20 sm:w-auto"
                                 onClick={() => toggleClosed.mutate(false)}
                                 disabled={toggleClosed.isPending}
                             >
@@ -314,15 +306,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     ? tr('funds.perDayPeople', { 0: formatBaht(dailyRate), 1: topic.memberCount })
                                     : tr('funds.eachPeople', { 0: formatBaht(topic.amountPerMember), 1: topic.memberCount })
                             }
-                            icon={<Target className="size-3.5 text-rose-700 dark:text-rose-400" />}
+                            icon={<Target className="size-3.5 text-destructive" />}
                             variant="summary"
                         />
                         <StatTile
                             label={tr('funds.collected')}
                             value={formatBaht(topic.collected)}
                             subtext={tr('funds.ofTargetTransfers', { 0: pct, 1: topic.payments.length })}
-                            icon={<Banknote className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
-                            valueClassName="text-emerald-700 dark:text-emerald-400"
+                            icon={<Banknote className="size-3.5 text-success" />}
+                            valueClassName="text-success"
                             tone="emerald"
                             variant="summary"
                         />
@@ -334,8 +326,8 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                                     ? tr('funds.peopleOweMoney', { 0: statusCounts.partial + statusCounts.unpaid })
                                     : tr('funds.nothingOutstandingEveryoneHasPaid')
                             }
-                            icon={<Clock className="size-3.5 text-amber-700 dark:text-amber-400" />}
-                            valueClassName={remaining > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}
+                            icon={<Clock className="size-3.5 text-warning" />}
+                            valueClassName={remaining > 0 ? 'text-warning' : 'text-muted-foreground'}
                             tone={remaining > 0 ? 'amber' : 'default'}
                             variant="summary"
                         />
@@ -343,7 +335,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             label={tr('funds.memberStatus')}
                             value={tr('funds.paidOfMembers', { 0: topic.paidCount, 1: topic.memberCount })}
                             subtext={tr('funds.partialUnpaid', { 0: statusCounts.partial, 1: statusCounts.unpaid })}
-                            icon={<Users className="size-3.5 text-sky-700 dark:text-sky-400" />}
+                            icon={<Users className="size-3.5 text-info" />}
                             tone="sky"
                             variant="summary"
                         />

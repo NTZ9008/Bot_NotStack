@@ -278,7 +278,7 @@ export function MembersTab({
                                 {selectedUnpaidMembers.length > 0 && (
                                     <span className="text-muted-foreground tabular-nums">
                                         {tr('funds.outstanding')} {selectedUnpaidMembers.length} {tr('funds.peopleTotal')}{' '}
-                                        <span className="font-semibold text-amber-700 dark:text-amber-400">{formatBaht(selectedRemainingTotal)}</span>)
+                                        <span className="font-semibold text-warning">{formatBaht(selectedRemainingTotal)}</span>)
                                     </span>
                                 )}
                             </div>
@@ -394,7 +394,7 @@ export function MembersTab({
                                                     <p
                                                         className={cn(
                                                             'py-0.5 text-xs tabular-nums',
-                                                            m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
+                                                            m.remaining > 0 ? 'font-semibold text-warning' : 'text-muted-foreground',
                                                         )}
                                                     >
                                                         {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
@@ -416,7 +416,7 @@ export function MembersTab({
                                                         <Button
                                                             size="xs"
                                                             variant="secondary"
-                                                            className="flex-1 border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                            className="flex-1 border-success/30 bg-success/10 text-success hover:bg-success/20"
                                                             disabled={topic.closed || payFull.isPending}
                                                             onClick={() => payFull.mutate(m)}
                                                             title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}
@@ -510,7 +510,7 @@ export function MembersTab({
                                                     <td
                                                         className={cn(
                                                             'px-3 py-2.5 text-right tabular-nums',
-                                                            m.remaining > 0 ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-muted-foreground',
+                                                            m.remaining > 0 ? 'font-semibold text-warning' : 'text-muted-foreground',
                                                         )}
                                                     >
                                                         {m.remaining > 0 ? formatBaht(m.remaining) : '—'}
@@ -529,7 +529,7 @@ export function MembersTab({
                                                                 <Button
                                                                     size="xs"
                                                                     variant="secondary"
-                                                                    className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20"
+                                                                    className="border-success/30 bg-success/10 text-success hover:bg-success/20"
                                                                     disabled={topic.closed || payFull.isPending}
                                                                     onClick={() => payFull.mutate(m)}
                                                                     title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}

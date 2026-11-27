@@ -2,27 +2,26 @@ import { tr, dateLocale } from '../../../../../lib/i18n';
 import type { WeatherSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertTriangle, Loader2, RotateCcw, Save, Send } from '@/components/icons';
+import { AlertTriangle, Loader2, Send } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { weatherApi, weatherMetaQuery, weatherSettingsQuery } from '@/api/weather';
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
+import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { WeatherPageSkeleton } from '@/components/skeleton/editor-pages';
 import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isDirty, toDraft, type PatchWeather, type WeatherDraft } from '@/features/weather/types';
 import { WEATHER_SECTIONS, WeatherForm, type WeatherSection } from '@/features/weather/weather-form';
 import { WeatherPreview } from '@/features/weather/weather-preview';
 import { useGuildId } from '@/hooks/use-guild';
-import { useSaveShortcut, useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/weather')({
@@ -115,8 +114,6 @@ function WeatherPage() {
         }
     };
 
-    useSaveShortcut(() => void save());
-
     // สวิตช์บันทึกทันที — ใช้ค่าที่บันทึกไว้ (การแก้ไขที่ค้างอยู่ยังอยู่ ไม่ถูกบันทึกไปด้วย)
     const toggle = async (enabled: boolean) => {
         if (enabled && !saved?.channelId) return toast.error(tr('common.cantEnableYet'), { description: tr('common.pickAChannelAndPressSave') });
@@ -160,11 +157,23 @@ function WeatherPage() {
 
     return (
         <>
-            <PageHeader help="weather" title={tr('common.weatherReport')} description={tr('weather.dailyWeatherEmbedWithAForecast')} />
+            <PageHeader
+                help="weather"
+                title={tr('common.weatherReport')}
+                description={tr('weather.dailyWeatherEmbedWithAForecast')}
+                actions={
+                    <FeatureSwitch
+                        checked={current.enabled}
+                        disabled={busy === 'toggle'}
+                        onCheckedChange={(checked) => void toggle(checked)}
+                        title={tr('weather.turnScheduledReportsOnOffSaved')}
+                    />
+                }
+            />
 
             {!meta.data.apiKeyConfigured && (
-                <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-700 dark:text-amber-400" />
+                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
                     <p>
                         {tr('weather.notSet')} <code>OPENWEATHER_KEY</code> {tr('weather.inTheServerEnvFileThe')}
                     </p>
@@ -177,7 +186,9 @@ function WeatherPage() {
                         <p className="text-muted-foreground">
                             {current.enabled && current.nextRunAt ? (
                                 <>
-                                    <Badge className="mr-1.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">{tr('common.on')}</Badge>
+                                    <Badge variant="success" className="mr-1.5">
+                                        {tr('common.on')}
+                                    </Badge>
                                     {tr('weather.nextSend')} <strong className="text-foreground">{formatThai(current.nextRunAt)}</strong> {tr('common.joins')}{' '}
                                     {channelLabel(allChannels, current.channelId) ?? '-'}
                                 </>
@@ -197,23 +208,15 @@ function WeatherPage() {
                                 tr('weather.neverSentOnSchedule')
                             ) : current.lastError ? (
                                 <>
-                                    <span className="font-semibold text-red-700 dark:text-red-400">{tr('weather.sendFailed')}</span>{' '}
-                                    {formatThai(current.lastRunAt)} — {current.lastError}
+                                    <span className="font-semibold text-destructive">{tr('weather.sendFailed')}</span> {formatThai(current.lastRunAt)} —{' '}
+                                    {current.lastError}
                                 </>
                             ) : (
                                 <>
-                                    <span className="font-semibold text-emerald-700 dark:text-emerald-400">{tr('weather.sent')}</span>{' '}
-                                    {formatThai(current.lastRunAt)}
+                                    <span className="font-semibold text-success">{tr('weather.sent')}</span> {formatThai(current.lastRunAt)}
                                 </>
                             )}
                         </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        {dirty && <Badge className="bg-amber-500/15 text-amber-700 dark:text-amber-300">{tr('common.youHaveUnsavedChanges')}</Badge>}
-                        <Label className="flex items-center gap-2" title={tr('weather.turnScheduledReportsOnOffSaved')}>
-                            {tr('common.enabled')}
-                            <Switch checked={current.enabled} disabled={busy === 'toggle'} onCheckedChange={(checked) => void toggle(checked)} />
-                        </Label>
                     </div>
                 </CardHeader>
                 <CardContent className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
@@ -238,25 +241,15 @@ function WeatherPage() {
                             channels={allChannels}
                             enabled={meta.data.apiKeyConfigured}
                         />
-                        <div className="flex flex-wrap gap-2">
-                            <Button onClick={() => void save()} disabled={!dirty || busy === 'save'} title="Ctrl/⌘ + S">
-                                {busy === 'save' ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
-                            </Button>
-                            <Button variant="outline" disabled={!dirty} onClick={() => saved && setDraft(structuredClone(saved))}>
-                                <RotateCcw /> {tr('common.cancelChanges')}
-                            </Button>
-                            <Button
-                                variant="secondary"
-                                className="text-amber-800 dark:text-amber-300"
-                                onClick={() => void testSend()}
-                                disabled={busy === 'test'}
-                            >
-                                {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
-                            </Button>
-                        </div>
                     </div>
                 </CardContent>
             </Card>
+
+            <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
+                <Button variant="secondary" onClick={() => void testSend()} disabled={busy === 'test'}>
+                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
+                </Button>
+            </SaveBar>
         </>
     );
 }

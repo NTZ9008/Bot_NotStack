@@ -102,8 +102,8 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     label={tr('funds.averageCollectedPerPerson')}
                     value={formatBaht(avgPaidPerMember)}
                     subtext={tr('funds.ofAnAverageTargetOf', { 0: formatBaht(topic.amountPerMember) })}
-                    icon={<BarChart3 className="size-3.5 text-emerald-700 dark:text-emerald-400" />}
-                    valueClassName="text-emerald-700 dark:text-emerald-400"
+                    icon={<BarChart3 className="size-3.5 text-success" />}
+                    valueClassName="text-success"
                     tone="emerald"
                     variant="kpi"
                 />
@@ -118,7 +118,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     label={tr('funds.fullyPaidRate')}
                     value={`${completionRate}%`}
                     subtext={tr('funds.ofPeopleFullyPaid', { 0: topic.paidCount, 1: topic.memberCount })}
-                    icon={<CheckCircle2 className="size-3.5 text-sky-700 dark:text-sky-400" />}
+                    icon={<CheckCircle2 className="size-3.5 text-info" />}
                     tone="sky"
                     variant="kpi"
                 />
@@ -126,7 +126,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     label={tr('funds.paymentsReceived')}
                     value={tr('funds.entriesCount', { 0: topic.payments.length })}
                     subtext={topic.payments.length > 0 ? tr('funds.recordedInTheSystem') : tr('funds.noTransfersYet')}
-                    icon={<Receipt className="size-3.5 text-amber-700 dark:text-amber-400" />}
+                    icon={<Receipt className="size-3.5 text-warning" />}
                     variant="kpi"
                 />
             </div>
@@ -164,7 +164,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                            <TrendingUp className="size-4 text-emerald-700 dark:text-emerald-400" />
+                            <TrendingUp className="size-4 text-success" />
 
                             {tr('funds.runningTotalDailyIncomeTrend')}
                         </CardTitle>
@@ -207,7 +207,7 @@ export function TopicAnalyticsTab({ topic }: { topic: FundTopicDetail }) {
                     <Card className="min-w-0 lg:col-span-2">
                         <CardHeader className="pb-2">
                             <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-                                <BarChart3 className="size-4 text-sky-700 dark:text-sky-400" />
+                                <BarChart3 className="size-4 text-info" />
 
                                 {tr('funds.paymentsByMember')}
                             </CardTitle>

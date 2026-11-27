@@ -5,12 +5,13 @@ import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, Save,
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { aiSettingsQuery, testAiKey, updateAiSettings } from '@/api/ai';
+import { FeatureSwitch } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 
@@ -95,7 +96,19 @@ function AiSettingsPage() {
 
     return (
         <div className="space-y-6">
-            <PageHeader title={tr('common.aiChatSettings')} description={tr('ai.manageTheGeminiApiKeyAnd')} />
+            <PageHeader
+                title={tr('common.aiChatSettings')}
+                description={tr('ai.manageTheGeminiApiKeyAnd')}
+                actions={
+                    !isLoading && (
+                        <FeatureSwitch
+                            checked={Boolean(data?.aiEnabled)}
+                            disabled={toggle.isPending || (!data?.aiEnabled && !canEnable)}
+                            onCheckedChange={(checked) => toggle.mutate(checked)}
+                        />
+                    )
+                }
+            />
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -112,29 +125,16 @@ function AiSettingsPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="flex flex-wrap items-center justify-between gap-4 rounded-lg border p-4">
-                                <div className="space-y-1">
-                                    <div className="font-medium">
-                                        {tr('ai.aiSystem')} {data?.aiEnabled ? tr('common.enabled') : tr('common.disable')}
-                                    </div>
-                                    <p className="max-w-2xl text-sm text-muted-foreground">
-                                        {data?.aiEnabled ? tr('ai.theBotRepliesWhenMentionedAnd') : tr('ai.whenOffTheBotWontReply')}
-                                    </p>
+                            <div className="space-y-1 rounded-lg border p-4">
+                                <div className="flex items-center gap-2 font-medium">
+                                    {tr('ai.aiSystem')}
+                                    <Badge variant={data?.aiEnabled ? 'success' : 'secondary'}>{data?.aiEnabled ? tr('common.on') : tr('common.off')}</Badge>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <span className={data?.aiEnabled ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-muted-foreground'}>
-                                        {data?.aiEnabled ? tr('ai.on') : tr('common.close')}
-                                    </span>
-                                    <Switch
-                                        checked={Boolean(data?.aiEnabled)}
-                                        disabled={toggle.isPending || (!data?.aiEnabled && !canEnable)}
-                                        onCheckedChange={(checked) => toggle.mutate(checked)}
-                                    />
-                                </div>
+                                <p className="max-w-2xl text-sm text-muted-foreground">
+                                    {data?.aiEnabled ? tr('ai.theBotRepliesWhenMentionedAnd') : tr('ai.whenOffTheBotWontReply')}
+                                </p>
                             </div>
-                            {!data?.aiEnabled && !canEnable && (
-                                <p className="-mt-2 text-sm text-amber-700 dark:text-amber-400">{tr('ai.saveAGeminiApiKeyFirst')}</p>
-                            )}
+                            {!data?.aiEnabled && !canEnable && <p className="-mt-2 text-sm text-warning">{tr('ai.saveAGeminiApiKeyFirst')}</p>}
                             {data?.isUsingFallbackHomeKey && (
                                 <p className="rounded-md border border-highlight/30 bg-highlight/5 p-3 text-sm text-highlight">
                                     {tr('ai.theHomeServerIsUsingThe')}
@@ -185,11 +185,7 @@ function AiSettingsPage() {
                                     </Button>
                                 )}
                                 {testResult && (
-                                    <span
-                                        className={testResult.ok ? 'text-sm text-emerald-700 dark:text-emerald-400' : 'text-sm text-red-700 dark:text-red-400'}
-                                    >
-                                        {testResult.message}
-                                    </span>
+                                    <span className={testResult.ok ? 'text-sm text-success' : 'text-sm text-destructive'}>{testResult.message}</span>
                                 )}
                             </div>
                             <div className="grid max-w-sm gap-2">
@@ -258,11 +254,11 @@ function AiSettingsPage() {
                                         <tr key={model.name} className="border-b last:border-0">
                                             <td className="px-3 py-4">
                                                 <div className="flex items-center gap-2 font-medium">
-                                                    <span className={`size-2 rounded-full ${model.status === 'cooldown' ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                                                    <span className={`size-2 rounded-full ${model.status === 'cooldown' ? 'bg-destructive' : 'bg-success'}`} />
                                                     {modelLabel}
                                                 </div>
                                                 {cooldownSeconds > 0 && (
-                                                    <div className="mt-1 flex items-center gap-1 text-xs text-red-700 dark:text-red-400">
+                                                    <div className="mt-1 flex items-center gap-1 text-xs text-destructive">
                                                         <ShieldAlert className="size-3" />
                                                         {tr('ai.coolingDown')} {cooldownSeconds} {tr('ai.seconds')}
                                                     </div>

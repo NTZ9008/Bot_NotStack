@@ -10,12 +10,13 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Plus, Save, Trash2 } from '@/components/icons';
+import { Copy, Plus, Trash2 } from '@/components/icons';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { xpApi, xpKey, xpSettingsQuery } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SaveBar } from '@/components/page-controls';
 import { XpSettingsSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
@@ -96,32 +97,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const voiceIds = (channels.data ?? []).filter((c) => c.isVoice).map((c) => c.id);
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        disabled={save.isPending}
-                        onClick={async () => {
-                            if (dirty && !(await confirm({ title: tr('levels.discardChangesAndReloadTheLatest'), destructive: true }))) return;
-                            try {
-                                const latest = await client.fetchQuery({ ...xpSettingsQuery(guildId), staleTime: 0 });
-                                setSaved(latest);
-                                setDraft(latest.settings);
-                                setCommandText({});
-                            } catch (err) {
-                                toast.error(errorMessage(err));
-                            }
-                        }}
-                    >
-                        {tr('levels.reload')}
-                    </Button>
-                    <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
-                        <Save />
-                        {save.isPending ? tr('levels.saving') : tr('levels.saveAll')}
-                    </Button>
-                </div>
-            </div>
+            <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
             {!parsed.success && (
                 <p role="alert" className="text-sm text-destructive">
                     {parsed.error.issues[0]?.path.join('.')} — {parsed.error.issues[0]?.message}
@@ -447,11 +423,35 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                     </Button>
                 </div>
             </fieldset>
-            <Button disabled={!dirty || !parsed.success || save.isPending} onClick={() => save.mutate()}>
-                <Save />
-
-                {tr('levels.saveAll')}
-            </Button>
+            <SaveBar
+                dirty={dirty}
+                saving={save.isPending}
+                invalid={!parsed.success}
+                saveLabel={tr('levels.saveAll')}
+                onSave={() => save.mutate()}
+                onReset={() => {
+                    setDraft(saved.settings);
+                    setCommandText({});
+                }}
+            >
+                <Button
+                    variant="outline"
+                    disabled={save.isPending}
+                    onClick={async () => {
+                        if (dirty && !(await confirm({ title: tr('levels.discardChangesAndReloadTheLatest'), destructive: true }))) return;
+                        try {
+                            const latest = await client.fetchQuery({ ...xpSettingsQuery(guildId), staleTime: 0 });
+                            setSaved(latest);
+                            setDraft(latest.settings);
+                            setCommandText({});
+                        } catch (err) {
+                            toast.error(errorMessage(err));
+                        }
+                    }}
+                >
+                    {tr('levels.reload')}
+                </Button>
+            </SaveBar>
         </div>
     );
 }

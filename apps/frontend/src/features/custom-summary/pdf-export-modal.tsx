@@ -229,9 +229,9 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         </div>
                     </div>
 
-                    {error && <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-700 dark:text-red-300">{error}</p>}
+                    {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>}
                     {lastExportInfo && (
-                        <p className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-300">
+                        <p className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
                             <CheckCircle2 className="size-4 shrink-0" />
                             <span>{lastExportInfo}</span>
                         </p>

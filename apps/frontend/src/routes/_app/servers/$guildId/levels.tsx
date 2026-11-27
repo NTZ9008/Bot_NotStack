@@ -87,7 +87,7 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                         </Button>
                     )}
                 </form>
-                {query.data?.searchLimited && <p className="text-sm text-amber-700 dark:text-amber-400">{tr('levels.atLeast100NamesMatchPlease')}</p>}
+                {query.data?.searchLimited && <p className="text-sm text-warning">{tr('levels.atLeast100NamesMatchPlease')}</p>}
                 {query.isLoading ? (
                     <LeaderboardTableSkeleton />
                 ) : query.error ? (

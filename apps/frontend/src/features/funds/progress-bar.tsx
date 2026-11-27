@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils';
 
 export function ProgressBar({ value, className }: { value: number; className?: string }) {
     const clamped = Math.min(100, Math.max(0, value));
-    const barColor = clamped >= 100 ? 'bg-emerald-500' : clamped >= 50 ? 'bg-amber-500' : 'bg-primary';
+    const barColor = clamped >= 100 ? 'bg-success' : clamped >= 50 ? 'bg-warning' : 'bg-primary';
     return (
         <div
             className={cn('h-2 w-full overflow-hidden rounded-full bg-muted/70', className)}

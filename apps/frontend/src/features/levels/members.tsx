@@ -181,9 +181,7 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                                 </div>
                                 <div className="flex flex-wrap justify-between gap-2">
                                     <dt>{tr('levels.change')}</dt>
-                                    <dd
-                                        className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-emerald-700 dark:text-emerald-400'}`}
-                                    >
+                                    <dd className={`font-semibold tabular-nums ${completed.data.delta < 0 ? 'text-destructive' : 'text-success'}`}>
                                         {completed.data.delta > 0 ? '+' : ''}
                                         {completed.data.delta.toLocaleString()} XP
                                     </dd>
@@ -260,7 +258,7 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                                             <p>{row.reason}</p>
                                             <p className="text-xs text-muted-foreground">{row.source}</p>
                                         </td>
-                                        <td className={`p-3 font-semibold ${row.delta >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-destructive'}`}>
+                                        <td className={`p-3 font-semibold ${row.delta >= 0 ? 'text-success' : 'text-destructive'}`}>
                                             {row.delta > 0 ? '+' : ''}
                                             {row.delta.toLocaleString()}
                                         </td>

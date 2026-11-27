@@ -119,9 +119,7 @@ function GuideCard({ guide }: { guide: CommandGuide }) {
                         key={step.label}
                         className={cn(
                             'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs',
-                            step.value
-                                ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
-                                : 'border-border text-muted-foreground',
+                            step.value ? 'border-success/40 bg-success/10 text-success' : 'border-border text-muted-foreground',
                         )}
                     >
                         {step.value ? <Check className="size-3" /> : <Circle className="size-3" />}

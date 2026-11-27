@@ -213,7 +213,7 @@ export function BatchPaymentDialog({
                                                 {m.remaining > 0 ? (
                                                     tr('funds.owes2', { 0: formatBaht(m.remaining) })
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-400">
+                                                    <span className="inline-flex items-center gap-1 text-success">
                                                         <CheckCircle2 className="size-3" /> {tr('funds.fullyPaid2')}
                                                     </span>
                                                 )}
@@ -231,7 +231,7 @@ export function BatchPaymentDialog({
                             {tr('funds.totalReceived')}
                             {selectedIds.length} {tr('funds.people2')}{' '}
                         </span>
-                        <span className="font-semibold text-emerald-700 dark:text-emerald-400 tabular-nums">{formatBaht(totalCollected)}</span>
+                        <span className="font-semibold text-success tabular-nums">{formatBaht(totalCollected)}</span>
                     </div>
                     <div className="flex w-full justify-end gap-2 sm:w-auto">
                         <Button variant="outline" className="flex-1 sm:flex-initial" onClick={() => onOpenChange(false)}>

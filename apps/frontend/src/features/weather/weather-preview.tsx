@@ -111,11 +111,9 @@ export function WeatherPreview({
                             <Loader2 className="size-4 animate-spin" /> {tr('weather.loadingWeatherData')}
                         </p>
                     )}
-                    {preview.error && (
-                        <p className="text-sm text-red-700 dark:text-red-400">{tr('weather.failedToCreatePreview', { 0: errorMessage(preview.error) })}</p>
-                    )}
+                    {preview.error && <p className="text-sm text-destructive">{tr('weather.failedToCreatePreview', { 0: errorMessage(preview.error) })}</p>}
                     {data?.warnings.length ? (
-                        <p className="flex items-start gap-1.5 text-sm text-amber-700 dark:text-amber-300">
+                        <p className="flex items-start gap-1.5 text-sm text-warning">
                             <AlertTriangle className="mt-0.5 size-4 shrink-0" /> {data.warnings.join(' · ')}
                         </p>
                     ) : null}

@@ -1,13 +1,14 @@
 import { tr, byLang } from '../../lib/i18n';
 import type { RankBackgroundType, RankCardMeta, RankCardStyle, RankCardTheme, RankPreviewKind, WelcomeAsset, WelcomeCard, WelcomeMeta } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Check, RotateCcw, Save } from '@/components/icons';
+import { Check, RotateCcw } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { rankCardApi, rankCardKey, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';
 import { assetImageUrl, welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } from '@/api/welcome';
 import { ColorField } from '@/components/color-field';
 import { useConfirm } from '@/components/confirm-dialog';
+import { SaveBar } from '@/components/page-controls';
 import { Field } from '@/components/field';
 import { RankEditorSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
@@ -144,33 +145,7 @@ function ThemeEditor({
 
     return (
         <div className="space-y-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-sm text-muted-foreground">{tr('levels.theDefaultThemeForEveryCard')}</p>
-                <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        disabled={save.isPending}
-                        onClick={async () => {
-                            if (
-                                !(await confirm({
-                                    title: tr('levels.resetToTheDefaultTheme'),
-                                    description: tr('levels.valuesEditedOnThisPageAre'),
-                                }))
-                            )
-                                return;
-                            setDraft(meta.defaultTheme);
-                        }}
-                    >
-                        <RotateCcw />
-
-                        {tr('levels.defaults')}
-                    </Button>
-                    <Button disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
-                        <Save />
-                        {save.isPending ? tr('levels.saving') : tr('levels.saveTheme')}
-                    </Button>
-                </div>
-            </div>
+            <p className="text-sm text-muted-foreground">{tr('levels.theDefaultThemeForEveryCard')}</p>
 
             <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                 <fieldset disabled={save.isPending} className="min-w-0 space-y-5">
@@ -419,6 +394,18 @@ function ThemeEditor({
                     <p className="mt-2 text-xs text-muted-foreground">{tr('levels.thePreviewUsesTheAvatarAnd')}</p>
                 </div>
             </div>
+            <SaveBar dirty={dirty} saving={save.isPending} saveLabel={tr('levels.saveTheme')} onSave={() => save.mutate()} onReset={() => setDraft(saved)}>
+                <Button
+                    variant="outline"
+                    disabled={save.isPending}
+                    onClick={async () => {
+                        if (!(await confirm({ title: tr('levels.resetToTheDefaultTheme'), description: tr('levels.valuesEditedOnThisPageAre') }))) return;
+                        setDraft(meta.defaultTheme);
+                    }}
+                >
+                    <RotateCcw /> {tr('levels.defaults')}
+                </Button>
+            </SaveBar>
         </div>
     );
 }
