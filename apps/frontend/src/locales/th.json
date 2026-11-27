@@ -3100,5 +3100,14 @@
     "levels.continueSetup": "ตั้งค่าต่อ",
     "levels.submitAdd": "เพิ่ม {xp} XP",
     "levels.submitSubtract": "ลด {xp} XP",
-    "levels.submitSet": "ตั้ง XP เป็น {xp}"
+    "levels.submitSet": "ตั้ง XP เป็น {xp}",
+    "levels.tierLegend": "ตำนาน",
+    "levels.tierMaster": "ปรมาจารย์",
+    "levels.tierExpert": "ตัวจริง",
+    "levels.tierRegular": "ขาประจำ",
+    "levels.tierMember": "สมาชิก",
+    "levels.tierNewbie": "มือใหม่",
+    "levels.stepDone": "เสร็จแล้ว",
+    "levels.stepTodo": "ยังไม่ได้ตั้ง",
+    "levels.stepOptional": "ไม่บังคับ"
 }

@@ -24,6 +24,7 @@ import { MemberXpSheet, ResetServerPanel, XpHistoryPanel, type XpMember } from '
 import { MyRankCardPanel } from '@/features/levels/my-rank-card';
 import { RankThemePanel } from '@/features/levels/rank-theme-editor';
 import { XpSettingsPanel } from '@/features/levels/settings';
+import { LevelBar, LevelChip } from '@/features/levels/tiers';
 import { useAuth } from '@/hooks/use-auth';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useGuild } from '@/hooks/use-guild';
@@ -143,16 +144,18 @@ function Leaderboard({ guildId, initialQuery = '', onManage }: { guildId: string
                                                         )}
                                                     </div>
                                                 </td>
-                                                <td className="p-3 font-semibold">Lvl {row.level.toLocaleString()}</td>
+                                                <td className="p-3">
+                                                    <LevelChip level={row.level} />
+                                                </td>
                                                 <td className="min-w-48 p-3">
                                                     <p className="tabular-nums">
                                                         {row.xp.toLocaleString()} / {next.toLocaleString()} XP
                                                     </p>
-                                                    <progress
-                                                        aria-label={tr('levels.levelProgressOf', { 0: row.username })}
-                                                        className="mt-2 h-2 w-full accent-primary"
-                                                        max={100}
-                                                        value={percent}
+                                                    <LevelBar
+                                                        className="mt-2"
+                                                        level={row.level}
+                                                        percent={percent}
+                                                        label={tr('levels.levelProgressOf', { 0: row.username })}
                                                     />
                                                 </td>
                                             </tr>
@@ -198,15 +201,17 @@ function useStepStatus(guildId: string, enabled: boolean): Record<(typeof STEPS)
     return { xp: xp.enabled && xp.rules.some((rule) => rule.enabled), 'level-up': levelUp.announce || levelUp.rewards.length > 0, theme: undefined };
 }
 
-function StepNumber({ n, done }: { n: number; done?: boolean }) {
+// สถานะของขั้น: เสร็จ (เขียว) · จำเป็นแต่ยังไม่ตั้ง (เหลือง) · ไม่บังคับ (เทา) — มีข้อความกำกับ ไม่พึ่งสีอย่างเดียว
+const STEP_STATE = {
+    done: { badge: 'bg-success text-white', text: 'text-success', label: 'levels.stepDone' },
+    todo: { badge: 'bg-amber-500 text-white', text: 'text-amber-700 dark:text-amber-300', label: 'levels.stepTodo' },
+    optional: { badge: 'bg-slate-500 text-white', text: 'text-muted-foreground', label: 'levels.stepOptional' },
+} as const;
+
+function StepNumber({ n, state }: { n: number; state: keyof typeof STEP_STATE }) {
     return (
-        <span
-            className={cn(
-                'inline-flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                done ? 'bg-success text-white' : 'bg-primary text-primary-foreground',
-            )}
-        >
-            {done ? <Check className="size-3" aria-hidden /> : n}
+        <span className={cn('inline-flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold', STEP_STATE[state].badge)}>
+            {state === 'done' ? <Check className="size-3" aria-hidden /> : n}
         </span>
     );
 }
@@ -266,7 +271,10 @@ function SettingsArea({
             key={value}
             value={value}
             {...intent(preload[value])}
-            className={cn('justify-start rounded-md data-active:bg-accent! data-active:text-accent-foreground!', className)}
+            className={cn(
+                'h-auto justify-start rounded-lg px-3 py-2 after:hidden hover:bg-muted/60 data-active:bg-primary/10! data-active:text-primary! dark:data-active:bg-primary/25! dark:data-active:text-foreground!',
+                className,
+            )}
         >
             {children}
         </TabsTrigger>
@@ -278,19 +286,31 @@ function SettingsArea({
             orientation={mobile ? 'horizontal' : 'vertical'}
             className="md:grid md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6"
         >
-            <TabsList variant="line" aria-label={tr('levels.settings')} className="h-auto w-full justify-start md:sticky md:top-4 md:w-auto md:items-stretch">
+            <TabsList
+                variant="line"
+                aria-label={tr('levels.settings')}
+                className="h-auto w-full justify-start rounded-2xl! border bg-card p-1.5 shadow-sm md:sticky md:top-4 md:w-auto md:items-stretch md:p-2"
+            >
                 <p className="hidden px-3 pt-1 pb-1 text-xs font-medium text-muted-foreground md:block" aria-hidden>
                     {tr('levels.setupSteps')}
                 </p>
-                {STEPS.map((step, index) =>
-                    item(
+                {STEPS.map((step, index) => {
+                    // ระหว่างโหลดสถานะยังไม่รู้ → ไม่ขึ้นข้อความ (กันขั้นที่จำเป็นโชว์ว่า "ไม่บังคับ" ชั่วครู่)
+                    const known = step === 'theme' || status !== null;
+                    const state = step === 'theme' ? 'optional' : status?.[step] ? 'done' : known ? 'todo' : 'optional';
+                    return item(
                         step,
                         <>
-                            <StepNumber n={index + 1} done={status?.[step]} />
-                            {labels[step]}
+                            <StepNumber n={index + 1} state={state} />
+                            <span className="flex flex-col items-start text-left">
+                                {labels[step]}
+                                {known && (
+                                    <span className={cn('hidden text-xs font-normal md:block', STEP_STATE[state].text)}>{tr(STEP_STATE[state].label)}</span>
+                                )}
+                            </span>
                         </>,
-                    ),
-                )}
+                    );
+                })}
                 <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border md:mx-3 md:my-2 md:h-px md:w-auto" />
                 {item('history', labels.history)}
                 {item(

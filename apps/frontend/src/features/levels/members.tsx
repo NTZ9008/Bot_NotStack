@@ -18,6 +18,7 @@ import { Segmented } from '@/features/welcome/form-controls';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime } from '@/lib/format';
 import { NumberField } from './settings';
+import { LevelBar, LevelChip } from './tiers';
 
 const ACTIONS = byLang((): Record<XpMemberMutation['action'], string> => ({
     add: tr('levels.addXp'),
@@ -119,12 +120,10 @@ function MemberXpBody({ guildId, member }: { guildId: string; member: XpMember }
                         <Stat label={tr('common.rank')} value={`#${row.rank.toLocaleString()}`} />
                         <Stat label={tr('levels.level')} value={row.level.toLocaleString()} />
                         <Stat label="XP" value={row.xp.toLocaleString()} />
-                        <progress
-                            aria-label={tr('levels.levelProgressOf', { 0: member.username })}
-                            className="col-span-3 h-2 w-full accent-primary"
-                            max={100}
-                            value={percent}
-                        />
+                        <div className="col-span-3 flex items-center gap-3">
+                            <LevelChip level={row.level} />
+                            <LevelBar className="flex-1" level={row.level} percent={percent} label={tr('levels.levelProgressOf', { 0: member.username })} />
+                        </div>
                     </>
                 ) : (
                     <p className="col-span-3 rounded-md bg-muted p-3 text-sm text-muted-foreground">{tr('levels.noXpYetAddToStart')}</p>

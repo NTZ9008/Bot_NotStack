@@ -3100,5 +3100,14 @@
     "levels.continueSetup": "Continue setup",
     "levels.submitAdd": "Add {xp} XP",
     "levels.submitSubtract": "Take {xp} XP",
-    "levels.submitSet": "Set XP to {xp}"
+    "levels.submitSet": "Set XP to {xp}",
+    "levels.tierLegend": "Legend",
+    "levels.tierMaster": "Master",
+    "levels.tierExpert": "Expert",
+    "levels.tierRegular": "Regular",
+    "levels.tierMember": "Member",
+    "levels.tierNewbie": "Newbie",
+    "levels.stepDone": "Done",
+    "levels.stepTodo": "Not set up",
+    "levels.stepOptional": "Optional"
 }
