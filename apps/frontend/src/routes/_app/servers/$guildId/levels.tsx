@@ -8,23 +8,26 @@ import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { xpHistoryQuery, xpSettingsQuery } from '@/api/levels';
 import { levelUpQuery, myRankCardQuery, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';
 import { welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } from '@/api/welcome';
+import { ArrowLeft, ArrowRight, Check, Search, Settings, X } from '@/components/icons';
 import { PageHeader } from '@/components/page-header';
 import { PAGE_SIZE, Pagination } from '@/components/pagination';
 import { RankBadge } from '@/components/rank-badge';
 import { LeaderboardTableSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
-import { ArrowLeft, ArrowRight, Check } from '@/components/icons';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LevelUpPanel } from '@/features/levels/level-up-settings';
-import { XpHistoryPanel, XpMembersPanel } from '@/features/levels/members';
+import { MemberXpSheet, ResetServerPanel, XpHistoryPanel, type XpMember } from '@/features/levels/members';
 import { MyRankCardPanel } from '@/features/levels/my-rank-card';
 import { RankThemePanel } from '@/features/levels/rank-theme-editor';
 import { XpSettingsPanel } from '@/features/levels/settings';
 import { useAuth } from '@/hooks/use-auth';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { useGuild } from '@/hooks/use-guild';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { usePreloadTasks } from '@/hooks/use-preload-tasks';
 import { cn } from '@/lib/utils';
 
@@ -38,59 +41,62 @@ export const Route = createFileRoute('/_app/servers/$guildId/levels')({
         context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: PAGE_SIZE, ...(deps.q ? { q: deps.q } : {}) })),
     component: LevelsPage,
 });
-function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQuery?: string }) {
+
+type Intent = (names: string[]) => { onMouseEnter: () => void; onFocus: () => void; onTouchStart: () => void };
+
+function Leaderboard({ guildId, initialQuery = '', onManage }: { guildId: string; initialQuery?: string; onManage?: (member: XpMember | 'pick') => void }) {
     const { user } = useAuth();
     const [page, setPage] = useState(1),
         [pageSize, setPageSize] = useState(PAGE_SIZE),
-        [search, setSearch] = useState(initialQuery),
-        [userId, setUserId] = useState(initialQuery);
-    const query = useQuery(levelsQuery(guildId, { page, pageSize, ...(userId ? { q: userId } : {}) }));
+        [search, setSearch] = useState(initialQuery);
+    // ค้นหาทันทีที่หยุดพิมพ์ ไม่ต้องกดปุ่ม
+    const q = useDebouncedValue(search.trim(), 300);
+    const query = useQuery(levelsQuery(guildId, { page, pageSize, ...(q ? { q } : {}) }));
+    const find = (text: string) => {
+        setSearch(text);
+        setPage(1);
+    };
     return (
         <Card>
             <CardContent className="space-y-4">
-                <form
-                    className="flex flex-wrap gap-2"
-                    onSubmit={(e) => {
-                        e.preventDefault();
-                        setUserId(search.trim());
-                        setPage(1);
-                    }}
-                >
-                    <Input
-                        aria-label={tr('levels.searchMembersByNameOrDiscord')}
-                        className="max-w-xs"
-                        placeholder={tr('levels.startOfANameOrDiscord')}
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                    <Button type="submit" variant="outline">
-                        {tr('common.search')}
-                    </Button>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        onClick={() => {
-                            setSearch('');
-                            setUserId('');
-                            setPage(1);
-                        }}
-                    >
-                        {tr('common.total')}
-                    </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                    <div className="relative w-full max-w-xs">
+                        <Search aria-hidden className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            type="search"
+                            aria-label={tr('levels.searchMembersByNameOrDiscord')}
+                            className="pr-9 pl-9"
+                            placeholder={tr('levels.startOfANameOrDiscord')}
+                            value={search}
+                            onChange={(e) => find(e.target.value)}
+                        />
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={() => find('')}
+                                aria-label={tr('common.clearSearch')}
+                                className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                            >
+                                <X className="size-4" />
+                            </button>
+                        )}
+                    </div>
                     {user.discordId && (
                         <Button
                             type="button"
                             variant="outline"
-                            onClick={() => {
-                                setSearch(user.discordId!);
-                                setUserId(user.discordId!);
-                                setPage(1);
-                            }}
+                            aria-pressed={search === user.discordId}
+                            onClick={() => find(search === user.discordId ? '' : user.discordId!)}
                         >
                             {tr('levels.myRank')}
                         </Button>
                     )}
-                </form>
+                    {onManage && (
+                        <Button type="button" variant="outline" className="sm:ml-auto" onClick={() => onManage('pick')}>
+                            {tr('levels.adjustMemberXp')}
+                        </Button>
+                    )}
+                </div>
                 {query.data?.searchLimited && <p className="text-sm text-warning">{tr('levels.atLeast100NamesMatchPlease')}</p>}
                 {query.isLoading ? (
                     <LeaderboardTableSkeleton />
@@ -114,17 +120,32 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                                             next = xpForNextLevel(row.level, query.data.settings);
                                         const percent = Math.max(0, Math.min(100, ((row.xp - previous) / (next - previous)) * 100));
                                         return (
-                                            <tr key={row.userId} className={`border-b ${row.userId === user.discordId ? 'bg-primary/10' : ''}`}>
+                                            <tr key={row.userId} className={cn('border-b', row.userId === user.discordId && 'bg-primary/10')}>
                                                 <td className="p-3">
                                                     <RankBadge rank={row.rank} />
                                                 </td>
                                                 <td className="p-3">
-                                                    <p className="font-medium">{row.username}</p>
-                                                    <p className="font-mono text-xs text-muted-foreground">{row.userId}</p>
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <div className="min-w-0">
+                                                            <p className="font-medium">{row.username}</p>
+                                                            <p className="font-mono text-xs text-muted-foreground">{row.userId}</p>
+                                                        </div>
+                                                        {onManage && (
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                aria-label={tr('levels.manageXpOf', { name: row.username })}
+                                                                onClick={() => onManage({ userId: row.userId, username: row.username })}
+                                                            >
+                                                                {tr('levels.manage')}
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="p-3 font-semibold">Lvl {row.level.toLocaleString()}</td>
                                                 <td className="min-w-48 p-3">
-                                                    <p>
+                                                    <p className="tabular-nums">
                                                         {row.xp.toLocaleString()} / {next.toLocaleString()} XP
                                                     </p>
                                                     <progress
@@ -165,6 +186,143 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
         </Card>
     );
 }
+
+const STEPS = ['xp', 'level-up', 'theme'] as const;
+type Section = (typeof STEPS)[number] | 'history' | 'danger';
+
+// สถานะของขั้นที่จำเป็น (ธีมการ์ดไม่บังคับ → undefined)
+function useStepStatus(guildId: string, enabled: boolean): Record<(typeof STEPS)[number], boolean | undefined> | null {
+    const xp = useQuery({ ...xpSettingsQuery(guildId), enabled }).data?.settings;
+    const levelUp = useQuery({ ...levelUpQuery(guildId), enabled }).data?.settings;
+    if (!xp || !levelUp) return null;
+    return { xp: xp.enabled && xp.rules.some((rule) => rule.enabled), 'level-up': levelUp.announce || levelUp.rewards.length > 0, theme: undefined };
+}
+
+function StepNumber({ n, done }: { n: number; done?: boolean }) {
+    return (
+        <span
+            className={cn(
+                'inline-flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
+                done ? 'bg-success text-white' : 'bg-primary text-primary-foreground',
+            )}
+        >
+            {done ? <Check className="size-3" aria-hidden /> : n}
+        </span>
+    );
+}
+
+function SettingsArea({
+    guildId,
+    section,
+    onSection,
+    status,
+    intent,
+}: {
+    guildId: string;
+    section: Section;
+    onSection: (section: Section) => void;
+    status: ReturnType<typeof useStepStatus>;
+    intent: Intent;
+}) {
+    const mobile = useIsMobile();
+    const labels: Record<Section, string> = {
+        xp: tr('levels.xpRulesRates'),
+        'level-up': tr('levels.levelUpsRewardRoles'),
+        theme: tr('levels.cardTheme'),
+        history: tr('levels.xpHistory'),
+        danger: tr('levels.dangerZone'),
+    };
+    const preload: Record<Section, string[]> = {
+        xp: ['settings', 'channels', 'roles'],
+        'level-up': ['meta', 'theme', 'level-up', 'channels', 'roles'],
+        theme: ['meta', 'theme', 'welcome-meta', 'assets', 'cards'],
+        history: ['history'],
+        danger: [],
+    };
+    const stepNav = (index: number) => {
+        const prev = STEPS[index - 1],
+            next = STEPS[index + 1];
+        return (
+            <div className="mt-5 flex flex-wrap justify-between gap-2 border-t pt-4">
+                {prev ? (
+                    <Button variant="ghost" onClick={() => onSection(prev)}>
+                        <ArrowLeft />
+                        {tr('levels.previousStep', { name: labels[prev] })}
+                    </Button>
+                ) : (
+                    <span />
+                )}
+                {next && (
+                    <Button variant="outline" onClick={() => onSection(next)} {...intent(preload[next])}>
+                        {tr('levels.nextStep', { name: labels[next] })}
+                        <ArrowRight />
+                    </Button>
+                )}
+            </div>
+        );
+    };
+    const item = (value: Section, children: React.ReactNode, className?: string) => (
+        <TabsTrigger
+            key={value}
+            value={value}
+            {...intent(preload[value])}
+            className={cn('justify-start rounded-md data-active:bg-accent! data-active:text-accent-foreground!', className)}
+        >
+            {children}
+        </TabsTrigger>
+    );
+    return (
+        <Tabs
+            value={section}
+            onValueChange={(value) => onSection(value as Section)}
+            orientation={mobile ? 'horizontal' : 'vertical'}
+            className="md:grid md:grid-cols-[14rem_minmax(0,1fr)] md:items-start md:gap-6"
+        >
+            <TabsList variant="line" aria-label={tr('levels.settings')} className="h-auto w-full justify-start md:sticky md:top-4 md:w-auto md:items-stretch">
+                <p className="hidden px-3 pt-1 pb-1 text-xs font-medium text-muted-foreground md:block" aria-hidden>
+                    {tr('levels.setupSteps')}
+                </p>
+                {STEPS.map((step, index) =>
+                    item(
+                        step,
+                        <>
+                            <StepNumber n={index + 1} done={status?.[step]} />
+                            {labels[step]}
+                        </>,
+                    ),
+                )}
+                <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-border md:mx-3 md:my-2 md:h-px md:w-auto" />
+                {item('history', labels.history)}
+                {item(
+                    'danger',
+                    labels.danger,
+                    'text-destructive hover:text-destructive dark:text-destructive dark:hover:text-destructive data-active:bg-destructive/10! data-active:text-destructive!',
+                )}
+            </TabsList>
+            <div className="min-w-0">
+                <TabsContent value="xp" forceMount className="data-[state=inactive]:hidden">
+                    <XpSettingsPanel guildId={guildId} />
+                    {stepNav(0)}
+                </TabsContent>
+                <TabsContent value="level-up">
+                    <LevelUpPanel guildId={guildId} />
+                    {stepNav(1)}
+                </TabsContent>
+                <TabsContent value="theme">
+                    <RankThemePanel guildId={guildId} />
+                    {stepNav(2)}
+                </TabsContent>
+                <TabsContent value="history">
+                    <XpHistoryPanel guildId={guildId} />
+                </TabsContent>
+                <TabsContent value="danger">
+                    <ResetServerPanel guildId={guildId} />
+                </TabsContent>
+            </div>
+        </Tabs>
+    );
+}
+
 function LevelsPage() {
     const t = useT();
     const guild = useGuild();
@@ -172,6 +330,10 @@ function LevelsPage() {
     const queryClient = useQueryClient();
     const manage = guild.access === 'manage';
     const guildId = guild.id;
+    const [tab, setTab] = useState('leaderboard');
+    const [section, setSection] = useState<Section>('xp');
+    const [member, setMember] = useState<XpMember | 'pick' | null>(null);
+    const status = useStepStatus(guildId, manage);
 
     const tasks = useMemo(() => {
         const queries = [
@@ -194,163 +356,59 @@ function LevelsPage() {
         return queries.map(({ name, run }) => ({ key: `${guildId}:levels:${name}`, run }));
     }, [guildId, manage, queryClient]);
     const prioritize = usePreloadTasks(tasks);
-    const intent = (names: string[]) => {
+    const intent: Intent = (names) => {
         const preload = () => prioritize(names.map((name) => `${guildId}:levels:${name}`));
         return { onMouseEnter: preload, onFocus: preload, onTouchStart: preload };
     };
-    // ขั้นตอนตั้งค่าเรียงตามที่ต้องทำจริง: กฎ XP → เลเวลอัป/ยศ → หน้าตาการ์ด
-    const steps = [
-        { value: 'settings', label: tr('levels.xpRulesRates'), hint: tr('levels.step1Hint'), preload: ['settings', 'channels', 'roles'] },
-        {
-            value: 'level-up',
-            label: tr('levels.levelUpsRewardRoles'),
-            hint: tr('levels.step2Hint'),
-            preload: ['meta', 'theme', 'level-up', 'channels', 'roles'],
-        },
-        { value: 'card-theme', label: tr('levels.cardTheme'), hint: tr('levels.step3Hint'), preload: ['meta', 'theme', 'welcome-meta', 'assets', 'cards'] },
-    ];
-    const [tab, setTab] = useState('leaderboard');
-    const stepNav = (index: number) => {
-        const prev = steps[index - 1],
-            next = steps[index + 1];
-        return (
-            <div className="mt-5 flex flex-wrap justify-between gap-2 border-t pt-4">
-                {prev ? (
-                    <Button variant="ghost" onClick={() => setTab(prev.value)}>
-                        <ArrowLeft />
-                        {tr('levels.previousStep', { name: prev.label })}
-                    </Button>
-                ) : (
-                    <span />
-                )}
-                {next && (
-                    <Button variant="outline" onClick={() => setTab(next.value)} {...intent(next.preload)}>
-                        {tr('levels.nextStep', { name: next.label })}
-                        <ArrowRight />
-                    </Button>
-                )}
-            </div>
-        );
+    const firstTodo = status && STEPS.find((step) => status[step] === false);
+    const openSettings = (next: Section) => {
+        setSection(next);
+        setTab('settings');
     };
+
     return (
         <>
             <PageHeader help="levels" title={tr('common.ranksLevels')} description={t('levels.xpSystemForNameLeaderboardRank', { name: guild.name })} />
-            {manage && <SetupSteps guildId={guildId} steps={steps} onOpen={setTab} intent={intent} />}
+            {manage && firstTodo && tab !== 'settings' && (
+                <Alert className="mb-4">
+                    <Settings />
+                    <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+                        <span>
+                            <span className="font-medium text-foreground">{tr('levels.setupIncomplete')}</span>{' '}
+                            {tr('levels.setupIncompleteHint', { done: STEPS.filter((s) => status[s]).length, total: 2 })}
+                        </span>
+                        <Button size="sm" onClick={() => openSettings(firstTodo)}>
+                            {tr('levels.continueSetup')}
+                            <ArrowRight />
+                        </Button>
+                    </AlertDescription>
+                </Alert>
+            )}
             <Tabs value={tab} onValueChange={setTab} key={guild.id}>
-                <TabsList className="mb-4 flex h-auto flex-wrap">
+                <TabsList className="mb-4">
                     <TabsTrigger value="leaderboard">{tr('levels.leaderboard')}</TabsTrigger>
                     <TabsTrigger value="my-card" {...intent(['meta', 'mine'])}>
                         {tr('levels.myCard')}
                     </TabsTrigger>
                     {manage && (
-                        <>
-                            <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                            {steps.map((step, index) => (
-                                <TabsTrigger key={step.value} value={step.value} {...intent(step.preload)}>
-                                    <StepNumber n={index + 1} />
-                                    {step.label}
-                                </TabsTrigger>
-                            ))}
-                            <span aria-hidden className="mx-1 h-5 w-px bg-border" />
-                            <TabsTrigger value="members">{tr('levels.manageMembers')}</TabsTrigger>
-                            <TabsTrigger value="history" {...intent(['history'])}>
-                                {tr('common.history')}
-                            </TabsTrigger>
-                        </>
+                        <TabsTrigger value="settings" {...intent(['settings', 'channels', 'roles'])}>
+                            {tr('levels.settings')}
+                        </TabsTrigger>
                     )}
                 </TabsList>
                 <TabsContent value="leaderboard">
-                    <Leaderboard key={`${guild.id}:${q ?? ''}`} guildId={guild.id} initialQuery={q?.trim()} />
+                    <Leaderboard key={`${guild.id}:${q ?? ''}`} guildId={guild.id} initialQuery={q?.trim()} onManage={manage ? setMember : undefined} />
                 </TabsContent>
                 <TabsContent value="my-card">
                     <MyRankCardPanel guildId={guild.id} />
                 </TabsContent>
                 {manage && (
-                    <>
-                        <TabsContent value="settings" forceMount className="data-[state=inactive]:hidden">
-                            <XpSettingsPanel guildId={guild.id} />
-                            {stepNav(0)}
-                        </TabsContent>
-                        <TabsContent value="level-up">
-                            <LevelUpPanel guildId={guild.id} />
-                            {stepNav(1)}
-                        </TabsContent>
-                        <TabsContent value="card-theme">
-                            <RankThemePanel guildId={guild.id} />
-                            {stepNav(2)}
-                        </TabsContent>
-                        <TabsContent value="members">
-                            <XpMembersPanel guildId={guild.id} />
-                        </TabsContent>
-                        <TabsContent value="history">
-                            <XpHistoryPanel guildId={guild.id} />
-                        </TabsContent>
-                    </>
+                    <TabsContent value="settings" forceMount className="data-[state=inactive]:hidden">
+                        <SettingsArea guildId={guild.id} section={section} onSection={setSection} status={status} intent={intent} />
+                    </TabsContent>
                 )}
             </Tabs>
+            {manage && <MemberXpSheet guildId={guild.id} member={member} onClose={() => setMember(null)} />}
         </>
-    );
-}
-
-function StepNumber({ n, done }: { n: number; done?: boolean }) {
-    return (
-        <span
-            className={cn(
-                'inline-flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-bold',
-                done ? 'bg-success text-white' : 'bg-primary text-primary-foreground',
-            )}
-        >
-            {done ? <Check className="size-3" aria-hidden /> : n}
-        </span>
-    );
-}
-
-// การ์ดบอกว่าตั้งค่าไปถึงไหนแล้ว — โผล่เฉพาะตอนขั้นที่จำเป็น (1, 2) ยังไม่ครบ
-function SetupSteps({
-    guildId,
-    steps,
-    onOpen,
-    intent,
-}: {
-    guildId: string;
-    steps: { value: string; label: string; hint: string; preload: string[] }[];
-    onOpen: (value: string) => void;
-    intent: (names: string[]) => object;
-}) {
-    const xp = useQuery(xpSettingsQuery(guildId)).data?.settings;
-    const levelUp = useQuery(levelUpQuery(guildId)).data?.settings;
-    if (!xp || !levelUp) return null;
-    const done = [xp.enabled && xp.rules.some((rule) => rule.enabled), levelUp.announce || levelUp.rewards.length > 0, undefined];
-    if (done[0] && done[1]) return null;
-    return (
-        <Card className="mb-4">
-            <CardContent className="space-y-3">
-                <div>
-                    <h2 className="font-semibold">{tr('levels.setupTitle')}</h2>
-                    <p className="text-sm text-muted-foreground">{tr('levels.setupDescription')}</p>
-                </div>
-                <ol className="grid gap-2 sm:grid-cols-3">
-                    {steps.map((step, index) => (
-                        <li key={step.value}>
-                            <button
-                                type="button"
-                                onClick={() => onOpen(step.value)}
-                                {...intent(step.preload)}
-                                className="flex h-full w-full items-start gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none"
-                            >
-                                <StepNumber n={index + 1} done={done[index]} />
-                                <span className="min-w-0">
-                                    <span className="block text-sm font-medium">{step.label}</span>
-                                    <span className="block text-xs text-muted-foreground">{step.hint}</span>
-                                    <span className={cn('mt-1 block text-xs font-medium', done[index] ? 'text-success' : 'text-muted-foreground')}>
-                                        {done[index] === undefined ? tr('levels.stepOptional') : done[index] ? tr('levels.stepDone') : tr('levels.stepTodo')}
-                                    </span>
-                                </span>
-                            </button>
-                        </li>
-                    ))}
-                </ol>
-            </CardContent>
-        </Card>
     );
 }

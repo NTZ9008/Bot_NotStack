@@ -150,6 +150,9 @@ export interface XpHistoryRow {
     reason: string;
     actorId: number | null;
     createdAt: string;
+    // null = หาชื่อไม่ได้ (ออกจากเซิร์ฟเวอร์ / บัญชีถูกลบ) → หน้าเว็บแสดง ID แทน
+    username: string | null;
+    actorName: string | null;
 }
 export interface XpHistoryPage {
     items: XpHistoryRow[];
