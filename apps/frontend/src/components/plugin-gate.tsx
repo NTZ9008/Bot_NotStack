@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
 import { PLUGIN_MAP, type PluginId } from '@notstack/shared';
 import { toast } from 'sonner';
 import { guildPluginsQuery, usePluginMutations } from '@/api/plugins';
-import { ArrowRight, Lock, Loader2, PlugZap } from '@/components/icons';
+import { ArrowRight, Lock, PlugZap } from '@/components/icons';
 import { PageHeader } from '@/components/page-header';
 import { Badge } from '@/components/ui/badge';
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -87,7 +88,7 @@ export function PluginRouteGuard({ pluginId, title, description, help, children 
 
                     <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
                         <Button type="button" onClick={handleInstall} disabled={installing || install.isPending} className="gap-2">
-                            {installing || install.isPending ? <Loader2 className="size-4 animate-spin" /> : <PlugZap className="size-4" />}
+                            {installing || install.isPending ? <Spinner className="size-4" /> : <PlugZap className="size-4" />}
                             {installing || install.isPending ? t('plugins.installing') : t('plugins.installNow')}
                         </Button>
                         <Link to="/servers/$guildId/plugins" params={{ guildId: guild.id }} className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}>

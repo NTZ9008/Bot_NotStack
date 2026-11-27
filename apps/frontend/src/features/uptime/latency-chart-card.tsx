@@ -60,7 +60,7 @@ export function LatencyChartCard({
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <CardTitle className="flex items-center gap-2 text-base">
-                        <Activity className="size-4 text-rose-500" />
+                        <Activity className="size-4 text-destructive" />
                         {t('uptime.latencyChart24h')}
                     </CardTitle>
                     <CardDescription>{t('uptime.latencyChart24hDesc')}</CardDescription>
@@ -68,7 +68,7 @@ export function LatencyChartCard({
 
                 <div className="flex flex-wrap items-center gap-2">
                     <Select value={activeId !== null ? String(activeId) : ''} onValueChange={(v) => onSelectTarget(Number(v))}>
-                        <SelectTrigger className="w-56">
+                        <SelectTrigger aria-label={t('uptime.targetName')} className="w-56">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -90,15 +90,11 @@ export function LatencyChartCard({
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline">
                             {t('uptime.uptime24h')}:{' '}
-                            <strong className="ml-1 text-foreground">
-                                {data.target.uptime24hPercent !== null ? `${data.target.uptime24hPercent}%` : '—'}
-                            </strong>
+                            <strong className="ml-1 text-foreground">{data.target.uptime24hPercent !== null ? `${data.target.uptime24hPercent}%` : '—'}</strong>
                         </Badge>
                         <Badge variant="outline">
                             {t('uptime.avgLatency')}:{' '}
-                            <strong className="ml-1 text-foreground">
-                                {data.target.avgLatency24hMs !== null ? `${data.target.avgLatency24hMs} ms` : '—'}
-                            </strong>
+                            <strong className="ml-1 text-foreground">{data.target.avgLatency24hMs !== null ? `${data.target.avgLatency24hMs} ms` : '—'}</strong>
                         </Badge>
                         <Badge variant="outline">
                             {t('uptime.checksCount24h')}: <strong className="ml-1 text-foreground">{data.target.checks24hCount}</strong>
@@ -123,13 +119,7 @@ export function LatencyChartCard({
                             </defs>
                             <CartesianGrid vertical={false} stroke="var(--border)" />
                             <XAxis dataKey="time" tickLine={false} axisLine={false} minTickGap={24} tick={{ fontSize: 11 }} />
-                            <YAxis
-                                tickLine={false}
-                                axisLine={false}
-                                width={48}
-                                tickFormatter={(v: number) => `${v}ms`}
-                                tick={{ fontSize: 11 }}
-                            />
+                            <YAxis tickLine={false} axisLine={false} width={48} tickFormatter={(v: number) => `${v}ms`} tick={{ fontSize: 11 }} />
                             <ChartTooltip content={<ChartTooltipContent indicator="line" />} />
                             <Area
                                 type="monotone"

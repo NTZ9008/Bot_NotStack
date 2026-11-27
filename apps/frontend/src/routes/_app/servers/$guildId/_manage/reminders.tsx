@@ -1,21 +1,16 @@
 import { useMemo, useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { useQuery } from '@tanstack/react-query';
-import {
-    parseDailyCron,
-    parseWeeklyCron,
-    type CreateReminderInput,
-    type ScheduledReminderItem,
-    type UpdateReminderInput,
-} from '@notstack/shared';
+import { parseDailyCron, parseWeeklyCron, type CreateReminderInput, type ScheduledReminderItem, type UpdateReminderInput } from '@notstack/shared';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
 import { remindersListQuery, useReminderMutations } from '@/api/reminders';
 import { channelLabel } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { DataTable } from '@/components/data-table';
-import { AlertTriangle, BellRing, CalendarClock, Loader2, Pencil, Plus, RefreshCw, Send, Trash2 } from '@/components/icons';
+import { AlertTriangle, BellRing, CalendarClock, Pencil, Plus, RefreshCw, Send, Trash2 } from '@/components/icons';
 import { PageHeader } from '@/components/page-header';
 import { PluginRouteGuard } from '@/components/plugin-gate';
 import { SearchInput } from '@/components/search-input';
@@ -111,9 +106,7 @@ function RemindersPageContent() {
             const parsed = parseWeeklyCron(item.cronExpression);
             return {
                 badge: t('reminders.scheduleWeekly'),
-                detail: parsed
-                    ? t('reminders.scheduleWeeklyAt', { 0: parsed.days.map(dayLabel).join(', '), 1: parsed.time })
-                    : (item.cronExpression ?? '—'),
+                detail: parsed ? t('reminders.scheduleWeeklyAt', { 0: parsed.days.map(dayLabel).join(', '), 1: parsed.time }) : (item.cronExpression ?? '—'),
             };
         }
         return {
@@ -209,10 +202,7 @@ function RemindersPageContent() {
             cell: ({ row }) =>
                 row.original.useEmbed ? (
                     <Badge variant="outline" className="gap-1.5 text-[11px]">
-                        <span
-                            className="size-2 rounded-full"
-                            style={{ backgroundColor: row.original.embedColor ?? '#5865f2' }}
-                        />
+                        <span className="size-2 rounded-full" style={{ backgroundColor: row.original.embedColor ?? '#5865f2' }} />
                         {t('reminders.formatEmbed')}
                     </Badge>
                 ) : (
@@ -262,9 +252,7 @@ function RemindersPageContent() {
                         {row.original.nextRunAt ? formatDateTime(row.original.nextRunAt) : t('reminders.noNextRun')}
                     </div>
                     {row.original.lastRunAt && (
-                        <div className="text-[11px] text-muted-foreground">
-                            {t('reminders.lastRunAgo', { 0: formatTimeAgo(row.original.lastRunAt) })}
-                        </div>
+                        <div className="text-[11px] text-muted-foreground">{t('reminders.lastRunAgo', { 0: formatTimeAgo(row.original.lastRunAt) })}</div>
                     )}
                 </div>
             ),
@@ -282,7 +270,7 @@ function RemindersPageContent() {
         },
         {
             id: 'actions',
-            header: '',
+            header: () => <span className="sr-only">{t('common.actions')}</span>,
             enableSorting: false,
             cell: ({ row }) => {
                 const item = row.original;
@@ -298,7 +286,7 @@ function RemindersPageContent() {
                             disabled={isTesting}
                             onClick={() => void handleTestSend(item)}
                         >
-                            {isTesting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+                            {isTesting ? <Spinner className="size-4" /> : <Send className="size-4" />}
                         </Button>
                         <Button
                             type="button"
@@ -376,11 +364,9 @@ function RemindersPageContent() {
                                 <CardContent className="pt-4">
                                     <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
                                         <span>{t('reminders.enabledReminders')}</span>
-                                        <BellRing className="size-3.5 text-emerald-500" />
+                                        <BellRing className="size-3.5 text-success" />
                                     </div>
-                                    <div className="mt-1 text-2xl font-bold text-emerald-600 tabular-nums dark:text-emerald-400">
-                                        {summary.enabled}
-                                    </div>
+                                    <div className="mt-1 text-2xl font-bold text-success tabular-nums">{summary.enabled}</div>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -410,19 +396,9 @@ function RemindersPageContent() {
                     ) : (
                         <>
                             <div className="flex flex-wrap items-center justify-between gap-3">
-                                <SearchInput
-                                    value={search}
-                                    onChange={setSearch}
-                                    placeholder={t('reminders.searchPlaceholder')}
-                                    className="w-full sm:w-72"
-                                />
+                                <SearchInput value={search} onChange={setSearch} placeholder={t('reminders.searchPlaceholder')} className="w-full sm:w-72" />
                             </div>
-                            <DataTable
-                                label={t('common.scheduledReminders')}
-                                columns={columns}
-                                data={reminders}
-                                globalFilter={search}
-                            />
+                            <DataTable label={t('common.scheduledReminders')} columns={columns} data={reminders} globalFilter={search} />
                         </>
                     )}
                 </div>
