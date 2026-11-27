@@ -628,7 +628,7 @@ model GuildPlugin {
   enabled     Boolean  @default(true)
   installedBy String?  @map("installed_by")
   installedAt DateTime @default(now()) @map("installed_at") @db.Timestamptz(3)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@id([guildId, pluginId])
   @@index([guildId, enabled])
@@ -653,7 +653,7 @@ model UptimeTarget {
   lastCheckedAt   DateTime?        @map("last_checked_at") @db.Timestamptz(3)
   nextCheckAt     DateTime         @default(now()) @map("next_check_at") @db.Timestamptz(3)
   createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   logs UptimeCheckLog[]
 
@@ -699,7 +699,7 @@ model ScheduledReminder {
   lastRunAt      DateTime? @map("last_run_at") @db.Timestamptz(3)
   lastError      String?   @map("last_error")
   createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt      DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@index([guildId])
   @@index([nextRunAt])
@@ -721,7 +721,7 @@ model ReactionRolePanel {
   mode          String             @default("BUTTON")
   allowMultiple Boolean            @default(true) @map("allow_multiple")
   createdAt     DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt     DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt     DateTime           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   items ReactionRoleItem[]
 
@@ -760,7 +760,7 @@ model TicketConfig {
   panelColor       String   @default("#5865F2") @map("panel_color")
   dmTranscript     Boolean  @default(true) @map("dm_transcript")
   maxOpenPerUser   Int      @default(1) @map("max_open_per_user")
-  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   @@map("ticket_configs")
 }
