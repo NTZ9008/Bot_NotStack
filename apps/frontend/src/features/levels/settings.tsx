@@ -11,7 +11,7 @@ import {
     type XpSettingsResponse,
 } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Copy, Plus, Trash2 } from '@/components/icons';
+import { ChevronDown, Copy, Plus, Trash2 } from '@/components/icons';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -22,11 +22,13 @@ import { XpSettingsSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { IdChoices } from '@/components/id-choices';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
+import { cn } from '@/lib/utils';
 
 export function NumberField({
     label,
@@ -71,12 +73,17 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const [saved, setSaved] = useState(initial);
     const [draft, setDraft] = useState(initial.settings);
     const [commandText, setCommandText] = useState<Record<string, string>>({});
+    // กฎที่กางอยู่ — กฎใหม่กางให้เลย, กฎที่กรอกผิดกางเองเพื่อให้เห็นช่องที่ต้องแก้
+    const [openRules, setOpenRules] = useState<string[]>([]);
     const client = useQueryClient(),
         confirm = useConfirm();
     const channels = useQuery(guildChannelsQuery(guildId));
     const roles = useQuery(guildRolesQuery(guildId));
     const dirty = JSON.stringify(draft) !== JSON.stringify(saved.settings);
     const parsed = xpSettingsSchema.safeParse(draft);
+    const invalidRules = new Set(parsed.success ? [] : parsed.error.issues.filter((i) => i.path[0] === 'rules').map((i) => draft.rules[Number(i.path[1])]?.id));
+    const earned = (xp: number, rule: XpRule) => Math.floor((((xp * rule.multiplierPercent) / 100) * draft.multiplierPercent) / 100).toLocaleString();
+    const toggleRule = (id: string, open: boolean) => setOpenRules((old) => (open ? [...old, id] : old.filter((v) => v !== id)));
     const patch = (data: Partial<typeof draft>) => setDraft((old) => ({ ...old, ...data }));
     const patchRule = (id: string, data: Partial<XpRule>) =>
         setDraft((old) => ({ ...old, rules: old.rules.map((r) => (r.id === id ? { ...r, ...data } : r)) }));
@@ -97,7 +104,6 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
     const voiceIds = (channels.data ?? []).filter((c) => c.isVoice).map((c) => c.id);
     return (
         <div className="space-y-5">
-            <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
             {!parsed.success && (
                 <p role="alert" className="text-sm text-destructive">
                     {parsed.error.issues[0]?.path.join('.')} — {parsed.error.issues[0]?.message}
@@ -111,6 +117,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <Toggle label={tr('levels.earnXpFromActivity')} checked={draft.enabled} onChange={(enabled) => patch({ enabled })} />
+                        {!draft.enabled && <p className="text-sm text-warning">{tr('levels.xpIsOff')}</p>}
                         <div className="grid gap-4 sm:grid-cols-2">
                             <NumberField
                                 label={tr('levels.serverWideMultiplier')}
@@ -124,33 +131,258 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                 max={2000000000}
                                 onChange={(dailyCap) => patch({ dailyCap })}
                             />
-                            <NumberField
-                                label={tr('levels.levelFormulaBaseXp')}
-                                value={draft.curveBase}
-                                min={1}
-                                max={100000}
-                                onChange={(curveBase) => patch({ curveBase })}
-                            />
-                            <NumberField
-                                label={tr('levels.formulaExponent')}
-                                value={draft.curveExponent}
-                                min={1}
-                                max={3}
-                                step={0.1}
-                                onChange={(curveExponent) => patch({ curveExponent })}
-                            />
-                        </div>
-                        <p className="text-sm text-muted-foreground">{tr('levels.totalXpNeededCeilBaseLevel')}</p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[1, 5, 10].map((level) => (
-                                <div className="rounded-md bg-muted p-3 text-center" key={level}>
-                                    <p className="text-xs text-muted-foreground">Level {level}</p>
-                                    <p className="font-semibold">{xpAtLevel(level, draft).toLocaleString()} XP</p>
-                                </div>
-                            ))}
                         </div>
                     </CardContent>
                 </Card>
+                <div className="space-y-2">
+                    <h2 className="text-lg font-semibold">{tr('levels.xpRulesCount', { count: draft.rules.length })}</h2>
+                    <p className="text-sm text-muted-foreground">{tr('levels.matchingRulesAddXpInThe')}</p>
+                </div>
+                {draft.rules.map((rule, index) => (
+                    <Collapsible
+                        key={rule.id}
+                        open={openRules.includes(rule.id) || invalidRules.has(rule.id)}
+                        onOpenChange={(open) => toggleRule(rule.id, open)}
+                        asChild
+                    >
+                        <Card className={cn('gap-0 py-0', !rule.enabled && 'opacity-70')}>
+                            <div className="flex items-center gap-2 p-3">
+                                <CollapsibleTrigger className="group flex min-w-0 flex-1 items-center gap-3 rounded-md p-1 text-left hover:bg-muted/50">
+                                    <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                                        {index + 1}
+                                    </span>
+                                    <span className="min-w-0 flex-1">
+                                        <span className="block truncate font-medium">{rule.name}</span>
+                                        <span className="block truncate text-xs text-muted-foreground">
+                                            {/* ชื่อกฎเริ่มต้น = ชื่อกิจกรรม ไม่ต้องบอกซ้ำ */}
+                                            {rule.name !== XP_SOURCE_LABELS[rule.source] && `${trText(XP_SOURCE_LABELS[rule.source])} · `}
+                                            {rule.enabled
+                                                ? tr('levels.ruleSummary', {
+                                                      min: earned(rule.minXp, rule),
+                                                      max: earned(rule.maxXp, rule),
+                                                      seconds: rule.cooldownSeconds,
+                                                  })
+                                                : tr('levels.ruleOff')}
+                                        </span>
+                                    </span>
+                                    <ChevronDown className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+                                </CollapsibleTrigger>
+                                <Switch
+                                    aria-label={tr('levels.enableThisRule')}
+                                    checked={rule.enabled}
+                                    onCheckedChange={(enabled) => patchRule(rule.id, { enabled })}
+                                />
+                                <div className="flex gap-1">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={tr('levels.copy2', { 0: rule.name })}
+                                        disabled={draft.rules.length >= 50}
+                                        onClick={() =>
+                                            patch({
+                                                rules: [
+                                                    ...draft.rules,
+                                                    {
+                                                        ...structuredClone(rule),
+                                                        id: crypto.randomUUID(),
+                                                        name: tr('levels.copy', { 0: rule.name }).slice(0, 80),
+                                                    },
+                                                ],
+                                            })
+                                        }
+                                    >
+                                        <Copy />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        aria-label={tr('common.remove', { 0: rule.name })}
+                                        onClick={async () => {
+                                            if (
+                                                await confirm({
+                                                    title: tr('levels.deleteRule', { 0: rule.name }),
+                                                    description: tr('levels.membersKeepTheirXpPressSave'),
+                                                    destructive: true,
+                                                })
+                                            )
+                                                patch({ rules: draft.rules.filter((r) => r.id !== rule.id) });
+                                        }}
+                                    >
+                                        <Trash2 />
+                                    </Button>
+                                </div>
+                            </div>
+                            <CollapsibleContent className="space-y-4 border-t p-4">
+                                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                    <label className="grid gap-1.5 text-sm">
+                                        {tr('levels.ruleName')}
+                                        <Input value={rule.name} maxLength={80} onChange={(e) => patchRule(rule.id, { name: e.target.value })} />
+                                    </label>
+                                    <label className="grid gap-1.5 text-sm">
+                                        {tr('levels.activity')}
+                                        <NativeSelect
+                                            className="w-full"
+                                            value={rule.source}
+                                            onChange={(e) => patchRule(rule.id, { source: e.target.value as XpRule['source'] })}
+                                        >
+                                            {XP_SOURCES.map((v) => (
+                                                <option key={v} value={v}>
+                                                    {trText(XP_SOURCE_LABELS[v])}
+                                                </option>
+                                            ))}
+                                        </NativeSelect>
+                                    </label>
+                                    <NumberField
+                                        label={tr('levels.minXpPerEvent')}
+                                        value={rule.minXp}
+                                        max={100000}
+                                        onChange={(minXp) => patchRule(rule.id, { minXp })}
+                                    />
+                                    <NumberField
+                                        label={tr('levels.maxXpPerEvent')}
+                                        value={rule.maxXp}
+                                        max={100000}
+                                        onChange={(maxXp) => patchRule(rule.id, { maxXp })}
+                                    />
+                                    <NumberField
+                                        label={tr('levels.ruleMultiplier')}
+                                        value={rule.multiplierPercent}
+                                        max={1000}
+                                        onChange={(multiplierPercent) => patchRule(rule.id, { multiplierPercent })}
+                                    />
+                                    <NumberField
+                                        label={tr('levels.chanceToEarnXp')}
+                                        value={rule.chancePercent}
+                                        max={100}
+                                        onChange={(chancePercent) => patchRule(rule.id, { chancePercent })}
+                                    />
+                                    <NumberField
+                                        label={tr('levels.cooldownSeconds')}
+                                        value={rule.cooldownSeconds}
+                                        min={1}
+                                        max={86400}
+                                        onChange={(cooldownSeconds) => patchRule(rule.id, { cooldownSeconds })}
+                                    />
+                                    <NumberField
+                                        label={tr('levels.ruleXpCapPerPersonPer')}
+                                        value={rule.dailyCap}
+                                        max={2000000000}
+                                        onChange={(dailyCap) => patchRule(rule.id, { dailyCap })}
+                                    />
+                                </div>
+                                <p className="rounded-md bg-primary/10 p-3 text-sm">
+                                    {tr('levels.whenEarned')}{' '}
+                                    <strong>
+                                        {earned(rule.minXp, rule)}–{earned(rule.maxXp, rule)} XP
+                                    </strong>{' '}
+                                    {tr('levels.eventChance')} {rule.chancePercent}%{rule.source === 'voice' && tr('levels.voiceCheckedEvery15Seconds')}
+                                </p>
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <IdChoices
+                                        title={tr('levels.onlyInChannelsCategories')}
+                                        options={channelOptions}
+                                        voiceIds={voiceIds}
+                                        emptyHint={
+                                            rule.source === 'voice'
+                                                ? tr('levels.noChannelSelectedEveryVoiceChannel')
+                                                : tr('levels.noChannelSelectedAllChannelsSelect')
+                                        }
+                                        values={rule.channelIds}
+                                        onChange={(channelIds) => patchRule(rule.id, { channelIds })}
+                                    />
+                                    <IdChoices
+                                        title={tr('levels.onlyForMembersWithAnyOf')}
+                                        options={roles.data ?? []}
+                                        values={rule.roleIds}
+                                        onChange={(roleIds) => patchRule(rule.id, { roleIds })}
+                                    />
+                                </div>
+                                {rule.source === 'command' && (
+                                    <label className="grid gap-1.5 text-sm">
+                                        {tr('levels.commandNamesCommaSeparatedEmptyEvery')}
+                                        <Input
+                                            value={commandText[rule.id] ?? rule.commands.join(', ')}
+                                            placeholder="ping, weather"
+                                            onChange={(e) => {
+                                                const text = e.target.value;
+                                                setCommandText((old) => ({ ...old, [rule.id]: text }));
+                                                patchRule(rule.id, {
+                                                    commands: text
+                                                        .split(',')
+                                                        .map((v) => v.trim().replace(/^\//, ''))
+                                                        .filter(Boolean),
+                                                });
+                                            }}
+                                        />
+                                    </label>
+                                )}
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={index === 0}
+                                        onClick={() => {
+                                            const rules = [...draft.rules];
+                                            [rules[index - 1], rules[index]] = [rules[index]!, rules[index - 1]!];
+                                            patch({ rules });
+                                        }}
+                                    >
+                                        {tr('common.moveUp')}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={index === draft.rules.length - 1}
+                                        onClick={() => {
+                                            const rules = [...draft.rules];
+                                            [rules[index], rules[index + 1]] = [rules[index + 1]!, rules[index]!];
+                                            patch({ rules });
+                                        }}
+                                    >
+                                        {tr('common.moveDown')}
+                                    </Button>
+                                </div>
+                            </CollapsibleContent>
+                        </Card>
+                    </Collapsible>
+                ))}
+                {!draft.rules.length && (
+                    <p className="rounded-md border border-dashed p-6 text-center text-muted-foreground">{tr('levels.noRulesYetMembersWontEarn')}</p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                    {XP_SOURCES.map((source) => (
+                        <Button
+                            key={source}
+                            variant="outline"
+                            disabled={draft.rules.length >= 50}
+                            onClick={() => {
+                                const rule = { ...defaultXpRule(source, crypto.randomUUID()), enabled: true };
+                                patch({ rules: [...draft.rules, rule] });
+                                toggleRule(rule.id, true);
+                            }}
+                        >
+                            <Plus />
+                            {tr('levels.addRule')} {trText(XP_SOURCE_LABELS[source])}
+                        </Button>
+                    ))}
+                    <Button
+                        variant="ghost"
+                        onClick={async () => {
+                            if (
+                                await confirm({
+                                    title: tr('levels.restoreDefaultXpSettings'),
+                                    description: tr('levels.replacesTheRulesYoureEditingKeeps'),
+                                    destructive: true,
+                                })
+                            ) {
+                                setDraft(defaultXpSettings());
+                                setCommandText({});
+                            }
+                        }}
+                    >
+                        {tr('common.restoreDefaults')}
+                    </Button>
+                </div>
                 <Card>
                     <CardHeader>
                         <CardTitle>{tr('levels.xpConditions')}</CardTitle>
@@ -199,229 +431,44 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                         />
                     </CardContent>
                 </Card>
-                <div className="space-y-2">
-                    <h2 className="text-lg font-semibold">
-                        {tr('levels.xpRules')}
-                        {draft.rules.length}/50)
-                    </h2>
-                    <p className="text-sm text-muted-foreground">{tr('levels.matchingRulesAddXpInThe')}</p>
-                </div>
-                {draft.rules.map((rule, index) => (
-                    <Card key={rule.id}>
-                        <CardHeader>
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                                <CardTitle>
-                                    {index + 1}. {rule.name}
-                                </CardTitle>
-                                <div className="flex gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label={tr('levels.copy2', { 0: rule.name })}
-                                        disabled={draft.rules.length >= 50}
-                                        onClick={() =>
-                                            patch({
-                                                rules: [
-                                                    ...draft.rules,
-                                                    {
-                                                        ...structuredClone(rule),
-                                                        id: crypto.randomUUID(),
-                                                        name: tr('levels.copy', { 0: rule.name }).slice(0, 80),
-                                                    },
-                                                ],
-                                            })
-                                        }
-                                    >
-                                        <Copy />
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon-sm"
-                                        aria-label={tr('common.remove', { 0: rule.name })}
-                                        onClick={async () => {
-                                            if (
-                                                await confirm({
-                                                    title: tr('levels.deleteRule', { 0: rule.name }),
-                                                    description: tr('levels.membersKeepTheirXpPressSave'),
-                                                    destructive: true,
-                                                })
-                                            )
-                                                patch({ rules: draft.rules.filter((r) => r.id !== rule.id) });
-                                        }}
-                                    >
-                                        <Trash2 />
-                                    </Button>
+                <Collapsible className="rounded-xl border">
+                    <CollapsibleTrigger className="group flex w-full items-center gap-2 p-4 text-left">
+                        <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">{tr('levels.advancedFormula')}</span>
+                            <span className="block text-sm text-muted-foreground">{tr('levels.advancedFormulaHint')}</span>
+                        </span>
+                        <ChevronDown className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="space-y-4 border-t p-4">
+                        <p className="text-sm text-muted-foreground">{tr('levels.changingTheLevelFormulaKeepsExisting')}</p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <NumberField
+                                label={tr('levels.levelFormulaBaseXp')}
+                                value={draft.curveBase}
+                                min={1}
+                                max={100000}
+                                onChange={(curveBase) => patch({ curveBase })}
+                            />
+                            <NumberField
+                                label={tr('levels.formulaExponent')}
+                                value={draft.curveExponent}
+                                min={1}
+                                max={3}
+                                step={0.1}
+                                onChange={(curveExponent) => patch({ curveExponent })}
+                            />
+                        </div>
+                        <p className="text-sm text-muted-foreground">{tr('levels.totalXpNeededCeilBaseLevel')}</p>
+                        <div className="grid grid-cols-3 gap-2">
+                            {[1, 5, 10].map((level) => (
+                                <div className="rounded-md bg-muted p-3 text-center" key={level}>
+                                    <p className="text-xs text-muted-foreground">Level {level}</p>
+                                    <p className="font-semibold">{xpAtLevel(level, draft).toLocaleString()} XP</p>
                                 </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Toggle label={tr('levels.enableThisRule')} checked={rule.enabled} onChange={(enabled) => patchRule(rule.id, { enabled })} />
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                <label className="grid gap-1.5 text-sm">
-                                    {tr('levels.ruleName')}
-                                    <Input value={rule.name} maxLength={80} onChange={(e) => patchRule(rule.id, { name: e.target.value })} />
-                                </label>
-                                <label className="grid gap-1.5 text-sm">
-                                    {tr('levels.activity')}
-                                    <NativeSelect
-                                        className="w-full"
-                                        value={rule.source}
-                                        onChange={(e) => patchRule(rule.id, { source: e.target.value as XpRule['source'] })}
-                                    >
-                                        {XP_SOURCES.map((v) => (
-                                            <option key={v} value={v}>
-                                                {trText(XP_SOURCE_LABELS[v])}
-                                            </option>
-                                        ))}
-                                    </NativeSelect>
-                                </label>
-                                <NumberField
-                                    label={tr('levels.minXpPerEvent')}
-                                    value={rule.minXp}
-                                    max={100000}
-                                    onChange={(minXp) => patchRule(rule.id, { minXp })}
-                                />
-                                <NumberField
-                                    label={tr('levels.maxXpPerEvent')}
-                                    value={rule.maxXp}
-                                    max={100000}
-                                    onChange={(maxXp) => patchRule(rule.id, { maxXp })}
-                                />
-                                <NumberField
-                                    label={tr('levels.ruleMultiplier')}
-                                    value={rule.multiplierPercent}
-                                    max={1000}
-                                    onChange={(multiplierPercent) => patchRule(rule.id, { multiplierPercent })}
-                                />
-                                <NumberField
-                                    label={tr('levels.chanceToEarnXp')}
-                                    value={rule.chancePercent}
-                                    max={100}
-                                    onChange={(chancePercent) => patchRule(rule.id, { chancePercent })}
-                                />
-                                <NumberField
-                                    label={tr('levels.cooldownSeconds')}
-                                    value={rule.cooldownSeconds}
-                                    min={1}
-                                    max={86400}
-                                    onChange={(cooldownSeconds) => patchRule(rule.id, { cooldownSeconds })}
-                                />
-                                <NumberField
-                                    label={tr('levels.ruleXpCapPerPersonPer')}
-                                    value={rule.dailyCap}
-                                    max={2000000000}
-                                    onChange={(dailyCap) => patchRule(rule.id, { dailyCap })}
-                                />
-                            </div>
-                            <p className="rounded-md bg-primary/10 p-3 text-sm">
-                                {tr('levels.whenEarned')}{' '}
-                                <strong>
-                                    {Math.floor((((rule.minXp * rule.multiplierPercent) / 100) * draft.multiplierPercent) / 100).toLocaleString()}–
-                                    {Math.floor((((rule.maxXp * rule.multiplierPercent) / 100) * draft.multiplierPercent) / 100).toLocaleString()} XP
-                                </strong>{' '}
-                                {tr('levels.eventChance')} {rule.chancePercent}%{rule.source === 'voice' && tr('levels.voiceCheckedEvery15Seconds')}
-                            </p>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <IdChoices
-                                    title={tr('levels.onlyInChannelsCategories')}
-                                    options={channelOptions}
-                                    voiceIds={voiceIds}
-                                    emptyHint={
-                                        rule.source === 'voice'
-                                            ? tr('levels.noChannelSelectedEveryVoiceChannel')
-                                            : tr('levels.noChannelSelectedAllChannelsSelect')
-                                    }
-                                    values={rule.channelIds}
-                                    onChange={(channelIds) => patchRule(rule.id, { channelIds })}
-                                />
-                                <IdChoices
-                                    title={tr('levels.onlyForMembersWithAnyOf')}
-                                    options={roles.data ?? []}
-                                    values={rule.roleIds}
-                                    onChange={(roleIds) => patchRule(rule.id, { roleIds })}
-                                />
-                            </div>
-                            {rule.source === 'command' && (
-                                <label className="grid gap-1.5 text-sm">
-                                    {tr('levels.commandNamesCommaSeparatedEmptyEvery')}
-                                    <Input
-                                        value={commandText[rule.id] ?? rule.commands.join(', ')}
-                                        placeholder="ping, weather"
-                                        onChange={(e) => {
-                                            const text = e.target.value;
-                                            setCommandText((old) => ({ ...old, [rule.id]: text }));
-                                            patchRule(rule.id, {
-                                                commands: text
-                                                    .split(',')
-                                                    .map((v) => v.trim().replace(/^\//, ''))
-                                                    .filter(Boolean),
-                                            });
-                                        }}
-                                    />
-                                </label>
-                            )}
-                            <div className="flex gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={index === 0}
-                                    onClick={() => {
-                                        const rules = [...draft.rules];
-                                        [rules[index - 1], rules[index]] = [rules[index]!, rules[index - 1]!];
-                                        patch({ rules });
-                                    }}
-                                >
-                                    {tr('common.moveUp')}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={index === draft.rules.length - 1}
-                                    onClick={() => {
-                                        const rules = [...draft.rules];
-                                        [rules[index], rules[index + 1]] = [rules[index + 1]!, rules[index]!];
-                                        patch({ rules });
-                                    }}
-                                >
-                                    {tr('common.moveDown')}
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-                {!draft.rules.length && (
-                    <p className="rounded-md border border-dashed p-6 text-center text-muted-foreground">{tr('levels.noRulesYetMembersWontEarn')}</p>
-                )}
-                <div className="flex flex-wrap gap-2">
-                    {XP_SOURCES.map((source) => (
-                        <Button
-                            key={source}
-                            variant="outline"
-                            disabled={draft.rules.length >= 50}
-                            onClick={() => patch({ rules: [...draft.rules, { ...defaultXpRule(source, crypto.randomUUID()), enabled: true }] })}
-                        >
-                            <Plus />
-                            {tr('levels.addRule')} {trText(XP_SOURCE_LABELS[source])}
-                        </Button>
-                    ))}
-                    <Button
-                        variant="ghost"
-                        onClick={async () => {
-                            if (
-                                await confirm({
-                                    title: tr('levels.restoreDefaultXpSettings'),
-                                    description: tr('levels.replacesTheRulesYoureEditingKeeps'),
-                                    destructive: true,
-                                })
-                            ) {
-                                setDraft(defaultXpSettings());
-                                setCommandText({});
-                            }
-                        }}
-                    >
-                        {tr('common.restoreDefaults')}
-                    </Button>
-                </div>
+                            ))}
+                        </div>
+                    </CollapsibleContent>
+                </Collapsible>
             </fieldset>
             <SaveBar
                 dirty={dirty}
