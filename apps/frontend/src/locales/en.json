@@ -3071,5 +3071,12 @@
     "tickets.transcriptDialogTitle": "Transcript — Ticket #{0}",
     "tickets.unsavedChangesDesc": "Ticket system settings have unsaved changes",
     "tickets.updatePanel": "Update Panel in Discord",
-    "tickets.viewTranscript": "View Transcript"
+    "tickets.viewTranscript": "View Transcript",
+    "common.pagination": "Pagination",
+    "common.firstPage": "First page",
+    "common.previousPage": "Previous page",
+    "common.nextPage": "Next page",
+    "common.lastPage": "Last page",
+    "common.pageOf": "Page {0} of {1}",
+    "common.showingRange": "Showing {0}–{1} of {2}"
 }

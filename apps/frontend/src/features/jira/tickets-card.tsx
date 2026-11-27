@@ -1,7 +1,8 @@
 import { tr, byLang } from '../../lib/i18n';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ChevronRight, ExternalLink, Loader2, Lock } from '@/components/icons';
+import { ExternalLink, Loader2, Lock } from '@/components/icons';
+import { Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';
@@ -158,19 +159,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                     </div>
                 )}
 
-                {pages > 1 && (
-                    <div className="flex items-center justify-end gap-2 text-sm">
-                        <Button variant="outline" size="icon" aria-label={tr('jira.previousPage')} disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                            <ChevronLeft />
-                        </Button>
-                        <span>
-                            {tr('common.pages')} {page} / {pages}
-                        </span>
-                        <Button variant="outline" size="icon" aria-label={tr('jira.nextPage')} disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
-                            <ChevronRight />
-                        </Button>
-                    </div>
-                )}
+                <Pagination page={page} pageCount={pages} total={data?.total} pageSize={PAGE_SIZE} onPageChange={setPage} />
             </CardContent>
         </Card>
     );

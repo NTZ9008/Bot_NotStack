@@ -1,4 +1,5 @@
 import { tr, dateLocale, byLang, trText } from '../../lib/i18n';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import {
     RELATION_CHAT_WINDOW_MINUTES,
     RELATION_KIND_LABELS,
@@ -199,6 +200,7 @@ export function PersonSheet({
 function PersonHistory({ guildId, userId }: { guildId: string; userId: string }) {
     const history = useInfiniteQuery(relationHistoryQuery(guildId, userId));
     const items = history.data?.pages.flatMap((page) => page.items) ?? [];
+    const { pageItems, pagination } = usePagedItems(items, { pageSize: 10, more: history });
     return (
         <section className="space-y-2">
             <h3 className="text-sm font-semibold">{tr('relations.fullHistory')}</h3>
@@ -206,7 +208,7 @@ function PersonHistory({ guildId, userId }: { guildId: string; userId: string })
             {history.isError && <ErrorState error={history.error} />}
             {history.isSuccess && items.length === 0 && <EmptyState>{tr('relations.noEventsForThisPersonIn')}</EmptyState>}
             <ol className="space-y-2">
-                {items.map((item) => (
+                {pageItems.map((item) => (
                     <li key={item.id} className="rounded-lg border p-3">
                         <div className="flex items-baseline justify-between gap-3">
                             <span className="text-sm font-medium">{item.label}</span>
@@ -226,11 +228,7 @@ function PersonHistory({ guildId, userId }: { guildId: string; userId: string })
                     </li>
                 ))}
             </ol>
-            {history.hasNextPage && (
-                <Button variant="outline" className="w-full" disabled={history.isFetchingNextPage} onClick={() => void history.fetchNextPage()}>
-                    {history.isFetchingNextPage ? tr('relations.loading') : tr('common.loadMore')}
-                </Button>
-            )}
+            <Pagination {...pagination} />
         </section>
     );
 }

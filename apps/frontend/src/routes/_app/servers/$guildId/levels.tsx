@@ -9,6 +9,7 @@ import { xpHistoryQuery, xpSettingsQuery } from '@/api/levels';
 import { levelUpQuery, myRankCardQuery, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';
 import { welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } from '@/api/welcome';
 import { PageHeader } from '@/components/page-header';
+import { Pagination } from '@/components/pagination';
 import { RankBadge } from '@/components/rank-badge';
 import { LeaderboardTableSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
@@ -143,23 +144,14 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                                 </tbody>
                             </table>
                         </div>
-                        <div className="flex items-center justify-between gap-2">
-                            <p className="text-sm text-muted-foreground">
-                                {query.data?.total.toLocaleString()} {tr('levels.peoplePage')} {page}
-                            </p>
-                            <div className="flex gap-2">
-                                <Button variant="outline" disabled={page === 1 || query.isFetching} onClick={() => setPage((p) => p - 1)}>
-                                    {tr('levels.previous')}
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    disabled={page * 25 >= (query.data?.total ?? 0) || query.isFetching}
-                                    onClick={() => setPage((p) => p + 1)}
-                                >
-                                    {tr('levels.next')}
-                                </Button>
-                            </div>
-                        </div>
+                        <Pagination
+                            page={page}
+                            pageCount={Math.max(1, Math.ceil((query.data?.total ?? 0) / 25))}
+                            total={query.data?.total}
+                            pageSize={25}
+                            busy={query.isFetching}
+                            onPageChange={setPage}
+                        />
                     </>
                 )}
             </CardContent>

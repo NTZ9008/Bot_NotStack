@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { xpApi, xpHistoryQuery, xpKey } from '@/api/levels';
 import { useConfirm } from '@/components/confirm-dialog';
+import { Pagination } from '@/components/pagination';
 import { XpHistoryTableSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
 import { UserPicker, type PickedUser } from '@/components/user-picker';
@@ -277,18 +278,13 @@ export function XpHistoryPanel({ guildId }: { guildId: string }) {
                         </table>
                     </div>
                 )}
-                <div className="flex gap-2">
-                    <Button variant="outline" disabled={cursors.length === 1 || query.isFetching} onClick={() => setCursors((old) => old.slice(0, -1))}>
-                        {tr('levels.previous')}
-                    </Button>
-                    <Button
-                        variant="outline"
-                        disabled={!query.data?.nextCursor || query.isFetching}
-                        onClick={() => setCursors((old) => [...old, query.data!.nextCursor!])}
-                    >
-                        {tr('levels.next')}
-                    </Button>
-                </div>
+                <Pagination
+                    page={cursors.length}
+                    pageCount={cursors.length}
+                    hasMore={Boolean(query.data?.nextCursor)}
+                    busy={query.isFetching}
+                    onPageChange={(page) => setCursors((old) => (page > old.length ? [...old, query.data!.nextCursor!] : old.slice(0, Math.max(1, page))))}
+                />
             </CardContent>
         </Card>
     );

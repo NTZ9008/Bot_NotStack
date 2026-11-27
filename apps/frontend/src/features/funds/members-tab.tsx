@@ -1,4 +1,5 @@
 import { tr } from '../../lib/i18n';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import { roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -149,6 +150,7 @@ export function MembersTab({
         }
         return filtered;
     }, [topic.members, search, statusFilter, sortBy]);
+    const memberPage = usePagedItems(filteredMembers, { resetKey: `${search}:${statusFilter}:${sortBy}` });
 
     const validSelectedIds = useMemo(() => {
         const memberIdSet = new Set(topic.members.map((m) => m.id));
@@ -330,7 +332,7 @@ export function MembersTab({
                                     </div>
                                 )}
 
-                                {filteredMembers.map((m) => {
+                                {memberPage.pageItems.map((m) => {
                                     const isPayingThis = payingMemberId === m.id;
                                     const isSelected = validSelectedIds.includes(m.id);
                                     const payCount = paymentCountByMember.get(m.id) ?? 0;
@@ -464,7 +466,7 @@ export function MembersTab({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {filteredMembers.map((m) => {
+                                        {memberPage.pageItems.map((m) => {
                                             const isPayingThis = payingMemberId === m.id;
                                             const isSelected = validSelectedIds.includes(m.id);
                                             const payCount = paymentCountByMember.get(m.id) ?? 0;
@@ -556,6 +558,7 @@ export function MembersTab({
                                     </tbody>
                                 </table>
                             </div>
+                            <Pagination {...memberPage.pagination} />
                         </>
                     )}
                 </>

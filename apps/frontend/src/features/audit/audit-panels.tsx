@@ -2,7 +2,7 @@ import { tr, byLang, trText } from '../../lib/i18n';
 import { AUDIT_GROUP_LABELS, auditLabel, type ActivityItem, type AuditLogItem } from '@notstack/shared';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, Search } from '@/components/icons';
+import { Search } from '@/components/icons';
 import { useState, type ReactNode } from 'react';
 import { activityMetaQuery, activityQuery, auditActionsQuery, auditLogsQuery, type ActivityFilters, type AuditFilters } from '@/api/admin';
 import { DataTable } from '@/components/data-table';
@@ -40,7 +40,7 @@ const GROUP_TONE: Record<string, string> = {
     reaction_roles: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
     tickets: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
     welcome: 'bg-pink-500/15 text-pink-700 dark:text-pink-300',
-    weather: 'bg-orange-500/15 text-orange-700 dark:text-orange-300',
+    weather: 'bg-orange-500/15 text-orange-800 dark:text-orange-300',
     jira: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',
 };
 
@@ -83,17 +83,6 @@ function DetailDialog({ title, rows, json, onClose }: { title: string | null; ro
                 )}
             </DialogContent>
         </Dialog>
-    );
-}
-
-function LoadMore({ hasNextPage, isFetchingNextPage, fetchNextPage }: { hasNextPage: boolean; isFetchingNextPage: boolean; fetchNextPage: () => void }) {
-    if (!hasNextPage) return null;
-    return (
-        <div className="flex justify-center">
-            <Button variant="outline" onClick={fetchNextPage} disabled={isFetchingNextPage}>
-                {isFetchingNextPage && <Loader2 className="animate-spin" />} {tr('common.loadMore')}
-            </Button>
-        </div>
     );
 }
 
@@ -144,7 +133,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
         },
         {
             id: 'view',
-            header: '',
+            header: () => <span className="sr-only">{tr('common.details')}</span>,
             cell: ({ row }) => (
                 <Button size="xs" variant="outline" onClick={() => setDetail(row.original)}>
                     {tr('audit.view')}
@@ -164,7 +153,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
                 }}
             >
                 <Select value={draft.action ?? ALL} onValueChange={(value) => setDraft((d) => ({ ...d, action: value === ALL ? undefined : value }))}>
-                    <SelectTrigger className="w-64">
+                    <SelectTrigger className="w-64" aria-label="Action">
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-80">
@@ -188,7 +177,7 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
                     </SelectContent>
                 </Select>
                 <Select value={draft.success ?? ALL} onValueChange={(value) => setDraft((d) => ({ ...d, success: value === ALL ? undefined : value }))}>
-                    <SelectTrigger className="w-48">
+                    <SelectTrigger className="w-48" aria-label={tr('audit.result')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -213,9 +202,8 @@ export function DashboardAudit({ guildId }: { guildId?: string }) {
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
-                <DataTable columns={columns} data={items} empty={tr('audit.noEntriesFound')} />
+                <DataTable columns={columns} data={items} empty={tr('audit.noEntriesFound')} more={logs} />
             )}
-            <LoadMore hasNextPage={logs.hasNextPage} isFetchingNextPage={logs.isFetchingNextPage} fetchNextPage={() => void logs.fetchNextPage()} />
 
             <DetailDialog
                 title={detail ? trText(auditLabel(detail.action)) : null}
@@ -297,7 +285,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
         },
         {
             id: 'view',
-            header: '',
+            header: () => <span className="sr-only">{tr('common.details')}</span>,
             cell: ({ row }) => (
                 <Button size="xs" variant="outline" onClick={() => setDetail(row.original)}>
                     {tr('audit.view')}
@@ -328,7 +316,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                 }}
             >
                 <Select value={filters.eventKey ?? ALL} onValueChange={(value) => setFilters((f) => ({ ...f, eventKey: value === ALL ? undefined : value }))}>
-                    <SelectTrigger className="w-60">
+                    <SelectTrigger className="w-60" aria-label={tr('common.event')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="max-h-80">
@@ -346,7 +334,7 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
                     </SelectContent>
                 </Select>
                 <Select value={String(filters.hours)} onValueChange={(value) => setFilters((f) => ({ ...f, hours: Number(value) }))}>
-                    <SelectTrigger className="w-44">
+                    <SelectTrigger className="w-44" aria-label={tr('relations.timeRange')}>
                         <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -372,9 +360,8 @@ export function DiscordActivity({ guildId, initialQuery }: { guildId: string; in
             ) : logs.error ? (
                 <ErrorState error={logs.error} />
             ) : (
-                <DataTable columns={columns} data={items} empty={tr('audit.noEventsInThisPeriod')} />
+                <DataTable columns={columns} data={items} empty={tr('audit.noEventsInThisPeriod')} more={logs} />
             )}
-            <LoadMore hasNextPage={logs.hasNextPage} isFetchingNextPage={logs.isFetchingNextPage} fetchNextPage={() => void logs.fetchNextPage()} />
 
             <DetailDialog
                 title={detail?.label ?? null}

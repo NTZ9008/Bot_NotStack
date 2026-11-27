@@ -1,4 +1,5 @@
 import { tr } from '../../../lib/i18n';
+import { Pagination, usePagedItems } from '@/components/pagination';
 import type { GuildSummary } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
@@ -110,6 +111,7 @@ function ServersPage() {
     const { denied } = Route.useSearch();
     const { discordEnabled } = useAuth();
     const { data, isLoading, error, refetch, isFetching } = useQuery(guildsQuery);
+    const guildPage = usePagedItems(data?.guilds ?? [], { pageSize: 10 });
 
     return (
         <>
@@ -192,7 +194,7 @@ function ServersPage() {
                 <ErrorState error={error} />
             ) : (
                 <div className="grid gap-4 md:grid-cols-2">
-                    {data?.guilds.map((guild) => (
+                    {guildPage.pageItems.map((guild) => (
                         <GuildCard key={guild.id} guild={guild} />
                     ))}
 
@@ -216,6 +218,7 @@ function ServersPage() {
                             </Button>
                         )}
                     </div>
+                    <Pagination {...guildPage.pagination} className="md:col-span-2" />
                 </div>
             )}
 

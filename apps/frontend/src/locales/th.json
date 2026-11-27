@@ -3071,5 +3071,12 @@
     "tickets.transcriptDialogTitle": "Transcript — Ticket #{0}",
     "tickets.unsavedChangesDesc": "การตั้งค่า Ticket มีการแก้ไขที่ยังไม่ได้กดบันทึก",
     "tickets.updatePanel": "อัปเดตแผงใน Discord",
-    "tickets.viewTranscript": "ดู Transcript"
+    "tickets.viewTranscript": "ดู Transcript",
+    "common.pagination": "การแบ่งหน้า",
+    "common.firstPage": "หน้าแรก",
+    "common.previousPage": "หน้าก่อน",
+    "common.nextPage": "หน้าถัดไป",
+    "common.lastPage": "หน้าสุดท้าย",
+    "common.pageOf": "หน้า {0} / {1}",
+    "common.showingRange": "แสดง {0}–{1} จาก {2}"
 }
