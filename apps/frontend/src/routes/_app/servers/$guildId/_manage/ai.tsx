@@ -3,11 +3,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, RefreshCw, Save, ShieldAlert, Trash2 } from '@/components/icons';
+import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, RefreshCw, ShieldAlert, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { aiSettingsQuery, testAiKey, updateAiSettings } from '@/api/ai';
-import { FeatureSwitch } from '@/components/page-controls';
+import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useGuildId } from '@/hooks/use-guild';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/ai')({ component: AiSettingsPage });
@@ -50,6 +51,8 @@ function AiSettingsPage() {
     const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
     const canEnable = Boolean(data?.hasKey || data?.hasFallbackHomeKey);
     const savedDailyLimit = data?.dailyLimit;
+    const dirty = Boolean(apiKey.trim()) || (savedDailyLimit !== undefined && Number(dailyLimit) !== savedDailyLimit);
+    useUnsavedChangesGuard(dirty, { title: tr('common.discardChanges'), destructive: true });
 
     useEffect(() => {
         if (savedDailyLimit !== undefined) setDailyLimit(String(savedDailyLimit));
@@ -96,8 +99,9 @@ function AiSettingsPage() {
     });
 
     return (
-        <div className="space-y-6">
+        <>
             <PageHeader
+                help="ai"
                 title={tr('common.aiChatSettings')}
                 description={tr('ai.manageTheGeminiApiKeyAnd')}
                 actions={
@@ -176,10 +180,6 @@ function AiSettingsPage() {
                                 >
                                     {test.isPending ? <Spinner /> : <CheckCircle2 />}
                                     {tr('ai.testKey')}
-                                </Button>
-                                <Button disabled={save.isPending || (!apiKey.trim() && Number(dailyLimit) === data?.dailyLimit)} onClick={() => save.mutate()}>
-                                    {save.isPending ? <Spinner /> : <Save />}
-                                    {tr('ai.saveSettings')}
                                 </Button>
                                 {data?.hasKey && (
                                     <Button variant="destructive" disabled={removeKey.isPending} onClick={() => removeKey.mutate()}>
@@ -285,6 +285,16 @@ function AiSettingsPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+            <SaveBar
+                dirty={dirty}
+                saving={save.isPending}
+                saveLabel={tr('ai.saveSettings')}
+                onSave={() => save.mutate()}
+                onReset={() => {
+                    setApiKey('');
+                    if (savedDailyLimit !== undefined) setDailyLimit(String(savedDailyLimit));
+                }}
+            />
+        </>
     );
 }

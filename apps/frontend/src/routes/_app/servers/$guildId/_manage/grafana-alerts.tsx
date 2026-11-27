@@ -4,8 +4,7 @@ import { Spinner } from '@/components/ui/spinner';
 import type { GrafanaSettings, UpdateGrafanaSettingsInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Plus, RefreshCw, Save, Send, Trash2 } from '@/components/icons';
-import type { FormEvent } from 'react';
+import { Copy, Eye, EyeOff, Plus, RefreshCw, Send, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { grafanaQuery, grafanaStatsQuery, rotateGrafanaSecret, sendGrafanaTest, updateGrafana } from '@/api/bot';
@@ -13,6 +12,7 @@ import { guildChannelsQuery } from '@/api/guilds';
 import { ChannelSelect } from '@/components/channel-select';
 import { useConfirm } from '@/components/confirm-dialog';
 import { Field } from '@/components/field';
+import { SaveBar } from '@/components/page-controls';
 import { PageHeader } from '@/components/page-header';
 import { PluginRouteGuard } from '@/components/plugin-gate';
 import { PrBotBodySkeleton } from '@/components/skeleton/guild-pages';
@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { API_BASE, errorMessage } from '@/lib/api';
 import { useGuildId } from '@/hooks/use-guild';
+import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 
 export const Route = createFileRoute('/_app/servers/$guildId/_manage/grafana-alerts')({
@@ -107,6 +108,19 @@ async function copy(value: string, label: string) {
     }
 }
 
+type RouteRow = { label: 'env' | 'severity'; value: string; channelId: string };
+const toRouteRows = (settings: GrafanaSettings): RouteRow[] =>
+    Object.entries(settings.labelChannels).map(([key, channelId]) => {
+        const [label, ...rest] = key.split(':');
+        return { label: label === 'severity' ? 'severity' : 'env', value: rest.join(':'), channelId };
+    });
+const toGrafanaInput = (defaultChannelId: string, rows: RouteRow[]): UpdateGrafanaSettingsInput => ({
+    defaultChannelId,
+    labelChannels: Object.fromEntries(
+        rows.filter((row) => row.value.trim() && row.channelId).map((row) => [`${row.label}:${row.value.trim()}`, row.channelId]),
+    ),
+});
+
 function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
     const guildId = useGuildId();
     const queryClient = useQueryClient();
@@ -114,17 +128,16 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
     const { data: channels = [] } = useQuery(guildChannelsQuery(guildId));
     const [reveal, setReveal] = useState(false);
     const [defaultChannel, setDefaultChannel] = useState(settings.defaultChannelId);
-    const [rows, setRows] = useState<Array<{ label: 'env' | 'severity'; value: string; channelId: string }>>([]);
+    const [rows, setRows] = useState(() => toRouteRows(settings));
     const webhookUrl = `${API_BASE || window.location.origin}${settings.webhookPath}`;
-    useEffect(() => {
+    const reset = () => {
         setDefaultChannel(settings.defaultChannelId);
-        setRows(
-            Object.entries(settings.labelChannels).map(([key, channelId]) => {
-                const [label, ...rest] = key.split(':');
-                return { label: label === 'severity' ? 'severity' : 'env', value: rest.join(':'), channelId };
-            }),
-        );
-    }, [settings]);
+        setRows(toRouteRows(settings));
+    };
+    useEffect(reset, [settings]);
+    const input = toGrafanaInput(defaultChannel, rows);
+    const dirty = JSON.stringify(input) !== JSON.stringify(toGrafanaInput(settings.defaultChannelId, toRouteRows(settings)));
+    useUnsavedChangesGuard(dirty, { title: tr('common.discardChanges'), destructive: true });
     const save = useMutation({
         mutationFn: (input: UpdateGrafanaSettingsInput) => updateGrafana(guildId, input),
         onSuccess: (data) => {
@@ -147,13 +160,6 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
         onSuccess: () => toast.success(tr('grafanaAlerts.testAlertSentToDiscord')),
         onError: (err) => toast.error(tr('grafanaAlerts.failedToSendTestAlert'), { description: errorMessage(err) }),
     });
-    const saveSettings = (event: FormEvent) => {
-        event.preventDefault();
-        const labelChannels = Object.fromEntries(
-            rows.filter((row) => row.value.trim() && row.channelId).map((row) => [`${row.label}:${row.value.trim()}`, row.channelId]),
-        );
-        save.mutate({ defaultChannelId: defaultChannel, labelChannels });
-    };
     return (
         <>
             <Card>
@@ -209,12 +215,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                             </Button>
                         </div>
                     </Field>
-                    <div className="flex flex-wrap items-center gap-3">
-                        <Button disabled={test.isPending || !settings.defaultChannelId} onClick={() => test.mutate()}>
-                            {test.isPending ? <Spinner /> : <Send />} {tr('grafanaAlerts.sendATestAlert')}
-                        </Button>
-                        <p className="text-xs text-muted-foreground">{tr('grafanaAlerts.perGuildEndpointSettingsWithLabel')}</p>
-                    </div>
+                    <p className="text-xs text-muted-foreground">{tr('grafanaAlerts.perGuildEndpointSettingsWithLabel')}</p>
                 </CardContent>
             </Card>
             <Card>
@@ -223,7 +224,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                     <CardDescription>{tr('grafanaAlerts.pickADefaultChannelOrRoute')}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form className="space-y-5" onSubmit={saveSettings}>
+                    <div className="space-y-5">
                         <Field label={tr('common.defaultChannel')} hint={tr('grafanaAlerts.pickDontSendToTurnOff')}>
                             <div className="flex flex-col gap-2 sm:flex-row">
                                 <ChannelSelect
@@ -232,9 +233,6 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                     onChange={setDefaultChannel}
                                     noneLabel={tr('common.dontSend')}
                                 />
-                                <Button type="submit" disabled={save.isPending}>
-                                    {save.isPending ? <Spinner /> : <Save />} {tr('common.save')}
-                                </Button>
                             </div>
                         </Field>
                         <div className="space-y-3">
@@ -290,14 +288,16 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                 >
                                     <Plus /> {tr('grafanaAlerts.addMapping')}
                                 </Button>
-                                <Button type="submit" disabled={save.isPending}>
-                                    {save.isPending ? <Spinner /> : <Save />} {tr('common.save')}
-                                </Button>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </CardContent>
             </Card>
+            <SaveBar dirty={dirty} saving={save.isPending} onSave={() => save.mutate(input)} onReset={reset}>
+                <Button variant="secondary" disabled={test.isPending || !settings.defaultChannelId} onClick={() => test.mutate()}>
+                    {test.isPending ? <Spinner /> : <Send />} {tr('grafanaAlerts.sendATestAlert')}
+                </Button>
+            </SaveBar>
         </>
     );
 }

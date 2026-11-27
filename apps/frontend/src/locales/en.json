@@ -3078,5 +3078,13 @@
     "common.nextPage": "Next page",
     "common.lastPage": "Last page",
     "common.pageOf": "Page {0} of {1}",
-    "common.showingRange": "Showing {0}–{1} of {2}"
+    "common.showingRange": "Showing {0}–{1} of {2}",
+    "common.saveBarSavesTheWholePage": "Edit, then press Save in the bar at the bottom (Ctrl/⌘ + S) — every section is saved together.",
+    "common.aiGuideSummary": "Set a Gemini key and let the bot reply when it is mentioned in this server.",
+    "common.aiGuideStepKey": "Paste a Gemini API key and press \"Test key\".",
+    "common.aiGuideStepLimit": "Set the server daily request limit, then press Save in the bottom bar.",
+    "common.aiGuideStepEnable": "Turn on the \"Enabled\" switch at the top right so the bot starts replying.",
+    "common.aiGuideSaving": "The key and limit need Save; the on/off switch and removing the key apply immediately.",
+    "common.aiGuideTip": "The key is encrypted before it is stored; the page only shows its last characters.",
+    "common.rowsPerPage": "Rows per page"
 }

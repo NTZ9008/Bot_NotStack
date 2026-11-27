@@ -3078,5 +3078,13 @@
     "common.nextPage": "หน้าถัดไป",
     "common.lastPage": "หน้าสุดท้าย",
     "common.pageOf": "หน้า {0} / {1}",
-    "common.showingRange": "แสดง {0}–{1} จาก {2}"
+    "common.showingRange": "แสดง {0}–{1} จาก {2}",
+    "common.saveBarSavesTheWholePage": "แก้ค่าแล้วกด \"บันทึก\" ในแถบล่างของหน้า (Ctrl/⌘ + S) บันทึกทุกส่วนพร้อมกัน",
+    "common.aiGuideSummary": "ตั้งคีย์ Gemini และเปิดให้บอทตอบเมื่อถูกแท็กในเซิร์ฟเวอร์นี้",
+    "common.aiGuideStepKey": "วาง Gemini API Key แล้วกด \"ทดสอบคีย์\"",
+    "common.aiGuideStepLimit": "ตั้งโควตาคำขอต่อวันของเซิร์ฟเวอร์ แล้วกดบันทึกในแถบล่าง",
+    "common.aiGuideStepEnable": "เปิดสวิตช์ \"เปิดใช้งาน\" มุมขวาบนเพื่อให้บอทเริ่มตอบ",
+    "common.aiGuideSaving": "คีย์และโควตาต้องกดบันทึก ส่วนสวิตช์เปิด/ปิดและการลบคีย์มีผลทันที",
+    "common.aiGuideTip": "คีย์ถูกเข้ารหัสก่อนบันทึก หน้าเว็บจะแสดงเฉพาะท้ายคีย์",
+    "common.rowsPerPage": "แถวต่อหน้า"
 }
