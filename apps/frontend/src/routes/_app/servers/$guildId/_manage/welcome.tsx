@@ -278,33 +278,33 @@ function WelcomePage() {
                             {visibleCards.map((card) => (
                                 <div
                                     key={card.id}
-                                    role="button"
-                                    tabIndex={0}
-                                    onClick={() => void select(card.id)}
-                                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && void select(card.id)}
                                     className={cn(
                                         'flex items-center gap-3 rounded-lg border p-3 transition-colors hover:border-primary/60',
                                         card.id === draft?.id && 'border-primary bg-primary/10',
                                     )}
                                 >
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate font-medium">{card.name}</p>
-                                        <p className="truncate text-xs">
+                                    <button
+                                        type="button"
+                                        aria-pressed={card.id === draft?.id}
+                                        onClick={() => void select(card.id)}
+                                        className="min-w-0 flex-1 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                    >
+                                        <span className="block truncate font-medium">{card.name}</span>
+                                        <span className="block truncate text-xs">
                                             {card.channelId ? (
                                                 <span className="text-muted-foreground">{channelLabel(allChannels, card.channelId)}</span>
                                             ) : (
                                                 <span className="text-warning">{tr('common.noChannelSelected')}</span>
                                             )}
-                                        </p>
-                                    </div>
-                                    <Badge variant={card.enabled ? 'default' : 'secondary'}>{card.enabled ? tr('common.on') : tr('common.off')}</Badge>
-                                    <span onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
-                                        <Switch
-                                            checked={card.enabled}
-                                            onCheckedChange={(checked) => void toggle(card, checked)}
-                                            title={tr('welcome.turnThisCardOnOffSaved')}
-                                        />
-                                    </span>
+                                        </span>
+                                    </button>
+                                    <Badge variant={card.enabled ? 'success' : 'secondary'}>{card.enabled ? tr('common.on') : tr('common.off')}</Badge>
+                                    <Switch
+                                        checked={card.enabled}
+                                        onCheckedChange={(checked) => void toggle(card, checked)}
+                                        aria-label={`${tr('common.enabled')}: ${card.name}`}
+                                        title={tr('welcome.turnThisCardOnOffSaved')}
+                                    />
                                 </div>
                             ))}
                         </div>

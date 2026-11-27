@@ -118,7 +118,7 @@ function VoiceListenPage() {
                 <Card>
                     <CardHeader className="flex-row items-center justify-between gap-2">
                         <CardTitle>{tr('voiceListen.listen')}</CardTitle>
-                        <Badge variant={stream.status === 'live' ? 'default' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
+                        <Badge variant={stream.status === 'live' ? 'success' : 'secondary'}>{STREAM_LABEL()[stream.status]}</Badge>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {stream.status === 'stopped' ? (
