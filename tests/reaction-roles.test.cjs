@@ -19,6 +19,14 @@ const {
     RR_IDS,
 } = require('../apps/backend/dist/reaction-roles/utils/reaction-roles.messages');
 const { ReactionRolesService } = require('../apps/backend/dist/reaction-roles/reaction-roles.service');
+const { ReactionRolesController } = require('../apps/backend/dist/reaction-roles/reaction-roles.controller');
+const {
+    CreateReactionRoleItemDto,
+    CreateReactionRolePanelDto,
+    UpdateReactionRoleItemDto,
+    UpdateReactionRolePanelDto,
+} = require('../apps/backend/dist/reaction-roles/dto/reaction-roles.dto');
+const { ReactionRolesModule } = require('../apps/backend/dist/reaction-roles/reaction-roles.module');
 const { ReactionRoleInteractionListener } = require('../apps/backend/dist/reaction-roles/listeners/reaction-role-interaction.listener');
 
 const GUILD_A = '11111111111111111';
@@ -437,4 +445,243 @@ test('ReactionRoleInteractionListener checks plugin status, role hierarchy, and 
     assert.deepEqual(switchSel.ops, [`remove:${ROLE_2}`, `add:${ROLE_1}`]);
     assert.equal(switchSel.held.has(ROLE_2), false);
     assert.equal(switchSel.held.has(ROLE_1), true);
+
+    // 5) Button toggle-off when user already holds ROLE_1
+    const toggleOffBtn = createInteraction({
+        customId: RR_IDS.button(panel.id, panel.items[0].id),
+        initialRoleIds: [ROLE_1],
+    });
+    await listener.onInteraction(toggleOffBtn.interaction);
+    assert.deepEqual(toggleOffBtn.ops, [`remove:${ROLE_1}`]);
+
+    // 6) Select menu empty values: clears held roles or replies info when none held
+    const clearHeld = createInteraction({
+        customId: RR_IDS.select(panel.id),
+        values: [],
+        initialRoleIds: [ROLE_1],
+    });
+    await listener.onInteraction(clearHeld.interaction);
+    assert.deepEqual(clearHeld.ops, [`remove:${ROLE_1}`]);
+
+    const clearEmpty = createInteraction({
+        customId: RR_IDS.select(panel.id),
+        values: [],
+        initialRoleIds: [],
+    });
+    await listener.onInteraction(clearEmpty.interaction);
+    assert.equal(clearEmpty.ops.length, 0);
+    assert.match(clearEmpty.replies[0].content, /คุณยังไม่มียศจากแผงนี้/);
+
+    // 7) Multi-choice select menu adds new roles and removes deselected/toggled roles
+    await prisma.reactionRolePanel.update({ where: { id: panel.id }, data: { allowMultiple: true, mode: 'SELECT_MENU' } });
+    const multiSel = createInteraction({
+        customId: RR_IDS.select(panel.id),
+        values: [String(panel.items[0].id), String(panel.items[1].id)],
+        initialRoleIds: [ROLE_1],
+    });
+    await listener.onInteraction(multiSel.interaction);
+    assert.deepEqual(multiSel.ops, [`remove:${ROLE_1}`, `add:${ROLE_2}`]);
+
+    // 8) Guard & error branches: non-guild, missing ManageRoles, missing panel, Discord 50013 error
+    const nonGuildReplies = [];
+    await listener.onInteraction({
+        customId: RR_IDS.button(panel.id, panel.items[0].id),
+        isButton: () => true,
+        isStringSelectMenu: () => false,
+        inCachedGuild: () => false,
+        isRepliable: () => true,
+        reply: async (p) => nonGuildReplies.push(p),
+    });
+    assert.match(nonGuildReplies[0].content, /ใช้ได้เฉพาะในเซิร์ฟเวอร์/);
+
+    const noPerm = createInteraction({
+        customId: RR_IDS.button(panel.id, panel.items[0].id),
+        hasManageRoles: false,
+    });
+    await listener.onInteraction(noPerm.interaction);
+    assert.match(noPerm.replies[0].content, /จัดการยศ \(Manage Roles\)/);
+
+    const missingPanel = createInteraction({ customId: RR_IDS.button(9999, 1) });
+    await listener.onInteraction(missingPanel.interaction);
+    assert.match(missingPanel.replies[0].content, /แผงรับยศนี้ไม่มีอยู่ในระบบ/);
+
+    const errCase = createInteraction({ customId: RR_IDS.button(panel.id, panel.items[0].id) });
+    errCase.interaction.member.roles.add = async () => {
+        const err = new Error('Missing Permissions');
+        err.code = 50013;
+        throw err;
+    };
+    await listener.onInteraction(errCase.interaction);
+    assert.match(errCase.replies[0].content, /บอทไม่มีสิทธิ์จัดการยศนี้/);
+});
+
+test('ReactionRolesController, DTOs, permissionWarnings, item CRUD, updatePanel diffing, and publish edit/send', async () => {
+    assert.ok(ReactionRolesModule);
+    assert.ok(CreateReactionRolePanelDto.schema);
+    assert.ok(UpdateReactionRolePanelDto.schema);
+    assert.ok(CreateReactionRoleItemDto.schema);
+    assert.ok(UpdateReactionRoleItemDto.schema);
+
+    const ROLE_3 = '44444444444444443';
+    const ROLE_MANAGED = '44444444444444448';
+    const prisma = createReactionRolesPrisma();
+    let editedCount = 0;
+    let sentCount = 0;
+
+    const rolesCache = new Map([
+        [ROLE_1, { id: ROLE_1, name: 'Backend', position: 2, managed: false }],
+        [ROLE_2, { id: ROLE_2, name: 'Frontend', position: 3, managed: false }],
+        [ROLE_MANAGED, { id: ROLE_MANAGED, name: 'BotManaged', position: 1, managed: true }],
+        [ROLE_HIGH, { id: ROLE_HIGH, name: 'AdminAboveBot', position: 20, managed: false }],
+    ]);
+
+    const discord = {
+        ready: true,
+        requireReady() {},
+        guild() {
+            return {
+                id: GUILD_A,
+                members: {
+                    me: {
+                        permissions: { has: () => false },
+                        roles: { highest: { position: 10 } },
+                    },
+                },
+                roles: { cache: rolesCache },
+            };
+        },
+        async fetchGuildChannel(_guildId, chId) {
+            return {
+                id: chId,
+                name: 'roles-channel',
+                isSendable: () => true,
+                messages: {
+                    async fetch(msgId) {
+                        if (msgId === 'msg-sent-1') {
+                            return {
+                                id: msgId,
+                                editable: true,
+                                async edit() {
+                                    editedCount += 1;
+                                },
+                            };
+                        }
+                        return null;
+                    },
+                },
+                async send() {
+                    sentCount += 1;
+                    return { id: 'msg-sent-1' };
+                },
+            };
+        },
+    };
+
+    const service = new ReactionRolesService(prisma, discord);
+    const controller = new ReactionRolesController(service);
+
+    const createAudit = {};
+    const panel = await controller.createPanel(
+        GUILD_A,
+        CreateReactionRolePanelDto.schema.parse({
+            title: 'Team Roles',
+            channelId: CHANNEL_A,
+            items: [
+                { roleId: ROLE_1, label: 'Backend' },
+                { roleId: ROLE_MANAGED, label: 'Managed' },
+                { roleId: ROLE_HIGH, label: 'High' },
+                { roleId: ROLE_3, label: 'MissingRole' },
+            ],
+        }),
+        createAudit,
+    );
+    assert.equal(createAudit.targetId, panel.id);
+
+    // list triggers permissionWarnings for missing ManageRoles, managed role, higher role, and missing role
+    const listed = await controller.list(GUILD_A);
+    assert.equal(listed.panels.length, 1);
+    assert.ok(listed.warnings.length >= 4);
+
+    const detail = await controller.detail(GUILD_A, String(panel.id));
+    assert.equal(detail.id, panel.id);
+
+    // updatePanel: replace items (deletes removed, updates ROLE_1, creates ROLE_2)
+    const updateAudit = {};
+    const updatedPanel = await controller.updatePanel(
+        GUILD_A,
+        String(panel.id),
+        UpdateReactionRolePanelDto.schema.parse({
+            title: 'Updated Roles',
+            items: [
+                { roleId: ROLE_1, label: 'Backend V2', buttonStyle: 'SUCCESS' },
+                { roleId: ROLE_2, label: 'Frontend V1' },
+            ],
+        }),
+        updateAudit,
+    );
+    assert.equal(updateAudit.targetId, panel.id);
+    assert.equal(updatedPanel.items.length, 2);
+
+    // publishPanel: first call sends new message, second call edits existing message
+    const pubAudit1 = {};
+    const pub1 = await controller.publishPanel(GUILD_A, String(panel.id), pubAudit1);
+    assert.equal(pub1.edited, false);
+    assert.equal(sentCount, 1);
+    assert.equal(pubAudit1.extra.edited, false);
+
+    const pubAudit2 = {};
+    const pub2 = await controller.publishPanel(GUILD_A, String(panel.id), pubAudit2);
+    assert.equal(pub2.edited, true);
+    assert.equal(editedCount, 1);
+
+    // addItem, updateItem, removeItem, removeItemPost
+    const addItemAudit = {};
+    const addedItem = await controller.addItem(
+        GUILD_A,
+        String(panel.id),
+        CreateReactionRoleItemDto.schema.parse({ roleId: ROLE_3, label: 'DevOps', emoji: '🚀' }),
+        addItemAudit,
+    );
+    assert.equal(addItemAudit.targetId, addedItem.id);
+
+    await assert.rejects(() =>
+        controller.updateItem(GUILD_A, String(panel.id), String(addedItem.id), { roleId: ROLE_1 }, {}),
+    );
+
+    const updItemAudit = {};
+    const updatedItem = await controller.updateItem(
+        GUILD_A,
+        String(panel.id),
+        String(addedItem.id),
+        UpdateReactionRoleItemDto.schema.parse({ label: 'Platform', buttonStyle: 'SECONDARY' }),
+        updItemAudit,
+    );
+    assert.equal(updItemAudit.targetId, addedItem.id);
+    assert.equal(updatedItem.label, 'Platform');
+
+    const delItemAudit = {};
+    assert.deepEqual(
+        await controller.removeItem(GUILD_A, String(panel.id), String(addedItem.id), delItemAudit),
+        { success: true },
+    );
+
+    const addedAgain = await controller.addItem(
+        GUILD_A,
+        String(panel.id),
+        CreateReactionRoleItemDto.schema.parse({ roleId: ROLE_3, label: 'QA' }),
+        {},
+    );
+    assert.deepEqual(
+        await controller.removeItemPost(GUILD_A, String(panel.id), String(addedAgain.id), {}),
+        { success: true },
+    );
+
+    // removePanel & removePanelPost
+    assert.deepEqual(await controller.removePanel(GUILD_A, String(panel.id), {}), { success: true });
+    const panel2 = await controller.createPanel(
+        GUILD_A,
+        CreateReactionRolePanelDto.schema.parse({ title: 'Temp', channelId: CHANNEL_B }),
+        {},
+    );
+    assert.deepEqual(await controller.removePanelPost(GUILD_A, String(panel2.id), {}), { success: true });
 });

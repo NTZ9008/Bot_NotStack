@@ -34,7 +34,8 @@ test('activity bucket labels are shortened for chart axes and highlights', () =>
 });
 
 const { visibleNavGroups, findNavItem } = require('../apps/frontend/src/components/layout/nav-items.ts');
-const { PLUGIN_IDS } = require('../packages/shared/src/plugins.ts');
+const { pluginIcon, pluginAccent, pluginCopy, pluginCategoryLabel } = require('../apps/frontend/src/lib/plugin-ui.ts');
+const { PLUGIN_CATEGORIES, PLUGIN_IDS, PLUGIN_REGISTRY } = require('../packages/shared/src/plugins.ts');
 const navItems = (admin, access, installedPlugins) =>
     visibleNavGroups(admin, access ? { access, installedPlugins } : null).flatMap((group) => group.items);
 
@@ -125,6 +126,28 @@ test('Thai labels retain English search terms and breadcrumb matching', () => {
     assert.match(findNavItem('/servers/$guildId/voice-guard').keywords, /whitelist blacklist/);
     assert.equal(findNavItem('/servers/$guildId/config').label, 'ตั้งค่าบอท');
     assert.equal(findNavItem('/missing'), undefined);
+});
+
+test('plugin-ui helpers resolve icons, accents, localized copy, and category labels for every plugin', () => {
+    for (const def of PLUGIN_REGISTRY) {
+        const byId = pluginIcon(def.id);
+        const byIconName = pluginIcon(def.icon);
+        assert.ok(byId, `expected icon for plugin id ${def.id}`);
+        assert.equal(byId, byIconName);
+
+        const accent = pluginAccent(def.id);
+        assert.ok(accent.badgeBg.length > 0);
+        assert.ok(accent.iconText.length > 0);
+        assert.ok(accent.borderHover.length > 0);
+
+        const copy = pluginCopy(def.id);
+        assert.ok(copy.name.length > 0);
+        assert.ok(copy.description.length > 0);
+    }
+
+    for (const category of PLUGIN_CATEGORIES) {
+        assert.ok(pluginCategoryLabel(category).length > 0);
+    }
 });
 
 const { PreloadQueue, canPreloadInBackground } = require('../apps/frontend/src/lib/background-preload.ts');

@@ -1,3 +1,4 @@
+import { trimChar } from '@notstack/shared';
 import { lookup } from 'node:dns/promises';
 import type { LookupAddress } from 'node:dns';
 import { isIP } from 'node:net';
@@ -81,8 +82,15 @@ function parseHexSegments(segmentStr: string): number[] | null {
     return out;
 }
 
+function stripIpv6Brackets(value: string): string {
+    let out = value;
+    if (out.startsWith('[')) out = out.slice(1);
+    if (out.endsWith(']')) out = out.slice(0, -1);
+    return out;
+}
+
 function expandIpv6(raw: string): number[] | null {
-    const clean = raw.replace(/^\[|\]$/g, '').split('%')[0] ?? '';
+    const clean = stripIpv6Brackets(raw).split('%')[0] ?? '';
     const halves = clean.split('::');
     if (halves.length > 2) return null;
 
@@ -136,7 +144,7 @@ function isForbiddenIpv6(raw: string): boolean {
 }
 
 export function isForbiddenIp(rawIp: string): boolean {
-    const stripped = rawIp.trim().replace(/^\[|\]$/g, '');
+    const stripped = stripIpv6Brackets(rawIp.trim());
     const noZone = stripped.split('%')[0] ?? stripped;
     const kind = isIP(noZone);
     if (kind === 4) {
@@ -150,7 +158,7 @@ export function isForbiddenIp(rawIp: string): boolean {
 }
 
 function normalizeHost(hostname: string): string {
-    return hostname.replace(/^\[|\]$/g, '').replace(/\.+$/, '').toLowerCase();
+    return trimChar(stripIpv6Brackets(hostname), '.', 'end').toLowerCase();
 }
 
 export async function assertSafeExternalUrl(rawUrl: string, lookupImpl: DnsLookupAll = defaultLookup): Promise<URL> {

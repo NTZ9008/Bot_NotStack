@@ -328,9 +328,14 @@ export class TicketsService {
                 { claimedById: { contains: q, mode: 'insensitive' } },
                 { subject: { contains: q, mode: 'insensitive' } },
             ];
-            const numMatch = /^#?0*(\d+)$/.exec(q);
-            if (numMatch) {
-                const parsedNum = Number(numMatch[1]);
+            const withoutHash = q.startsWith('#') ? q.slice(1) : q;
+            let startIdx = 0;
+            while (startIdx < withoutHash.length && withoutHash.charCodeAt(startIdx) === 48) {
+                startIdx += 1;
+            }
+            const cleanDigits = withoutHash.slice(startIdx);
+            if (/^\d{1,10}$/.test(cleanDigits)) {
+                const parsedNum = Number(cleanDigits);
                 if (Number.isSafeInteger(parsedNum) && parsedNum > 0 && parsedNum <= 2_147_483_647) {
                     or.push({ ticketNumber: parsedNum });
                 }

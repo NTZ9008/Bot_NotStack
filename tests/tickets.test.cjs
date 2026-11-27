@@ -21,6 +21,9 @@ const {
     renderTranscriptHtmlFromMarkdown,
 } = require('../apps/backend/dist/tickets/utils/ticket-transcript');
 const { TicketsService } = require('../apps/backend/dist/tickets/tickets.service');
+const { TicketsController } = require('../apps/backend/dist/tickets/tickets.controller');
+const { TicketListQueryDto, TicketTranscriptQueryDto, UpdateTicketConfigDto } = require('../apps/backend/dist/tickets/dto/tickets.dto');
+const { TicketsModule } = require('../apps/backend/dist/tickets/tickets.module');
 const { TicketInteractionListener } = require('../apps/backend/dist/tickets/listeners/ticket-interaction.listener');
 
 const GUILD_ID = '11111111111111111';
@@ -630,4 +633,66 @@ test('TicketInteractionListener enforces plugin guard, opening lock, maxOpenPerU
     const htmlFile = await service.getTranscriptFile(GUILD_ID, ticket.id, 'html');
     assert.equal(htmlFile.filename, 'ticket-0001.html');
     assert.match(htmlFile.buffer.toString('utf8'), /<!DOCTYPE html>/);
+
+    // 10. Verify linear-time ticket search on long '0' repetitions and zero-only queries (CodeQL ReDoS regression test)
+    const zeroSearch = await service.listTickets(GUILD_ID, { page: 1, status: 'ALL', q: `${'0'.repeat(10_000)}abc` });
+    assert.equal(zeroSearch.items.length, 0);
+    const allZeroSearch = await service.listTickets(GUILD_ID, { page: 1, status: 'ALL', q: '#0000' });
+    assert.equal(allZeroSearch.items.length, 0);
+
+    // 11. TicketsController endpoints (config GET/POST/PATCH, publishPanel, list, detail, downloadTranscript, closeTicket)
+    assert.ok(TicketsModule);
+    assert.ok(TicketListQueryDto.schema);
+    assert.ok(TicketTranscriptQueryDto.schema);
+    assert.ok(UpdateTicketConfigDto.schema);
+
+    const controller = new TicketsController(service);
+    const cfgBefore = await controller.getConfig(GUILD_ID);
+    assert.equal(cfgBefore.categoryId, CATEGORY_ID);
+
+    const postCfgAudit = {};
+    const savedPost = await controller.saveConfigPost(GUILD_ID, { panelTitle: 'Updated Title', maxOpenPerUser: 2 }, postCfgAudit);
+    assert.equal(savedPost.success, true);
+    assert.equal(savedPost.config.panelTitle, 'Updated Title');
+    assert.ok(postCfgAudit.extra.before);
+
+    const patchCfgAudit = {};
+    const savedPatch = await controller.saveConfigPatch(GUILD_ID, { dmTranscript: false }, patchCfgAudit);
+    assert.equal(savedPatch.config.dmTranscript, false);
+
+    const pubAudit = {};
+    const pubRes = await controller.publishPanel(GUILD_ID, pubAudit);
+    assert.ok(pubRes.messageId);
+    assert.equal(pubAudit.extra.messageId, pubRes.messageId);
+
+    const ctrlList = await controller.listTickets(GUILD_ID, { page: 1, status: 'CLOSED', q: '#0001' });
+    assert.equal(ctrlList.items.length, 1);
+
+    const detail = await controller.getTicketDetail(GUILD_ID, String(ticket.id));
+    assert.equal(detail.id, ticket.id);
+    assert.match(detail.transcriptMarkdown, /Chat line 1/);
+
+    const headers = {};
+    let sentBuffer = null;
+    const mockRes = {
+        setHeader(k, v) {
+            headers[k] = v;
+        },
+        send(buf) {
+            sentBuffer = buf;
+        },
+    };
+    await controller.downloadTranscript(GUILD_ID, String(ticket.id), { format: 'html' }, mockRes);
+    assert.match(headers['Content-Type'], /text\/html/);
+    assert.match(headers['Content-Disposition'], /ticket-0001\.html/);
+    assert.ok(Buffer.isBuffer(sentBuffer));
+
+    // Open a second ticket and close it via TicketsController.closeTicket
+    const secondTicket = await prisma.ticket.create({
+        data: { guildId: GUILD_ID, ticketNumber: 2, openerId: OPENER_ID, status: 'OPEN' },
+    });
+    const closeAudit = {};
+    const closedViaCtrl = await controller.closeTicket(GUILD_ID, String(secondTicket.id), { discordId: STAFF_USER_ID }, closeAudit);
+    assert.equal(closeAudit.targetId, String(secondTicket.id));
+    assert.equal(closedViaCtrl.status, 'CLOSED');
 });

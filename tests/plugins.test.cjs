@@ -9,12 +9,16 @@ const { MessageFlags } = req('discord.js');
 const {
     PLUGIN_BOT_DISABLED_MESSAGE,
     PLUGIN_IDS,
+    PLUGIN_MAP,
     PLUGIN_NOT_INSTALLED_CODE,
     PLUGIN_REGISTRY,
     isPluginId,
+    pluginIdSchema,
 } = req('@notstack/shared');
 
 const { PluginsService } = require('../apps/backend/dist/plugins/plugins.service');
+const { PluginsController } = require('../apps/backend/dist/plugins/plugins.controller');
+const { PluginsModule } = require('../apps/backend/dist/plugins/plugins.module');
 const { PluginGuard } = require('../apps/backend/dist/plugins/guards/plugin.guard');
 const { RequirePlugin } = require('../apps/backend/dist/plugins/decorators/require-plugin.decorator');
 const { GithubWebhookController } = require('../apps/backend/dist/pr-bot/controllers/github-webhook.controller');
@@ -410,4 +414,33 @@ test('Discord Bot guards slash commands, HelpCommand listing, and Jira component
         content: PLUGIN_BOT_DISABLED_MESSAGE,
         flags: MessageFlags.Ephemeral,
     });
+});
+
+test('PluginsController delegates list/install/uninstall, records audit targetId, and shared lookup helpers work', async () => {
+    assert.ok(PluginsModule);
+    assert.equal(PLUGIN_MAP.get('github-pr')?.id, 'github-pr');
+    assert.equal(pluginIdSchema.safeParse('ticket-system').success, true);
+    assert.equal(pluginIdSchema.safeParse('nonexistent').success, false);
+
+    const prisma = createGuildPluginPrisma();
+    const service = createPluginsService(prisma);
+    const controller = new PluginsController(service);
+
+    const initial = await controller.list(GUILD_A);
+    assert.deepEqual(initial.installedIds, []);
+
+    const auditInstall = {};
+    const afterInstall = await controller.install(GUILD_A, 'ticket-system', { displayName: 'Admin Boat' }, auditInstall);
+    assert.equal(auditInstall.targetId, 'ticket-system');
+    assert.deepEqual(afterInstall.installedIds, ['ticket-system']);
+    assert.equal(afterInstall.plugins.find((p) => p.id === 'ticket-system')?.installedBy, 'Admin Boat');
+
+    const auditInstallFallback = {};
+    await controller.install(GUILD_A, 'uptime-monitor', undefined, auditInstallFallback);
+    assert.equal(auditInstallFallback.targetId, 'uptime-monitor');
+
+    const auditUninstall = {};
+    const afterUninstall = await controller.uninstall(GUILD_A, 'ticket-system', auditUninstall);
+    assert.equal(auditUninstall.targetId, 'ticket-system');
+    assert.deepEqual(afterUninstall.installedIds, ['uptime-monitor']);
 });

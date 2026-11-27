@@ -7,6 +7,9 @@ const { uptimeTargetInputSchema, updateUptimeTargetSchema, UPTIME_LIMITS } = req
 
 const { isForbiddenIp, assertSafeExternalUrl, probeExternalUrl, SsrfBlockedError } = require('../apps/backend/dist/common/utils/ssrf-guard');
 const { UptimeService } = require('../apps/backend/dist/uptime/uptime.service');
+const { UptimeController } = require('../apps/backend/dist/uptime/uptime.controller');
+const { CreateUptimeTargetDto, UpdateUptimeTargetDto } = require('../apps/backend/dist/uptime/dto/uptime-target.dto');
+const { UptimeModule } = require('../apps/backend/dist/uptime/uptime.module');
 const { UptimeMonitorTask } = require('../apps/backend/dist/uptime/tasks/uptime-monitor.task');
 
 const GUILD_A = '11111111111111111';
@@ -323,4 +326,107 @@ test('UptimeMonitorTask checks due targets concurrently only for guilds with upt
     await task.tick();
 
     assert.deepEqual(checkedIds, [1]);
+});
+
+test('UptimeController endpoints, DTOs, checkNow, update, and SSRF edge cases', async () => {
+    assert.ok(UptimeModule);
+    assert.ok(CreateUptimeTargetDto.schema);
+    assert.ok(UpdateUptimeTargetDto.schema);
+
+    // SSRF edge cases: trailing dots, bracketed IPv6, NAT64, 6to4, non-IP, DNS failure, TimeoutError
+    assert.equal(isForbiddenIp('not-an-ip'), true);
+    assert.equal(isForbiddenIp('[::1]'), true);
+    assert.equal(isForbiddenIp('64:ff9b::127.0.0.1'), true);
+    assert.equal(isForbiddenIp('2002:7f00:0001::1'), true);
+    assert.equal(isForbiddenIp('[2606:4700:4700::1111]'), false);
+
+    const safeTrailingDots = await assertSafeExternalUrl('https://Example.COM.../', async () => [{ address: '93.184.216.34', family: 4 }]);
+    assert.equal(safeTrailingDots.protocol, 'https:');
+    const safePublicIpv6 = await assertSafeExternalUrl('https://[2606:4700:4700::1111]/health');
+    assert.equal(safePublicIpv6.pathname, '/health');
+
+    await assert.rejects(() => assertSafeExternalUrl('not a url'), SsrfBlockedError);
+    await assert.rejects(() => assertSafeExternalUrl('https://broken.example.com', async () => { throw new Error('ENOTFOUND'); }), SsrfBlockedError);
+    await assert.rejects(() => assertSafeExternalUrl('https://empty.example.com', async () => []), SsrfBlockedError);
+
+    const timeoutProbe = await probeExternalUrl('https://93.184.216.34/slow', {
+        timeoutMs: 2000,
+        fetchImpl: async () => {
+            const err = new Error('aborted');
+            err.name = 'TimeoutError';
+            throw err;
+        },
+    });
+    assert.equal(timeoutProbe.status, 'DOWN');
+    assert.match(timeoutProbe.error, /หมดเวลาเชื่อมต่อ/);
+
+    // UptimeService + UptimeController full roundtrip
+    const prisma = createUptimePrisma();
+    const discord = {
+        ready: true,
+        async fetchGuildChannel() {
+            return { isSendable: () => true, send: async () => ({ id: 'msg-1' }) };
+        },
+    };
+    const service = new UptimeService(prisma, discord);
+    service.lookupImpl = async () => [{ address: '93.184.216.34', family: 4 }];
+    service.fetchImpl = async () => new Response('ok', { status: 200 });
+    const controller = new UptimeController(service);
+
+    const createAudit = {};
+    const created = await controller.create(
+        GUILD_A,
+        CreateUptimeTargetDto.schema.parse({
+            name: 'Main API',
+            url: 'https://93.184.216.34/health',
+            intervalMinutes: 5,
+            channelId: CHANNEL_A,
+            mentionRoleId: '',
+        }),
+        createAudit,
+    );
+    assert.equal(createAudit.targetId, created.id);
+    assert.equal(createAudit.extra.name, 'Main API');
+
+    const listed = await controller.list(GUILD_A);
+    assert.equal(listed.targets.length, 1);
+
+    const checkAudit = {};
+    const checked = await controller.checkNow(GUILD_A, String(created.id), checkAudit);
+    assert.equal(checkAudit.targetId, created.id);
+    assert.equal(checked.lastStatus, 'UP');
+
+    const detail = await controller.detail(GUILD_A, String(created.id));
+    assert.equal(detail.target.id, created.id);
+
+    const updateAudit = {};
+    const updated = await controller.update(
+        GUILD_A,
+        String(created.id),
+        UpdateUptimeTargetDto.schema.parse({ name: 'Renamed API', intervalMinutes: 15, enabled: false }),
+        updateAudit,
+    );
+    assert.equal(updateAudit.targetId, created.id);
+    assert.equal(updated.name, 'Renamed API');
+    assert.equal(updated.enabled, false);
+
+    const deleteAudit = {};
+    const delRes = await controller.remove(GUILD_A, String(created.id), deleteAudit);
+    assert.deepEqual(delRes, { success: true });
+    assert.equal(deleteAudit.targetId, created.id);
+
+    const second = await controller.create(
+        GUILD_A,
+        CreateUptimeTargetDto.schema.parse({
+            name: 'Temp API',
+            url: 'https://93.184.216.34/ping',
+            intervalMinutes: 1,
+            channelId: CHANNEL_A,
+        }),
+        {},
+    );
+    const delPostAudit = {};
+    const delPostRes = await controller.removePost(GUILD_A, String(second.id), delPostAudit);
+    assert.deepEqual(delPostRes, { success: true });
+    assert.equal(delPostAudit.targetId, second.id);
 });

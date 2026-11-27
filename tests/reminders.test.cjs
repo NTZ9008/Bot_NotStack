@@ -8,6 +8,7 @@ const {
     buildDailyCron,
     buildWeeklyCron,
     formatBangkokDateTimeInput,
+    isValidCronSyntax,
     parseBangkokDateTimeInput,
     parseDailyCron,
     parseWeeklyCron,
@@ -17,6 +18,9 @@ const {
 
 const { computeNextRunAt, cronTimeSchema, isValidCronTime } = require('../apps/backend/dist/reminders/utils/reminder-schedule');
 const { RemindersService } = require('../apps/backend/dist/reminders/reminders.service');
+const { RemindersController } = require('../apps/backend/dist/reminders/reminders.controller');
+const { CreateReminderDto, UpdateReminderDto } = require('../apps/backend/dist/reminders/dto/reminder.dto');
+const { RemindersModule } = require('../apps/backend/dist/reminders/reminders.module');
 const { ScheduledReminderTask } = require('../apps/backend/dist/reminders/tasks/scheduled-reminder.task');
 
 const GUILD_A = '11111111111111111';
@@ -331,4 +335,128 @@ test('ScheduledReminderTask polls due reminders and skips guilds without schedul
     await task.tick();
 
     assert.deepEqual(executedIds, [1]);
+});
+
+test('RemindersController, DTO cron validation, shared cron syntax parser, and service edge cases', async () => {
+    assert.ok(RemindersModule);
+
+    // Shared cron syntax parser & helper edge cases
+    assert.equal(isValidCronSyntax('@daily'), true);
+    assert.equal(isValidCronSyntax('0 */15 9-17 * JAN-DEC MON-FRI'), true);
+    assert.equal(isValidCronSyntax(''), false);
+    assert.equal(isValidCronSyntax('* * *'), false);
+    assert.equal(isValidCronSyntax('60 0 * * * *'), false);
+    assert.equal(isValidCronSyntax('1,,2 * * * *'), false);
+    assert.equal(isValidCronSyntax('*/0 * * * *'), false);
+    assert.equal(isValidCronSyntax('1/2/3 * * * *'), false);
+    assert.equal(isValidCronSyntax('1-2-3 * * * *'), false);
+    assert.equal(isValidCronSyntax('10-5 * * * *'), false);
+    assert.equal(isValidCronSyntax('abc * * * *'), false);
+    assert.equal(buildDailyCron('99:99'), '');
+    assert.equal(parseDailyCron(null), null);
+    assert.equal(parseDailyCron('75 25 * * *'), null);
+    assert.equal(parseWeeklyCron(null), null);
+
+    // updateReminderSchema superRefine branches
+    assert.equal(updateReminderSchema.safeParse({}).success, false);
+    assert.equal(updateReminderSchema.safeParse({ cronExpression: 'bad cron' }).success, false);
+    assert.equal(updateReminderSchema.safeParse({ runAt: 'not-a-date' }).success, false);
+    assert.equal(updateReminderSchema.safeParse({ scheduleType: 'ONCE', runAt: null }).success, false);
+    assert.equal(updateReminderSchema.safeParse({ scheduleType: 'DAILY', cronExpression: null }).success, false);
+
+    // Backend DTO superRefine validation
+    const validCreate = CreateReminderDto.schema.parse({
+        title: 'Daily Standup',
+        channelId: CHANNEL_A,
+        message: 'Join voice!',
+        useEmbed: false,
+        mentionRoleId: ROLE_A,
+        scheduleType: 'DAILY',
+        cronExpression: '0 10 * * *',
+    });
+    assert.equal(validCreate.scheduleType, 'DAILY');
+    assert.equal(
+        CreateReminderDto.schema.safeParse({
+            title: 'Bad Day',
+            channelId: CHANNEL_A,
+            message: 'x',
+            scheduleType: 'CRON',
+            cronExpression: '0 10 31 2 *',
+        }).success,
+        false,
+    );
+    assert.equal(UpdateReminderDto.schema.safeParse({ cronExpression: '0 10 31 2 *' }).success, false);
+    assert.equal(UpdateReminderDto.schema.safeParse({ title: 'Updated Title', cronExpression: '30 9 * * *' }).success, true);
+
+    // RemindersController + RemindersService testSend / plain-text / error paths
+    const prisma = createRemindersPrisma();
+    const sentPayloads = [];
+    let failSend = false;
+    const discord = {
+        ready: true,
+        requireReady() {},
+        async fetchGuildChannel() {
+            return {
+                isSendable: () => true,
+                async send(payload) {
+                    if (failSend) throw new Error('Discord 500');
+                    sentPayloads.push(payload);
+                },
+            };
+        },
+    };
+    const service = new RemindersService(prisma, discord);
+    const controller = new RemindersController(service);
+
+    const createAudit = {};
+    const created = await controller.create(GUILD_A, validCreate, createAudit);
+    assert.equal(createAudit.targetId, created.id);
+    assert.equal(created.useEmbed, false);
+
+    // Simulate previous error then testSend clears lastError and sends plain text with role mention
+    prisma.rows[0].lastError = 'previous failure';
+    const testAudit = {};
+    const afterTest = await controller.testSend(GUILD_A, String(created.id), testAudit);
+    assert.equal(testAudit.targetId, created.id);
+    assert.equal(afterTest.lastError, null);
+    assert.match(sentPayloads[0].content, new RegExp(`^<@&${ROLE_A}>`));
+
+    // testSend failure surfaces error
+    failSend = true;
+    await assert.rejects(() => controller.testSend(GUILD_A, String(created.id), {}));
+    failSend = false;
+
+    // executeDueReminder handles send failure and records lastError, plus invalid cron auto-disables
+    failSend = true;
+    await service.executeDueReminder(prisma.rows[0], new Date('2026-11-26T03:00:00.000Z'));
+    assert.match(prisma.rows[0].lastError, /Discord 500/);
+    failSend = false;
+
+    prisma.rows[0].cronExpression = 'invalid-cron';
+    await service.executeDueReminder(prisma.rows[0], new Date('2026-11-26T03:00:00.000Z'));
+    assert.equal(prisma.rows[0].enabled, false);
+
+    // Controller list, update (re-enable embed with default color), remove, removePost
+    const listed = await controller.list(GUILD_A);
+    assert.equal(listed.reminders.length, 1);
+
+    const updateAudit = {};
+    const updated = await controller.update(
+        GUILD_A,
+        String(created.id),
+        UpdateReminderDto.schema.parse({ useEmbed: true, cronExpression: '15 11 * * *', enabled: true }),
+        updateAudit,
+    );
+    assert.equal(updateAudit.targetId, created.id);
+    assert.equal(updated.useEmbed, true);
+    assert.ok(updated.embedColor);
+
+    const delAudit = {};
+    assert.deepEqual(await controller.remove(GUILD_A, String(created.id), delAudit), { success: true });
+    assert.equal(delAudit.targetId, created.id);
+
+    const second = await controller.create(GUILD_A, validCreate, {});
+    const delPostAudit = {};
+    assert.deepEqual(await controller.removePost(GUILD_A, String(second.id), delPostAudit), { success: true });
+    assert.equal(delPostAudit.targetId, second.id);
 });

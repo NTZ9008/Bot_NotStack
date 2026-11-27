@@ -1,7 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
+import { Activity, CalendarClock, Coins, GitPullRequest, HeartPulse, LifeBuoy, Sparkles, Ticket } from 'lucide-react';
 import type { PluginCategory, PluginIconName, PluginId } from '@notstack/shared';
-import { Activity, CalendarClock, Coins, GitPullRequest, HeartPulse, LifeBuoy, Sparkles, Ticket } from '@/components/icons';
-import { tr } from '@/lib/i18n';
+import { tr } from './i18n';
 
 const ICON_BY_NAME: Record<PluginIconName, LucideIcon> = {
     GitPullRequest,
