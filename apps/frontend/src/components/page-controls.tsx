@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { Spinner } from '@/components/ui/spinner';
 import { tr } from '@/lib/i18n';
 import { RotateCcw, Save } from '@/components/icons';
@@ -50,10 +50,13 @@ export function SaveBar({
     saveLabel?: string;
     children?: ReactNode;
 }) {
-    // Ctrl/⌘ + S ทุกหน้า; แท็บที่ซ่อนแต่ยัง mount อยู่จะไม่บันทึกเพราะไม่มีการแก้ไข
-    useSaveShortcut(() => dirty && !saving && !invalid && onSave());
+    // Ctrl/⌘ + S บันทึกเฉพาะแถบที่มองเห็น (แท็บที่ซ่อนแต่ยัง mount อยู่จะไม่ถูกบันทึกตามไปด้วย)
+    const bar = useRef<HTMLDivElement>(null);
+    useSaveShortcut(() => {
+        if (dirty && !saving && !invalid && bar.current?.checkVisibility()) onSave();
+    });
     return (
-        <div className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-3 shadow-(--soft-shadow) backdrop-blur">
+        <div ref={bar} className="sticky bottom-3 z-20 flex flex-wrap items-center gap-2 rounded-xl border bg-card/95 p-3 shadow-(--soft-shadow) backdrop-blur">
             {children}
             <div className="ms-auto flex flex-wrap items-center justify-end gap-2">
                 {dirty && <Badge variant="warning">{tr('common.youHaveUnsavedChanges')}</Badge>}
