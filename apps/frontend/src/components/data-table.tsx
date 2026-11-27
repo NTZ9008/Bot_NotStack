@@ -23,6 +23,7 @@ export function DataTable<TData>({
     label,
     pageSize,
     more,
+    paginate = true,
 }: {
     columns: ColumnDef<TData, any>[]; // eslint-disable-line @typescript-eslint/no-explicit-any
     data: TData[];
@@ -33,6 +34,8 @@ export function DataTable<TData>({
     label?: string;
     pageSize?: number;
     more?: MorePages;
+    // false = ข้อมูลแบ่งหน้ามาจาก API แล้ว (หน้าแม่วาง Pagination เอง)
+    paginate?: boolean;
 }) {
     const captionId = useId();
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -46,7 +49,9 @@ export function DataTable<TData>({
         getFilteredRowModel: getFilteredRowModel(),
         enableSortingRemoval: true,
     });
-    const { pageItems: rows, pagination } = usePagedItems(table.getRowModel().rows, { pageSize, more, resetKey: globalFilter });
+    const allRows = table.getRowModel().rows;
+    const { pageItems, pagination } = usePagedItems(allRows, { pageSize, more, resetKey: globalFilter });
+    const rows = paginate ? pageItems : allRows;
 
     return (
         <div className="space-y-3">
@@ -124,7 +129,7 @@ export function DataTable<TData>({
                     </TableBody>
                 </Table>
             </div>
-            <Pagination {...pagination} />
+            {paginate && <Pagination {...pagination} />}
         </div>
     );
 }

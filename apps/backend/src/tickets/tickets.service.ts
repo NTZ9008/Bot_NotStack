@@ -96,7 +96,10 @@ export class TicketsService {
 
         if (config.panelChannelId) {
             const panelCh = guild.channels.cache.get(config.panelChannelId);
-            if (panelCh && !me.permissionsIn(panelCh).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])) {
+            if (
+                panelCh &&
+                !me.permissionsIn(panelCh).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks])
+            ) {
                 problems.push(`บอทส่งแผงเข้า #${panelCh.name} ไม่ได้`);
             }
         }
@@ -105,7 +108,9 @@ export class TicketsService {
             const logCh = guild.channels.cache.get(config.logChannelId);
             if (
                 logCh &&
-                !me.permissionsIn(logCh).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles])
+                !me
+                    .permissionsIn(logCh)
+                    .has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.EmbedLinks, PermissionFlagsBits.AttachFiles])
             ) {
                 problems.push(`บอทส่งไฟล์ Transcript เข้า #${logCh.name} ไม่ได้`);
             }
@@ -316,7 +321,7 @@ export class TicketsService {
         const page = Math.max(1, Number(query.page) || 1);
         const status = query.status ?? 'ALL';
         const q = typeof query.q === 'string' ? query.q.trim() : undefined;
-        const pageSize = TICKET_LIMITS.pageSize;
+        const pageSize = Math.min(100, Math.max(1, Number(query.pageSize) || TICKET_LIMITS.pageSize));
 
         const where: Prisma.TicketWhereInput = { guildId };
         if (status !== 'ALL') {
@@ -379,11 +384,7 @@ export class TicketsService {
         };
     }
 
-    async getTranscriptFile(
-        guildId: string,
-        ticketId: number,
-        format: 'md' | 'html',
-    ): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
+    async getTranscriptFile(guildId: string, ticketId: number, format: 'md' | 'html'): Promise<{ buffer: Buffer; filename: string; contentType: string }> {
         const row = await this.findTicket(guildId, ticketId);
         if (!row) throw notFound('ไม่พบ Ticket นี้');
         if (!row.transcriptMarkdown) throw notFound('ยังไม่มีบันทึก Transcript สำหรับ Ticket นี้');
