@@ -27,12 +27,12 @@ function compact(value: number): string {
     return String(value);
 }
 
-function UsageBar({ current, limit, cooldown }: { current: number; limit: number; cooldown: boolean }) {
+function UsageBar({ label, current, limit, cooldown }: { label: string; current: number; limit: number; cooldown: boolean }) {
     const ratio = Math.min(100, (current / Math.max(1, limit)) * 100);
     const color = cooldown || ratio >= 100 ? 'bg-destructive' : ratio > 70 ? 'bg-warning' : 'bg-muted-foreground/40';
     return (
         <div className="space-y-1.5">
-            <Progress value={ratio} className="h-1.5" indicatorClassName={color} />
+            <Progress aria-label={label} value={ratio} className="h-1.5" indicatorClassName={color} />
             <div className="text-xs tabular-nums text-muted-foreground">
                 {compact(current)} / {compact(limit)}
             </div>
@@ -269,13 +269,28 @@ function AiSettingsPage() {
                                             </td>
                                             <td className="px-3 py-4 text-muted-foreground">{model.category}</td>
                                             <td className="px-3 py-4">
-                                                <UsageBar current={model.rpm.current} limit={model.rpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="RPM"
+                                                    current={model.rpm.current}
+                                                    limit={model.rpm.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <UsageBar current={model.tpm.current} limit={model.tpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="TPM"
+                                                    current={model.tpm.current}
+                                                    limit={model.tpm.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <UsageBar current={model.rpd.current} limit={model.rpd.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar
+                                                    label="RPD"
+                                                    current={model.rpd.current}
+                                                    limit={model.rpd.limit}
+                                                    cooldown={model.status === 'cooldown'}
+                                                />
                                             </td>
                                         </tr>
                                     );
