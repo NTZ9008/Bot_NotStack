@@ -7,8 +7,26 @@ import type { PluginId } from './plugins';
 // ประเภทข้อมูลและ Schema ที่ใช้ร่วมกันระหว่าง Backend และ Frontend
 // ==========================================
 
-export const CUSTOM_SUMMARY_MODULES = ['voice', 'messages', 'githubPr', 'devopsOther'] as const;
+export const CUSTOM_SUMMARY_CORE_MODULES = ['voice', 'messages', 'server'] as const;
+export const CUSTOM_SUMMARY_PLUGIN_MODULES = ['githubPr', 'devops'] as const;
+export const CUSTOM_SUMMARY_MODULES = [...CUSTOM_SUMMARY_CORE_MODULES, ...CUSTOM_SUMMARY_PLUGIN_MODULES] as const;
 export type CustomSummaryModule = (typeof CUSTOM_SUMMARY_MODULES)[number];
+
+/** กรองโมดูลรายงานให้เหลือเฉพาะ Core และปลั๊กอินที่ติดตั้งจริงในเซิร์ฟเวอร์ */
+export function filterActiveSummaryModules(
+    modules: readonly CustomSummaryModule[],
+    installedPlugins?: readonly PluginId[],
+): CustomSummaryModule[] {
+    if (!installedPlugins) return [...modules];
+    const set = new Set<PluginId>(installedPlugins);
+    const hasPr = set.has('github-pr');
+    const hasDevops = set.has('grafana-alert') || set.has('jira-card');
+    return modules.filter((mod) => {
+        if (mod === 'githubPr') return hasPr;
+        if (mod === 'devops') return hasDevops;
+        return true;
+    });
+}
 
 export const CUSTOM_SUMMARY_CHANNEL_GROUPS = ['text', 'voice', 'devops'] as const;
 export type CustomSummaryChannelGroup = (typeof CUSTOM_SUMMARY_CHANNEL_GROUPS)[number];
@@ -35,10 +53,19 @@ const channelIdListSchema = z
     .max(300, 'เลือกห้องได้สูงสุด 300 ห้อง')
     .default([]);
 
+const rawModuleSchema = z.enum([...CUSTOM_SUMMARY_MODULES, 'devopsOther'] as const);
+
 const modulesSchema = z
-    .array(z.enum(CUSTOM_SUMMARY_MODULES))
+    .array(rawModuleSchema)
     .min(1, 'กรุณาเลือกประเภทกิจกรรมอย่างน้อย 1 รายการ')
-    .transform((items) => [...new Set(items)])
+    .transform((items): CustomSummaryModule[] => {
+        const expanded: CustomSummaryModule[] = [];
+        for (const item of items) {
+            if (item === 'devopsOther') expanded.push('server', 'devops');
+            else expanded.push(item);
+        }
+        return [...new Set(expanded)];
+    })
     .default([...CUSTOM_SUMMARY_MODULES]);
 
 const optionalSnowflake = z
@@ -109,17 +136,20 @@ export interface CustomSummaryGithubPrKpi {
     uniquePrCount: number;
 }
 
-export interface CustomSummaryDevopsOtherKpi {
+export interface CustomSummaryServerKpi {
+    memberJoin: number;
+    memberLeave: number;
+    netMembers: number;
+    commandsUsed: number;
+}
+
+export interface CustomSummaryDevopsKpi {
     grafanaSent: number;
     grafanaFiring: number;
     grafanaResolved: number;
     jiraCreated: number;
     jiraIssueCreated: number;
     jiraClosed: number;
-    memberJoin: number;
-    memberLeave: number;
-    netMembers: number;
-    commandsUsed: number;
 }
 
 export interface CustomSummaryTimelinePoint {
@@ -241,8 +271,9 @@ export interface CustomSummaryResponse {
     kpis: {
         voice: CustomSummaryVoiceKpi;
         messages: CustomSummaryMessagesKpi;
+        server: CustomSummaryServerKpi;
         githubPr: CustomSummaryGithubPrKpi;
-        devopsOther: CustomSummaryDevopsOtherKpi;
+        devops: CustomSummaryDevopsKpi;
         activeUsers: number;
         totalEvents: number;
     };

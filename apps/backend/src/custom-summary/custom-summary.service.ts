@@ -2,6 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import {
     PLUGIN_IDS,
     PR_CONFIG_KEYS,
+    filterActiveSummaryModules,
     type CustomSummaryChannelGroup,
     type CustomSummaryChannelOption,
     type CustomSummaryChannelRow,
@@ -44,7 +45,7 @@ const TEXT_TYPES = new Set<ChannelType>([ChannelType.GuildText, ChannelType.Guil
 const VOICE_TYPES = new Set<ChannelType>([ChannelType.GuildVoice, ChannelType.GuildStageVoice]);
 
 const MESSAGE_KEYS = ['messageSent', 'messageDelete', 'messageUpdate', 'messageBulkDelete', 'messagePin', 'invitePosted', 'filterUsed'] as const;
-const DEVOPS_ACTIVITY_KEYS = [...SERVER_JOIN_KEYS, ...SERVER_LEAVE_KEYS, 'commandUsed'] as const;
+const SERVER_ACTIVITY_KEYS = [...SERVER_JOIN_KEYS, ...SERVER_LEAVE_KEYS, 'commandUsed'] as const;
 
 function safeJsonRecord(raw: string | null | undefined): Record<string, string> {
     if (!raw) return {};
@@ -58,6 +59,7 @@ function safeJsonRecord(raw: string | null | undefined): Record<string, string> 
 }
 
 interface DevopsChannelConfig {
+    anyDevopsPluginInstalled: boolean;
     prDefaultChannelId: string;
     prChannelIds: Set<string>;
     grafanaDefaultChannelId: string;
@@ -82,6 +84,7 @@ export class CustomSummaryService {
         const hasPr = !installedSet || installedSet.has('github-pr');
         const hasGrafana = !installedSet || installedSet.has('grafana-alert');
         const hasJira = !installedSet || installedSet.has('jira-card');
+        const anyDevopsPluginInstalled = hasPr || hasGrafana || hasJira;
         const [prDefault, prOrgMapRaw, grafanaDefault, grafanaMapRaw, jiraSetting, prMsgChannels] = await Promise.all([
             hasPr ? this.botConfig.get(guildId, PR_CONFIG_KEYS.defaultChannel) : Promise.resolve(null),
             hasPr ? this.botConfig.get(guildId, PR_CONFIG_KEYS.orgChannelMap) : Promise.resolve(null),
@@ -105,6 +108,7 @@ export class CustomSummaryService {
         ]);
 
         return {
+            anyDevopsPluginInstalled,
             prDefaultChannelId: prDefault ?? '',
             prChannelIds,
             grafanaDefaultChannelId: grafanaDefault ?? '',
@@ -125,7 +129,7 @@ export class CustomSummaryService {
         if (devopsCfg.prChannelIds.has(id)) devopsTags.push('pr');
         if (devopsCfg.grafanaChannelIds.has(id)) devopsTags.push('grafana');
         if (devopsCfg.jiraChannelIds.has(id)) devopsTags.push('jira');
-        const isDevops = !isVoice && (devopsTags.length > 0 || DEVOPS_CHANNEL_NAME_RE.test(name));
+        const isDevops = !isVoice && (devopsTags.length > 0 || (devopsCfg.anyDevopsPluginInstalled && DEVOPS_CHANNEL_NAME_RE.test(name)));
         const group: CustomSummaryChannelGroup = isVoice ? 'voice' : isDevops ? 'devops' : 'text';
         return { group, isDevops, devopsTags };
     }
@@ -247,11 +251,13 @@ export class CustomSummaryService {
         const { from, to, cutoff, interval } = this.resolveRange(request, now);
         const installedIds = this.plugins ? await this.plugins.getInstalledIds(guildId) : [...PLUGIN_IDS];
         const installedSet = new Set<PluginId>(installedIds);
-        const moduleSet = new Set<CustomSummaryModule>(request.modules);
+        const activeModules = filterActiveSummaryModules(request.modules, installedIds);
+        const moduleSet = new Set<CustomSummaryModule>(activeModules);
         const hasVoice = moduleSet.has('voice');
         const hasMessages = moduleSet.has('messages');
+        const hasServer = moduleSet.has('server');
         const hasPr = moduleSet.has('githubPr') && installedSet.has('github-pr');
-        const hasDevops = moduleSet.has('devopsOther');
+        const hasDevops = moduleSet.has('devops');
         const hasGrafana = hasDevops && installedSet.has('grafana-alert');
         const hasJira = hasDevops && installedSet.has('jira-card');
 
@@ -325,10 +331,10 @@ export class CustomSummaryService {
                 ORDER BY created_at ASC, id ASC`
             : Promise.resolve([]);
 
-        // 2) Non-voice Activity Series (Messages + DevOps/Server)
+        // 2) Non-voice Activity Series (Messages + Server)
         const relevantActivityKeys = [
             ...(hasMessages ? MESSAGE_KEYS : []),
-            ...(hasDevops ? DEVOPS_ACTIVITY_KEYS : []),
+            ...(hasServer ? SERVER_ACTIVITY_KEYS : []),
         ];
 
         const activitySeriesPromise =
@@ -434,7 +440,7 @@ export class CustomSummaryService {
                 ORDER BY pn.created_at DESC`
             : Promise.resolve([]);
 
-        // 4) Grafana Alerts + Jira Tickets (when devopsOther enabled and corresponding plugin installed)
+        // 4) Grafana Alerts + Jira Tickets (when devops enabled and corresponding plugin installed)
         const grafanaRowsPromise = hasGrafana
             ? this.prisma.$queryRaw<{ message_id: string; kind: string; created_at: Date }[]>`
                 SELECT message_id, kind, created_at
@@ -472,7 +478,7 @@ export class CustomSummaryService {
         const detailKeys = [
             ...(hasVoice ? VOICE_LIFECYCLE_EVENTS : []),
             ...(hasMessages ? MESSAGE_KEYS : []),
-            ...(hasDevops ? DEVOPS_ACTIVITY_KEYS : []),
+            ...(hasServer ? SERVER_ACTIVITY_KEYS : []),
         ];
         const detailLimit = request.includeDetailedLogs ? request.detailedLogLimit : 0;
         const activityDetailPromise =
@@ -976,8 +982,10 @@ export class CustomSummaryService {
         const totalEvents =
             (hasVoice ? voicePaired.totals.joins + voicePaired.totals.leaves + voicePaired.totals.switches : 0) +
             (hasMessages ? totalMessagesSent + totalMessagesDeleted + totalMessagesEdited : 0) +
+            (hasServer ? memberJoin + memberLeave + commandsUsed : 0) +
             (hasPr ? prTotal : 0) +
-            (hasDevops ? grafanaSent + jiraCreated + memberJoin + memberLeave + commandsUsed : 0);
+            (hasGrafana ? grafanaSent : 0) +
+            (hasJira ? jiraCreated : 0);
 
         return {
             guild: guildInfo,
@@ -991,7 +999,7 @@ export class CustomSummaryService {
             filters: {
                 channelIds,
                 selectedChannels,
-                modules: request.modules,
+                modules: activeModules,
                 userId: request.userId ?? null,
                 userQuery: request.userQuery ?? null,
                 includeBots: request.includeBots,
@@ -1014,6 +1022,12 @@ export class CustomSummaryService {
                     edited: totalMessagesEdited,
                     busiestChannel,
                 },
+                server: {
+                    memberJoin,
+                    memberLeave,
+                    netMembers: memberJoin - memberLeave,
+                    commandsUsed,
+                },
                 githubPr: {
                     totalNotifications: prTotal,
                     openedOrUpdated: prSent,
@@ -1022,17 +1036,13 @@ export class CustomSummaryService {
                     mergeRatePercent,
                     uniquePrCount: uniquePrSet.size,
                 },
-                devopsOther: {
+                devops: {
                     grafanaSent,
                     grafanaFiring,
                     grafanaResolved,
                     jiraCreated,
                     jiraIssueCreated,
                     jiraClosed,
-                    memberJoin,
-                    memberLeave,
-                    netMembers: memberJoin - memberLeave,
-                    commandsUsed,
                 },
                 activeUsers: activeDiscordUsers,
                 totalEvents,

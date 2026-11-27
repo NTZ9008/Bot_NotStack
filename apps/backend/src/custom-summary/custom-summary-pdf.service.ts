@@ -1,11 +1,14 @@
 import { Injectable, Logger, type OnModuleDestroy } from '@nestjs/common';
-import type {
-    CustomSummaryChannelGroup,
-    CustomSummaryChannelRow,
-    CustomSummaryDetailMode,
-    CustomSummaryLogRow,
-    CustomSummaryPdfTheme,
-    CustomSummaryResponse,
+import {
+    filterActiveSummaryModules,
+    type CustomSummaryChannelGroup,
+    type CustomSummaryChannelRow,
+    type CustomSummaryDetailMode,
+    type CustomSummaryLogRow,
+    type CustomSummaryModule,
+    type CustomSummaryPdfTheme,
+    type CustomSummaryResponse,
+    type PluginId,
 } from '@notstack/shared';
 import { accessSync, constants as fsConstants, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -584,9 +587,51 @@ function buildVoiceMinutesTimelineSvg(points: CustomSummaryResponse['timeline'])
     </div>`;
 }
 
+interface PdfPluginState {
+    prInstalled: boolean;
+    grafanaInstalled: boolean;
+    jiraInstalled: boolean;
+    anyDevopsInstalled: boolean;
+}
+
+function resolvePdfPlugins(summary: CustomSummaryResponse): PdfPluginState {
+    const installed = summary.installedPlugins;
+    if (!installed) {
+        return {
+            prInstalled: true,
+            grafanaInstalled: true,
+            jiraInstalled: true,
+            anyDevopsInstalled: true,
+        };
+    }
+    const set = new Set<PluginId>(installed);
+    const prInstalled = set.has('github-pr');
+    const grafanaInstalled = set.has('grafana-alert');
+    const jiraInstalled = set.has('jira-card');
+    return {
+        prInstalled,
+        grafanaInstalled,
+        jiraInstalled,
+        anyDevopsInstalled: grafanaInstalled || jiraInstalled,
+    };
+}
+
+function devopsSeriesLabel(plugins: PdfPluginState): string {
+    if (plugins.grafanaInstalled && plugins.jiraInstalled) return 'DevOps (Grafana/Jira)';
+    if (plugins.grafanaInstalled) return 'DevOps (Grafana Alert)';
+    return 'DevOps (Jira Card)';
+}
+
+function devopsModuleLabel(plugins: PdfPluginState): string {
+    if (plugins.grafanaInstalled && plugins.jiraInstalled) return 'DevOps (Grafana Alert & Jira Card)';
+    if (plugins.grafanaInstalled) return 'DevOps (Grafana Alert)';
+    return 'DevOps (Jira Card)';
+}
+
 function buildEventCountsTimelineSvg(
     points: CustomSummaryResponse['timeline'],
-    enabled: Set<string>,
+    enabled: Set<CustomSummaryModule>,
+    plugins: PdfPluginState,
 ): string {
     const seriesList: Array<{
         key: string;
@@ -607,7 +652,17 @@ function buildEventCountsTimelineSvg(
             value: (pt) => pt.messages,
         });
     }
-    if (enabled.has('githubPr')) {
+    if (enabled.has('server')) {
+        seriesList.push({
+            key: 'server',
+            label: 'สมาชิกเข้า-ออกเซิร์ฟเวอร์',
+            stroke: '#2E7D32',
+            dash: '4,2',
+            marker: 'circle',
+            value: (pt) => pt.memberJoin + pt.memberLeave,
+        });
+    }
+    if (enabled.has('githubPr') && plugins.prInstalled) {
         seriesList.push({
             key: 'pr',
             label: 'GitHub PR (แจ้งเตือน/Merge/ปิด)',
@@ -617,14 +672,14 @@ function buildEventCountsTimelineSvg(
             value: (pt) => pt.prSent + pt.prMerged + pt.prClosed,
         });
     }
-    if (enabled.has('devopsOther')) {
+    if (enabled.has('devops') && plugins.anyDevopsInstalled) {
         seriesList.push({
             key: 'devops',
-            label: 'DevOps & สมาชิก (Grafana/Jira/เข้า-ออก)',
+            label: devopsSeriesLabel(plugins),
             stroke: '#6B7280',
             dash: '2.5,2.5',
             marker: 'diamond',
-            value: (pt) => pt.grafanaAlerts + pt.jiraCards + pt.memberJoin + pt.memberLeave,
+            value: (pt) => (plugins.grafanaInstalled ? pt.grafanaAlerts : 0) + (plugins.jiraInstalled ? pt.jiraCards : 0),
         });
     }
 
@@ -718,9 +773,13 @@ function buildEventCountsTimelineSvg(
     </div>`;
 }
 
-function buildTopComparisonSvgs(summary: CustomSummaryResponse): string {
-    const voiceTop = summary.voiceChannels.filter((r) => r.totalSeconds > 0).slice(0, 8);
-    const prTop = summary.prBreakdown.byRepo.filter((r) => r.total > 0).slice(0, 8);
+function buildTopComparisonSvgs(
+    summary: CustomSummaryResponse,
+    enabled: Set<CustomSummaryModule>,
+    plugins: PdfPluginState,
+): string {
+    const voiceTop = enabled.has('voice') ? summary.voiceChannels.filter((r) => r.totalSeconds > 0).slice(0, 8) : [];
+    const prTop = plugins.prInstalled && enabled.has('githubPr') ? summary.prBreakdown.byRepo.filter((r) => r.total > 0).slice(0, 8) : [];
 
     if (voiceTop.length === 0 && prTop.length === 0) return '';
 
@@ -800,12 +859,16 @@ function buildTopComparisonSvgs(summary: CustomSummaryResponse): string {
     return `<div class="${panels.length === 2 ? 'chart-grid-2' : 'chart-grid-1'}">${panels.join('')}</div>`;
 }
 
-function renderSummaryOverviewSection(summary: CustomSummaryResponse): string {
-    const enabled = new Set(summary.filters.modules);
+function renderSummaryOverviewSection(
+    summary: CustomSummaryResponse,
+    enabled: Set<CustomSummaryModule>,
+    plugins: PdfPluginState,
+): string {
     const v = summary.kpis.voice;
     const m = summary.kpis.messages;
+    const s = summary.kpis.server;
     const pr = summary.kpis.githubPr;
-    const d = summary.kpis.devopsOther;
+    const d = summary.kpis.devops;
 
     const rows: Array<{ label: string; value: string }> = [
         {
@@ -829,38 +892,52 @@ function renderSummaryOverviewSection(summary: CustomSummaryResponse): string {
                 : 'ไม่ได้เลือกโมดูลข้อความ',
         },
         {
-            label: 'กิจกรรม GitHub Pull Request',
-            value: enabled.has('githubPr')
-                ? `รวม ${formatNum(pr.totalNotifications)} ครั้ง (เปิด/อัปเดต ${formatNum(pr.openedOrUpdated)} · Merge ${formatNum(pr.merged)} · ปิด ${formatNum(pr.closed)} · PR ไม่ซ้ำ ${formatNum(pr.uniquePrCount)} ใบ)`
-                : 'ไม่ได้เลือกโมดูล GitHub PR',
-        },
-        {
-            label: 'อัตราการ Merge PR (Merge rate)',
-            value: enabled.has('githubPr') ? `${pr.mergeRatePercent}%` : '-',
-        },
-        {
-            label: 'การแจ้งเตือน Grafana Alert',
-            value: enabled.has('devopsOther')
-                ? `${formatNum(d.grafanaSent)} ครั้ง (Firing ${formatNum(d.grafanaFiring)} / Resolved ${formatNum(d.grafanaResolved)})`
-                : 'ไม่ได้เลือกโมดูล DevOps & อื่นๆ',
-        },
-        {
-            label: 'ความเคลื่อนไหว Jira Cards',
-            value: enabled.has('devopsOther')
-                ? `สร้าง/เปิด ${formatNum(d.jiraCreated + d.jiraIssueCreated)} รายการ · ปิดงาน ${formatNum(d.jiraClosed)} รายการ`
-                : '-',
-        },
-        {
             label: 'สมาชิกเข้า-ออก และการใช้คำสั่งบอท',
-            value: enabled.has('devopsOther')
-                ? `เข้า +${formatNum(d.memberJoin)} / ออก -${formatNum(d.memberLeave)} (สุทธิ ${d.netMembers >= 0 ? '+' : ''}${formatNum(d.netMembers)}) · คำสั่งบอท ${formatNum(d.commandsUsed)} ครั้ง`
-                : '-',
-        },
-        {
-            label: 'ผู้ใช้งานที่มีส่วนร่วม (บัญชี Discord)',
-            value: `${formatNum(summary.kpis.activeUsers)} คน · เหตุการณ์รวมทั้งหมด ${formatNum(summary.kpis.totalEvents)} รายการ (จาก ${formatNum(summary.channelBreakdown.length)} ห้อง)`,
+            value: enabled.has('server')
+                ? `เข้า +${formatNum(s.memberJoin)} / ออก -${formatNum(s.memberLeave)} (สุทธิ ${s.netMembers >= 0 ? '+' : ''}${formatNum(s.netMembers)}) · คำสั่งบอท ${formatNum(s.commandsUsed)} ครั้ง`
+                : 'ไม่ได้เลือกโมดูลสมาชิกและระบบ',
         },
     ];
+
+    if (plugins.prInstalled) {
+        rows.push(
+            {
+                label: 'กิจกรรม GitHub Pull Request',
+                value: enabled.has('githubPr')
+                    ? `รวม ${formatNum(pr.totalNotifications)} ครั้ง (เปิด/อัปเดต ${formatNum(pr.openedOrUpdated)} · Merge ${formatNum(pr.merged)} · ปิด ${formatNum(pr.closed)} · PR ไม่ซ้ำ ${formatNum(pr.uniquePrCount)} ใบ)`
+                    : 'ไม่ได้เลือกโมดูล GitHub PR',
+            },
+            {
+                label: 'อัตราการ Merge PR (Merge rate)',
+                value: enabled.has('githubPr') ? `${pr.mergeRatePercent}%` : '-',
+            },
+        );
+    }
+
+    if (plugins.grafanaInstalled) {
+        rows.push({
+            label: 'การแจ้งเตือน Grafana Alert',
+            value: enabled.has('devops')
+                ? `${formatNum(d.grafanaSent)} ครั้ง (Firing ${formatNum(d.grafanaFiring)} / Resolved ${formatNum(d.grafanaResolved)})`
+                : 'ไม่ได้เลือกโมดูลสถิติ DevOps',
+        });
+    }
+
+    if (plugins.jiraInstalled) {
+        rows.push({
+            label: 'ความเคลื่อนไหว Jira Cards',
+            value: enabled.has('devops')
+                ? `สร้าง/เปิด ${formatNum(d.jiraCreated + d.jiraIssueCreated)} รายการ · ปิดงาน ${formatNum(d.jiraClosed)} รายการ`
+                : plugins.grafanaInstalled
+                  ? '-'
+                  : 'ไม่ได้เลือกโมดูลสถิติ DevOps',
+        });
+    }
+
+    rows.push({
+        label: 'ผู้ใช้งานที่มีส่วนร่วม (บัญชี Discord)',
+        value: `${formatNum(summary.kpis.activeUsers)} คน · เหตุการณ์รวมทั้งหมด ${formatNum(summary.kpis.totalEvents)} รายการ (จาก ${formatNum(summary.channelBreakdown.length)} ห้อง)`,
+    });
 
     const trHtml = rows
         .map(
@@ -870,6 +947,14 @@ function renderSummaryOverviewSection(summary: CustomSummaryResponse): string {
             </tr>`,
         )
         .join('\n');
+
+    const footnoteLines = [
+        ...(plugins.prInstalled
+            ? ['<div>• <em>อัตราการ Merge PR (Merge rate)</em> = จำนวน PR ที่ Merge ÷ (จำนวน PR ที่ Merge + จำนวน PR ที่ปิดโดยไม่ Merge) × 100</div>']
+            : []),
+        '<div>• <em>เวลาสนทนาเฉลี่ยต่อช่วง (Session)</em> = เวลารวมทั้งหมดในห้องเสียง ÷ จำนวนช่วงสนทนาที่จับคู่ได้ (รวมการย้ายห้องเสียงและการสนทนาที่ยังเปิดอยู่ ณ เวลาตัดยอด จึงต่างจากเวลาหารด้วยจำนวนครั้งที่เข้าห้อง)</div>',
+        '<div>• <em>เวลารวมระดับเซิร์ฟเวอร์ vs รายแถว</em> คำนวณเวลาจริงในหน่วยมิลลิวินาทีแล้วจึงปัดเศษในแต่ละระดับ ตารางรายห้องและรายบุคคลแสดงหน่วยชั่วโมง/นาที (ไม่รวมเศษวินาที) และจำกัดตารางผู้มีส่วนร่วมไว้ที่ 50 อันดับแรก</div>',
+    ];
 
     return `
     <section>
@@ -887,15 +972,16 @@ function renderSummaryOverviewSection(summary: CustomSummaryResponse): string {
         </table>
         <div class="footnote">
             <div><strong>นิยามตัวชี้วัด:</strong></div>
-            <div>• <em>อัตราการ Merge PR (Merge rate)</em> = จำนวน PR ที่ Merge ÷ (จำนวน PR ที่ Merge + จำนวน PR ที่ปิดโดยไม่ Merge) × 100</div>
-            <div>• <em>เวลาสนทนาเฉลี่ยต่อช่วง (Session)</em> = เวลารวมทั้งหมดในห้องเสียง ÷ จำนวนช่วงสนทนาที่จับคู่ได้ (รวมการย้ายห้องเสียงและการสนทนาที่ยังเปิดอยู่ ณ เวลาตัดยอด จึงต่างจากเวลาหารด้วยจำนวนครั้งที่เข้าห้อง)</div>
-            <div>• <em>เวลารวมระดับเซิร์ฟเวอร์ vs รายแถว</em> คำนวณเวลาจริงในหน่วยมิลลิวินาทีแล้วจึงปัดเศษในแต่ละระดับ ตารางรายห้องและรายบุคคลแสดงหน่วยชั่วโมง/นาที (ไม่รวมเศษวินาที) และจำกัดตารางผู้มีส่วนร่วมไว้ที่ 50 อันดับแรก</div>
+            ${footnoteLines.join('\n            ')}
         </div>
     </section>`;
 }
 
-function renderTrendsSection(summary: CustomSummaryResponse): string {
-    const enabled = new Set(summary.filters.modules);
+function renderTrendsSection(
+    summary: CustomSummaryResponse,
+    enabled: Set<CustomSummaryModule>,
+    plugins: PdfPluginState,
+): string {
     const points = summary.timeline;
     const isHourly = summary.range.interval === 'hour';
     const heading = isHourly ? 'แนวโน้มรายชั่วโมง' : 'แนวโน้มรายวัน';
@@ -912,8 +998,13 @@ function renderTrendsSection(summary: CustomSummaryResponse): string {
     if (enabled.has('voice')) {
         parts.push(buildVoiceMinutesTimelineSvg(points));
     }
-    if (enabled.has('messages') || enabled.has('githubPr') || enabled.has('devopsOther')) {
-        parts.push(buildEventCountsTimelineSvg(points, enabled));
+    if (
+        enabled.has('messages') ||
+        enabled.has('server') ||
+        (enabled.has('githubPr') && plugins.prInstalled) ||
+        (enabled.has('devops') && plugins.anyDevopsInstalled)
+    ) {
+        parts.push(buildEventCountsTimelineSvg(points, enabled, plugins));
     }
 
     return `
@@ -924,10 +1015,16 @@ function renderTrendsSection(summary: CustomSummaryResponse): string {
     </section>`;
 }
 
-function renderChannelBreakdownSection(summary: CustomSummaryResponse, detailMode: CustomSummaryDetailMode): string {
+function renderChannelBreakdownSection(
+    summary: CustomSummaryResponse,
+    detailMode: CustomSummaryDetailMode,
+    enabled: Set<CustomSummaryModule>,
+    plugins: PdfPluginState,
+): string {
     const maxRows = detailMode === 'detailed' ? summary.channelBreakdown.length : Math.min(25, summary.channelBreakdown.length);
     const rows: CustomSummaryChannelRow[] = summary.channelBreakdown.slice(0, maxRows);
-    const comparisonHtml = buildTopComparisonSvgs(summary);
+    const comparisonHtml = buildTopComparisonSvgs(summary, enabled, plugins);
+    const thirdColHeader = plugins.anyDevopsInstalled ? 'DevOps / อื่นๆ' : 'เหตุการณ์อื่นๆ';
 
     const tableHtml =
         rows.length === 0
@@ -941,8 +1038,8 @@ function renderChannelBreakdownSection(summary: CustomSummaryResponse, detailMod
                     <th style="width: 72px">ประเภท</th>
                     <th class="num">ข้อความ</th>
                     <th class="num">เวลาห้องเสียง</th>
-                    <th class="num">GitHub PR</th>
-                    <th class="num">DevOps / อื่นๆ</th>
+                    ${plugins.prInstalled ? '<th class="num">GitHub PR</th>' : ''}
+                    <th class="num">${thirdColHeader}</th>
                     <th class="num">รวม</th>
                 </tr>
             </thead>
@@ -950,17 +1047,24 @@ function renderChannelBreakdownSection(summary: CustomSummaryResponse, detailMod
                 ${rows
                     .map((row, idx) => {
                         const cleanName = `#${stripEmojiForPdf(row.channelName)}`;
-                        const devopsOther = row.grafanaAlerts + row.jiraCards + row.otherEvents;
+                        const displayKind: CustomSummaryChannelGroup =
+                            row.kind === 'devops' && !plugins.prInstalled && !plugins.anyDevopsInstalled ? 'text' : row.kind;
+                        const devopsOrOther =
+                            (plugins.grafanaInstalled ? row.grafanaAlerts : 0) +
+                            (plugins.jiraInstalled ? row.jiraCards : 0) +
+                            row.otherEvents;
+                        const prCount = plugins.prInstalled ? row.prEvents : 0;
+                        const visibleTotal = row.messages + row.voiceJoins + prCount + devopsOrOther;
                         const voiceText = row.voiceSeconds > 0 ? formatThaiDuration(row.voiceSeconds) : '-';
                         return `<tr>
                             <td class="num">${idx + 1}</td>
                             <td>${escapeHtml(cleanName)}</td>
-                            <td>${escapeHtml(channelGroupLabel(row.kind))}</td>
+                            <td>${escapeHtml(channelGroupLabel(displayKind))}</td>
                             <td class="num">${row.messages > 0 ? formatNum(row.messages) : '-'}</td>
                             <td class="num">${escapeHtml(voiceText)}</td>
-                            <td class="num">${row.prEvents > 0 ? formatNum(row.prEvents) : '-'}</td>
-                            <td class="num">${devopsOther > 0 ? formatNum(devopsOther) : '-'}</td>
-                            <td class="num">${formatNum(row.totalActivity)}</td>
+                            ${plugins.prInstalled ? `<td class="num">${prCount > 0 ? formatNum(prCount) : '-'}</td>` : ''}
+                            <td class="num">${devopsOrOther > 0 ? formatNum(devopsOrOther) : '-'}</td>
+                            <td class="num">${formatNum(visibleTotal)}</td>
                         </tr>`;
                     })
                     .join('\n')}
@@ -980,12 +1084,16 @@ function renderContributorsSection(
     summary: CustomSummaryResponse,
     detailMode: CustomSummaryDetailMode,
     maskIds: boolean,
+    plugins: PdfPluginState,
 ): string {
-    const maxRows = detailMode === 'detailed' ? summary.topContributors.length : Math.min(20, summary.topContributors.length);
-    const rows = summary.topContributors.slice(0, maxRows);
+    const visibleContributors = plugins.prInstalled
+        ? summary.topContributors
+        : summary.topContributors.filter((c) => !c.userId.startsWith('github:'));
+    const maxRows = detailMode === 'detailed' ? visibleContributors.length : Math.min(20, visibleContributors.length);
+    const rows = visibleContributors.slice(0, maxRows);
 
-    const discordOnlyInTable = summary.topContributors.filter((c) => !c.userId.startsWith('github:')).length;
-    const githubOnlyInTable = summary.topContributors.filter((c) => c.userId.startsWith('github:')).length;
+    const discordOnlyInTable = visibleContributors.filter((c) => !c.userId.startsWith('github:')).length;
+    const githubOnlyInTable = visibleContributors.filter((c) => c.userId.startsWith('github:')).length;
 
     const tableHtml =
         rows.length === 0
@@ -998,8 +1106,8 @@ function renderContributorsSection(
                     <th style="width: 30%">ผู้ใช้งาน</th>
                     <th class="num">เวลาห้องเสียง</th>
                     <th class="num">ข้อความ</th>
-                    <th class="num">PR</th>
-                    <th class="num">Jira</th>
+                    ${plugins.prInstalled ? '<th class="num">PR</th>' : ''}
+                    ${plugins.jiraInstalled ? '<th class="num">Jira</th>' : ''}
                     <th class="num">คำสั่ง</th>
                     <th class="num">คะแนนรวม</th>
                 </tr>
@@ -1018,8 +1126,8 @@ function renderContributorsSection(
                             </td>
                             <td class="num">${escapeHtml(voiceText)}</td>
                             <td class="num">${row.messages > 0 ? formatNum(row.messages) : '-'}</td>
-                            <td class="num">${row.prActivity > 0 ? formatNum(row.prActivity) : '-'}</td>
-                            <td class="num">${row.jiraTickets > 0 ? formatNum(row.jiraTickets) : '-'}</td>
+                            ${plugins.prInstalled ? `<td class="num">${row.prActivity > 0 ? formatNum(row.prActivity) : '-'}</td>` : ''}
+                            ${plugins.jiraInstalled ? `<td class="num">${row.jiraTickets > 0 ? formatNum(row.jiraTickets) : '-'}</td>` : ''}
                             <td class="num">${row.commandsUsed > 0 ? formatNum(row.commandsUsed) : '-'}</td>
                             <td class="num"><strong>${formatNum(row.totalScore)}</strong></td>
                         </tr>`;
@@ -1028,14 +1136,26 @@ function renderContributorsSection(
             </tbody>
         </table>`;
 
+    const formulaParts = [
+        'เวลาห้องเสียง (นาที)',
+        'จำนวนข้อความ',
+        ...(plugins.prInstalled ? ['(5 × กิจกรรม GitHub PR)'] : []),
+        ...(plugins.jiraInstalled ? ['(3 × Jira Cards)'] : []),
+        'จำนวนคำสั่งบอทที่ใช้',
+    ];
+
+    const githubFootnote = plugins.prInstalled
+        ? `<div><strong>ความหมายของจำนวนผู้ใช้งาน 2 ชุด:</strong> ตัวเลขในสรุปภาพรวม (${formatNum(summary.kpis.activeUsers)} คน) นับเฉพาะบัญชีผู้ใช้ Discord ที่มีส่วนร่วมจริง ส่วนตารางผู้มีส่วนร่วมสูงสุด (${formatNum(visibleContributors.length)} รายการ) รวมทั้งบัญชี Discord (${formatNum(discordOnlyInTable)} ราย) และผู้เขียน PR จาก GitHub ที่ยังไม่ได้ผูกบัญชี Discord ในระบบ (<code>github:&lt;username&gt;</code> จำนวน ${formatNum(githubOnlyInTable)} ราย)</div>`
+        : '';
+
     return `
     <section>
         <h2>ผู้ใช้งานที่มีส่วนร่วมสูงสุด</h2>
-        <p class="meta" style="margin: 0 0 6pt;">แสดง ${formatNum(rows.length)} อันดับแรกจาก ${formatNum(summary.topContributors.length)} รายการที่จัดอันดับ (สูงสุด 50 อันดับ)</p>
+        <p class="meta" style="margin: 0 0 6pt;">แสดง ${formatNum(rows.length)} อันดับแรกจาก ${formatNum(visibleContributors.length)} รายการที่จัดอันดับ (สูงสุด 50 อันดับ)</p>
         ${tableHtml}
         <div class="footnote">
-            <div><strong>สูตรคำนวณคะแนนรวม:</strong> คะแนนรวม = เวลาห้องเสียง (นาที) + จำนวนข้อความ + (5 × กิจกรรม GitHub PR) + (3 × Jira Cards) + จำนวนคำสั่งบอทที่ใช้</div>
-            <div><strong>ความหมายของจำนวนผู้ใช้งาน 2 ชุด:</strong> ตัวเลขในสรุปภาพรวม (${formatNum(summary.kpis.activeUsers)} คน) นับเฉพาะบัญชีผู้ใช้ Discord ที่มีส่วนร่วมจริง ส่วนตารางผู้มีส่วนร่วมสูงสุด (${formatNum(summary.topContributors.length)} รายการ) รวมทั้งบัญชี Discord (${formatNum(discordOnlyInTable)} ราย) และผู้เขียน PR จาก GitHub ที่ยังไม่ได้ผูกบัญชี Discord ในระบบ (<code>github:&lt;username&gt;</code> จำนวน ${formatNum(githubOnlyInTable)} ราย)</div>
+            <div><strong>สูตรคำนวณคะแนนรวม:</strong> คะแนนรวม = ${formulaParts.join(' + ')}</div>
+            ${githubFootnote}
         </div>
     </section>`;
 }
@@ -1093,8 +1213,11 @@ function renderDetailedLogsAppendix(summary: CustomSummaryResponse, maskIds: boo
     </section>`;
 }
 
-function buildReportHtml(summary: CustomSummaryResponse, opts: RenderCustomSummaryPdfOptions, printedAt: Date): string {
+export function buildReportHtml(summary: CustomSummaryResponse, opts: RenderCustomSummaryPdfOptions, printedAt = new Date()): string {
     const maskIds = Boolean(opts.maskIds);
+    const plugins = resolvePdfPlugins(summary);
+    const activeModules = filterActiveSummaryModules(summary.filters.modules, summary.installedPlugins);
+    const enabled = new Set<CustomSummaryModule>(activeModules);
     const printedLabel = formatBangkokDateTime(printedAt);
     const title = opts.title.trim() || `รายงานสรุปกิจกรรมเซิร์ฟเวอร์ ${summary.guild.name}`;
     const selected = summary.filters.selectedChannels;
@@ -1108,13 +1231,14 @@ function buildReportHtml(summary: CustomSummaryResponse, opts: RenderCustomSumma
                     .map((c) => `#${stripEmojiForPdf(c.name)}`)
                     .join(', ')} (+${formatNum(selected.length - 6)} ห้อง)`;
 
-    const moduleLabelMap: Record<string, string> = {
+    const moduleLabelMap: Record<CustomSummaryModule, string> = {
         voice: 'ห้องเสียง',
         messages: 'ข้อความ',
+        server: 'สมาชิกและระบบ',
         githubPr: 'GitHub PR',
-        devopsOther: 'DevOps & อื่นๆ',
+        devops: devopsModuleLabel(plugins),
     };
-    const moduleText = summary.filters.modules.map((m) => moduleLabelMap[m] ?? m).join(', ');
+    const moduleText = activeModules.map((m) => moduleLabelMap[m] ?? m).join(', ') || '-';
     const userFilterText = summary.filters.userId
         ? maskIds
             ? 'กรองเฉพาะผู้ใช้ (ปกปิด ID)'
@@ -1132,10 +1256,10 @@ function buildReportHtml(summary: CustomSummaryResponse, opts: RenderCustomSumma
 
     const fontCss = getEmbeddedFontCss();
     const sectionsHtml = [
-        renderSummaryOverviewSection(summary),
-        renderTrendsSection(summary),
-        renderChannelBreakdownSection(summary, opts.detailMode),
-        renderContributorsSection(summary, opts.detailMode, maskIds),
+        renderSummaryOverviewSection(summary, enabled, plugins),
+        renderTrendsSection(summary, enabled, plugins),
+        renderChannelBreakdownSection(summary, opts.detailMode, enabled, plugins),
+        renderContributorsSection(summary, opts.detailMode, maskIds, plugins),
         opts.detailMode === 'detailed' ? renderDetailedLogsAppendix(summary, maskIds) : '',
     ]
         .filter(Boolean)

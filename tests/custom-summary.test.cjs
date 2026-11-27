@@ -16,12 +16,17 @@ const {
 } = backendRequire('./custom-summary/voice-pairing.util.js');
 const {
     renderCustomSummaryPdf,
+    buildReportHtml,
     closePdfBrowser,
     findBrowserExecutable,
 } = backendRequire('./custom-summary/custom-summary-pdf.service.js');
+const { CustomSummaryService } = backendRequire('./custom-summary/custom-summary.service.js');
+const { ChannelType } = backendRequire('discord.js');
 const {
+    CUSTOM_SUMMARY_MODULES,
     customSummaryRequestSchema,
     customSummaryPdfRequestSchema,
+    filterActiveSummaryModules,
 } = require('../packages/shared/dist/index.js');
 
 const CH_TEXT = '111111111111111111';
@@ -76,8 +81,37 @@ describe('customSummary Zod schemas', () => {
 
         assert.equal(parsed.theme, 'dark');
         assert.equal(parsed.detailMode, 'executive');
+        assert.deepEqual(parsed.modules, [...CUSTOM_SUMMARY_MODULES]);
         assert.throws(() => customSummaryPdfRequestSchema.parse({ title: '   ', theme: 'dark' }));
         assert.throws(() => customSummaryPdfRequestSchema.parse({ title: 'OK', theme: 'sepia' }));
+    });
+
+    it('normalizes legacy devopsOther module to server + devops and filters by installed plugins', () => {
+        const legacy = customSummaryRequestSchema.parse({
+            modules: ['voice', 'devopsOther'],
+        });
+        assert.deepEqual(legacy.modules, ['voice', 'server', 'devops']);
+
+        assert.deepEqual(filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, []), ['voice', 'messages', 'server']);
+        assert.deepEqual(filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, ['grafana-alert']), [
+            'voice',
+            'messages',
+            'server',
+            'devops',
+        ]);
+        assert.deepEqual(filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, ['github-pr']), [
+            'voice',
+            'messages',
+            'server',
+            'githubPr',
+        ]);
+        assert.deepEqual(filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, ['github-pr', 'grafana-alert', 'jira-card']), [
+            'voice',
+            'messages',
+            'server',
+            'githubPr',
+            'devops',
+        ]);
     });
 });
 
@@ -298,7 +332,7 @@ function buildSampleSummary(extraRows = 0) {
         filters: {
             channelIds: [],
             selectedChannels: [],
-            modules: ['voice', 'messages', 'githubPr', 'devopsOther'],
+            modules: ['voice', 'messages', 'server', 'githubPr', 'devops'],
             userId: null,
             userQuery: null,
             includeBots: false,
@@ -321,6 +355,12 @@ function buildSampleSummary(extraRows = 0) {
                 edited: 18,
                 busiestChannel: { channelId: CH_TEXT, channelName: 'peagasus', count: 1284 },
             },
+            server: {
+                memberJoin: 6,
+                memberLeave: 1,
+                netMembers: 5,
+                commandsUsed: 94,
+            },
             githubPr: {
                 totalNotifications: 38,
                 openedOrUpdated: 18,
@@ -329,17 +369,13 @@ function buildSampleSummary(extraRows = 0) {
                 mergeRatePercent: 42,
                 uniquePrCount: 20,
             },
-            devopsOther: {
+            devops: {
                 grafanaSent: 5,
                 grafanaFiring: 2,
                 grafanaResolved: 3,
                 jiraCreated: 4,
                 jiraIssueCreated: 3,
                 jiraClosed: 2,
-                memberJoin: 6,
-                memberLeave: 1,
-                netMembers: 5,
-                commandsUsed: 94,
             },
             activeUsers: 19,
             totalEvents: 1518,
@@ -602,5 +638,277 @@ describe('renderCustomSummaryPdf (Chromium formal Thai business report)', () => 
         } finally {
             fs.rmSync(tmpRoot, { recursive: true, force: true });
         }
+    });
+});
+
+function collectSqlMeta(strings, values) {
+    const fragments = [];
+    const params = [];
+    const visit = (node) => {
+        if (node === null || node === undefined) return;
+        if (typeof node === 'object' && Array.isArray(node.strings) && Array.isArray(node.values)) {
+            node.strings.forEach((s, idx) => {
+                fragments.push(s);
+                if (idx < node.values.length) visit(node.values[idx]);
+            });
+            return;
+        }
+        params.push(node);
+    };
+    strings.forEach((s, idx) => {
+        fragments.push(s);
+        if (idx < values.length) visit(values[idx]);
+    });
+    return { sql: fragments.join(' '), params };
+}
+
+function createSummaryServiceMock(installedPlugins) {
+    const tracker = {
+        botConfigKeys: [],
+        prMessagesQueried: false,
+        jiraSettingQueried: false,
+        jiraTicketsQueried: false,
+        prNotificationsQueried: false,
+        grafanaNotificationsQueried: false,
+        activitySeriesKeys: [],
+    };
+
+    const channelsMap = new Map([
+        [CH_TEXT, { id: CH_TEXT, name: 'peagasus', type: ChannelType.GuildText, parent: { name: 'General' }, rawPosition: 1 }],
+        [CH_DEVOPS, { id: CH_DEVOPS, name: 'github-pr-devops', type: ChannelType.GuildText, parent: { name: 'Eng' }, rawPosition: 2 }],
+        [CH_VOICE_A, { id: CH_VOICE_A, name: 'voice-room', type: ChannelType.GuildVoice, parent: { name: 'Voice' }, rawPosition: 3 }],
+    ]);
+
+    const prisma = {
+        guild: { findUnique: async () => null },
+        activityEvent: { findFirst: async () => null },
+        prMessage: {
+            findMany: async () => {
+                tracker.prMessagesQueried = true;
+                return [];
+            },
+        },
+        jiraSetting: {
+            findUnique: async () => {
+                tracker.jiraSettingQueried = true;
+                return { panelChannelId: CH_DEVOPS, logChannelId: CH_DEVOPS };
+            },
+        },
+        jiraTicket: {
+            findMany: async () => {
+                tracker.jiraTicketsQueried = true;
+                return [
+                    {
+                        id: 1,
+                        userId: USER_A,
+                        userName: 'Alice',
+                        channelId: CH_DEVOPS,
+                        issueKey: 'PROJ-10',
+                        issueType: 'Bug',
+                        title: 'Fix bug',
+                        createdAt: new Date('2026-11-10T04:00:00.000Z'),
+                        closedAt: null,
+                    },
+                ];
+            },
+        },
+        $queryRaw: async (strings, ...values) => {
+            const { sql, params } = collectSqlMeta(strings, values);
+            if (sql.includes('bool_or(event_key IN') && sql.includes('LIMIT 250')) {
+                return [];
+            }
+            if (sql.includes('ORDER BY created_at ASC')) {
+                return [];
+            }
+            if (sql.includes('SELECT to_char(')) {
+                const keysArr = params.find((p) => Array.isArray(p)) ?? [];
+                tracker.activitySeriesKeys = [...keysArr];
+                const rows = [];
+                if (keysArr.includes('messageSent')) rows.push({ bucket: '2026-11-10 00:00', event_key: 'messageSent', total: 15 });
+                if (keysArr.includes('memberJoin')) rows.push({ bucket: '2026-11-10 00:00', event_key: 'memberJoin', total: 4 });
+                if (keysArr.includes('memberLeave')) rows.push({ bucket: '2026-11-10 00:00', event_key: 'memberLeave', total: 1 });
+                if (keysArr.includes('commandUsed')) rows.push({ bucket: '2026-11-10 00:00', event_key: 'commandUsed', total: 7 });
+                return rows;
+            }
+            if (sql.includes('COUNT(*) FILTER (WHERE event_key = \'messageSent\')::int AS messages') && sql.includes('GROUP BY channel_id')) {
+                return [{ channel_id: CH_TEXT, channel_name: 'peagasus', messages: 15, deleted: 0, edited: 0, other_events: 2 }];
+            }
+            if (sql.includes('GROUP BY user_id')) {
+                return [
+                    {
+                        user_id: USER_A,
+                        user_name: 'Alice',
+                        is_bot: false,
+                        messages: 15,
+                        commands_used: 7,
+                        total_events: 22,
+                        last_seen: new Date('2026-11-10T05:00:00.000Z'),
+                    },
+                ];
+            }
+            if (sql.includes('FROM pr_notifications pn')) {
+                tracker.prNotificationsQueried = true;
+                return [
+                    {
+                        message_id: 'm1',
+                        kind: 'merged',
+                        created_at: new Date('2026-11-10T03:00:00.000Z'),
+                        repo_full_name: 'org/repo',
+                        pr_number: 1,
+                        channel_id: CH_DEVOPS,
+                        pr_author: 'Alice',
+                        pr_title: 'Test PR',
+                    },
+                ];
+            }
+            if (sql.includes('FROM pr_notifications') && sql.includes('grafana_sent')) {
+                tracker.grafanaNotificationsQueried = true;
+                return [
+                    { message_id: 'g1', kind: 'grafana_sent', created_at: new Date('2026-11-10T03:00:00.000Z') },
+                    { message_id: 'g1', kind: 'grafana_firing', created_at: new Date('2026-11-10T03:00:00.000Z') },
+                ];
+            }
+            return [];
+        },
+    };
+
+    const discord = {
+        guild: () => ({
+            id: GUILD_ID,
+            name: 'Mock Guild',
+            iconURL: () => null,
+            channels: { cache: channelsMap },
+            voiceStates: { cache: new Map() },
+            members: { cache: new Map() },
+        }),
+    };
+
+    const botConfig = {
+        get: async (_guildId, key) => {
+            tracker.botConfigKeys.push(key);
+            if (key === 'GRAFANA_CHANNEL_ID') return CH_DEVOPS;
+            return null;
+        },
+    };
+
+    const plugins = {
+        getInstalledIds: async () => installedPlugins,
+    };
+
+    return { service: new CustomSummaryService(prisma, discord, botConfig, plugins), tracker };
+}
+
+describe('CustomSummaryService plugin separation', () => {
+    const baseReq = customSummaryRequestSchema.parse({
+        from: '2026-11-09T00:00:00.000Z',
+        to: '2026-11-11T00:00:00.000Z',
+        modules: ['voice', 'messages', 'server', 'githubPr', 'devops'],
+    });
+
+    it('0 plugins installed: strips plugin modules, skips plugin queries, keeps #github-pr-devops in text group, and returns Core server KPIs', async () => {
+        const { service, tracker } = createSummaryServiceMock([]);
+        const summary = await service.buildSummary(GUILD_ID, baseReq);
+
+        assert.deepEqual(summary.filters.modules, ['voice', 'messages', 'server']);
+        assert.equal(tracker.prMessagesQueried, false);
+        assert.equal(tracker.prNotificationsQueried, false);
+        assert.equal(tracker.grafanaNotificationsQueried, false);
+        assert.equal(tracker.jiraSettingQueried, false);
+        assert.equal(tracker.jiraTicketsQueried, false);
+        assert.equal(tracker.botConfigKeys.length, 0);
+        assert.ok(tracker.activitySeriesKeys.includes('memberJoin'));
+        assert.ok(tracker.activitySeriesKeys.includes('commandUsed'));
+
+        const devopsNamedCh = summary.availableChannels.find((c) => c.id === CH_DEVOPS);
+        assert.equal(devopsNamedCh?.group, 'text');
+        assert.equal(devopsNamedCh?.isDevops, false);
+
+        assert.equal(summary.kpis.server.memberJoin, 4);
+        assert.equal(summary.kpis.server.memberLeave, 1);
+        assert.equal(summary.kpis.server.netMembers, 3);
+        assert.equal(summary.kpis.server.commandsUsed, 7);
+        assert.equal(summary.kpis.githubPr.totalNotifications, 0);
+        assert.equal(summary.kpis.devops.grafanaSent, 0);
+        assert.equal(summary.kpis.devops.jiraCreated, 0);
+    });
+
+    it('partial plugins (grafana-alert only): enables devops for Grafana, skips PR and Jira', async () => {
+        const { service, tracker } = createSummaryServiceMock(['grafana-alert']);
+        const summary = await service.buildSummary(GUILD_ID, baseReq);
+
+        assert.deepEqual(summary.filters.modules, ['voice', 'messages', 'server', 'devops']);
+        assert.equal(tracker.grafanaNotificationsQueried, true);
+        assert.equal(tracker.prNotificationsQueried, false);
+        assert.equal(tracker.jiraTicketsQueried, false);
+        assert.equal(summary.kpis.devops.grafanaSent, 1);
+        assert.equal(summary.kpis.devops.grafanaFiring, 1);
+        assert.equal(summary.kpis.devops.jiraCreated, 0);
+    });
+
+    it('all plugins installed: runs all Core and Plugin queries', async () => {
+        const { service, tracker } = createSummaryServiceMock(['github-pr', 'grafana-alert', 'jira-card']);
+        const summary = await service.buildSummary(GUILD_ID, baseReq);
+
+        assert.deepEqual(summary.filters.modules, ['voice', 'messages', 'server', 'githubPr', 'devops']);
+        assert.equal(tracker.prNotificationsQueried, true);
+        assert.equal(tracker.grafanaNotificationsQueried, true);
+        assert.equal(tracker.jiraTicketsQueried, true);
+        assert.equal(summary.kpis.githubPr.merged, 1);
+        assert.equal(summary.kpis.devops.grafanaSent, 1);
+        assert.equal(summary.kpis.devops.jiraCreated, 1);
+        assert.equal(summary.kpis.server.commandsUsed, 7);
+    });
+});
+
+describe('buildReportHtml plugin visibility', () => {
+    const renderOpts = {
+        title: 'รายงานทดสอบ',
+        theme: 'light',
+        detailMode: 'executive',
+        adminName: 'Admin',
+        printedAt: new Date('2026-11-14T04:30:00.000Z'),
+    };
+
+    it('hides all plugin sections, series and columns when 0 plugins are installed', () => {
+        const sample = buildSampleSummary(0);
+        sample.installedPlugins = [];
+        sample.channelBreakdown = sample.channelBreakdown
+            .filter((ch) => ch.id !== CH_DEVOPS && ch.channelId !== CH_DEVOPS)
+            .map((ch) => ({ ...ch }));
+
+        const html = buildReportHtml(sample, renderOpts, renderOpts.printedAt);
+        assert.match(html, /สมาชิกและระบบ/);
+        assert.match(html, /สมาชิกเข้า-ออก และการใช้คำสั่งบอท/);
+        assert.match(html, /เหตุการณ์อื่นๆ/);
+        assert.doesNotMatch(html, /GitHub PR/);
+        assert.doesNotMatch(html, /Merge rate/);
+        assert.doesNotMatch(html, /Grafana/);
+        assert.doesNotMatch(html, /Jira/);
+        assert.doesNotMatch(html, /DevOps/);
+        assert.doesNotMatch(html, /github:&lt;username&gt;/);
+    });
+
+    it('shows only Grafana Alert under DevOps when only grafana-alert is installed', () => {
+        const sample = buildSampleSummary(0);
+        sample.installedPlugins = ['grafana-alert'];
+
+        const html = buildReportHtml(sample, renderOpts, renderOpts.printedAt);
+        assert.match(html, /DevOps \(Grafana Alert\)/);
+        assert.match(html, /การแจ้งเตือน Grafana Alert/);
+        assert.doesNotMatch(html, /กิจกรรม GitHub Pull Request/);
+        assert.doesNotMatch(html, /Merge rate/);
+        assert.doesNotMatch(html, /ความเคลื่อนไหว Jira Cards/);
+    });
+
+    it('shows all plugin sections when github-pr, grafana-alert, and jira-card are installed', () => {
+        const sample = buildSampleSummary(0);
+        sample.installedPlugins = ['github-pr', 'grafana-alert', 'jira-card'];
+
+        const html = buildReportHtml(sample, renderOpts, renderOpts.printedAt);
+        assert.match(html, /GitHub PR/);
+        assert.match(html, /DevOps \(Grafana Alert &amp; Jira Card\)/);
+        assert.match(html, /การแจ้งเตือน Grafana Alert/);
+        assert.match(html, /ความเคลื่อนไหว Jira Cards/);
+        assert.match(html, /สมาชิกและระบบ/);
     });
 });

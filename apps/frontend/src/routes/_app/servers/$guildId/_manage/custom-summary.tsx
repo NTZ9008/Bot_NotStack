@@ -1,4 +1,4 @@
-import { CUSTOM_SUMMARY_MODULES, type CustomSummaryModule, type CustomSummaryRequestInput, type PluginId } from '@notstack/shared';
+import { CUSTOM_SUMMARY_MODULES, filterActiveSummaryModules, type CustomSummaryModule, type CustomSummaryRequestInput, type PluginId } from '@notstack/shared';
 import { useT, tr } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -25,9 +25,7 @@ export const Route = createFileRoute('/_app/servers/$guildId/_manage/custom-summ
 
 function createDefaultDraft(installedPlugins?: readonly PluginId[]): { draft: CustomSummaryDraftFilter; payload: CustomSummaryRequestInput } {
     const { fromInput, toInput, fromIso, toIso } = bangkokPresetInputs(24 * 7);
-    const defaultModules: CustomSummaryModule[] = installedPlugins
-        ? CUSTOM_SUMMARY_MODULES.filter((mod) => mod !== 'githubPr' || installedPlugins.includes('github-pr'))
-        : [...CUSTOM_SUMMARY_MODULES];
+    const defaultModules = filterActiveSummaryModules(CUSTOM_SUMMARY_MODULES, installedPlugins);
     const draft: CustomSummaryDraftFilter = {
         preset: '7d',
         fromInput,
@@ -104,10 +102,13 @@ function CustomLogSummaryPage() {
         () => summary?.installedPlugins ?? guild.installedPlugins ?? [],
         [summary?.installedPlugins, guild.installedPlugins],
     );
-    const hasPrPlugin = installedPlugins.includes('github-pr');
     const selectedActiveModules = useMemo(
-        () => (hasPrPlugin ? draft.modules : draft.modules.filter((m) => m !== 'githubPr')),
-        [draft.modules, hasPrPlugin],
+        () => filterActiveSummaryModules(draft.modules, installedPlugins),
+        [draft.modules, installedPlugins],
+    );
+    const anySummaryPluginInstalled = useMemo(
+        () => installedPlugins.some((id) => id === 'github-pr' || id === 'grafana-alert' || id === 'jira-card'),
+        [installedPlugins],
     );
 
     const validationError = useMemo(() => {
@@ -181,7 +182,9 @@ function CustomLogSummaryPage() {
             <PageHeader
                 help="customSummary"
                 title={tr('common.summaryReport')}
-                description={t('customSummary.customVoiceMessageGithubPrAnd', { name: guild.name })}
+                description={t(anySummaryPluginInstalled ? 'customSummary.customVoiceMessageGithubPrAnd' : 'customSummary.pageDescriptionCore', {
+                    name: guild.name,
+                })}
             />
 
             <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
@@ -233,7 +236,7 @@ function CustomLogSummaryPage() {
 
                         <SummaryKpis summary={summary} installedPlugins={installedPlugins} />
                         <SummaryCharts summary={summary} installedPlugins={installedPlugins} />
-                        <SummaryTables summary={summary} />
+                        <SummaryTables summary={summary} installedPlugins={installedPlugins} />
 
                         <PdfExportModal
                             open={pdfOpen}
@@ -243,6 +246,10 @@ function CustomLogSummaryPage() {
                             summary={summary}
                             queryPayload={{
                                 ...appliedQuery.payload,
+                                modules: filterActiveSummaryModules(
+                                    (appliedQuery.payload.modules ?? selectedActiveModules).filter((m): m is CustomSummaryModule => m !== 'devopsOther'),
+                                    installedPlugins,
+                                ),
                                 title: tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name }),
                                 theme: 'dark',
                                 detailMode: 'executive',

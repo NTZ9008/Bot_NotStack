@@ -1,9 +1,10 @@
 import { tr, byLang } from '../../lib/i18n';
-import type { CustomSummaryChannelOption, CustomSummaryModule, PluginId } from '@notstack/shared';
+import { filterActiveSummaryModules, type CustomSummaryChannelOption, type CustomSummaryModule, type PluginId } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import {
-    Activity,
+    ArrowUpRight,
     Bot,
     CalendarClock,
     Download,
@@ -15,13 +16,14 @@ import {
     Play,
     RotateCcw,
     Search,
+    ShieldAlert,
     UserRound,
+    Users,
     Volume2,
     X,
 } from '@/components/icons';
 import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -29,7 +31,6 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { pluginCopy } from '@/lib/plugin-ui';
 import { cn } from '@/lib/utils';
 import { ChannelMultiSelect } from './channel-multi-select';
@@ -57,15 +58,19 @@ const DATE_PRESETS = byLang((): Array<{ key: DatePresetKey; label: string; hours
     { key: 'custom', label: tr('common.custom') },
 ]);
 
-const MODULE_OPTIONS = byLang(
-    (): Array<{
-        key: CustomSummaryModule;
-        title: string;
-        hint: string;
-        icon: typeof Volume2;
-        activeClass: string;
-        iconClass: string;
-    }> => [
+interface ModuleCardDef {
+    key: CustomSummaryModule;
+    title: string;
+    hint: string;
+    icon: typeof Volume2;
+    activeClass: string;
+    iconClass: string;
+    locked?: boolean;
+    lockedHint?: string;
+}
+
+const CORE_MODULE_OPTIONS = byLang(
+    (): ModuleCardDef[] => [
         {
             key: 'voice',
             title: tr('customSummary.voiceStatistics'),
@@ -83,23 +88,80 @@ const MODULE_OPTIONS = byLang(
             iconClass: 'text-emerald-700 dark:text-emerald-400',
         },
         {
-            key: 'githubPr',
-            title: tr('customSummary.githubPrStatistics'),
-            hint: tr('customSummary.prsOpenedUpdatedMergedClosedBy'),
-            icon: GitPullRequest,
-            activeClass: 'border-purple-500/50 bg-purple-500/10 text-purple-900 dark:text-purple-100',
-            iconClass: 'text-purple-700 dark:text-purple-400',
-        },
-        {
-            key: 'devopsOther',
-            title: tr('customSummary.devopsOtherStatistics'),
-            hint: tr('customSummary.grafanaAlertsJiraCardsMembersJoining'),
-            icon: Activity,
-            activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
-            iconClass: 'text-amber-700 dark:text-amber-400',
+            key: 'server',
+            title: tr('customSummary.serverStatistics'),
+            hint: tr('customSummary.serverStatisticsHint'),
+            icon: Users,
+            activeClass: 'border-indigo-500/50 bg-indigo-500/10 text-indigo-900 dark:text-indigo-100',
+            iconClass: 'text-indigo-700 dark:text-indigo-400',
         },
     ],
 );
+
+function ActivityModuleCard({
+    mod,
+    guildId,
+    checked,
+    onToggle,
+}: {
+    mod: ModuleCardDef;
+    guildId: string;
+    checked: boolean;
+    onToggle: (key: CustomSummaryModule) => void;
+}) {
+    const Icon = mod.icon;
+
+    if (mod.locked) {
+        return (
+            <Link
+                to="/servers/$guildId/plugins"
+                params={{ guildId }}
+                className="group flex w-full items-start gap-2.5 rounded-xl border border-dashed border-border bg-muted/30 p-3 text-left text-muted-foreground transition-colors hover:border-highlight/50 hover:bg-muted/50"
+            >
+                <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
+                            <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+                            <span>{mod.title}</span>
+                        </div>
+                        <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-highlight/40 bg-highlight/10 px-2 py-0.5 text-[11px] font-medium text-highlight group-hover:bg-highlight/20">
+                            {tr('customSummary.goToInstallPlugin')}
+                            <ArrowUpRight className="size-3" />
+                        </span>
+                    </div>
+                    <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{mod.lockedHint}</p>
+                </div>
+            </Link>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            aria-pressed={checked}
+            onClick={() => onToggle(mod.key)}
+            className={cn(
+                'flex w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-all',
+                checked ? mod.activeClass : 'border-border bg-background/70 text-muted-foreground hover:border-border hover:text-foreground',
+            )}
+        >
+            <Checkbox
+                aria-hidden
+                tabIndex={-1}
+                checked={checked}
+                className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
+            />
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 text-xs font-semibold">
+                    <Icon className={cn('size-3.5 shrink-0', checked ? mod.iconClass : 'text-muted-foreground')} />
+                    <span>{mod.title}</span>
+                </div>
+                <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{mod.hint}</p>
+            </div>
+        </button>
+    );
+}
 
 export interface FilterBuilderProps {
     guildId: string;
@@ -136,9 +198,43 @@ export function FilterBuilder({
     const [memberPopoverOpen, setMemberPopoverOpen] = useState(false);
     const [memberSearch, setMemberSearch] = useState('');
     const installedSet = installedPlugins ? new Set(installedPlugins) : null;
-    const lockedSummaryPlugins: PluginId[] = installedSet
-        ? (['github-pr', 'grafana-alert', 'jira-card'] as const).filter((id) => !installedSet.has(id))
-        : [];
+    const hasPr = installedSet === null || installedSet.has('github-pr');
+    const hasGrafana = installedSet === null || installedSet.has('grafana-alert');
+    const hasJira = installedSet === null || installedSet.has('jira-card');
+    const hasDevops = hasGrafana || hasJira;
+
+    const devopsHint =
+        hasGrafana && hasJira
+            ? tr('customSummary.devopsHintBoth')
+            : hasGrafana
+              ? tr('customSummary.devopsHintGrafanaOnly')
+              : tr('customSummary.devopsHintJiraOnly');
+
+    const pluginModules: ModuleCardDef[] = [
+        {
+            key: 'githubPr',
+            title: tr('customSummary.githubPrStatistics'),
+            hint: tr('customSummary.prsOpenedUpdatedMergedClosedBy'),
+            icon: GitPullRequest,
+            activeClass: 'border-purple-500/50 bg-purple-500/10 text-purple-900 dark:text-purple-100',
+            iconClass: 'text-purple-700 dark:text-purple-400',
+            locked: !hasPr,
+            lockedHint: tr('plugins.requiresPluginShort', { 0: pluginCopy('github-pr').name }),
+        },
+        {
+            key: 'devops',
+            title: tr('customSummary.devopsStatistics'),
+            hint: devopsHint,
+            icon: ShieldAlert,
+            activeClass: 'border-amber-500/50 bg-amber-500/10 text-amber-900 dark:text-amber-100',
+            iconClass: 'text-amber-700 dark:text-amber-400',
+            locked: !hasDevops,
+            lockedHint: tr('customSummary.requiresDevopsPlugins', {
+                0: pluginCopy('grafana-alert').name,
+                1: pluginCopy('jira-card').name,
+            }),
+        },
+    ];
 
     const { data: foundMembers = [], isFetching: searchingMembers } = useQuery({
         ...searchMembersQuery(guildId, memberSearch.trim()),
@@ -146,10 +242,11 @@ export function FilterBuilder({
     });
 
     const toggleModule = (mod: CustomSummaryModule) => {
-        if (mod === 'githubPr' && installedSet && !installedSet.has('github-pr')) return;
+        if (mod === 'githubPr' && !hasPr) return;
+        if (mod === 'devops' && !hasDevops) return;
         const exists = draft.modules.includes(mod);
         if (exists) {
-            const activeCount = draft.modules.filter((m) => m !== 'githubPr' || !installedSet || installedSet.has('github-pr')).length;
+            const activeCount = filterActiveSummaryModules(draft.modules, installedPlugins).length;
             if (activeCount <= 1) return;
             onUpdate({ modules: draft.modules.filter((m) => m !== mod) });
         } else {
@@ -369,83 +466,39 @@ export function FilterBuilder({
                     </div>
                 </div>
 
-                {/* แถวที่ 3: เลือกประเภทกิจกรรม */}
-                <div className="space-y-2">
+                {/* แถวที่ 3: เลือกประเภทกิจกรรม (แยก Core vs Plugin ชัดเจน) */}
+                <div className="space-y-3">
                     <Label className="text-xs font-medium text-muted-foreground">{tr('customSummary.activityTypesToSummarize')}</Label>
-                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
-                        {MODULE_OPTIONS().map((mod) => {
-                            const Icon = mod.icon;
-                            const isPrLocked = mod.key === 'githubPr' && installedSet !== null && !installedSet.has('github-pr');
-                            const checked = !isPrLocked && draft.modules.includes(mod.key);
-                            const btn = (
-                                <button
+
+                    <div className="space-y-1.5">
+                        <div className="text-[11px] font-medium text-muted-foreground">{tr('customSummary.coreReportGroup')}</div>
+                        <div className="grid gap-2.5 sm:grid-cols-3">
+                            {CORE_MODULE_OPTIONS().map((mod) => (
+                                <ActivityModuleCard
                                     key={mod.key}
-                                    type="button"
-                                    disabled={isPrLocked}
-                                    aria-disabled={isPrLocked || undefined}
-                                    aria-pressed={checked}
-                                    onClick={() => toggleModule(mod.key)}
-                                    className={cn(
-                                        'flex w-full items-start gap-2.5 rounded-xl border p-3 text-left transition-all',
-                                        isPrLocked
-                                            ? 'cursor-not-allowed border-border/60 bg-muted/40 text-muted-foreground opacity-60'
-                                            : checked
-                                              ? mod.activeClass
-                                              : 'border-border bg-background/70 text-muted-foreground hover:border-border hover:text-foreground',
-                                    )}
-                                >
-                                    {isPrLocked ? (
-                                        <Lock className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-                                    ) : (
-                                        <Checkbox
-                                            aria-hidden
-                                            tabIndex={-1}
-                                            checked={checked}
-                                            className="mt-0.5 pointer-events-none border-input data-[state=checked]:border-highlight data-[state=checked]:bg-highlight"
-                                        />
-                                    )}
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex items-center gap-1.5 text-xs font-semibold">
-                                            <Icon className={cn('size-3.5 shrink-0', checked ? mod.iconClass : 'text-muted-foreground')} />
-                                            <span>{mod.title}</span>
-                                        </div>
-                                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                                            {isPrLocked ? tr('plugins.requiresPluginShort', { 0: pluginCopy('github-pr').name }) : mod.hint}
-                                        </p>
-                                    </div>
-                                </button>
-                            );
-
-                            if (!isPrLocked) return btn;
-
-                            return (
-                                <Tooltip key={mod.key}>
-                                    <TooltipTrigger asChild>
-                                        <span className="flex">{btn}</span>
-                                    </TooltipTrigger>
-                                    <TooltipContent>{tr('plugins.requiresPluginTooltip', { 0: pluginCopy('github-pr').name })}</TooltipContent>
-                                </Tooltip>
-                            );
-                        })}
-                    </div>
-                    {lockedSummaryPlugins.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-muted-foreground">
-                            {lockedSummaryPlugins.map((pluginId) => {
-                                const name = pluginCopy(pluginId).name;
-                                return (
-                                    <Tooltip key={pluginId}>
-                                        <TooltipTrigger asChild>
-                                            <Badge variant="outline" className="cursor-help gap-1 border-dashed text-[11px] text-muted-foreground">
-                                                <Lock className="size-3" />
-                                                {tr('plugins.requiresPluginShort', { 0: name })}
-                                            </Badge>
-                                        </TooltipTrigger>
-                                        <TooltipContent>{tr('plugins.requiresPluginTooltip', { 0: name })}</TooltipContent>
-                                    </Tooltip>
-                                );
-                            })}
+                                    mod={mod}
+                                    guildId={guildId}
+                                    checked={draft.modules.includes(mod.key)}
+                                    onToggle={toggleModule}
+                                />
+                            ))}
                         </div>
-                    )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <div className="text-[11px] font-medium text-muted-foreground">{tr('customSummary.pluginReportGroup')}</div>
+                        <div className="grid gap-2.5 sm:grid-cols-2">
+                            {pluginModules.map((mod) => (
+                                <ActivityModuleCard
+                                    key={mod.key}
+                                    mod={mod}
+                                    guildId={guildId}
+                                    checked={!mod.locked && draft.modules.includes(mod.key)}
+                                    onToggle={toggleModule}
+                                />
+                            ))}
+                        </div>
+                    </div>
                 </div>
 
                 {/* แถว Action + Validation */}

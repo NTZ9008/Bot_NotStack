@@ -1,37 +1,28 @@
-import type { ReactElement } from 'react';
 import { tr } from '../../lib/i18n';
 import type { CustomSummaryResponse, PluginId } from '@notstack/shared';
-import { Activity, AlertTriangle, GitPullRequest, Lock, MessageSquareText, Terminal, Users, Volume2 } from '@/components/icons';
+import { Activity, AlertTriangle, GitPullRequest, MessageSquareText, Terminal, Users, Volume2 } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { pluginCopy } from '@/lib/plugin-ui';
 import { cn } from '@/lib/utils';
 import { formatThaiDuration } from './timezone';
 
-function PluginLockTooltip({ locked, pluginId, children }: { locked: boolean; pluginId: PluginId; children: ReactElement }) {
-    if (!locked) return children;
-    return (
-        <Tooltip>
-            <TooltipTrigger asChild>{children}</TooltipTrigger>
-            <TooltipContent>{tr('plugins.requiresPluginTooltip', { 0: pluginCopy(pluginId).name })}</TooltipContent>
-        </Tooltip>
-    );
-}
-
-/** แถว KPI Summary Cards ตามโมดูลที่ผู้ดูแลเลือก */
+/** แถว KPI Summary Cards ตามโมดูล Core และปลั๊กอินที่ติดตั้งจริง */
 export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSummaryResponse; installedPlugins?: PluginId[] }) {
     const enabled = new Set(summary.filters.modules);
-    const { voice, messages, githubPr, devopsOther, activeUsers, totalEvents } = summary.kpis;
+    const { voice, messages, server, githubPr, devops, activeUsers, totalEvents } = summary.kpis;
     const pluginSource = installedPlugins ?? summary.installedPlugins;
     const hasPlugin = (id: PluginId) => (pluginSource ? pluginSource.includes(id) : true);
     const prInstalled = hasPlugin('github-pr');
-    const prActive = enabled.has('githubPr') && prInstalled;
     const grafanaInstalled = hasPlugin('grafana-alert');
     const jiraInstalled = hasPlugin('jira-card');
+    const showPrCard = prInstalled && enabled.has('githubPr');
+    const showGrafanaCard = grafanaInstalled && enabled.has('devops');
+    const showJiraCard = jiraInstalled && enabled.has('devops');
+    const visiblePluginCardCount = Number(showPrCard) + Number(showGrafanaCard) + Number(showJiraCard);
 
     return (
         <div className="space-y-3">
+            {/* กลุ่ม Core KPIs */}
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {/* 1. เวลารวมในห้องเสียง */}
                 <Card className={cn('rounded-xl border-border bg-card transition-opacity', !enabled.has('voice') && 'opacity-50')}>
@@ -106,56 +97,38 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                     </CardContent>
                 </Card>
 
-                {/* 3. GitHub PR รวม (เปิด / Merge / ปิด) */}
-                <PluginLockTooltip locked={!prInstalled} pluginId="github-pr">
-                    <Card
-                        aria-disabled={!prInstalled || undefined}
-                        className={cn(
-                            'rounded-xl border-border bg-card transition-opacity',
-                            !prActive && 'opacity-50',
-                            !prInstalled && 'cursor-not-allowed',
-                        )}
-                    >
-                        <CardContent className="pt-5">
-                            <div className="flex items-start justify-between gap-2">
-                                <span className="text-xs font-medium text-muted-foreground">{tr('customSummary.totalGithubPrsOpenedMergedClosed')}</span>
-                                <span
-                                    className={cn(
-                                        'flex size-8 items-center justify-center rounded-lg',
-                                        prInstalled ? 'bg-purple-500/15 text-purple-700 dark:text-purple-400' : 'bg-muted text-muted-foreground',
-                                    )}
-                                >
-                                    {prInstalled ? <GitPullRequest className="size-4" /> : <Lock className="size-4" />}
-                                </span>
-                            </div>
+                {/* 3. สมาชิกเข้า-ออก & คำสั่งระบบ (Core server) */}
+                <Card className={cn('rounded-xl border-border bg-card transition-opacity', !enabled.has('server') && 'opacity-50')}>
+                    <CardContent className="pt-5">
+                        <div className="flex items-start justify-between gap-2">
+                            <span className="text-xs font-medium text-muted-foreground">{tr('customSummary.serverMembersAndCommands')}</span>
+                            <span className="flex size-8 items-center justify-center rounded-lg bg-indigo-500/15 text-indigo-700 dark:text-indigo-400">
+                                <Terminal className="size-4" />
+                            </span>
+                        </div>
+                        {enabled.has('server') ? (
                             <div className="mt-2 flex items-baseline gap-2.5">
-                                <span className="text-3xl font-bold tracking-tight text-foreground">
-                                    {!prInstalled ? '—' : prActive ? githubPr.totalNotifications.toLocaleString('en-US') : tr('customSummary.notSelected')}
+                                <span className="text-3xl font-bold tracking-tight">
+                                    <span className="text-emerald-700 dark:text-emerald-400">+{server.memberJoin}</span>
+                                    <span className="mx-1 text-muted-foreground">/</span>
+                                    <span className="text-red-700 dark:text-red-400">-{server.memberLeave}</span>
                                 </span>
-                                {prActive && <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">Merge {githubPr.mergeRatePercent}%</span>}
+                                <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                                    {tr('customSummary.net')} {server.netMembers >= 0 ? `+${server.netMembers}` : server.netMembers}
+                                </span>
                             </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                {!prInstalled ? (
-                                    <span>{tr('plugins.requiresPluginShort', { 0: pluginCopy('github-pr').name })}</span>
-                                ) : prActive ? (
-                                    <>
-                                        <span>
-                                            {tr('customSummary.openedUpdated')} <strong className="text-highlight">{githubPr.openedOrUpdated}</strong>
-                                        </span>
-                                        <span>
-                                            Merge <strong className="text-purple-700 dark:text-purple-400">{githubPr.merged}</strong>
-                                        </span>
-                                        <span>
-                                            {tr('customSummary.closedPrs')} <strong className="text-amber-700 dark:text-amber-400">{githubPr.closed}</strong>
-                                        </span>
-                                    </>
-                                ) : (
-                                    <span>{tr('customSummary.githubPrModuleHidden')}</span>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </PluginLockTooltip>
+                        ) : (
+                            <div className="mt-2 text-3xl font-bold tracking-tight text-foreground">{tr('customSummary.notSelected')}</div>
+                        )}
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            {enabled.has('server') ? (
+                                <span>{tr('customSummary.commandsCount', { 0: server.commandsUsed.toLocaleString('en-US') })}</span>
+                            ) : (
+                                <span>{tr('customSummary.serverModuleHidden')}</span>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* 4. จำนวนผู้ใช้งานที่มีส่วนร่วม */}
                 <Card className="rounded-xl border-border bg-card">
@@ -179,97 +152,89 @@ export function SummaryKpis({ summary, installedPlugins }: { summary: CustomSumm
                 </Card>
             </div>
 
-            {/* แถบสถิติย่อย DevOps & สมาชิกเซิร์ฟเวอร์ (แสดงเมื่อเลือก devopsOther) */}
-            {enabled.has('devopsOther') && (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <PluginLockTooltip locked={!grafanaInstalled} pluginId="grafana-alert">
-                        <div
-                            aria-disabled={!grafanaInstalled || undefined}
-                            className={cn(
-                                'flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3',
-                                !grafanaInstalled && 'cursor-not-allowed opacity-50',
-                            )}
-                        >
-                            <div>
-                                <div className="text-[11px] font-medium text-muted-foreground">Grafana Alerts</div>
-                                <div className={cn('mt-0.5 text-lg font-bold', grafanaInstalled ? 'text-sky-700 dark:text-sky-400' : 'text-muted-foreground')}>
-                                    {grafanaInstalled ? devopsOther.grafanaSent.toLocaleString('en-US') : '—'}
+            {/* กลุ่ม Plugin KPIs — แสดงเฉพาะปลั๊กอินที่ติดตั้งและเปิดใช้งานจริง */}
+            {visiblePluginCardCount > 0 && (
+                <div
+                    className={cn(
+                        'grid gap-3',
+                        visiblePluginCardCount === 1
+                            ? 'grid-cols-1'
+                            : visiblePluginCardCount === 2
+                              ? 'sm:grid-cols-2'
+                              : 'sm:grid-cols-2 xl:grid-cols-3',
+                    )}
+                >
+                    {showPrCard && (
+                        <Card className="rounded-xl border-border bg-card">
+                            <CardContent className="pt-5">
+                                <div className="flex items-start justify-between gap-2">
+                                    <span className="text-xs font-medium text-muted-foreground">{tr('customSummary.totalGithubPrsOpenedMergedClosed')}</span>
+                                    <span className="flex size-8 items-center justify-center rounded-lg bg-purple-500/15 text-purple-700 dark:text-purple-400">
+                                        <GitPullRequest className="size-4" />
+                                    </span>
                                 </div>
-                                <div className="text-[11px] text-muted-foreground">
-                                    {grafanaInstalled ? (
-                                        <>
-                                            <span className="text-red-700 dark:text-red-400">Firing {devopsOther.grafanaFiring}</span> •{' '}
-                                            <span className="text-emerald-700 dark:text-emerald-400">Resolved {devopsOther.grafanaResolved}</span>
-                                        </>
-                                    ) : (
-                                        tr('plugins.requiresPluginShort', { 0: pluginCopy('grafana-alert').name })
-                                    )}
+                                <div className="mt-2 flex items-baseline gap-2.5">
+                                    <span className="text-3xl font-bold tracking-tight text-foreground">
+                                        {githubPr.totalNotifications.toLocaleString('en-US')}
+                                    </span>
+                                    <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">
+                                        Merge {githubPr.mergeRatePercent}%
+                                    </span>
                                 </div>
-                            </div>
-                            {grafanaInstalled ? (
-                                <AlertTriangle className="size-5 text-sky-700/70 dark:text-sky-400/70" />
-                            ) : (
-                                <Lock className="size-4 text-muted-foreground" />
-                            )}
-                        </div>
-                    </PluginLockTooltip>
+                                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                    <span>
+                                        {tr('customSummary.openedUpdated')} <strong className="text-highlight">{githubPr.openedOrUpdated}</strong>
+                                    </span>
+                                    <span>
+                                        Merge <strong className="text-purple-700 dark:text-purple-400">{githubPr.merged}</strong>
+                                    </span>
+                                    <span>
+                                        {tr('customSummary.closedPrs')} <strong className="text-amber-700 dark:text-amber-400">{githubPr.closed}</strong>
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                    <PluginLockTooltip locked={!jiraInstalled} pluginId="jira-card">
-                        <div
-                            aria-disabled={!jiraInstalled || undefined}
-                            className={cn(
-                                'flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3',
-                                !jiraInstalled && 'cursor-not-allowed opacity-50',
-                            )}
-                        >
-                            <div>
-                                <div className="text-[11px] font-medium text-muted-foreground">Jira Card & Issues</div>
-                                <div className={cn('mt-0.5 text-lg font-bold', jiraInstalled ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
-                                    {jiraInstalled ? (devopsOther.jiraCreated + devopsOther.jiraIssueCreated).toLocaleString('en-US') : '—'}
+                    {showGrafanaCard && (
+                        <Card className="rounded-xl border-border bg-card">
+                            <CardContent className="flex items-center justify-between pt-5">
+                                <div>
+                                    <div className="text-xs font-medium text-muted-foreground">Grafana Alerts</div>
+                                    <div className="mt-1 text-2xl font-bold text-sky-700 dark:text-sky-400">
+                                        {devops.grafanaSent.toLocaleString('en-US')}
+                                    </div>
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                        <span className="text-red-700 dark:text-red-400">Firing {devops.grafanaFiring}</span> •{' '}
+                                        <span className="text-emerald-700 dark:text-emerald-400">Resolved {devops.grafanaResolved}</span>
+                                    </div>
                                 </div>
-                                <div className="text-[11px] text-muted-foreground">
-                                    {jiraInstalled ? (
-                                        <>
-                                            {tr('customSummary.cardsOpened')} {devopsOther.jiraCreated} • Issue {devopsOther.jiraIssueCreated}{' '}
-                                            {tr('customSummary.closed')} {devopsOther.jiraClosed}
-                                        </>
-                                    ) : (
-                                        tr('plugins.requiresPluginShort', { 0: pluginCopy('jira-card').name })
-                                    )}
+                                <span className="flex size-8 items-center justify-center rounded-lg bg-sky-500/15 text-sky-700 dark:text-sky-400">
+                                    <AlertTriangle className="size-4" />
+                                </span>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {showJiraCard && (
+                        <Card className="rounded-xl border-border bg-card">
+                            <CardContent className="flex items-center justify-between pt-5">
+                                <div>
+                                    <div className="text-xs font-medium text-muted-foreground">Jira Card & Issues</div>
+                                    <div className="mt-1 text-2xl font-bold text-amber-700 dark:text-amber-400">
+                                        {(devops.jiraCreated + devops.jiraIssueCreated).toLocaleString('en-US')}
+                                    </div>
+                                    <div className="mt-1 text-xs text-muted-foreground">
+                                        {tr('customSummary.cardsOpened')} {devops.jiraCreated} • Issue {devops.jiraIssueCreated}{' '}
+                                        {tr('customSummary.closed')} {devops.jiraClosed}
+                                    </div>
                                 </div>
-                            </div>
-                            {jiraInstalled ? (
-                                <Activity className="size-5 text-amber-700/70 dark:text-amber-400/70" />
-                            ) : (
-                                <Lock className="size-4 text-muted-foreground" />
-                            )}
-                        </div>
-                    </PluginLockTooltip>
-
-                    <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-                        <div>
-                            <div className="text-[11px] font-medium text-muted-foreground">{tr('customSummary.membersJoiningLeaving')}</div>
-                            <div className="mt-0.5 flex items-baseline gap-2 text-lg font-bold">
-                                <span className="text-emerald-700 dark:text-emerald-400">+{devopsOther.memberJoin}</span>
-                                <span className="text-muted-foreground">/</span>
-                                <span className="text-red-700 dark:text-red-400">-{devopsOther.memberLeave}</span>
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                                {tr('customSummary.net')} {devopsOther.netMembers >= 0 ? `+${devopsOther.netMembers}` : devopsOther.netMembers}{' '}
-                                {tr('common.people')}
-                            </div>
-                        </div>
-                        <Users className="size-5 text-emerald-700/70 dark:text-emerald-400/70" />
-                    </div>
-
-                    <div className="flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
-                        <div>
-                            <div className="text-[11px] font-medium text-muted-foreground">{tr('customSummary.botCommandsUsed')}</div>
-                            <div className="mt-0.5 text-lg font-bold text-highlight">{devopsOther.commandsUsed.toLocaleString('en-US')}</div>
-                            <div className="text-[11px] text-muted-foreground">{tr('customSummary.slashCommandsInTheFilteredScope')}</div>
-                        </div>
-                        <Terminal className="size-5 text-highlight/70" />
-                    </div>
+                                <span className="flex size-8 items-center justify-center rounded-lg bg-amber-500/15 text-amber-700 dark:text-amber-400">
+                                    <Activity className="size-4" />
+                                </span>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             )}
         </div>

@@ -5,6 +5,7 @@ import type {
     CustomSummaryContributorRow,
     CustomSummaryLogRow,
     CustomSummaryResponse,
+    PluginId,
 } from '@notstack/shared';
 import type { ColumnDef } from '@tanstack/react-table';
 import { ChevronDown, ChevronUp, FileSpreadsheet, ListTree, Search, Trophy, Volume2 } from '@/components/icons';
@@ -33,10 +34,31 @@ const SOURCE_BADGE: Record<CustomSummaryLogRow['source'], { label: string; class
 };
 
 /** ตารางสรุปแยกตามห้อง, อันดับผู้ใช้งานสูงสุด และตัวอย่างรายการ Log รายบรรทัด */
-export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
+export function SummaryTables({ summary, installedPlugins }: { summary: CustomSummaryResponse; installedPlugins?: PluginId[] }) {
     const [channelSearch, setChannelSearch] = useState('');
     const [userSearch, setUserSearch] = useState('');
     const [showDetailedPreview, setShowDetailedPreview] = useState(false);
+
+    const pluginSource = installedPlugins ?? summary.installedPlugins;
+    const hasPlugin = (id: PluginId) => (pluginSource ? pluginSource.includes(id) : true);
+    const prInstalled = hasPlugin('github-pr');
+    const grafanaInstalled = hasPlugin('grafana-alert');
+    const jiraInstalled = hasPlugin('jira-card');
+    const anyPluginInstalled = prInstalled || grafanaInstalled || jiraInstalled;
+
+    const contributorRows = useMemo(
+        () => (prInstalled ? summary.topContributors : summary.topContributors.filter((c) => !c.userId.startsWith('github:'))),
+        [summary.topContributors, prInstalled],
+    );
+
+    const channelExtraHeader = anyPluginInstalled
+        ? [
+              ...(prInstalled ? ['PR'] : []),
+              ...(grafanaInstalled ? ['Alert'] : []),
+              ...(jiraInstalled ? ['Jira'] : []),
+              tr('customSummary.other'),
+          ].join(' / ')
+        : tr('customSummary.otherEventsCol');
 
     const channelColumns = useMemo<ColumnDef<CustomSummaryChannelRow>[]>(
         () => [
@@ -54,7 +76,8 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 accessorKey: 'kind',
                 header: tr('common.type'),
                 cell: ({ row }) => {
-                    const meta = KIND_BADGE()[row.original.kind];
+                    const displayKind = !anyPluginInstalled && row.original.kind === 'devops' ? 'text' : row.original.kind;
+                    const meta = KIND_BADGE()[displayKind];
                     return (
                         <Badge variant="outline" className={meta.className}>
                             {meta.label}
@@ -86,22 +109,29 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
             },
             {
                 id: 'prAndAlerts',
-                header: 'PR / Alert / Jira',
-                accessorFn: (row) => row.prEvents + row.grafanaAlerts + row.jiraCards + row.otherEvents,
+                header: channelExtraHeader,
+                accessorFn: (row) =>
+                    (prInstalled ? row.prEvents : 0) +
+                    (grafanaInstalled ? row.grafanaAlerts : 0) +
+                    (jiraInstalled ? row.jiraCards : 0) +
+                    row.otherEvents,
                 cell: ({ row }) => {
                     const r = row.original;
-                    const total = r.prEvents + r.grafanaAlerts + r.jiraCards + r.otherEvents;
+                    const prCount = prInstalled ? r.prEvents : 0;
+                    const grafanaCount = grafanaInstalled ? r.grafanaAlerts : 0;
+                    const jiraCount = jiraInstalled ? r.jiraCards : 0;
+                    const total = prCount + grafanaCount + jiraCount + r.otherEvents;
                     if (total === 0) return <span className="text-muted-foreground">-</span>;
                     return (
                         <div className="flex flex-wrap gap-1.5 text-xs">
-                            {r.prEvents > 0 && (
-                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">PR {r.prEvents}</span>
+                            {prCount > 0 && (
+                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">PR {prCount}</span>
                             )}
-                            {r.grafanaAlerts > 0 && (
-                                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-sky-700 dark:text-sky-300">Alert {r.grafanaAlerts}</span>
+                            {grafanaCount > 0 && (
+                                <span className="rounded bg-sky-500/15 px-1.5 py-0.5 text-sky-700 dark:text-sky-300">Alert {grafanaCount}</span>
                             )}
-                            {r.jiraCards > 0 && (
-                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">Jira {r.jiraCards}</span>
+                            {jiraCount > 0 && (
+                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">Jira {jiraCount}</span>
                             )}
                             {r.otherEvents > 0 && (
                                 <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">
@@ -113,7 +143,7 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 },
             },
         ],
-        [],
+        [anyPluginInstalled, channelExtraHeader, grafanaInstalled, jiraInstalled, prInstalled],
     );
 
     const contributorColumns = useMemo<ColumnDef<CustomSummaryContributorRow>[]>(
@@ -166,26 +196,44 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                 ),
             },
             {
-                id: 'prJira',
-                header: tr('customSummary.prJiraActivity'),
-                accessorFn: (row) => row.prActivity + row.jiraTickets,
-                cell: ({ row }) => {
-                    const { prActivity, jiraTickets } = row.original;
-                    if (prActivity + jiraTickets === 0) return <span className="text-muted-foreground">-</span>;
-                    return (
-                        <div className="flex flex-wrap gap-1.5 text-xs">
-                            {prActivity > 0 && (
-                                <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">{prActivity} PR</span>
-                            )}
-                            {jiraTickets > 0 && (
-                                <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">{jiraTickets} Jira</span>
-                            )}
-                        </div>
-                    );
-                },
+                accessorKey: 'commandsUsed',
+                header: tr('common.command'),
+                cell: ({ row }) => (
+                    <span className={row.original.commandsUsed > 0 ? 'font-medium text-foreground tabular-nums' : 'text-muted-foreground'}>
+                        {row.original.commandsUsed > 0 ? row.original.commandsUsed.toLocaleString('en-US') : '-'}
+                    </span>
+                ),
             },
+            ...(prInstalled || jiraInstalled
+                ? [
+                      {
+                          id: 'prJira',
+                          header: prInstalled && jiraInstalled ? tr('customSummary.prJiraActivity') : prInstalled ? 'GitHub PR' : 'Jira Card',
+                          accessorFn: (row) => (prInstalled ? row.prActivity : 0) + (jiraInstalled ? row.jiraTickets : 0),
+                          cell: ({ row }) => {
+                              const prActivity = prInstalled ? row.original.prActivity : 0;
+                              const jiraTickets = jiraInstalled ? row.original.jiraTickets : 0;
+                              if (prActivity + jiraTickets === 0) return <span className="text-muted-foreground">-</span>;
+                              return (
+                                  <div className="flex flex-wrap gap-1.5 text-xs">
+                                      {prActivity > 0 && (
+                                          <span className="rounded bg-purple-500/15 px-1.5 py-0.5 text-purple-700 dark:text-purple-300">
+                                              {prActivity} PR
+                                          </span>
+                                      )}
+                                      {jiraTickets > 0 && (
+                                          <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-700 dark:text-amber-300">
+                                              {jiraTickets} Jira
+                                          </span>
+                                      )}
+                                  </div>
+                              );
+                          },
+                      } satisfies ColumnDef<CustomSummaryContributorRow>,
+                  ]
+                : []),
         ],
-        [],
+        [jiraInstalled, prInstalled],
     );
 
     const logColumns = useMemo<ColumnDef<CustomSummaryLogRow>[]>(
@@ -242,7 +290,9 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
 
                             {tr('customSummary.table1SummaryByChannel')}
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.channelNameTypeMessageCountTotal')}</CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">
+                            {anyPluginInstalled ? tr('customSummary.channelNameTypeMessageCountTotal') : tr('customSummary.channelTableDescCore')}
+                        </CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
                         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -278,7 +328,9 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
 
                             {tr('customSummary.table2TopUsers')}
                         </CardTitle>
-                        <CardDescription className="text-xs text-muted-foreground">{tr('customSummary.rankedByVoiceTimeMessageCount')}</CardDescription>
+                        <CardDescription className="text-xs text-muted-foreground">
+                            {prInstalled || jiraInstalled ? tr('customSummary.rankedByVoiceTimeMessageCount') : tr('customSummary.contributorTableDescCore')}
+                        </CardDescription>
                     </div>
                     <div className="relative w-full sm:w-64">
                         <Search className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -291,12 +343,12 @@ export function SummaryTables({ summary }: { summary: CustomSummaryResponse }) {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {summary.topContributors.length === 0 ? (
+                    {contributorRows.length === 0 ? (
                         <EmptyState>{tr('customSummary.noUsersWithActivityInThe')}</EmptyState>
                     ) : (
                         <DataTable
                             columns={contributorColumns}
-                            data={summary.topContributors}
+                            data={contributorRows}
                             globalFilter={userSearch}
                             className="border-border bg-background/40"
                             empty={tr('customSummary.noUsersMatchYourSearch')}
