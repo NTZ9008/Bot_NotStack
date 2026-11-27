@@ -98,14 +98,8 @@ function CustomLogSummaryPage() {
         queryFn: ({ signal }) => fetchCustomSummary(guildId, appliedQuery.payload, signal),
     });
 
-    const installedPlugins = useMemo(
-        () => summary?.installedPlugins ?? guild.installedPlugins ?? [],
-        [summary?.installedPlugins, guild.installedPlugins],
-    );
-    const selectedActiveModules = useMemo(
-        () => filterActiveSummaryModules(draft.modules, installedPlugins),
-        [draft.modules, installedPlugins],
-    );
+    const installedPlugins = useMemo(() => summary?.installedPlugins ?? guild.installedPlugins ?? [], [summary?.installedPlugins, guild.installedPlugins]);
+    const selectedActiveModules = useMemo(() => filterActiveSummaryModules(draft.modules, installedPlugins), [draft.modules, installedPlugins]);
     const anySummaryPluginInstalled = useMemo(
         () => installedPlugins.some((id) => id === 'github-pr' || id === 'grafana-alert' || id === 'jira-card'),
         [installedPlugins],
@@ -187,77 +181,75 @@ function CustomLogSummaryPage() {
                 })}
             />
 
-            <div className="space-y-5 rounded-2xl border border-border bg-background p-4 sm:p-5">
-                <FilterBuilder
-                    guildId={guildId}
-                    draft={draft}
-                    channels={channels}
-                    channelsLoading={channelsLoading}
-                    installedPlugins={installedPlugins}
-                    validationError={validationError}
-                    isProcessing={isFetching}
-                    hasSummary={Boolean(summary)}
-                    onSelectPreset={handleSelectPreset}
-                    onUpdate={handleUpdateDraft}
-                    onReset={handleReset}
-                    onRunSummary={handleRunSummary}
-                    onOpenPdfModal={() => setPdfOpen(true)}
-                />
+            <FilterBuilder
+                guildId={guildId}
+                draft={draft}
+                channels={channels}
+                channelsLoading={channelsLoading}
+                installedPlugins={installedPlugins}
+                validationError={validationError}
+                isProcessing={isFetching}
+                hasSummary={Boolean(summary)}
+                onSelectPreset={handleSelectPreset}
+                onUpdate={handleUpdateDraft}
+                onReset={handleReset}
+                onRunSummary={handleRunSummary}
+                onOpenPdfModal={() => setPdfOpen(true)}
+            />
 
-                {error ? (
-                    <ErrorState error={error} title={tr('customSummary.failedToRunTheLogSummary')} />
-                ) : isLoading || !summary ? (
-                    <CustomSummaryLoadingSkeleton />
-                ) : (
-                    <div className="space-y-5">
-                        {/* แถบสถานะผลลัพธ์ที่ประมวลผลล่าสุด */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs">
-                            <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-                                <Sparkles className="size-4 text-highlight" />
-                                <span className="font-medium text-foreground">{summary.guild.name}</span>
-                                <span className="text-muted-foreground">•</span>
-                                <span>
-                                    {formatBangkokDateTime(summary.range.from)} — {formatBangkokDateTime(summary.range.to)}
-                                </span>
-                                <Badge variant="outline" className="border-border bg-background text-[11px] text-highlight">
-                                    <Layers3 className="mr-1 size-3" />
-                                    {summary.filters.selectedChannels.length === 0
-                                        ? tr('customSummary.allChannels2', { 0: summary.availableChannels.length })
-                                        : tr('customSummary.selectedChannels', { 0: summary.filters.selectedChannels.length })}
-                                </Badge>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                <Clock className="size-3.5" />
-                                <span>
-                                    {tr('customSummary.lastRun')} {formatBangkokDateTime(summary.generatedAt)}
-                                </span>
-                            </div>
+            {error ? (
+                <ErrorState error={error} title={tr('customSummary.failedToRunTheLogSummary')} />
+            ) : isLoading || !summary ? (
+                <CustomSummaryLoadingSkeleton />
+            ) : (
+                <div className="space-y-5">
+                    {/* แถบสถานะผลลัพธ์ที่ประมวลผลล่าสุด */}
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/90 px-4 py-2.5 text-xs">
+                        <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                            <Sparkles className="size-4 text-highlight" />
+                            <span className="font-medium text-foreground">{summary.guild.name}</span>
+                            <span className="text-muted-foreground">•</span>
+                            <span>
+                                {formatBangkokDateTime(summary.range.from)} — {formatBangkokDateTime(summary.range.to)}
+                            </span>
+                            <Badge variant="outline" className="border-border bg-background text-[11px] text-highlight">
+                                <Layers3 className="mr-1 size-3" />
+                                {summary.filters.selectedChannels.length === 0
+                                    ? tr('customSummary.allChannels2', { 0: summary.availableChannels.length })
+                                    : tr('customSummary.selectedChannels', { 0: summary.filters.selectedChannels.length })}
+                            </Badge>
                         </div>
-
-                        <SummaryKpis summary={summary} installedPlugins={installedPlugins} />
-                        <SummaryCharts summary={summary} installedPlugins={installedPlugins} />
-                        <SummaryTables summary={summary} installedPlugins={installedPlugins} />
-
-                        <PdfExportModal
-                            open={pdfOpen}
-                            onOpenChange={setPdfOpen}
-                            guildId={guildId}
-                            adminName={adminName}
-                            summary={summary}
-                            queryPayload={{
-                                ...appliedQuery.payload,
-                                modules: filterActiveSummaryModules(
-                                    (appliedQuery.payload.modules ?? selectedActiveModules).filter((m): m is CustomSummaryModule => m !== 'devopsOther'),
-                                    installedPlugins,
-                                ),
-                                title: tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name }),
-                                theme: 'dark',
-                                detailMode: 'executive',
-                            }}
-                        />
+                        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <Clock className="size-3.5" />
+                            <span>
+                                {tr('customSummary.lastRun')} {formatBangkokDateTime(summary.generatedAt)}
+                            </span>
+                        </div>
                     </div>
-                )}
-            </div>
+
+                    <SummaryKpis summary={summary} installedPlugins={installedPlugins} />
+                    <SummaryCharts summary={summary} installedPlugins={installedPlugins} />
+                    <SummaryTables summary={summary} installedPlugins={installedPlugins} />
+
+                    <PdfExportModal
+                        open={pdfOpen}
+                        onOpenChange={setPdfOpen}
+                        guildId={guildId}
+                        adminName={adminName}
+                        summary={summary}
+                        queryPayload={{
+                            ...appliedQuery.payload,
+                            modules: filterActiveSummaryModules(
+                                (appliedQuery.payload.modules ?? selectedActiveModules).filter((m): m is CustomSummaryModule => m !== 'devopsOther'),
+                                installedPlugins,
+                            ),
+                            title: tr('customSummary.serverActivitySummaryFor', { 0: summary.guild.name }),
+                            theme: 'dark',
+                            detailMode: 'executive',
+                        }}
+                    />
+                </div>
+            )}
         </>
     );
 }
