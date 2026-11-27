@@ -131,7 +131,13 @@ function RoomsCard({ rooms }: { rooms: AccessRoom[] }) {
                     ))}
                 </div>
                 <div className="flex max-w-xl gap-2">
-                    <ChannelSelect channels={available} value={channelId} onChange={setChannelId} placeholder={tr('roomAccess.pickAChannelToAdd')} />
+                    <ChannelSelect
+                        aria-label={tr('roomAccess.pickAChannelToAdd')}
+                        channels={available}
+                        value={channelId}
+                        onChange={setChannelId}
+                        placeholder={tr('roomAccess.pickAChannelToAdd')}
+                    />
                     <Button onClick={() => add.mutate()} disabled={!channelId || add.isPending}>
                         {add.isPending ? <Spinner /> : <Plus />} {tr('common.add')}
                     </Button>

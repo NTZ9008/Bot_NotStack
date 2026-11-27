@@ -118,7 +118,7 @@ export function PaymentsTab({
                                 value={memberFilter !== null ? String(memberFilter) : 'all'}
                                 onValueChange={(v) => onMemberFilterChange(v === 'all' ? null : Number(v))}
                             >
-                                <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
+                                <SelectTrigger aria-label={tr('common.member')} className="h-8 w-full min-w-0 flex-1 text-xs sm:w-44 sm:flex-initial">
                                     <SelectValue placeholder={tr('funds.allMembers')} />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-72">
@@ -136,7 +136,7 @@ export function PaymentsTab({
                         )}
 
                         <Select value={sortBy} onValueChange={(v) => setSortBy(v as PaymentSort)}>
-                            <SelectTrigger className="h-8 w-full min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
+                            <SelectTrigger aria-label={tr('common.sortBy')} className="h-8 w-full min-w-0 flex-1 text-xs sm:w-36 sm:flex-initial">
                                 <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                 <SelectValue />
                             </SelectTrigger>

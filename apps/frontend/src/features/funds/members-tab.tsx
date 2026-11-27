@@ -258,7 +258,7 @@ export function MembersTab({
                         <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
                             <SearchInput value={search} onChange={setSearch} placeholder={tr('funds.searchNameOrUserId')} className="w-full sm:w-56" />
                             <Select value={sortBy} onValueChange={(v) => setSortBy(v as MemberSort)}>
-                                <SelectTrigger className="h-8 w-full text-xs sm:w-40">
+                                <SelectTrigger aria-label={tr('common.sortBy')} className="h-8 w-full text-xs sm:w-40">
                                     <ArrowUpDown className="mr-1 size-3 shrink-0 text-muted-foreground" />
                                     <SelectValue />
                                 </SelectTrigger>

@@ -55,6 +55,7 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                         </div>
                         <div className="w-full min-w-0 sm:w-64">
                             <ChannelSelect
+                                aria-label={tr('funds.pickReportChannel')}
                                 channels={textChannels}
                                 value={topic.reportChannelId}
                                 onChange={(id) => saveChannel.mutate(id)}

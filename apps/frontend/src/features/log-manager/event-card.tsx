@@ -58,6 +58,7 @@ export function EventCard({ event, channels }: { event: LogEventSetting; channel
                 />
             </div>
             <ChannelSelect
+                aria-label={tr('logManager.pickATargetChannel')}
                 channels={channels.filter((ch) => ch.sendable)}
                 disabled={mutation.isPending}
                 value={event.channelId}

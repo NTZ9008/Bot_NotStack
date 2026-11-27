@@ -3086,5 +3086,6 @@
     "common.aiGuideStepEnable": "Turn on the \"Enabled\" switch at the top right so the bot starts replying.",
     "common.aiGuideSaving": "The key and limit need Save; the on/off switch and removing the key apply immediately.",
     "common.aiGuideTip": "The key is encrypted before it is stored; the page only shows its last characters.",
-    "common.rowsPerPage": "Rows per page"
+    "common.rowsPerPage": "Rows per page",
+    "common.sortBy": "Sort by"
 }

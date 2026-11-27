@@ -145,6 +145,7 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                 <CardContent>
                     <Field hint={tr('prBot.pickDontSendTurnOffAlerts')}>
                         <ChannelSelect
+                            aria-label={tr('common.defaultChannel')}
                             channels={channels.filter((channel) => channel.sendable)}
                             value={draft.defaultChannel}
                             onChange={(defaultChannel) => setDraft((d) => ({ ...d, defaultChannel }))}

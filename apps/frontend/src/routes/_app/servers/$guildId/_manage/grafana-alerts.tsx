@@ -264,6 +264,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                         }
                                     />
                                     <ChannelSelect
+                                        aria-label={tr('grafanaAlerts.pickAChannel')}
                                         channels={channels.filter((channel) => channel.sendable)}
                                         value={row.channelId}
                                         onChange={(channelId) => setRows((current) => current.map((item, i) => (i === index ? { ...item, channelId } : item)))}
