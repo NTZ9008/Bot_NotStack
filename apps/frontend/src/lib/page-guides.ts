@@ -69,6 +69,13 @@ export const PAGE_GUIDES = byLang(
                 saving: tr('common.savePanelThenPressPublishToSync'),
                 tip: tr('common.botRoleMustBeAboveManagedRoles'),
             },
+            tickets: {
+                title: tr('common.ticketSystem'),
+                summary: tr('tickets.pageDescription'),
+                steps: [tr('tickets.guideStep1'), tr('tickets.guideStep2'), tr('tickets.guideStep3')],
+                saving: tr('tickets.guideSaving'),
+                tip: tr('tickets.guideTip'),
+            },
             config: {
                 title: tr('common.botSettings'),
                 summary: tr('common.pickTargetChannelsAndTurnOn'),

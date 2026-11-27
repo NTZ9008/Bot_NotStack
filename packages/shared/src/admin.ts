@@ -140,6 +140,9 @@ export const AUDIT_ACTION_LABELS: Record<string, string> = {
     'reaction_roles.item_create': 'เพิ่มยศในแผงรับยศ',
     'reaction_roles.item_update': 'แก้ไขยศในแผงรับยศ',
     'reaction_roles.item_delete': 'ลบยศออกจากแผงรับยศ',
+    'tickets.config_update': 'ตั้งค่าระบบ Ticket',
+    'tickets.panel_publish': 'ส่ง/อัปเดตแผงเปิด Ticket เข้า Discord',
+    'tickets.ticket_close': 'ปิดห้อง Ticket จาก Dashboard',
 };
 
 export const AUDIT_GROUP_LABELS: Record<string, string> = {
@@ -162,6 +165,7 @@ export const AUDIT_GROUP_LABELS: Record<string, string> = {
     uptime: 'ตรวจสอบสถานะเว็บ & API',
     reminder: 'แจ้งเตือนและนัดหมายตามเวลา',
     reaction_roles: 'รับยศด้วยปุ่มกด & เมนูเลือก',
+    tickets: 'ระบบเปิด Ticket แจ้งปัญหา',
 };
 
 export function auditLabel(action: string): string {

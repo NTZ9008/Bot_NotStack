@@ -41,6 +41,11 @@
       "source": "./src/reaction-roles.ts",
       "types": "./dist/reaction-roles.d.ts",
       "default": "./dist/reaction-roles.js"
+    },
+    "./tickets": {
+      "source": "./src/tickets.ts",
+      "types": "./dist/tickets.d.ts",
+      "default": "./dist/tickets.js"
     }
   },
   "files": [

@@ -112,9 +112,9 @@ function createMockResponse() {
     };
 }
 
-test('shared plugin registry exposes all 7 plugins, metadata, and Thai bot disable message', () => {
-    assert.deepEqual([...PLUGIN_IDS], ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders', 'reaction-roles']);
-    assert.equal(PLUGIN_REGISTRY.length, 7);
+test('shared plugin registry exposes all 8 plugins, metadata, and Thai bot disable message', () => {
+    assert.deepEqual([...PLUGIN_IDS], ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders', 'reaction-roles', 'ticket-system']);
+    assert.equal(PLUGIN_REGISTRY.length, 8);
     for (const def of PLUGIN_REGISTRY) {
         assert.equal(isPluginId(def.id), true);
         assert.ok(def.name.length > 0);

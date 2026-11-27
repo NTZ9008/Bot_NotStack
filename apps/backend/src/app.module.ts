@@ -38,6 +38,7 @@ import { RankModule } from './rank/rank.module';
 import { ReactionRolesModule } from './reaction-roles/reaction-roles.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { RoomAccessModule } from './room-access/room-access.module';
+import { TicketsModule } from './tickets/tickets.module';
 import { UptimeModule } from './uptime/uptime.module';
 import { UsersModule } from './users/users.module';
 import { VoiceGuardModule } from './voice-guard/voice-guard.module';
@@ -109,6 +110,7 @@ import { WelcomeModule } from './welcome/welcome.module';
         UptimeModule,
         RemindersModule,
         ReactionRolesModule,
+        TicketsModule,
         ChatModule,
         CommandsModule,
     ],

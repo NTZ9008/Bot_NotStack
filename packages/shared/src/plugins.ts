@@ -4,13 +4,13 @@ import { z } from 'zod';
 // 🧩 PLUGINS — แคตตาล็อกปลั๊กอินเสริมแยกตามเซิร์ฟเวอร์ (Per-Guild)
 // ==========================================
 
-export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders', 'reaction-roles'] as const;
+export const PLUGIN_IDS = ['github-pr', 'grafana-alert', 'jira-card', 'savings-goal', 'uptime-monitor', 'scheduled-reminders', 'reaction-roles', 'ticket-system'] as const;
 export type PluginId = (typeof PLUGIN_IDS)[number];
 
 export const PLUGIN_CATEGORIES = ['devops', 'productivity', 'finance', 'community'] as const;
 export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
 
-export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse' | 'CalendarClock' | 'Sparkles';
+export type PluginIconName = 'GitPullRequest' | 'Activity' | 'Ticket' | 'Coins' | 'HeartPulse' | 'CalendarClock' | 'Sparkles' | 'LifeBuoy';
 
 export const PLUGIN_NOT_INSTALLED_CODE = 'PLUGIN_NOT_INSTALLED' as const;
 export const PLUGIN_BOT_DISABLED_MESSAGE = 'ฟีเจอร์นี้ยังไม่ถูกเปิดใช้งาน กรุณาติดตั้งปลั๊กอินผ่าน Dashboard ก่อน';
@@ -22,7 +22,8 @@ export type PluginRoutePath =
     | '/servers/$guildId/funds'
     | '/servers/$guildId/uptime'
     | '/servers/$guildId/reminders'
-    | '/servers/$guildId/reaction-roles';
+    | '/servers/$guildId/reaction-roles'
+    | '/servers/$guildId/tickets';
 
 export interface PluginDefinition {
     id: PluginId;
@@ -97,6 +98,16 @@ export const PLUGIN_REGISTRY: readonly PluginDefinition[] = [
         category: 'community',
         version: '1.0.0',
         routePath: '/servers/$guildId/reaction-roles',
+    },
+    {
+        id: 'ticket-system',
+        name: 'ระบบเปิด Ticket แจ้งปัญหา',
+        description:
+            'ให้สมาชิกกดปุ่มเปิดห้อง Ticket ส่วนตัวแจ้งปัญหาหรือติดต่อทีมงาน พร้อมระบบกดรับเรื่อง (Claim) และบันทึกประวัติแชทเป็นไฟล์ Transcript อัตโนมัติเมื่อปิดห้อง',
+        icon: 'LifeBuoy',
+        category: 'community',
+        version: '1.0.0',
+        routePath: '/servers/$guildId/tickets',
     },
 ] as const;
 

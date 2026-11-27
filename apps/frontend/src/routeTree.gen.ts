@@ -41,6 +41,7 @@ import { Route as AppServersGuildIdManageReactionRolesRouteImport } from './rout
 import { Route as AppServersGuildIdManageRelationsRouteImport } from './routes/_app/servers/$guildId/_manage/relations'
 import { Route as AppServersGuildIdManageRemindersRouteImport } from './routes/_app/servers/$guildId/_manage/reminders'
 import { Route as AppServersGuildIdManageRoomAccessRouteImport } from './routes/_app/servers/$guildId/_manage/room-access'
+import { Route as AppServersGuildIdManageTicketsRouteImport } from './routes/_app/servers/$guildId/_manage/tickets'
 import { Route as AppServersGuildIdManageUptimeRouteImport } from './routes/_app/servers/$guildId/_manage/uptime'
 import { Route as AppServersGuildIdManageVoiceGuardRouteImport } from './routes/_app/servers/$guildId/_manage/voice-guard'
 import { Route as AppServersGuildIdManageVoiceListenRouteImport } from './routes/_app/servers/$guildId/_manage/voice-listen'
@@ -220,6 +221,12 @@ const AppServersGuildIdManageRoomAccessRoute =
     path: '/room-access',
     getParentRoute: () => AppServersGuildIdManageRoute,
   } as any)
+const AppServersGuildIdManageTicketsRoute =
+  AppServersGuildIdManageTicketsRouteImport.update({
+    id: '/tickets',
+    path: '/tickets',
+    getParentRoute: () => AppServersGuildIdManageRoute,
+  } as any)
 const AppServersGuildIdManageUptimeRoute =
   AppServersGuildIdManageUptimeRouteImport.update({
     id: '/uptime',
@@ -281,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/servers/$guildId/tickets': typeof AppServersGuildIdManageTicketsRoute
   '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
@@ -316,6 +324,7 @@ export interface FileRoutesByTo {
   '/servers/$guildId/relations': typeof AppServersGuildIdManageRelationsRoute
   '/servers/$guildId/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/servers/$guildId/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/servers/$guildId/tickets': typeof AppServersGuildIdManageTicketsRoute
   '/servers/$guildId/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/servers/$guildId/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/servers/$guildId/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
@@ -356,6 +365,7 @@ export interface FileRoutesById {
   '/_app/servers/$guildId/_manage/relations': typeof AppServersGuildIdManageRelationsRoute
   '/_app/servers/$guildId/_manage/reminders': typeof AppServersGuildIdManageRemindersRoute
   '/_app/servers/$guildId/_manage/room-access': typeof AppServersGuildIdManageRoomAccessRoute
+  '/_app/servers/$guildId/_manage/tickets': typeof AppServersGuildIdManageTicketsRoute
   '/_app/servers/$guildId/_manage/uptime': typeof AppServersGuildIdManageUptimeRoute
   '/_app/servers/$guildId/_manage/voice-guard': typeof AppServersGuildIdManageVoiceGuardRoute
   '/_app/servers/$guildId/_manage/voice-listen': typeof AppServersGuildIdManageVoiceListenRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/relations'
     | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
+    | '/servers/$guildId/tickets'
     | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/voice-listen'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/servers/$guildId/relations'
     | '/servers/$guildId/reminders'
     | '/servers/$guildId/room-access'
+    | '/servers/$guildId/tickets'
     | '/servers/$guildId/uptime'
     | '/servers/$guildId/voice-guard'
     | '/servers/$guildId/voice-listen'
@@ -468,6 +480,7 @@ export interface FileRouteTypes {
     | '/_app/servers/$guildId/_manage/relations'
     | '/_app/servers/$guildId/_manage/reminders'
     | '/_app/servers/$guildId/_manage/room-access'
+    | '/_app/servers/$guildId/_manage/tickets'
     | '/_app/servers/$guildId/_manage/uptime'
     | '/_app/servers/$guildId/_manage/voice-guard'
     | '/_app/servers/$guildId/_manage/voice-listen'
@@ -709,6 +722,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppServersGuildIdManageRoomAccessRouteImport
       parentRoute: typeof AppServersGuildIdManageRoute
     }
+    '/_app/servers/$guildId/_manage/tickets': {
+      id: '/_app/servers/$guildId/_manage/tickets'
+      path: '/tickets'
+      fullPath: '/servers/$guildId/tickets'
+      preLoaderRoute: typeof AppServersGuildIdManageTicketsRouteImport
+      parentRoute: typeof AppServersGuildIdManageRoute
+    }
     '/_app/servers/$guildId/_manage/uptime': {
       id: '/_app/servers/$guildId/_manage/uptime'
       path: '/uptime'
@@ -780,6 +800,7 @@ interface AppServersGuildIdManageRouteChildren {
   AppServersGuildIdManageRelationsRoute: typeof AppServersGuildIdManageRelationsRoute
   AppServersGuildIdManageRemindersRoute: typeof AppServersGuildIdManageRemindersRoute
   AppServersGuildIdManageRoomAccessRoute: typeof AppServersGuildIdManageRoomAccessRoute
+  AppServersGuildIdManageTicketsRoute: typeof AppServersGuildIdManageTicketsRoute
   AppServersGuildIdManageUptimeRoute: typeof AppServersGuildIdManageUptimeRoute
   AppServersGuildIdManageVoiceGuardRoute: typeof AppServersGuildIdManageVoiceGuardRoute
   AppServersGuildIdManageVoiceListenRoute: typeof AppServersGuildIdManageVoiceListenRoute
@@ -813,6 +834,7 @@ const AppServersGuildIdManageRouteChildren: AppServersGuildIdManageRouteChildren
       AppServersGuildIdManageRemindersRoute,
     AppServersGuildIdManageRoomAccessRoute:
       AppServersGuildIdManageRoomAccessRoute,
+    AppServersGuildIdManageTicketsRoute: AppServersGuildIdManageTicketsRoute,
     AppServersGuildIdManageUptimeRoute: AppServersGuildIdManageUptimeRoute,
     AppServersGuildIdManageVoiceGuardRoute:
       AppServersGuildIdManageVoiceGuardRoute,

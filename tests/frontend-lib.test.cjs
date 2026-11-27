@@ -56,7 +56,7 @@ const CORE_GUILD_SLUGS = [
     'welcome',
 ];
 
-const PLUGIN_GUILD_SLUGS = ['funds', 'grafana-alerts', 'jira', 'pr-bot', 'reaction-roles', 'reminders', 'uptime'];
+const PLUGIN_GUILD_SLUGS = ['funds', 'grafana-alerts', 'jira', 'pr-bot', 'reaction-roles', 'reminders', 'tickets', 'uptime'];
 
 test('navigation keeps core features always visible and reveals plugin routes only when installed', () => {
     const withoutPlugins = navItems(false, 'manage', []);

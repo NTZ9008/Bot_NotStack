@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import type { PluginCategory, PluginIconName, PluginId } from '@notstack/shared';
-import { Activity, CalendarClock, Coins, GitPullRequest, HeartPulse, Sparkles, Ticket } from '@/components/icons';
+import { Activity, CalendarClock, Coins, GitPullRequest, HeartPulse, LifeBuoy, Sparkles, Ticket } from '@/components/icons';
 import { tr } from '@/lib/i18n';
 
 const ICON_BY_NAME: Record<PluginIconName, LucideIcon> = {
@@ -11,6 +11,7 @@ const ICON_BY_NAME: Record<PluginIconName, LucideIcon> = {
     HeartPulse,
     CalendarClock,
     Sparkles,
+    LifeBuoy,
 };
 
 const ICON_BY_ID: Record<PluginId, LucideIcon> = {
@@ -21,6 +22,7 @@ const ICON_BY_ID: Record<PluginId, LucideIcon> = {
     'uptime-monitor': HeartPulse,
     'scheduled-reminders': CalendarClock,
     'reaction-roles': Sparkles,
+    'ticket-system': LifeBuoy,
 };
 
 export interface PluginAccentStyle {
@@ -65,6 +67,11 @@ const ACCENT_BY_ID: Record<PluginId, PluginAccentStyle> = {
         iconText: 'text-violet-500 dark:text-violet-400',
         borderHover: 'hover:border-violet-500/40',
     },
+    'ticket-system': {
+        badgeBg: 'bg-cyan-500/12 border-cyan-500/25',
+        iconText: 'text-cyan-500 dark:text-cyan-400',
+        borderHover: 'hover:border-cyan-500/40',
+    },
 };
 
 export function pluginIcon(idOrIcon: PluginId | PluginIconName): LucideIcon {
@@ -92,6 +99,8 @@ export function pluginCopy(id: PluginId): { name: string; description: string } 
             return { name: tr('plugins.featureScheduledRemindersName'), description: tr('plugins.featureScheduledRemindersDesc') };
         case 'reaction-roles':
             return { name: tr('plugins.featureReactionRolesName'), description: tr('plugins.featureReactionRolesDesc') };
+        case 'ticket-system':
+            return { name: tr('plugins.featureTicketSystemName'), description: tr('plugins.featureTicketSystemDesc') };
     }
 }
 

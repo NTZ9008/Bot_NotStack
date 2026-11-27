@@ -38,6 +38,7 @@ const GROUP_TONE: Record<string, string> = {
     uptime: 'bg-rose-500/15 text-rose-700 dark:text-rose-300',
     reminder: 'bg-teal-500/15 text-teal-700 dark:text-teal-300',
     reaction_roles: 'bg-violet-500/15 text-violet-700 dark:text-violet-300',
+    tickets: 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-300',
     welcome: 'bg-pink-500/15 text-pink-700 dark:text-pink-300',
     weather: 'bg-orange-500/15 text-orange-700 dark:text-orange-300',
     jira: 'bg-blue-500/15 text-blue-700 dark:text-blue-300',

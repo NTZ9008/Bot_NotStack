@@ -37,6 +37,7 @@ const GUILD_PAGES: Record<string, ComponentType> = {
     uptime: GenericPageSkeleton,
     reminders: GenericPageSkeleton,
     'reaction-roles': GenericPageSkeleton,
+    tickets: JiraPageSkeleton,
 };
 
 const APP_PAGES: Record<string, ComponentType> = {

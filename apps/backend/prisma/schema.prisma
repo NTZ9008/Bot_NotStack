@@ -744,3 +744,44 @@ model ReactionRoleItem {
   @@index([panelId, sortOrder])
   @@map("reaction_role_items")
 }
+
+// ==========================================
+// 🎟️ TICKET SYSTEM — ระบบเปิดห้อง Ticket แจ้งปัญหาและบันทึก Transcript แยกตามเซิร์ฟเวอร์
+// ==========================================
+model TicketConfig {
+  guildId          String   @id @map("guild_id")
+  categoryId       String   @default("") @map("category_id")
+  logChannelId     String?  @map("log_channel_id")
+  panelChannelId   String?  @map("panel_channel_id")
+  panelMessageId   String?  @map("panel_message_id")
+  staffRoleIds     Json     @default("[]") @map("staff_role_ids")
+  panelTitle       String   @default("🎫 ติดต่อทีมงาน / แจ้งปัญหา") @map("panel_title")
+  panelDescription String   @default("กดปุ่มด้านล่างเพื่อเปิดห้อง Ticket ส่วนตัว ทีมงานจะเข้ามาดูแลโดยเร็วที่สุด") @map("panel_description")
+  panelColor       String   @default("#5865F2") @map("panel_color")
+  dmTranscript     Boolean  @default(true) @map("dm_transcript")
+  maxOpenPerUser   Int      @default(1) @map("max_open_per_user")
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  @@map("ticket_configs")
+}
+
+model Ticket {
+  id                 Int       @id @default(autoincrement())
+  guildId            String    @map("guild_id")
+  ticketNumber       Int       @map("ticket_number")
+  channelId          String?   @map("channel_id")
+  openerId           String    @map("opener_id")
+  claimedById        String?   @map("claimed_by_id")
+  status             String    @default("OPEN")
+  subject            String?
+  transcriptMarkdown String?   @map("transcript_markdown") @db.Text
+  closedById         String?   @map("closed_by_id")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  closedAt           DateTime? @map("closed_at") @db.Timestamptz(3)
+
+  @@unique([guildId, ticketNumber])
+  @@index([guildId, status, createdAt])
+  @@index([guildId, openerId, status])
+  @@index([channelId])
+  @@map("tickets")
+}
