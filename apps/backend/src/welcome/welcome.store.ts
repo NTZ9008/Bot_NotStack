@@ -1,6 +1,6 @@
 import { badRequest } from '../common/exceptions/api.exception';
 import { Injectable } from '@nestjs/common';
-import { normalizeDesign, type WelcomeAsset, type WelcomeCard, type WelcomeDesign } from '@notstack/shared';
+import { normalizeDesign, type WelcomeAsset, type WelcomeCard, type WelcomeDesign, type WelcomeEvent } from '@notstack/shared';
 import type { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { toJsonValue } from '../prisma/json.util';
@@ -9,6 +9,7 @@ const CARD_FIELDS = {
     id: true,
     name: true,
     enabled: true,
+    event: true,
     channelId: true,
     content: true,
     design: true,
@@ -34,6 +35,7 @@ type AssetRow = Prisma.WelcomeAssetGetPayload<{ select: typeof ASSET_FIELDS }>;
 export interface CardData {
     name: string;
     enabled: boolean;
+    event: WelcomeEvent;
     channelId: string;
     content: string;
     design: WelcomeDesign;
@@ -43,6 +45,7 @@ export interface CardData {
 // design ในฐานข้อมูลอาจมาจากโค้ดเวอร์ชันเก่า — ผ่าน normalize ทุกครั้งที่อ่าน จะได้มีฟิลด์ครบเสมอ
 const toCard = (row: CardRow): WelcomeCard => ({
     ...row,
+    event: row.event === 'leave' ? 'leave' : 'join',
     design: normalizeDesign(row.design),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -64,9 +67,9 @@ export class WelcomeStore {
         return rows.map(toCard);
     }
 
-    async listEnabledCards(guildId: string): Promise<WelcomeCard[]> {
+    async listEnabledCards(guildId: string, event: WelcomeEvent): Promise<WelcomeCard[]> {
         const rows = await this.prisma.welcomeCard.findMany({
-            where: { guildId, enabled: true, channelId: { not: '' } },
+            where: { guildId, event, enabled: true, channelId: { not: '' } },
             select: CARD_FIELDS,
             orderBy: { id: 'asc' },
         });
@@ -83,7 +86,7 @@ export class WelcomeStore {
     }
 
     // คืน null ถ้าไม่มีการ์ดนี้ (ถูกลบไปแล้วจากอีกแท็บ)
-    async updateCard(guildId: string, id: number, data: Partial<CardData>): Promise<WelcomeCard | null> {
+    async updateCard(guildId: string, id: number, data: Partial<Omit<CardData, 'event'>>): Promise<WelcomeCard | null> {
         const { design, ...rest } = data;
         const { count } = await this.prisma.welcomeCard.updateMany({
             where: { id, guildId },

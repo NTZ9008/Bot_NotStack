@@ -94,7 +94,7 @@ export function WelcomePreview({
         retry: false,
     });
     const imageUrl = useObjectUrl(preview.data?.image);
-    const vars = preview.data?.vars ?? FALLBACK_VARS();
+    const vars = preview.data?.vars ?? { ...FALLBACK_VARS(), user: draft.event === 'leave' ? tr('welcome.formerMember') : tr('welcome.newMember') };
     useEffect(() => {
         if (preview.data?.vars) onVars(preview.data.vars);
     }, [preview.data?.vars, onVars]);

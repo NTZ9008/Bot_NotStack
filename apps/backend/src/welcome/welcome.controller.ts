@@ -7,6 +7,7 @@ import { Body, Controller, Get, HttpCode, HttpException, HttpStatus, Logger, Par
 import {
     ALIGNS,
     defaultDesign,
+    defaultLeaveDesign,
     defaultText,
     FITS,
     PLACEHOLDERS,
@@ -46,6 +47,8 @@ import { WelcomeStore } from './welcome.store';
 
 const DEFAULT_CARD_NAME = 'การ์ดต้อนรับใหม่';
 const DEFAULT_CONTENT = 'ยินดีต้อนรับ {mention} เข้าสู่ **{server}** 🎉';
+const DEFAULT_LEAVE_CARD_NAME = 'การ์ดอำลาใหม่';
+const DEFAULT_LEAVE_CONTENT = '👋 **{user}** ออกจาก **{server}** แล้ว';
 
 // ==========================================
 // 🌐 WELCOME API — /api/guilds/:guildId/welcome/* (ผู้ที่จัดการเซิร์ฟเวอร์นั้นได้)
@@ -126,16 +129,22 @@ export class WelcomeController {
             if (sourceId && !source) throw notFound('ไม่พบการ์ดที่ต้องการคัดลอก');
             await this.validateBackground(guildId, body);
 
+            const event = source?.event ?? body.event ?? 'join';
+            const leave = event === 'leave';
             const card = await this.store.createCard(guildId, {
-                name: body.name || (source ? `${source.name} (สำเนา)`.slice(0, WELCOME_LIMITS.maxNameLength) : DEFAULT_CARD_NAME),
+                name:
+                    body.name ||
+                    (source ? `${source.name} (สำเนา)`.slice(0, WELCOME_LIMITS.maxNameLength) : leave ? DEFAULT_LEAVE_CARD_NAME : DEFAULT_CARD_NAME),
                 enabled: false,
+                event,
                 channelId: body.channelId ?? source?.channelId ?? '',
-                content: body.content ?? source?.content ?? DEFAULT_CONTENT,
-                design: body.design ?? source?.design ?? defaultDesign(),
+                content: body.content ?? source?.content ?? (leave ? DEFAULT_LEAVE_CONTENT : DEFAULT_CONTENT),
+                design: body.design ?? source?.design ?? (leave ? defaultLeaveDesign() : defaultDesign()),
                 backgroundId: body.backgroundId !== undefined ? body.backgroundId : (source?.backgroundId ?? null),
             });
             this.previews.clear();
             audit.targetId = card.id;
+            audit.extra = { event };
             return { success: true, card };
         } catch (err) {
             this.fail(err, 'สร้างการ์ดไม่สำเร็จ');

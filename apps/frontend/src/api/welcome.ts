@@ -6,6 +6,7 @@ import type {
     WelcomeCardInput,
     WelcomeCardResponse,
     WelcomeDesign,
+    WelcomeEvent,
     WelcomeMeta,
     WelcomeVars,
 } from '@notstack/shared';
@@ -31,7 +32,8 @@ export interface PreviewInput {
 }
 
 export const welcomeApi = {
-    createCard: (guildId: string, input: WelcomeCardInput & { duplicateOf?: number }) => api<WelcomeCardResponse>(w(guildId, '/cards'), { body: input }),
+    createCard: (guildId: string, input: WelcomeCardInput & { duplicateOf?: number; event?: WelcomeEvent }) =>
+        api<WelcomeCardResponse>(w(guildId, '/cards'), { body: input }),
     updateCard: (guildId: string, id: number, input: WelcomeCardInput) => api<WelcomeCardResponse>(w(guildId, `/cards/${id}/update`), { body: input }),
     deleteCard: (guildId: string, id: number) => api<SuccessResponse>(w(guildId, `/cards/${id}/delete`), { method: 'POST' }),
     preview: (guildId: string, input: PreviewInput, signal?: AbortSignal) =>

@@ -100,7 +100,7 @@ const GUILD_GROUPS = byLang((): NavGroup[] => [
                 guide: 'welcome',
                 icon: UserPlus,
                 guild: 'manage',
-                keywords: 'welcome ต้อนรับ สมาชิกใหม่ การ์ด รูปภาพ announcement ยินดีต้อนรับ card',
+                keywords: 'welcome ต้อนรับ สมาชิกใหม่ การ์ด รูปภาพ announcement ยินดีต้อนรับ card goodbye leave อำลา ออก',
             },
             {
                 to: '/servers/$guildId/weather',
