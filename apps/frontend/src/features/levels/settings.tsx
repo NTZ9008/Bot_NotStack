@@ -168,7 +168,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                     <ChevronDown className="size-4 shrink-0 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
                                 </CollapsibleTrigger>
                                 <Switch
-                                    aria-label={tr('levels.enableThisRule')}
+                                    aria-label={`${tr('levels.enableThisRule')}: ${rule.name}`}
                                     checked={rule.enabled}
                                     onCheckedChange={(enabled) => patchRule(rule.id, { enabled })}
                                 />
