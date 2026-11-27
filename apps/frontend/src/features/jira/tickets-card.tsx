@@ -4,7 +4,7 @@ import { Spinner } from '@/components/ui/spinner';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Lock } from '@/components/icons';
-import { Pagination } from '@/components/pagination';
+import { PAGE_SIZE, Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { jiraApi, jiraTicketsQuery } from '@/api/jira';
@@ -18,8 +18,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime, formatNumber } from '@/lib/format';
-
-const PAGE_SIZE = 20;
 
 const FILTERS = byLang((): { value: 'all' | JiraTicketStatus; label: string }[] => [
     { value: 'all', label: tr('common.total') },
@@ -40,9 +38,10 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
     const confirm = useConfirm();
     const [status, setStatus] = useState<'all' | JiraTicketStatus>('all');
     const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZE);
     const [closing, setClosing] = useState<number | null>(null);
-    const { data, isLoading, error } = useQuery(jiraTicketsQuery(guildId, page, status));
-    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / PAGE_SIZE));
+    const { data, isLoading, error } = useQuery(jiraTicketsQuery(guildId, page, status, pageSize));
+    const pages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize));
 
     const close = async (ticket: JiraTicket) => {
         const ok = await confirm({
@@ -163,7 +162,17 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                     </div>
                 )}
 
-                <Pagination page={page} pageCount={pages} total={data?.total} pageSize={PAGE_SIZE} onPageChange={setPage} />
+                <Pagination
+                    page={page}
+                    pageCount={pages}
+                    total={data?.total}
+                    pageSize={pageSize}
+                    onPageChange={setPage}
+                    onPageSizeChange={(size) => {
+                        setPageSize(size);
+                        setPage(1);
+                    }}
+                />
             </CardContent>
         </Card>
     );

@@ -21,10 +21,10 @@ const g = (guildId: string, path: string) => `/guilds/${guildId}/jira${path}`;
 export const jiraSettingsQuery = (guildId: string) =>
     queryOptions({ queryKey: [...guildKey(guildId), 'jira', 'settings'], queryFn: () => api<JiraSettings>(g(guildId, '/settings')) });
 
-export const jiraTicketsQuery = (guildId: string, page: number, status: 'all' | JiraTicketStatus) =>
+export const jiraTicketsQuery = (guildId: string, page: number, status: 'all' | JiraTicketStatus, pageSize = 20) =>
     queryOptions({
-        queryKey: [...guildKey(guildId), 'jira', 'tickets', status, page],
-        queryFn: ({ signal }) => api<JiraTicketPage>(g(guildId, '/tickets'), { query: { page, status }, signal }),
+        queryKey: [...guildKey(guildId), 'jira', 'tickets', status, page, pageSize],
+        queryFn: ({ signal }) => api<JiraTicketPage>(g(guildId, '/tickets'), { query: { page, pageSize, status }, signal }),
         placeholderData: keepPreviousData,
         // สมาชิกเปิดห้องใหม่จาก Discord ได้ตลอด
         refetchInterval: 30_000,

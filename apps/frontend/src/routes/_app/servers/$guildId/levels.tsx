@@ -9,7 +9,7 @@ import { xpHistoryQuery, xpSettingsQuery } from '@/api/levels';
 import { levelUpQuery, myRankCardQuery, rankMetaQuery, rankThemeQuery } from '@/api/rank-card';
 import { welcomeAssetsQuery, welcomeCardsQuery, welcomeMetaQuery } from '@/api/welcome';
 import { PageHeader } from '@/components/page-header';
-import { Pagination } from '@/components/pagination';
+import { PAGE_SIZE, Pagination } from '@/components/pagination';
 import { RankBadge } from '@/components/rank-badge';
 import { LeaderboardTableSkeleton } from '@/components/skeleton/levels';
 import { ErrorState } from '@/components/states';
@@ -33,15 +33,16 @@ export const Route = createFileRoute('/_app/servers/$guildId/levels')({
         (typeof search.q === 'string' || typeof search.q === 'number') && String(search.q).trim() ? { q: String(search.q).trim().slice(0, 100) } : {},
     loaderDeps: ({ search }) => ({ q: search.q }),
     loader: ({ context, params, deps }) =>
-        context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: 25, ...(deps.q ? { q: deps.q } : {}) })),
+        context.queryClient.ensureQueryData(levelsQuery(params.guildId, { page: 1, pageSize: PAGE_SIZE, ...(deps.q ? { q: deps.q } : {}) })),
     component: LevelsPage,
 });
 function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQuery?: string }) {
     const { user } = useAuth();
     const [page, setPage] = useState(1),
+        [pageSize, setPageSize] = useState(PAGE_SIZE),
         [search, setSearch] = useState(initialQuery),
         [userId, setUserId] = useState(initialQuery);
-    const query = useQuery(levelsQuery(guildId, { page, pageSize: 25, ...(userId ? { q: userId } : {}) }));
+    const query = useQuery(levelsQuery(guildId, { page, pageSize, ...(userId ? { q: userId } : {}) }));
     return (
         <Card>
             <CardContent className="space-y-4">
@@ -146,9 +147,13 @@ function Leaderboard({ guildId, initialQuery = '' }: { guildId: string; initialQ
                         </div>
                         <Pagination
                             page={page}
-                            pageCount={Math.max(1, Math.ceil((query.data?.total ?? 0) / 25))}
+                            pageCount={Math.max(1, Math.ceil((query.data?.total ?? 0) / pageSize))}
                             total={query.data?.total}
-                            pageSize={25}
+                            pageSize={pageSize}
+                            onPageSizeChange={(size) => {
+                                setPageSize(size);
+                                setPage(1);
+                            }}
                             busy={query.isFetching}
                             onPageChange={setPage}
                         />

@@ -3,6 +3,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { tr } from '@/lib/i18n';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select';
 import { cn } from '@/lib/utils';
 
 // แถบเปลี่ยนหน้ามาตรฐานของทุกรายการ — อยู่ใต้รายการเสมอ: ซ้าย "แสดง x–y จาก N" · ขวา [« ‹ หน้า p / P › »]
@@ -15,6 +16,8 @@ export function Pagination({
     total,
     pageSize,
     busy = false,
+    onPageSizeChange,
+    pageSizeOptions = PAGE_SIZE_OPTIONS,
     className,
 }: {
     page: number;
@@ -24,9 +27,13 @@ export function Pagination({
     total?: number;
     pageSize?: number;
     busy?: boolean;
+    onPageSizeChange?: (pageSize: number) => void;
+    pageSizeOptions?: readonly number[];
     className?: string;
 }) {
-    if (pageCount <= 1 && !hasMore) return null;
+    // ยังโชว์ตัวเลือกจำนวนแถวไว้ถ้ารายการยาวกว่าตัวเลือกเล็กสุด (ไม่งั้นเลือก 50 แล้วจะกลับมาเลือกใหม่ไม่ได้)
+    const canResize = Boolean(onPageSizeChange && pageSize && (hasMore || (total ?? 0) > pageSizeOptions[0]!));
+    if (pageCount <= 1 && !hasMore && !canResize) return null;
     const canPrev = page > 1 && !busy;
     const canNext = (page < pageCount || hasMore) && !busy;
     const range =
@@ -39,7 +46,21 @@ export function Pagination({
             : null;
     return (
         <nav aria-label={tr('common.pagination')} className={cn('flex flex-wrap items-center justify-between gap-2 text-sm', className)}>
-            <p className="text-muted-foreground">{range}</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+                {range && <p>{range}</p>}
+                {canResize && (
+                    <label className="flex items-center gap-2">
+                        {tr('common.rowsPerPage')}
+                        <NativeSelect size="sm" value={pageSize} onChange={(e) => onPageSizeChange?.(Number(e.target.value))}>
+                            {pageSizeOptions.map((size) => (
+                                <NativeSelectOption key={size} value={size}>
+                                    {size}
+                                </NativeSelectOption>
+                            ))}
+                        </NativeSelect>
+                    </label>
+                )}
+            </div>
             <div className="ms-auto flex items-center gap-1">
                 <Button variant="outline" size="icon-sm" aria-label={tr('common.firstPage')} disabled={!canPrev} onClick={() => onPageChange(1)}>
                     <ChevronsLeft />
@@ -68,6 +89,7 @@ export function Pagination({
 }
 
 export const PAGE_SIZE = 20;
+export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 export interface MorePages {
     hasNextPage: boolean;
@@ -79,12 +101,13 @@ export interface MorePages {
 // เปลี่ยน resetKey (เช่นคำค้น/ตัวกรอง) → กลับไปหน้า 1
 export function usePagedItems<T>(items: T[], { pageSize = PAGE_SIZE, more, resetKey }: { pageSize?: number; more?: MorePages; resetKey?: unknown } = {}) {
     const [state, setState] = useState({ page: 1, resetKey });
+    const [size, setSize] = useState(pageSize);
     let page = state.page;
     if (!Object.is(state.resetKey, resetKey)) {
         page = 1;
         setState({ page, resetKey });
     }
-    const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+    const pageCount = Math.max(1, Math.ceil(items.length / size));
     page = Math.min(page, pageCount);
     const hasMore = Boolean(more?.hasNextPage);
     // อยู่หน้าสุดท้ายที่โหลดไว้ → โหลดหน้าถัดไปล่วงหน้า ให้หน้านี้เต็มก่อนกด "ถัดไป" (ไม่ข้ามแถวที่ยังไม่เห็น)
@@ -101,14 +124,19 @@ export function usePagedItems<T>(items: T[], { pageSize = PAGE_SIZE, more, reset
         setState((s) => ({ ...s, page: next }));
     };
     return {
-        pageItems: items.slice((page - 1) * pageSize, page * pageSize),
+        pageItems: items.slice((page - 1) * size, page * size),
         pagination: {
             page,
             pageCount,
             hasMore,
             onPageChange: setPage,
             busy: Boolean(more?.isFetchingNextPage),
-            ...(hasMore ? {} : { total: items.length, pageSize }),
+            pageSize: size,
+            onPageSizeChange: (next: number) => {
+                setSize(next);
+                setState((s) => ({ ...s, page: 1 }));
+            },
+            ...(hasMore ? {} : { total: items.length }),
         },
     };
 }

@@ -58,7 +58,7 @@ export class JiraController {
 
     @Get('tickets')
     tickets(@GuildId() guildId: string, @Query() query: JiraTicketQueryDto): Promise<JiraTicketPage> {
-        return this.jira.listTickets(guildId, query.page, query.status);
+        return this.jira.listTickets(guildId, query.page, query.status, query.pageSize);
     }
 
     @Audit('jira.ticket_close')

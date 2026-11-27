@@ -228,6 +228,7 @@ export interface JiraTicketPage {
 
 export const jiraTicketQuerySchema = z.object({
     page: z.coerce.number().int().min(1).max(10_000).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
     status: z.enum(['all', 'open', 'created', 'closed']).default('all'),
 });
 export type JiraTicketQuery = z.input<typeof jiraTicketQuerySchema>;

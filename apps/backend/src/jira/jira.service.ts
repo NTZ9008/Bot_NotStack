@@ -264,13 +264,13 @@ export class JiraService implements OnApplicationShutdown {
 
     // ---------- ห้อง / card ----------
 
-    async listTickets(guildId: string, page: number, status: 'all' | JiraTicketStatus): Promise<JiraTicketPage> {
+    async listTickets(guildId: string, page: number, status: 'all' | JiraTicketStatus, pageSize = PAGE_SIZE): Promise<JiraTicketPage> {
         const where: Prisma.JiraTicketWhereInput = { guildId };
         if (status === 'closed') where.closedAt = { not: null };
         if (status === 'open') Object.assign(where, { closedAt: null, issueKey: null });
         if (status === 'created') Object.assign(where, { closedAt: null, issueKey: { not: null } });
         const [items, total, openCount, createdCount] = await Promise.all([
-            this.prisma.jiraTicket.findMany({ where, orderBy: { id: 'desc' }, skip: (page - 1) * PAGE_SIZE, take: PAGE_SIZE }),
+            this.prisma.jiraTicket.findMany({ where, orderBy: { id: 'desc' }, skip: (page - 1) * pageSize, take: pageSize }),
             this.prisma.jiraTicket.count({ where }),
             this.prisma.jiraTicket.count({ where: { guildId, closedAt: null } }),
             this.prisma.jiraTicket.count({ where: { guildId, issueKey: { not: null } } }),
