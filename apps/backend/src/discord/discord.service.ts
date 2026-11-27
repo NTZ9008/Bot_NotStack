@@ -57,7 +57,7 @@ export class DiscordService implements OnApplicationBootstrap, OnApplicationShut
         this.client = new Client({
             // Privileged intent: ต้องเปิดใน Developer Portal ก่อน ไม่อย่างนั้น Discord จะปฏิเสธการ login ทั้งบอท
             intents: this.presenceEnabled ? [...BASE_INTENTS, GatewayIntentBits.GuildPresences] : BASE_INTENTS,
-            partials: [Partials.Message, Partials.Channel, Partials.Reaction],
+            partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember],
             // ค่าเริ่มต้นของทุกข้อความ: แท็กได้เฉพาะผู้ใช้ — ข้อความที่มีส่วนที่ผู้ใช้/AI พิมพ์มา (เช่น /random, AI Chat) จะแท็ก @everyone / ยศไม่ได้
             // ข้อความที่แอดมินตั้งใจแท็กยศ (การ์ดต้อนรับ / รายงานอากาศ / PR Bot) ระบุ allowedMentions เองทุกครั้ง
             allowedMentions: { parse: ['users'], repliedUser: true },

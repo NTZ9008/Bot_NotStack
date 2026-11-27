@@ -4,7 +4,7 @@ import type { WelcomeCard } from '@notstack/shared';
 // ฟิลด์ที่ต้องกดบันทึก (enabled แยกไปบันทึกทันทีจากสวิตช์)
 export const DRAFT_FIELDS = ['name', 'channelId', 'content', 'design', 'backgroundId'] as const;
 
-export type CardDraft = Pick<WelcomeCard, (typeof DRAFT_FIELDS)[number] | 'enabled' | 'id'>;
+export type CardDraft = Pick<WelcomeCard, (typeof DRAFT_FIELDS)[number] | 'enabled' | 'id' | 'event'>;
 
 export type Section = 'general' | 'background' | 'avatar' | 'texts';
 

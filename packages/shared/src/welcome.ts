@@ -30,6 +30,9 @@ export type BackgroundFit = (typeof FITS)[number];
 export type AvatarShape = (typeof SHAPES)[number];
 export type TextAlign = (typeof ALIGNS)[number];
 
+export const WELCOME_EVENTS = ['join', 'leave'] as const;
+export type WelcomeEvent = (typeof WELCOME_EVENTS)[number]; // การ์ดส่งตอนไหน — เปลี่ยนไม่ได้หลังสร้าง
+
 // ฟอนต์ที่มีไฟล์มากับแพ็กเกจ @expo-google-fonts/* (ทุกฟอนต์มีครบทั้ง 4 น้ำหนัก)
 export const WELCOME_FONTS = [
     { id: 'kanit', label: 'Kanit' },
@@ -54,9 +57,9 @@ const WEIGHT_VALUES = new Set<number>(WELCOME_WEIGHTS.map((weight) => weight.val
 export const PLACEHOLDERS = [
     { key: 'user', label: 'ชื่อที่แสดงของสมาชิก (ชื่อเล่นในเซิร์ฟเวอร์ ถ้ามี)' },
     { key: 'username', label: 'username ของสมาชิก' },
-    { key: 'mention', label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ' },
+    { key: 'mention', label: 'แท็กสมาชิก — ในข้อความจะแท็กจริง ส่วนบนรูปจะเป็น @ชื่อ (การ์ดออก แนะนำ {user})' },
     { key: 'server', label: 'ชื่อเซิร์ฟเวอร์' },
-    { key: 'memberCount', label: 'จำนวนสมาชิกทั้งหมด (= สมาชิกคนที่เท่าไร)' },
+    { key: 'memberCount', label: 'จำนวนสมาชิกตอนนี้ (การ์ดเข้า = คนที่เท่าไร, การ์ดออก = เหลือกี่คน)' },
     { key: 'id', label: 'User ID ของสมาชิก' },
 ] as const;
 
@@ -148,6 +151,18 @@ export function defaultDesign(): WelcomeDesign {
     };
 }
 
+// ดีไซน์เริ่มต้นของการ์ดอำลา (โครงเดียวกับ defaultDesign ต่างแค่สีและข้อความ)
+export function defaultLeaveDesign(): WelcomeDesign {
+    const design = defaultDesign();
+    design.background.color = '#374151';
+    design.texts = [
+        defaultText({ text: 'GOODBYE', y: 297, weight: 900, size: 60, letterSpacing: 6 }),
+        defaultText({ text: '{user}', y: 355, size: 42, color: '#cbd5e1' }),
+        defaultText({ text: 'ตอนนี้ {server} เหลือสมาชิก {memberCount} คน', y: 407, font: 'noto-sans-thai', weight: 400, size: 24, color: '#e2e8f0' }),
+    ];
+    return design;
+}
+
 // ==========================================
 // ตัวช่วยตรวจค่า — ค่าที่ใช้ไม่ได้จะถอยกลับไปใช้ค่า default แทนการโยน error
 // (หน้าเว็บส่งทั้งก้อนมาทุกครั้ง ถ้าฟิลด์เดียวพังไม่ควรทำให้บันทึกทั้งการ์ดไม่ได้)
@@ -216,9 +231,7 @@ export function normalizeDesign(input: unknown): WelcomeDesign {
             borderWidth: int(av.borderWidth, 0, 40, def.avatar.borderWidth),
             borderColor: color(av.borderColor, def.avatar.borderColor),
         },
-        texts: (Array.isArray(src.texts) ? src.texts : def.texts)
-            .slice(0, WELCOME_LIMITS.maxTexts)
-            .map((text) => normalizeText(text, width, height)),
+        texts: (Array.isArray(src.texts) ? src.texts : def.texts).slice(0, WELCOME_LIMITS.maxTexts).map((text) => normalizeText(text, width, height)),
     };
 }
 
@@ -237,12 +250,7 @@ export interface WelcomeVars {
  * @param target ข้อความบนรูปแท็กคนไม่ได้ → {mention} กลายเป็น @ชื่อ
  * @param mentionId User ID ที่จะแท็กจริงในข้อความ (เฉพาะ target = 'message')
  */
-export function fillPlaceholders(
-    template: string,
-    vars: WelcomeVars,
-    target: 'image' | 'message' = 'image',
-    mentionId: string | null = null,
-): string {
+export function fillPlaceholders(template: string, vars: WelcomeVars, target: 'image' | 'message' = 'image', mentionId: string | null = null): string {
     return String(template || '').replace(/\{(\w+)\}/g, (match, key: string) => {
         if (key === 'mention') return target === 'message' && mentionId ? `<@${mentionId}>` : `@${vars.user}`;
         return Object.prototype.hasOwnProperty.call(vars, key) ? vars[key as keyof WelcomeVars] : match;
@@ -256,6 +264,7 @@ export interface WelcomeCard {
     id: number;
     name: string;
     enabled: boolean;
+    event: WelcomeEvent;
     channelId: string;
     // ข้อความธรรมดาที่ส่งคู่กับรูป — ว่าง = ส่งแค่รูป
     content: string;
@@ -358,6 +367,8 @@ export type WelcomeCardData = z.output<typeof welcomeCardInputSchema>;
 export const welcomeCreateSchema = welcomeCardInputSchema.extend({
     // สร้างโดยคัดลอกจากการ์ดเดิม
     duplicateOf: z.unknown().optional(),
+    // ไม่ส่ง = 'join' (หรือชนิดเดียวกับการ์ดที่คัดลอก)
+    event: z.enum(WELCOME_EVENTS, { error: 'event ต้องเป็น join หรือ leave' }).optional(),
 });
 
 export const welcomePreviewSchema = z.object({
@@ -383,7 +394,9 @@ export const welcomeRenameAssetSchema = z.object({
         .unknown()
         .optional()
         .transform((value, ctx) => {
-            const name = String(value ?? '').trim().slice(0, WELCOME_LIMITS.maxNameLength);
+            const name = String(value ?? '')
+                .trim()
+                .slice(0, WELCOME_LIMITS.maxNameLength);
             if (!name) {
                 ctx.addIssue({ code: 'custom', message: 'กรุณาตั้งชื่อรูป' });
                 return z.NEVER;
