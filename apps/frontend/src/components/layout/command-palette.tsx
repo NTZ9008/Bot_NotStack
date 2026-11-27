@@ -1,4 +1,6 @@
 import type { GuildSummary, MemberSearchResult } from '@notstack/shared';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Spinner } from '@/components/ui/spinner';
 import { useT, tr, byLang, trText } from '@/lib/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from '@tanstack/react-router';
@@ -13,7 +15,6 @@ import {
     Globe,
     History,
     Lightbulb,
-    Loader2,
     LogOut,
     Minus,
     Plus,
@@ -399,7 +400,7 @@ export function CommandPalette() {
                 ))
             ) : membersLoading ? (
                 <CommandItem disabled value="xp-loading">
-                    <Row media={<Loader2 className="animate-spin" />} title={tr('layout.searching', { 0: xpCommand.target })} />
+                    <Row media={<Spinner />} title={tr('layout.searching', { 0: xpCommand.target })} />
                 </CommandItem>
             ) : (
                 <CommandItem disabled value="xp-none">
@@ -449,7 +450,7 @@ export function CommandPalette() {
                     ))}
                     {membersLoading && memberResults.length === 0 && (
                         <CommandItem disabled value="member-loading">
-                            <Row media={<Loader2 className="animate-spin" />} title={tr('layout.searchingMembers')} />
+                            <Row media={<Spinner />} title={tr('layout.searchingMembers')} />
                         </CommandItem>
                     )}
                 </CommandGroup>
@@ -542,9 +543,10 @@ export function CommandPalette() {
             >
                 <Search className="size-4" />
                 <span className="sr-only min-w-0 flex-1 truncate text-left md:not-sr-only md:whitespace-nowrap">{t('layout.searchOrTypeACommand')}</span>
-                <kbd className="pointer-events-none ml-auto hidden rounded-md border border-border bg-card px-1.5 font-mono text-[10px] md:inline">
-                    {isMac ? '⌘ K' : 'Ctrl K'}
-                </kbd>
+                <KbdGroup className="pointer-events-none ml-auto hidden md:inline-flex">
+                    <Kbd>{isMac ? '⌘' : 'Ctrl'}</Kbd>
+                    <Kbd>K</Kbd>
+                </KbdGroup>
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent
@@ -596,18 +598,18 @@ export function CommandPalette() {
                         </CommandList>
                         <div className="flex items-center gap-3 border-t px-3 py-2 text-[11px] text-muted-foreground">
                             <span>
-                                <kbd className="font-mono">↑↓</kbd> {tr('common.select2')}
+                                <Kbd>↑↓</Kbd> {tr('common.select2')}
                             </span>
                             <span>
-                                <kbd className="font-mono">↵</kbd> {tr('layout.run')}
+                                <Kbd>↵</Kbd> {tr('layout.run')}
                             </span>
                             {member && (
                                 <span>
-                                    <kbd className="font-mono">⌫</kbd> {tr('layout.back')}
+                                    <Kbd>⌫</Kbd> {tr('layout.back')}
                                 </span>
                             )}
                             <span className="ml-auto">
-                                <kbd className="font-mono">Esc</kbd> {tr('common.close')}
+                                <Kbd>Esc</Kbd> {tr('common.close')}
                             </span>
                         </div>
                     </Command>

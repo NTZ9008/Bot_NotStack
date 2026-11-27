@@ -1,8 +1,9 @@
 import { tr, byLang } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { WelcomeCard, WelcomeEvent, WelcomeVars } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Loader2, Plus, Send, Trash2 } from '@/components/icons';
+import { Copy, Plus, Send, Trash2 } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -19,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EditorForm, type PatchDraft } from '@/features/welcome/editor-form';
 import { WelcomePreview, type Handle } from '@/features/welcome/preview';
 import { isDirty, pickDraft, type CardDraft, type Section } from '@/features/welcome/types';
@@ -331,7 +332,7 @@ function WelcomePage() {
                     </CardHeader>
                     <CardContent className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
                         <div className="space-y-4">
-                            <Tabs value={section} onValueChange={(value) => setSection(value as Section)}>
+                            <Tabs value={section} onValueChange={(value) => setSection(value as Section)} className="gap-4">
                                 <TabsList className="w-full">
                                     {SECTIONS().map((s) => (
                                         <TabsTrigger key={s.value} value={s.value} className="flex-1">
@@ -339,19 +340,21 @@ function WelcomePage() {
                                         </TabsTrigger>
                                     ))}
                                 </TabsList>
+                                <TabsContent value={section}>
+                                    <EditorForm
+                                        section={section}
+                                        meta={meta.data}
+                                        draft={draft}
+                                        patch={patch}
+                                        channels={channels}
+                                        assets={assets.data ?? []}
+                                        cards={cardList}
+                                        openText={openText}
+                                        setOpenText={setOpenText}
+                                        onAssetDeleted={onAssetDeleted}
+                                    />
+                                </TabsContent>
                             </Tabs>
-                            <EditorForm
-                                section={section}
-                                meta={meta.data}
-                                draft={draft}
-                                patch={patch}
-                                channels={channels}
-                                assets={assets.data ?? []}
-                                cards={cardList}
-                                openText={openText}
-                                setOpenText={setOpenText}
-                                onAssetDeleted={onAssetDeleted}
-                            />
                         </div>
 
                         <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
@@ -382,7 +385,7 @@ function WelcomePage() {
             {draft && meta.data && current && (
                 <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
                     <Button variant="secondary" onClick={() => void testSend()} disabled={busy === 'test'}>
-                        {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
+                        {busy === 'test' ? <Spinner /> : <Send />} {tr('common.sendTest')}
                     </Button>
                 </SaveBar>
             )}

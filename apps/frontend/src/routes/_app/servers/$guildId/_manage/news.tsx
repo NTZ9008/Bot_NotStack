@@ -1,8 +1,10 @@
 import { HEX_COLOR_RE, isHttpUrl, NEWS_DEFAULT_FOOTER, NEWS_LIMITS, NEWS_PRESETS, type NewsType } from '@notstack/shared';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Spinner } from '@/components/ui/spinner';
 import { useT, tr, trText } from '@/lib/i18n';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Loader2, Send } from '@/components/icons';
+import { Send } from '@/components/icons';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { sendNews } from '@/api/bot';
@@ -184,42 +186,42 @@ function NewsEditor({ guildId, guildName }: { guildId: string; guildName: string
                                 />
                             </div>
                         </Field>
-                        <details className="rounded-lg border">
-                            <summary className="cursor-pointer rounded-lg p-3 text-sm font-medium focus-visible:outline-2 focus-visible:outline-ring">
-                                {tr('news.moreOptionsColorImageFooter')}
-                            </summary>
-                            <div className="space-y-4 border-t p-3">
-                                <Field label={tr('common.embedLeftBarColor')}>
-                                    <ColorField value={color} onChange={setColor} />
-                                </Field>
-                                <div className="grid gap-4 sm:grid-cols-2">
-                                    <Field label={tr('news.footerText')} htmlFor="news-footer">
-                                        <Input
-                                            id="news-footer"
-                                            maxLength={NEWS_LIMITS.footer}
-                                            placeholder={NEWS_DEFAULT_FOOTER}
-                                            value={form.footer}
-                                            onChange={set('footer')}
-                                        />
+                        <Accordion type="single" collapsible className="rounded-lg border">
+                            <AccordionItem value="more" className="border-none">
+                                <AccordionTrigger className="px-3">{tr('news.moreOptionsColorImageFooter')}</AccordionTrigger>
+                                <AccordionContent className="space-y-4 border-t p-3">
+                                    <Field label={tr('common.embedLeftBarColor')}>
+                                        <ColorField value={color} onChange={setColor} />
                                     </Field>
-                                    <Field
-                                        label={tr('news.imageUrl')}
-                                        htmlFor="news-image"
-                                        error={form.imageUrl.trim() && !imageOk ? tr('news.theImageUrlMustStartWith') : undefined}
-                                    >
-                                        <Input
-                                            id="news-image"
-                                            placeholder={tr('news.httpsOptional')}
-                                            spellCheck={false}
-                                            value={form.imageUrl}
-                                            onChange={set('imageUrl')}
-                                        />
-                                    </Field>
-                                </div>
-                            </div>
-                        </details>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        <Field label={tr('news.footerText')} htmlFor="news-footer">
+                                            <Input
+                                                id="news-footer"
+                                                maxLength={NEWS_LIMITS.footer}
+                                                placeholder={NEWS_DEFAULT_FOOTER}
+                                                value={form.footer}
+                                                onChange={set('footer')}
+                                            />
+                                        </Field>
+                                        <Field
+                                            label={tr('news.imageUrl')}
+                                            htmlFor="news-image"
+                                            error={form.imageUrl.trim() && !imageOk ? tr('news.theImageUrlMustStartWith') : undefined}
+                                        >
+                                            <Input
+                                                id="news-image"
+                                                placeholder={tr('news.httpsOptional')}
+                                                spellCheck={false}
+                                                value={form.imageUrl}
+                                                onChange={set('imageUrl')}
+                                            />
+                                        </Field>
+                                    </div>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                         <Button className="w-full" onClick={() => void send()} disabled={mutation.isPending}>
-                            {mutation.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('news.postAnnouncementToDiscord')}
+                            {mutation.isPending ? <Spinner /> : <Send />} {tr('news.postAnnouncementToDiscord')}
                         </Button>
                     </CardContent>
                 </Card>

@@ -1,26 +1,30 @@
 import { tr } from '../lib/i18n';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from '@/components/ui/empty';
 import { AlertCircle, Inbox } from '@/components/icons';
 import type { ReactNode } from 'react';
-import { cn } from '@/lib/utils';
 import { errorMessage } from '@/lib/api';
 
 export function ErrorState({ error, title = tr('common.failedToLoadData'), className }: { error: unknown; title?: string; className?: string }) {
     return (
-        <div className={cn('flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm', className)}>
-            <AlertCircle className="mt-0.5 size-4 shrink-0 text-destructive" />
-            <div>
-                <p className="font-medium text-destructive">{title}</p>
-                <p className="text-muted-foreground">{errorMessage(error)}</p>
-            </div>
-        </div>
+        <Alert variant="destructive" className={className}>
+            <AlertCircle />
+            <AlertTitle>{title}</AlertTitle>
+            <AlertDescription>{errorMessage(error)}</AlertDescription>
+        </Alert>
     );
 }
 
 export function EmptyState({ children, className }: { children: ReactNode; className?: string }) {
     return (
-        <div className={cn('flex flex-col items-center justify-center gap-2 py-10 text-center text-sm text-muted-foreground', className)}>
-            <Inbox className="size-6 opacity-60" />
-            {children}
-        </div>
+        <Empty className={className}>
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    <Inbox />
+                </EmptyMedia>
+                {typeof children === 'string' ? <EmptyDescription>{children}</EmptyDescription> : null}
+            </EmptyHeader>
+            {typeof children === 'string' ? null : <EmptyContent className="text-sm text-muted-foreground">{children}</EmptyContent>}
+        </Empty>
     );
 }

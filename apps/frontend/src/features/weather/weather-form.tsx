@@ -1,7 +1,8 @@
 import { tr, byLang } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { GuildChannel, GuildRole, WeatherFieldKey, WeatherMeta, WeatherPlace } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
-import { ArrowDown, ArrowUp, Loader2, MapPin, Search } from '@/components/icons';
+import { ArrowDown, ArrowUp, MapPin, Search } from '@/components/icons';
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { weatherApi } from '@/api/weather';
@@ -258,7 +259,7 @@ function LocationSection({ meta, draft, patch }: FormProps) {
                         onChange={(e) => setQuery(e.target.value)}
                     />
                     <Button type="submit" disabled={searching || !query.trim()}>
-                        {searching ? <Loader2 className="animate-spin" /> : <Search />} {tr('common.search')}
+                        {searching ? <Spinner /> : <Search />} {tr('common.search')}
                     </Button>
                 </form>
             </Field>

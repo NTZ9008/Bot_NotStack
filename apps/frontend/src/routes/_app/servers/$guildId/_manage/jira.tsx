@@ -1,8 +1,9 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { JiraConnectionResult, JiraOptions, JiraSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Loader2, Send } from '@/components/icons';
+import { Send } from '@/components/icons';
 import { FeatureSwitch, SaveBar } from '@/components/page-controls';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -219,8 +220,7 @@ function JiraPageContent() {
 
             <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
                 <Button variant="secondary" onClick={() => void sendPanel()} disabled={busy === 'panel'}>
-                    {busy === 'panel' ? <Loader2 className="animate-spin" /> : <Send />}{' '}
-                    {current.panelMessageId ? tr('jira.updatePanel') : tr('jira.sendPanelToChannel')}
+                    {busy === 'panel' ? <Spinner /> : <Send />} {current.panelMessageId ? tr('jira.updatePanel') : tr('jira.sendPanelToChannel')}
                 </Button>
             </SaveBar>
         </>

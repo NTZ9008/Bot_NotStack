@@ -1,8 +1,10 @@
 import { tr, byLang } from '../../../../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
+import { Spinner } from '@/components/ui/spinner';
 import type { GrafanaSettings, UpdateGrafanaSettingsInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, Send, Trash2 } from '@/components/icons';
+import { Copy, Eye, EyeOff, Plus, RefreshCw, Save, Send, Trash2 } from '@/components/icons';
 import type { FormEvent } from 'react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -203,13 +205,13 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                         rotate.mutate();
                                 }}
                             >
-                                {rotate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} {tr('common.createNew')}
+                                {rotate.isPending ? <Spinner /> : <RefreshCw />} {tr('common.createNew')}
                             </Button>
                         </div>
                     </Field>
                     <div className="flex flex-wrap items-center gap-3">
                         <Button disabled={test.isPending || !settings.defaultChannelId} onClick={() => test.mutate()}>
-                            {test.isPending ? <Loader2 className="animate-spin" /> : <Send />} {tr('grafanaAlerts.sendATestAlert')}
+                            {test.isPending ? <Spinner /> : <Send />} {tr('grafanaAlerts.sendATestAlert')}
                         </Button>
                         <p className="text-xs text-muted-foreground">{tr('grafanaAlerts.perGuildEndpointSettingsWithLabel')}</p>
                     </div>
@@ -231,7 +233,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                     noneLabel={tr('common.dontSend')}
                                 />
                                 <Button type="submit" disabled={save.isPending}>
-                                    {save.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
+                                    {save.isPending ? <Spinner /> : <Save />} {tr('common.save')}
                                 </Button>
                             </div>
                         </Field>
@@ -242,8 +244,8 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                             </div>
                             {rows.map((row, index) => (
                                 <div key={index} className="grid gap-2 sm:grid-cols-[140px_minmax(120px,1fr)_minmax(180px,1.4fr)_40px]">
-                                    <select
-                                        className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+                                    <NativeSelect
+                                        className="w-full"
                                         aria-label={tr('grafanaAlerts.labelType')}
                                         value={row.label}
                                         onChange={(event) =>
@@ -254,7 +256,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                     >
                                         <option value="env">env</option>
                                         <option value="severity">severity</option>
-                                    </select>
+                                    </NativeSelect>
                                     <Input
                                         aria-label={tr('grafanaAlerts.labelValue')}
                                         placeholder={row.label === 'env' ? 'prod' : 'critical'}
@@ -289,7 +291,7 @@ function GrafanaSettingsCards({ settings }: { settings: GrafanaSettings }) {
                                     <Plus /> {tr('grafanaAlerts.addMapping')}
                                 </Button>
                                 <Button type="submit" disabled={save.isPending}>
-                                    {save.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
+                                    {save.isPending ? <Spinner /> : <Save />} {tr('common.save')}
                                 </Button>
                             </div>
                         </div>

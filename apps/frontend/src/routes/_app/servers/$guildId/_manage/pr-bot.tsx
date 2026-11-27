@@ -1,8 +1,9 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { PrBotSettings, UpdatePrBotInput } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Copy, Eye, EyeOff, Loader2, Plus, RefreshCw, Save, X } from '@/components/icons';
+import { Copy, Eye, EyeOff, Plus, RefreshCw, Save, X } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { prBotQuery, rotatePrBotSecret, updatePrBot } from '@/api/bot';
@@ -104,7 +105,7 @@ function MapEditor({
                         <Plus /> {addLabel}
                     </Button>
                     <Button onClick={() => onSave(toMap(rows))} disabled={saving}>
-                        {saving ? <Loader2 className="animate-spin" /> : <Save />} {saveLabel}
+                        {saving ? <Spinner /> : <Save />} {saveLabel}
                     </Button>
                 </div>
             </CardContent>
@@ -143,7 +144,7 @@ function PrBotForm({ settings }: { settings: PrBotSettings }) {
                                 noneLabel={tr('common.dontSend')}
                             />
                             <Button type="submit" disabled={saveDefault.isPending}>
-                                {saveDefault.isPending ? <Loader2 className="animate-spin" /> : <Save />} {tr('common.save')}
+                                {saveDefault.isPending ? <Spinner /> : <Save />} {tr('common.save')}
                             </Button>
                         </form>
                     </Field>
@@ -255,7 +256,7 @@ function WebhookCard({ settings }: { settings: PrBotSettings }) {
                                 if (ok) rotate.mutate();
                             }}
                         >
-                            {rotate.isPending ? <Loader2 className="animate-spin" /> : <RefreshCw />} {tr('common.createNew')}
+                            {rotate.isPending ? <Spinner /> : <RefreshCw />} {tr('common.createNew')}
                         </Button>
                     </div>
                 </Field>

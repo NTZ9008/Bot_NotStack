@@ -1,7 +1,8 @@
 import { tr } from '../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { MemberSearchResult } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, X } from '@/components/icons';
+import { X } from '@/components/icons';
 import { useState } from 'react';
 import { searchMembersQuery } from '@/api/guilds';
 import { Button } from '@/components/ui/button';
@@ -96,7 +97,7 @@ export function UserPicker({
                         <CommandList className="max-h-72">
                             {waiting && results.length === 0 ? (
                                 <div className="flex items-center gap-2 px-3 py-3 text-sm text-muted-foreground">
-                                    <Loader2 className="size-4 animate-spin" /> {tr('common.searching')}
+                                    <Spinner className="size-4" /> {tr('common.searching')}
                                 </div>
                             ) : (
                                 <>

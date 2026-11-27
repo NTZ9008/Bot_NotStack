@@ -1,4 +1,5 @@
 import { tr, trText } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
 import {
     defaultXpRule,
     defaultXpSettings,
@@ -27,7 +28,6 @@ import { IdChoices } from '@/components/id-choices';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
 import { errorMessage } from '@/lib/api';
 
-const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
 export function NumberField({
     label,
     value,
@@ -263,8 +263,8 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                 </label>
                                 <label className="grid gap-1.5 text-sm">
                                     {tr('levels.activity')}
-                                    <select
-                                        className={selectClass}
+                                    <NativeSelect
+                                        className="w-full"
                                         value={rule.source}
                                         onChange={(e) => patchRule(rule.id, { source: e.target.value as XpRule['source'] })}
                                     >
@@ -273,7 +273,7 @@ function SettingsEditor({ initial, guildId }: { initial: XpSettingsResponse; gui
                                                 {trText(XP_SOURCE_LABELS[v])}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </label>
                                 <NumberField
                                     label={tr('levels.minXpPerEvent')}

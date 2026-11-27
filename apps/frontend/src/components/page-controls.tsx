@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { tr } from '@/lib/i18n';
-import { Loader2, RotateCcw, Save } from '@/components/icons';
+import { RotateCcw, Save } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -62,7 +63,7 @@ export function SaveBar({
                     </Button>
                 )}
                 <Button onClick={onSave} disabled={!dirty || saving || invalid} title="Ctrl/⌘ + S">
-                    {saving ? <Loader2 className="animate-spin" /> : <Save />} {saveLabel}
+                    {saving ? <Spinner /> : <Save />} {saveLabel}
                 </Button>
             </div>
         </div>

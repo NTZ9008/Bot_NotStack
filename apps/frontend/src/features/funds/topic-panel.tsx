@@ -1,4 +1,6 @@
 import { tr, dateLocale } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertAction, AlertDescription } from '@/components/ui/alert';
 import { roundMoney, type FundMemberView, type FundPaymentView } from '@notstack/shared';
 import { formatBaht } from './money';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -12,7 +14,6 @@ import {
     Clock,
     Copy,
     Download,
-    Loader2,
     Lock,
     LockOpen,
     Pencil,
@@ -245,7 +246,7 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
                             disabled={exporting}
                             title={tr('funds.downloadTheSummaryMemberListAnd')}
                         >
-                            {exporting ? <Loader2 className="animate-spin" /> : <Download />}
+                            {exporting ? <Spinner /> : <Download />}
                             {exporting ? tr('funds.exporting') : tr('funds.exportCsv')}
                         </Button>
                         <Button
@@ -280,21 +281,15 @@ export function TopicPanel({ topicId, onDeleted }: { topicId: number; onDeleted:
 
                 <CardContent className="space-y-3">
                     {topic.closed && (
-                        <div className="flex flex-col items-start justify-between gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning sm:flex-row sm:items-center">
-                            <div className="flex items-start gap-2 sm:items-center">
-                                <Lock className="mt-0.5 size-4 shrink-0 sm:mt-0" />
-                                <span>{tr('funds.thisTopicIsClosedPressReopen')}</span>
-                            </div>
-                            <Button
-                                size="xs"
-                                variant="outline"
-                                className="w-full shrink-0 border-warning/40 text-warning hover:bg-warning/20 sm:w-auto"
-                                onClick={() => toggleClosed.mutate(false)}
-                                disabled={toggleClosed.isPending}
-                            >
-                                <LockOpen className="size-3" /> {tr('funds.reopen')}
-                            </Button>
-                        </div>
+                        <Alert variant="warning">
+                            <Lock />
+                            <AlertDescription>{tr('funds.thisTopicIsClosedPressReopen')}</AlertDescription>
+                            <AlertAction>
+                                <Button size="xs" variant="outline" onClick={() => toggleClosed.mutate(false)} disabled={toggleClosed.isPending}>
+                                    <LockOpen /> {tr('funds.reopen')}
+                                </Button>
+                            </AlertAction>
+                        </Alert>
                     )}
 
                     <div className="grid grid-cols-2 gap-2.5 sm:gap-3 md:grid-cols-4">

@@ -1,4 +1,5 @@
 import { tr, byLang } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
 import type { RankBackgroundType, RankCardMeta, RankCardStyle, RankCardTheme, RankPreviewKind, WelcomeAsset, WelcomeCard, WelcomeMeta } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, RotateCcw } from '@/components/icons';
@@ -22,7 +23,6 @@ import { errorMessage } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { RankPreview } from './rank-preview';
 
-export const selectClass = 'h-9 w-full rounded-md border bg-background px-3 text-sm';
 export const BACKGROUND_LABELS = byLang((): Record<RankBackgroundType, string> => ({
     color: tr('levels.solid'),
     gradient: tr('levels.gradient'),
@@ -260,8 +260,8 @@ function ThemeEditor({
                                     <ColorField value={style.trackColor} onChange={(c) => patchStyle((s) => void (s.trackColor = c))} />
                                 </Field>
                                 <Field label={tr('common.font')}>
-                                    <select
-                                        className={selectClass}
+                                    <NativeSelect
+                                        className="w-full"
                                         value={style.font}
                                         onChange={(e) => patchStyle((s) => void (s.font = e.target.value as RankCardStyle['font']))}
                                     >
@@ -270,7 +270,7 @@ function ThemeEditor({
                                                 {font.label}
                                             </option>
                                         ))}
-                                    </select>
+                                    </NativeSelect>
                                 </Field>
                                 <Field label={tr('levels.avatarShape')}>
                                     <Segmented

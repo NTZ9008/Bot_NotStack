@@ -1,7 +1,7 @@
 import { useObjectUrl } from '@/hooks/use-object-url';
+import { Spinner } from '@/components/ui/spinner';
 import type { RankPreviewKind } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { Loader2 } from '@/components/icons';
 import { DiscordMessage } from '@/components/discord-message';
 import { Segmented } from '@/features/welcome/form-controls';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
@@ -64,7 +64,7 @@ export function RankPreview<T>({
                     {preview.data && preview.error && (
                         <p className="absolute inset-x-0 bottom-0 bg-destructive/80 px-3 py-1 text-xs text-white">{errorMessage(preview.error)}</p>
                     )}
-                    {preview.isFetching && preview.data && <Loader2 className="absolute top-2 right-2 size-4 animate-spin text-white/80" />}
+                    {preview.isFetching && preview.data && <Spinner className="absolute top-2 right-2 size-4 text-white/80" />}
                 </div>
             </DiscordMessage>
         </div>

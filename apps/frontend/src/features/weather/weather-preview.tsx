@@ -1,7 +1,8 @@
 import { tr } from '@/lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { GuildChannel, GuildRole, PreviewEmbed, WeatherOptions } from '@notstack/shared';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Loader2 } from '@/components/icons';
+import { AlertTriangle } from '@/components/icons';
 import { weatherApi } from '@/api/weather';
 import { DiscordMessage } from '@/components/discord-message';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
@@ -108,7 +109,7 @@ export function WeatherPreview({
                     ))}
                     {!data && preview.isFetching && (
                         <p className="flex items-center gap-2 text-sm text-[#949ba4]">
-                            <Loader2 className="size-4 animate-spin" /> {tr('weather.loadingWeatherData')}
+                            <Spinner className="size-4" /> {tr('weather.loadingWeatherData')}
                         </p>
                     )}
                     {preview.error && <p className="text-sm text-destructive">{tr('weather.failedToCreatePreview', { 0: errorMessage(preview.error) })}</p>}

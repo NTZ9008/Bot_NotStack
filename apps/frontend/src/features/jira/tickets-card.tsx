@@ -1,7 +1,9 @@
 import { tr, byLang } from '../../lib/i18n';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Spinner } from '@/components/ui/spinner';
 import type { JiraTicket, JiraTicketStatus } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Loader2, Lock } from '@/components/icons';
+import { ExternalLink, Lock } from '@/components/icons';
 import { Pagination } from '@/components/pagination';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -14,7 +16,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { errorMessage } from '@/lib/api';
 import { formatDateTime, formatNumber } from '@/lib/format';
 
@@ -73,21 +74,24 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                <Tabs
+                <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    className="flex-wrap"
+                    aria-label={tr('common.status')}
                     value={status}
                     onValueChange={(value) => {
+                        if (!value) return;
                         setStatus(value as typeof status);
                         setPage(1);
                     }}
                 >
-                    <TabsList className="h-auto flex-wrap">
-                        {FILTERS().map((filter) => (
-                            <TabsTrigger key={filter.value} value={filter.value}>
-                                {filter.label}
-                            </TabsTrigger>
-                        ))}
-                    </TabsList>
-                </Tabs>
+                    {FILTERS().map((filter) => (
+                        <ToggleGroupItem key={filter.value} value={filter.value}>
+                            {filter.label}
+                        </ToggleGroupItem>
+                    ))}
+                </ToggleGroup>
 
                 {isLoading ? (
                     <JiraTicketsBodySkeleton />
@@ -147,7 +151,7 @@ export function JiraTicketsCard({ guildId }: { guildId: string }) {
                                                         </a>
                                                     </Button>
                                                     <Button variant="outline" size="sm" disabled={closing === ticket.id} onClick={() => void close(ticket)}>
-                                                        {closing === ticket.id ? <Loader2 className="animate-spin" /> : <Lock />} {tr('jira.closeChannel')}
+                                                        {closing === ticket.id ? <Spinner /> : <Lock />} {tr('jira.closeChannel')}
                                                     </Button>
                                                 </div>
                                             )}

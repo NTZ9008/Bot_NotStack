@@ -1,4 +1,5 @@
 import { tr } from '../../../lib/i18n';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Pagination, usePagedItems } from '@/components/pagination';
 import type { GuildSummary } from '@notstack/shared';
 import { useQuery } from '@tanstack/react-query';
@@ -126,10 +127,10 @@ function ServersPage() {
             />
 
             {denied && (
-                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-                    <p>{tr('servers.youDontHaveAccessToThat')}</p>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>{tr('servers.youDontHaveAccessToThat')}</AlertDescription>
+                </Alert>
             )}
 
             {data?.needsDiscordLink && (
@@ -153,10 +154,10 @@ function ServersPage() {
             )}
 
             {data && !data.botOnline && (
-                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-                    <p>{tr('servers.theBotIsntOnlineYetThe')}</p>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>{tr('servers.theBotIsntOnlineYetThe')}</AlertDescription>
+                </Alert>
             )}
 
             {data && (

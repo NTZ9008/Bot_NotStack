@@ -1,9 +1,10 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { ALL_ROOMS, type AccessRoom, type GrantAccessInput, type RoomAccessItem } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, Plus, Trash2 } from '@/components/icons';
+import { Plus, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { accessRoomsQuery, roomAccessApi, roomAccessQuery } from '@/api/bot';
@@ -132,7 +133,7 @@ function RoomsCard({ rooms }: { rooms: AccessRoom[] }) {
                 <div className="flex max-w-xl gap-2">
                     <ChannelSelect channels={available} value={channelId} onChange={setChannelId} placeholder={tr('roomAccess.pickAChannelToAdd')} />
                     <Button onClick={() => add.mutate()} disabled={!channelId || add.isPending}>
-                        {add.isPending ? <Loader2 className="animate-spin" /> : <Plus />} {tr('common.add')}
+                        {add.isPending ? <Spinner /> : <Plus />} {tr('common.add')}
                     </Button>
                 </div>
             </CardContent>
@@ -299,7 +300,7 @@ function RoomAccessPage() {
                         </Field>
                     )}
                     <Button className="w-full" onClick={() => void submit()} disabled={mutation.isPending || rooms.length === 0}>
-                        {mutation.isPending && <Loader2 className="animate-spin" />} {tr('roomAccess.run')}
+                        {mutation.isPending && <Spinner />} {tr('roomAccess.run')}
                     </Button>
                 </CardContent>
             </Card>

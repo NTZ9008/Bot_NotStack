@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { Spinner } from '@/components/ui/spinner';
 import { tr } from '@/lib/i18n';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Loader2 } from '@/components/icons';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +49,7 @@ export function Pagination({
                 </Button>
                 <span aria-live="polite" className="min-w-24 px-2 text-center tabular-nums">
                     {busy ? (
-                        <Loader2 className="mx-auto size-4 animate-spin" />
+                        <Spinner className="mx-auto size-4" />
                     ) : (
                         tr('common.pageOf', { 0: page.toLocaleString(), 1: `${pageCount.toLocaleString()}${hasMore ? '+' : ''}` })
                     )}

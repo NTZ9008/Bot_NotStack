@@ -1,10 +1,11 @@
 import { tr } from '../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { passwordFieldSchema, ROLES, usernameFieldSchema, type AdminUser, type UpdateUserInput, type UserRole } from '@notstack/shared';
 import { useForm } from '@tanstack/react-form';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
-import { KeyRound, Loader2, LockOpen, LogOut, Trash2, UserPlus } from '@/components/icons';
+import { KeyRound, LockOpen, LogOut, Trash2, UserPlus } from '@/components/icons';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -118,7 +119,7 @@ function CreateUserForm() {
             <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
                     <Button type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? <Loader2 className="animate-spin" /> : <UserPlus />} {tr('users.addUser')}
+                        {isSubmitting ? <Spinner /> : <UserPlus />} {tr('users.addUser')}
                     </Button>
                 )}
             </form.Subscribe>
@@ -182,7 +183,7 @@ function SetPasswordDialog({ user, onClose, onSave }: { user: AdminUser | null; 
                             {tr('common.cancel')}
                         </Button>
                         <Button type="submit" disabled={saving || !password}>
-                            {saving && <Loader2 className="animate-spin" />} {tr('common.save')}
+                            {saving && <Spinner />} {tr('common.save')}
                         </Button>
                     </DialogFooter>
                 </form>

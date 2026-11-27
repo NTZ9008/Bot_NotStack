@@ -1,8 +1,10 @@
 import { tr, dateLocale } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { WeatherSettings } from '@notstack/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { AlertTriangle, Loader2, Send } from '@/components/icons';
+import { AlertTriangle, Send } from '@/components/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { guildChannelsQuery, guildRolesQuery } from '@/api/guilds';
@@ -16,7 +18,7 @@ import { ErrorState } from '@/components/states';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isDirty, toDraft, type PatchWeather, type WeatherDraft } from '@/features/weather/types';
 import { WEATHER_SECTIONS, WeatherForm, type WeatherSection } from '@/features/weather/weather-form';
 import { WeatherPreview } from '@/features/weather/weather-preview';
@@ -172,12 +174,14 @@ function WeatherPage() {
             />
 
             {!meta.data.apiKeyConfigured && (
-                <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-                    <p>
-                        {tr('weather.notSet')} <code>OPENWEATHER_KEY</code> {tr('weather.inTheServerEnvFileThe')}
-                    </p>
-                </div>
+                <Alert variant="warning">
+                    <AlertTriangle />
+                    <AlertDescription>
+                        <p>
+                            {tr('weather.notSet')} <code>OPENWEATHER_KEY</code> {tr('weather.inTheServerEnvFileThe')}
+                        </p>
+                    </AlertDescription>
+                </Alert>
             )}
 
             <Card>
@@ -221,7 +225,7 @@ function WeatherPage() {
                 </CardHeader>
                 <CardContent className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
                     <div className="space-y-4">
-                        <Tabs value={section} onValueChange={(value) => setSection(value as WeatherSection)}>
+                        <Tabs value={section} onValueChange={(value) => setSection(value as WeatherSection)} className="gap-4">
                             <TabsList className="h-auto w-full flex-wrap">
                                 {WEATHER_SECTIONS().map((s) => (
                                     <TabsTrigger key={s.value} value={s.value} className="flex-1">
@@ -229,8 +233,10 @@ function WeatherPage() {
                                     </TabsTrigger>
                                 ))}
                             </TabsList>
+                            <TabsContent value={section}>
+                                <WeatherForm section={section} meta={meta.data} draft={draft} patch={patch} channels={channels} roles={roles} />
+                            </TabsContent>
                         </Tabs>
-                        <WeatherForm section={section} meta={meta.data} draft={draft} patch={patch} channels={channels} roles={roles} />
                     </div>
 
                     <div className="space-y-4 xl:sticky xl:top-20 xl:self-start">
@@ -247,7 +253,7 @@ function WeatherPage() {
 
             <SaveBar dirty={dirty} saving={busy === 'save'} onSave={() => void save()} onReset={() => saved && setDraft(structuredClone(saved))}>
                 <Button variant="secondary" onClick={() => void testSend()} disabled={busy === 'test'}>
-                    {busy === 'test' ? <Loader2 className="animate-spin" /> : <Send />} {tr('common.sendTest')}
+                    {busy === 'test' ? <Spinner /> : <Send />} {tr('common.sendTest')}
                 </Button>
             </SaveBar>
         </>

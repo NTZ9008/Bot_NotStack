@@ -1,9 +1,10 @@
 import { tr, dateLocale } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { calculateDailyAmount, calculateDays, type FundTopicDetail, type FundTopicSummary } from '@notstack/shared';
 import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { AlertCircle, Banknote, Calendar, Loader2, Sparkles } from '@/components/icons';
+import { AlertCircle, Banknote, Calendar, Sparkles } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -439,7 +440,7 @@ export function TopicDialog({
                         {tr('common.cancel')}
                     </Button>
                     <Button type="submit" form="fund-topic-form" disabled={save.isPending || !name.trim() || invalidDateRange}>
-                        {save.isPending && <Loader2 className="animate-spin" />}
+                        {save.isPending && <Spinner />}
                         {topic ? tr('common.save') : tr('funds.createTopic')}
                     </Button>
                 </DialogFooter>

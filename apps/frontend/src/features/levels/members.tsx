@@ -1,4 +1,5 @@
 import { tr, byLang } from '../../lib/i18n';
+import { NativeSelect } from '@/components/ui/native-select';
 import { xpMemberMutationSchema, type XpMemberMutation, type XpMemberMutationResult, type XpResetGuildResult } from '@notstack/shared';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
@@ -85,17 +86,13 @@ export function XpMembersPanel({ guildId }: { guildId: string }) {
                             <UserPicker value={user} onSelect={setUser} onClear={() => setUser(null)} />
                             <label className="grid gap-1.5 text-sm">
                                 {tr('levels.action')}
-                                <select
-                                    className="h-9 rounded-md border bg-background px-3"
-                                    value={action}
-                                    onChange={(e) => setAction(e.target.value as XpMemberMutation['action'])}
-                                >
+                                <NativeSelect value={action} onChange={(e) => setAction(e.target.value as XpMemberMutation['action'])}>
                                     {Object.entries(ACTIONS()).map(([key, label]) => (
                                         <option value={key} key={key}>
                                             {label}
                                         </option>
                                     ))}
-                                </select>
+                                </NativeSelect>
                             </label>
                             {!['reset', 'delete'].includes(action) && (
                                 <NumberField label={tr('common.xpAmount')} value={amount} max={2000000000} onChange={setAmount} />

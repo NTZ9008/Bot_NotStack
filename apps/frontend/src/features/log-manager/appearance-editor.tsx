@@ -1,7 +1,7 @@
 import { tr, byLang } from '../../lib/i18n';
 import { DEFAULT_LOG_APPEARANCE, formatLogEmbed, type LogAppearance, type LogEmbedContent, type LogEventSetting } from '@notstack/shared';
 import { useMutation } from '@tanstack/react-query';
-import { Check, RotateCcw } from '@/components/icons';
+import { RotateCcw } from '@/components/icons';
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { logSettingsApi } from '@/api/bot';
@@ -9,7 +9,9 @@ import { SaveBar } from '@/components/page-controls';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Field, FieldContent, FieldDescription, FieldLabel, FieldTitle } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useUnsavedChangesGuard } from '@/hooks/use-unsaved-changes';
@@ -112,26 +114,29 @@ export function AppearanceEditor({
                     <div className="min-w-0 space-y-5">
                         <fieldset disabled={mutation.isPending} className="min-w-0 space-y-5 disabled:opacity-60">
                             <div className="space-y-2">
-                                <Label>{tr('logManager.fieldLayout')}</Label>
-                                <div className="grid grid-cols-2 gap-3">
+                                <Label id="log-layout-label">{tr('logManager.fieldLayout')}</Label>
+                                <RadioGroup
+                                    aria-labelledby="log-layout-label"
+                                    value={draft.layout}
+                                    onValueChange={(layout) => patch({ layout: layout as LogAppearance['layout'] })}
+                                    className="grid grid-cols-2 gap-3"
+                                >
                                     {(['compact', 'comfortable'] as const).map((layout) => (
-                                        <button
-                                            key={layout}
-                                            type="button"
-                                            aria-pressed={draft.layout === layout}
-                                            onClick={() => patch({ layout })}
-                                            className={`rounded-lg border p-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-ring ${draft.layout === layout ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
-                                        >
-                                            <span className="flex items-center justify-between text-sm font-medium">
-                                                {layout === 'compact' ? tr('logManager.compact') : tr('logManager.comfortable')}
-                                                {draft.layout === layout && <Check className="size-4" />}
-                                            </span>
-                                            <span className="mt-1 block text-xs text-muted-foreground">
-                                                {layout === 'compact' ? tr('logManager.shortFieldsSideBySideSaves') : tr('logManager.oneFieldPerLineEasyTo')}
-                                            </span>
-                                        </button>
+                                        <FieldLabel key={layout} htmlFor={`log-layout-${layout}`}>
+                                            <Field orientation="horizontal">
+                                                <FieldContent>
+                                                    <FieldTitle>{layout === 'compact' ? tr('logManager.compact') : tr('logManager.comfortable')}</FieldTitle>
+                                                    <FieldDescription className="text-xs">
+                                                        {layout === 'compact'
+                                                            ? tr('logManager.shortFieldsSideBySideSaves')
+                                                            : tr('logManager.oneFieldPerLineEasyTo')}
+                                                    </FieldDescription>
+                                                </FieldContent>
+                                                <RadioGroupItem value={layout} id={`log-layout-${layout}`} />
+                                            </Field>
+                                        </FieldLabel>
                                     ))}
-                                </div>
+                                </RadioGroup>
                             </div>
                             <div className="divide-y rounded-lg border px-3">
                                 {toggles.map(([key, title, hint]) => (

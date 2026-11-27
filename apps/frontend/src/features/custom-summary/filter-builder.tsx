@@ -1,4 +1,5 @@
 import { tr, byLang } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { filterActiveSummaryModules, type CustomSummaryChannelOption, type CustomSummaryModule, type PluginId } from '@notstack/shared';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useQuery } from '@tanstack/react-query';
@@ -10,7 +11,6 @@ import {
     Download,
     Filter,
     GitPullRequest,
-    Loader2,
     Lock,
     MessageSquareText,
     Play,
@@ -520,7 +520,7 @@ export function FilterBuilder({
                             disabled={isProcessing || Boolean(validationError)}
                             className="h-9 bg-primary px-4 font-medium text-primary-foreground hover:bg-primary/80"
                         >
-                            {isProcessing ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Play className="mr-1.5 size-4" />}
+                            {isProcessing ? <Spinner className="mr-1.5 size-4" /> : <Play className="mr-1.5 size-4" />}
                             {isProcessing ? tr('customSummary.processing') : tr('customSummary.runSummary')}
                         </Button>
 

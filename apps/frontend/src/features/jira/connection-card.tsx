@@ -1,6 +1,7 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import type { JiraConnectionResult } from '@notstack/shared';
-import { ExternalLink, Loader2, PlugZap } from '@/components/icons';
+import { ExternalLink, PlugZap } from '@/components/icons';
 import { Field } from '@/components/field';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -65,7 +66,7 @@ export function JiraConnectionCard({
                 </Field>
                 <div className="flex flex-wrap items-center gap-2">
                     <Button variant="outline" onClick={onTest} disabled={testing}>
-                        {testing ? <Loader2 className="animate-spin" /> : <PlugZap />} {tr('jira.testConnection')}
+                        {testing ? <Spinner /> : <PlugZap />} {tr('jira.testConnection')}
                     </Button>
                     {connection && (
                         <span className="text-sm text-success">

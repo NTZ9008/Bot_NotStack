@@ -6,8 +6,8 @@ import { meQuery } from '@/api/auth';
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { findNavItem } from '@/components/layout/nav-items';
 import { TopBar } from '@/components/layout/top-bar';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { ChevronRight } from '@/components/icons';
 import { SplashScreen } from '@/components/splash-screen';
 import { ChristmasThemePromo } from '@/components/layout/christmas-promo';
 
@@ -44,11 +44,19 @@ function AppLayout() {
             <AppSidebar />
             <SidebarInset className="min-w-0 bg-transparent pt-(--dash-top)">
                 <div className="mx-auto w-full max-w-6xl flex-1 px-3 pb-10 md:px-5">
-                    <nav aria-label={t('app.breadcrumb')} className="mb-4 flex min-w-0 items-center gap-1.5 text-sm">
-                        <span className="max-w-48 truncate text-muted-foreground">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
-                        <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" />
-                        <h1 className="truncate font-medium">{current ? trText(current.label) : 'Dashboard'}</h1>
-                    </nav>
+                    <Breadcrumb aria-label={t('app.breadcrumb')} className="mb-4 min-w-0">
+                        <BreadcrumbList className="flex-nowrap">
+                            <BreadcrumbItem className="max-w-48 min-w-0">
+                                <span className="truncate">{guildId ? (guild?.name ?? '…') : 'Dashboard'}</span>
+                            </BreadcrumbItem>
+                            <BreadcrumbSeparator />
+                            <BreadcrumbItem className="min-w-0">
+                                <h1 className="truncate">
+                                    <BreadcrumbPage className="font-medium">{current ? trText(current.label) : 'Dashboard'}</BreadcrumbPage>
+                                </h1>
+                            </BreadcrumbItem>
+                        </BreadcrumbList>
+                    </Breadcrumb>
                     {/* key ตาม path: เปลี่ยนหน้าแล้วเล่นแอนิเมชันเข้าใหม่ (เปลี่ยนแค่ ?search เช่นตัวกรอง จะไม่กระพริบ) */}
                     <div key={pathname} className="dash-page-in space-y-6">
                         <Outlet />

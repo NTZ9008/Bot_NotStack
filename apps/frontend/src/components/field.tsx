@@ -1,6 +1,6 @@
 import { trText } from '@/lib/i18n';
 import { useId, type ReactNode } from 'react';
-import { Label } from '@/components/ui/label';
+import { FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
 import { FieldLabelContext } from '@/components/ui/field-label';
 import { cn } from '@/lib/utils';
 
@@ -22,17 +22,17 @@ export function Field({
 }) {
     const labelId = useId();
     return (
-        <div className={cn('grid min-w-0 gap-1.5', className)}>
+        <div data-slot="field" data-invalid={error ? true : undefined} className={cn('grid min-w-0 gap-1.5', className)}>
             {label && (
-                <Label id={labelId} htmlFor={htmlFor}>
+                <FieldLabel id={labelId} htmlFor={htmlFor}>
                     {label}
-                </Label>
+                </FieldLabel>
             )}
             <FieldLabelContext value={label && !htmlFor ? labelId : undefined}>{children}</FieldLabelContext>
             {error ? (
-                <p className="text-xs text-destructive">{typeof error === 'string' ? trText(error) : error}</p>
+                <FieldError className="text-xs">{typeof error === 'string' ? trText(error) : error}</FieldError>
             ) : hint ? (
-                <p className="text-xs text-muted-foreground">{hint}</p>
+                <FieldDescription className="text-xs">{hint}</FieldDescription>
             ) : null}
         </div>
     );

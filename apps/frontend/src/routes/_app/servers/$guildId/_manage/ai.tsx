@@ -1,7 +1,9 @@
 import { tr } from '../../../../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, Save, ShieldAlert, Trash2 } from '@/components/icons';
+import { Bot, CheckCircle2, Eye, EyeOff, ExternalLink, RefreshCw, Save, ShieldAlert, Trash2 } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { aiSettingsQuery, testAiKey, updateAiSettings } from '@/api/ai';
@@ -12,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { useGuildId } from '@/hooks/use-guild';
 import { errorMessage } from '@/lib/api';
 
@@ -23,14 +26,12 @@ function compact(value: number): string {
     return String(value);
 }
 
-function Progress({ current, limit, cooldown }: { current: number; limit: number; cooldown: boolean }) {
+function UsageBar({ current, limit, cooldown }: { current: number; limit: number; cooldown: boolean }) {
     const ratio = Math.min(100, (current / Math.max(1, limit)) * 100);
-    const color = cooldown || ratio >= 100 ? '#ef4444' : ratio > 70 ? '#f59e0b' : '#cbd5e1';
+    const color = cooldown || ratio >= 100 ? 'bg-destructive' : ratio > 70 ? 'bg-warning' : 'bg-muted-foreground/40';
     return (
         <div className="space-y-1.5">
-            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full transition-all" style={{ width: `${ratio}%`, backgroundColor: color }} />
-            </div>
+            <Progress value={ratio} className="h-1.5" indicatorClassName={color} />
             <div className="text-xs tabular-nums text-muted-foreground">
                 {compact(current)} / {compact(limit)}
             </div>
@@ -120,7 +121,7 @@ function AiSettingsPage() {
                 <CardContent className="space-y-5">
                     {isLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Loader2 className="size-4 animate-spin" />
+                            <Spinner className="size-4" />
                             {tr('ai.loadingSettings')}
                         </div>
                     ) : (
@@ -136,10 +137,12 @@ function AiSettingsPage() {
                             </div>
                             {!data?.aiEnabled && !canEnable && <p className="-mt-2 text-sm text-warning">{tr('ai.saveAGeminiApiKeyFirst')}</p>}
                             {data?.isUsingFallbackHomeKey && (
-                                <p className="rounded-md border border-highlight/30 bg-highlight/5 p-3 text-sm text-highlight">
-                                    {tr('ai.theHomeServerIsUsingThe')}
-                                    {data.maskedKey ?? 'GEMINI_KEY'})
-                                </p>
+                                <Alert variant="info">
+                                    <AlertDescription>
+                                        {tr('ai.theHomeServerIsUsingThe')}
+                                        {data.maskedKey ?? 'GEMINI_KEY'})
+                                    </AlertDescription>
+                                </Alert>
                             )}
                             <div className="grid gap-2">
                                 <Label htmlFor="gemini-key">Gemini API Key</Label>
@@ -171,16 +174,16 @@ function AiSettingsPage() {
                                     disabled={test.isPending || (!apiKey.trim() && !data?.hasKey && !data?.isUsingFallbackHomeKey)}
                                     onClick={() => test.mutate()}
                                 >
-                                    {test.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
+                                    {test.isPending ? <Spinner /> : <CheckCircle2 />}
                                     {tr('ai.testKey')}
                                 </Button>
                                 <Button disabled={save.isPending || (!apiKey.trim() && Number(dailyLimit) === data?.dailyLimit)} onClick={() => save.mutate()}>
-                                    {save.isPending ? <Loader2 className="animate-spin" /> : <Save />}
+                                    {save.isPending ? <Spinner /> : <Save />}
                                     {tr('ai.saveSettings')}
                                 </Button>
                                 {data?.hasKey && (
                                     <Button variant="destructive" disabled={removeKey.isPending} onClick={() => removeKey.mutate()}>
-                                        {removeKey.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />}
+                                        {removeKey.isPending ? <Spinner /> : <Trash2 />}
                                         {tr('ai.removeKey')}
                                     </Button>
                                 )}
@@ -225,7 +228,7 @@ function AiSettingsPage() {
                             </CardDescription>
                         </div>
                         <Button variant="outline" size="sm" onClick={() => void refetch()} disabled={isFetching}>
-                            {isFetching ? <Loader2 className="animate-spin" /> : <RefreshCw />}
+                            {isFetching ? <Spinner /> : <RefreshCw />}
                             {tr('common.refresh')}
                         </Button>
                     </div>
@@ -266,13 +269,13 @@ function AiSettingsPage() {
                                             </td>
                                             <td className="px-3 py-4 text-muted-foreground">{model.category}</td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.rpm.current} limit={model.rpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar current={model.rpm.current} limit={model.rpm.limit} cooldown={model.status === 'cooldown'} />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.tpm.current} limit={model.tpm.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar current={model.tpm.current} limit={model.tpm.limit} cooldown={model.status === 'cooldown'} />
                                             </td>
                                             <td className="px-3 py-4">
-                                                <Progress current={model.rpd.current} limit={model.rpd.limit} cooldown={model.status === 'cooldown'} />
+                                                <UsageBar current={model.rpd.current} limit={model.rpd.limit} cooldown={model.status === 'cooldown'} />
                                             </td>
                                         </tr>
                                     );

@@ -1,9 +1,10 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { Pagination, usePagedItems } from '@/components/pagination';
 import { roundMoney, type FundMemberView, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Loader2, Trash2, Users, X } from '@/components/icons';
+import { ArrowUpDown, Banknote, Calendar, CheckCheck, History, Trash2, Users, X } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -220,7 +221,7 @@ export function MembersTab({
                                 disabled={!roleId || add.isPending}
                                 onClick={() => add.mutate({ roleId })}
                             >
-                                {add.isPending ? <Loader2 className="animate-spin" /> : <Users />} {tr('funds.addWholeRole')}
+                                {add.isPending ? <Spinner /> : <Users />} {tr('funds.addWholeRole')}
                             </Button>
                         </div>
                     </Field>
@@ -287,7 +288,7 @@ export function MembersTab({
                             <div className="flex flex-wrap items-center gap-1.5">
                                 {selectedUnpaidMembers.length > 0 && (
                                     <Button type="button" size="xs" disabled={bulkPayFull.isPending} onClick={() => void handleBulkPayFull()}>
-                                        {bulkPayFull.isPending ? <Loader2 className="animate-spin" /> : <CheckCheck />}
+                                        {bulkPayFull.isPending ? <Spinner /> : <CheckCheck />}
                                         {tr('funds.markEveryoneSelectedAsPaid')}
                                         {formatBaht(selectedRemainingTotal)})
                                     </Button>
@@ -423,7 +424,7 @@ export function MembersTab({
                                                             onClick={() => payFull.mutate(m)}
                                                             title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}
                                                         >
-                                                            {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />} {tr('funds.paidInFull')}
+                                                            {isPayingThis ? <Spinner /> : <CheckCheck />} {tr('funds.paidInFull')}
                                                         </Button>
                                                     )}
                                                     <Button
@@ -536,8 +537,7 @@ export function MembersTab({
                                                                     onClick={() => payFull.mutate(m)}
                                                                     title={tr('funds.recordReceiptOfOutstanding', { 0: formatBaht(m.remaining) })}
                                                                 >
-                                                                    {isPayingThis ? <Loader2 className="animate-spin" /> : <CheckCheck />}{' '}
-                                                                    {tr('funds.paidInFull')}
+                                                                    {isPayingThis ? <Spinner /> : <CheckCheck />} {tr('funds.paidInFull')}
                                                                 </Button>
                                                             )}
                                                             <Button

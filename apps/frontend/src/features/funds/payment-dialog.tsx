@@ -1,9 +1,10 @@
 import { tr } from '../../lib/i18n';
+import { Spinner } from '@/components/ui/spinner';
 import { roundMoney, type FundMemberView, type FundPaymentView, type FundTopicDetail } from '@notstack/shared';
 import { formatBaht } from './money';
 import { DateTimeInput } from '@/components/date-time-input';
 import { useMutation } from '@tanstack/react-query';
-import { ArrowRight, Calendar, CheckCircle2, Loader2 } from '@/components/icons';
+import { ArrowRight, Calendar, CheckCircle2 } from '@/components/icons';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -316,7 +317,7 @@ export function PaymentDialog({
                         {tr('common.cancel')}
                     </Button>
                     <Button type="submit" form="fund-payment-form" disabled={save.isPending || !memberId || !(numAmount > 0) || invalidPeriod}>
-                        {save.isPending && <Loader2 className="animate-spin" />}
+                        {save.isPending && <Spinner />}
                         {payment ? tr('funds.saveChanges') : tr('funds.recordPayment')}
                     </Button>
                 </DialogFooter>

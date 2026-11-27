@@ -1,6 +1,9 @@
 import { tr } from '../../lib/i18n';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { CustomSummaryDetailMode, CustomSummaryPdfRequestInput, CustomSummaryPdfTheme, CustomSummaryResponse } from '@notstack/shared';
-import { CheckCircle2, Download, FileText, Loader2, Moon, Sun } from '@/components/icons';
+import { CheckCircle2, Download, FileText, Moon, Sun } from '@/components/icons';
 import { useEffect, useState } from 'react';
 import { exportCustomSummaryPdf } from '@/api/custom-summary';
 import { Button } from '@/components/ui/button';
@@ -191,7 +194,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                             <div className="font-medium text-foreground">{tr('customSummary.hideDiscordUserIdsAndServer')}</div>
                             <p className="mt-0.5 text-[11px] text-muted-foreground">{tr('customSummary.turnOnWhenSharingTheReport')}</p>
                         </div>
-                        <input type="checkbox" checked={maskIds} onChange={(e) => setMaskIds(e.target.checked)} className="size-4 accent-highlight" />
+                        <Checkbox checked={maskIds} onCheckedChange={(checked) => setMaskIds(checked === true)} />
                     </label>
 
                     {/* 4. ตัวอย่างหัว-ท้ายหน้ากระดาษ A4 */}
@@ -229,12 +232,16 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         </div>
                     </div>
 
-                    {error && <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">{error}</p>}
+                    {error && (
+                        <Alert variant="destructive">
+                            <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                    )}
                     {lastExportInfo && (
-                        <p className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-xs text-success">
-                            <CheckCircle2 className="size-4 shrink-0" />
-                            <span>{lastExportInfo}</span>
-                        </p>
+                        <Alert variant="success">
+                            <CheckCircle2 />
+                            <AlertDescription>{lastExportInfo}</AlertDescription>
+                        </Alert>
                     )}
                 </div>
 
@@ -253,7 +260,7 @@ export function PdfExportModal({ open, onOpenChange, guildId, adminName, summary
                         disabled={exporting || !queryPayload}
                         className="bg-primary text-primary-foreground hover:bg-primary/80"
                     >
-                        {exporting ? <Loader2 className="mr-1.5 size-4 animate-spin" /> : <Download className="mr-1.5 size-4" />}
+                        {exporting ? <Spinner className="mr-1.5 size-4" /> : <Download className="mr-1.5 size-4" />}
                         {exporting ? tr('customSummary.creatingPdf') : tr('customSummary.downloadPdf')}
                     </Button>
                 </DialogFooter>
