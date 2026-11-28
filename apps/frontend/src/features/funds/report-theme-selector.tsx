@@ -1,5 +1,5 @@
 import { FUND_REPORT_THEMES, FUND_REPORT_THEME_PALETTES, type FundReportThemeId } from '@notstack/shared';
-import { Check, Compass, Gamepad2, Landmark, LayoutTemplate, Palette } from '@/components/icons';
+import { Check, Compass, Gamepad2, Landmark, LayoutTemplate, Palette, Snowflake } from '@/components/icons';
 import { Badge } from '@/components/ui/badge';
 import { byLang, tr } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,7 @@ export interface ReportThemeOption {
     name: string;
     description: string;
     isDefault: boolean;
+    isSeasonal?: boolean;
 }
 
 export const REPORT_THEME_OPTIONS = byLang((): readonly ReportThemeOption[] => [
@@ -35,6 +36,13 @@ export const REPORT_THEME_OPTIONS = byLang((): readonly ReportThemeOption[] => [
         name: tr('funds.themeCozyJourneyName'),
         description: tr('funds.themeCozyJourneyDesc'),
         isDefault: false,
+    },
+    {
+        id: 'christmas-wonderland',
+        name: tr('funds.themeChristmasWonderlandName'),
+        description: tr('funds.themeChristmasWonderlandDesc'),
+        isDefault: false,
+        isSeasonal: true,
     },
 ]);
 
@@ -122,6 +130,40 @@ function ThemeMiniatureArtwork({ themeId }: { themeId: FundReportThemeId }) {
             </div>
         );
     }
+    if (themeId === 'christmas-wonderland') {
+        return (
+            <div
+                className="relative h-20 w-full overflow-hidden rounded-lg border p-1.5"
+                style={{ backgroundColor: p.background, borderColor: `${p.primary}99` }}
+            >
+                <div
+                    className="flex h-full flex-col justify-between rounded-md border p-1.5"
+                    style={{ borderColor: `${p.primary}66`, backgroundColor: p.surface }}
+                >
+                    <div className="flex items-center justify-between gap-1">
+                        <div className="h-2 w-14 rounded-full" style={{ backgroundColor: p.text }} />
+                        <span
+                            className="flex size-5 items-center justify-center rounded-full border"
+                            style={{ backgroundColor: p.secondary, borderColor: p.primary }}
+                        >
+                            <Snowflake className="size-3" style={{ color: p.text }} />
+                        </span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-black/30">
+                        <div
+                            className="h-full w-4/5 rounded-full"
+                            style={{ background: `linear-gradient(90deg, #2FA682, ${p.primary})` }}
+                        />
+                    </div>
+                    <div className="grid grid-cols-3 gap-1">
+                        <div className="h-1.5 rounded-sm" style={{ backgroundColor: p.secondary }} />
+                        <div className="h-1.5 rounded-sm bg-emerald-400/75" />
+                        <div className="h-1.5 rounded-sm" style={{ backgroundColor: p.primary }} />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     // Classic Default
     return (
         <div className="relative h-20 w-full overflow-hidden rounded-lg border border-slate-700/80" style={{ backgroundColor: p.background }}>
@@ -149,6 +191,7 @@ const THEME_ICON: Record<FundReportThemeId, typeof LayoutTemplate> = {
     'minimal-finance': Landmark,
     'arcade-quest': Gamepad2,
     'cozy-journey': Compass,
+    'christmas-wonderland': Snowflake,
 };
 
 export function ReportThemeSelector({
@@ -173,7 +216,7 @@ export function ReportThemeSelector({
                 <span className="text-[11px] text-muted-foreground">{tr('funds.cardThemeHint')}</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {FUND_REPORT_THEMES.map((id) => {
                     const opt = byId.get(id)!;
                     const active = value === id;
@@ -210,6 +253,14 @@ export function ReportThemeSelector({
                                     {opt.isDefault && (
                                         <Badge variant="secondary" className="h-4 shrink-0 px-1.5 text-[10px]">
                                             {tr('funds.defaultThemeBadge')}
+                                        </Badge>
+                                    )}
+                                    {opt.isSeasonal && (
+                                        <Badge
+                                            variant="outline"
+                                            className="h-4 shrink-0 border-[#C94145]/45 bg-[#C94145]/12 px-1.5 text-[10px] font-semibold text-[#C94145] dark:text-[#FCA5A5]"
+                                        >
+                                            {tr('funds.seasonalThemeBadge')}
                                         </Badge>
                                     )}
                                 </div>

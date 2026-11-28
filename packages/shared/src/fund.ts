@@ -282,7 +282,7 @@ export type BatchFundPaymentData = z.output<typeof batchFundPaymentSchema>;
 // ==========================================
 // 🎨 REPORT CARD THEMES — ธีมการ์ดรายงานและตัวคำนวณข้อมูลกลางสำหรับทุกธีม
 // ==========================================
-export const FUND_REPORT_THEMES = ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey'] as const;
+export const FUND_REPORT_THEMES = ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey', 'christmas-wonderland'] as const;
 export type FundReportThemeId = (typeof FUND_REPORT_THEMES)[number];
 export const DEFAULT_FUND_REPORT_THEME: FundReportThemeId = 'default';
 export const fundReportThemeSchema = z.enum(FUND_REPORT_THEMES);
@@ -338,6 +338,14 @@ export const FUND_REPORT_THEME_PALETTES: Record<FundReportThemeId, FundReportThe
         secondary: '#A8D8EA',
         accent: '#F4B183',
         text: '#55483E',
+    },
+    'christmas-wonderland': {
+        background: '#0B2925',
+        surface: '#123C32',
+        primary: '#E7C779',
+        secondary: '#C94145',
+        accent: '#C8E6F0',
+        text: '#FFFDF7',
     },
 };
 

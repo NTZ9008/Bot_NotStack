@@ -401,8 +401,8 @@ function makeReportTopic(overrides = {}) {
     };
 }
 
-test('report theme registry keeps default and exposes 3 new distinct palettes and validators', () => {
-    assert.deepEqual(FUND_REPORT_THEMES, ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey']);
+test('report theme registry keeps default and exposes 4 new distinct palettes including seasonal Christmas Wonderland', () => {
+    assert.deepEqual(FUND_REPORT_THEMES, ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey', 'christmas-wonderland']);
     assert.equal(DEFAULT_FUND_REPORT_THEME, 'default');
 
     assert.equal(FUND_REPORT_THEME_PALETTES['minimal-finance'].background, '#F8F6F0');
@@ -411,6 +411,10 @@ test('report theme registry keeps default and exposes 3 new distinct palettes an
     assert.equal(FUND_REPORT_THEME_PALETTES['arcade-quest'].primary, '#22D3EE');
     assert.equal(FUND_REPORT_THEME_PALETTES['cozy-journey'].background, '#FFF8EA');
     assert.equal(FUND_REPORT_THEME_PALETTES['cozy-journey'].primary, '#8BAF91');
+    assert.equal(FUND_REPORT_THEME_PALETTES['christmas-wonderland'].background, '#0B2925');
+    assert.equal(FUND_REPORT_THEME_PALETTES['christmas-wonderland'].surface, '#123C32');
+    assert.equal(FUND_REPORT_THEME_PALETTES['christmas-wonderland'].primary, '#E7C779');
+    assert.equal(FUND_REPORT_THEME_PALETTES['christmas-wonderland'].secondary, '#C94145');
 
     assert.equal(resolveFundReportTheme(undefined), 'default');
     assert.equal(resolveFundReportTheme(null), 'default');
@@ -517,9 +521,24 @@ test('renderFundReportCard renders distinct valid PNG and WebP buffers across al
         assert.deepEqual(emptyPng.subarray(0, 4), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
     }
 
-    // All 4 themes produce distinct visual outputs
+    // All 5 themes produce distinct visual outputs
     const uniqueHashes = new Set([...buffers.values()].map((b) => b.toString('base64').slice(0, 120) + ':' + b.length));
-    assert.equal(uniqueHashes.size, 4);
+    assert.equal(uniqueHashes.size, 5);
+
+    // Exercise all 4 Christmas Wonderland mascot stages (0-30%, 31-60%, 61-99%, 100%)
+    for (const collectedAmt of [500, 1800, 2900, 3600]) {
+        const isDone = collectedAmt === 3600;
+        const xmasPng = await renderFundReportCard(
+            makeReportTopic({
+                collected: collectedAmt,
+                paidCount: isDone ? 4 : 1,
+                members: isDone ? baseTopic.members.map((m) => ({ ...m, paid: 900, remaining: 0, status: 'paid' })) : baseTopic.members,
+            }),
+            false,
+            'christmas-wonderland',
+        );
+        assert.deepEqual(xmasPng.subarray(0, 4), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    }
 
     // Exercise low and complete progress states (all mascot poses & completed flags)
     for (const theme of FUND_REPORT_THEMES) {
@@ -610,6 +629,10 @@ test('FundController.reportImage and FundService.sendReport pass selected theme 
     await controller.reportImage('g1', '42', 'arcade-quest', resArcade);
     assert.equal(calls[1].theme, 'arcade-quest');
 
+    const resXmas = fakeRes();
+    await controller.reportImage('g1', '42', 'christmas-wonderland', resXmas);
+    assert.equal(calls[2].theme, 'christmas-wonderland');
+
     await assert.rejects(() => controller.reportImage('g1', '42', 'invalid-theme', fakeRes()), /ไม่พบธีมการ์ดรายงาน/);
 
     // Verify FundService.sendReport sends PNG attachment with selected theme & preserves unpaid mentions
@@ -650,7 +673,7 @@ test('FundController.reportImage and FundService.sendReport pass selected theme 
         },
     );
 
-    const renderedBuf = await service.renderReportImage('g1', 7, false, 'cozy-journey');
+    const renderedBuf = await service.renderReportImage('g1', 7, false, 'christmas-wonderland');
     assert.deepEqual(renderedBuf.subarray(0, 4), Buffer.from([0x89, 0x50, 0x4e, 0x47]));
 
     const result = await service.sendReport('g1', 7, { mentionUnpaid: true, theme: 'minimal-finance' });
