@@ -772,3 +772,42 @@ test('usePageMeta writes title, canonical and social tags for client-side naviga
     // a page without the optional tags must not throw
     applyPageMeta({ title: '', querySelector: () => null }, '/');
 });
+
+test('fund report themes metadata covers all 5 themes with Thai and English locale parity', () => {
+    const th = require('../apps/frontend/src/locales/th.json');
+    const en = require('../apps/frontend/src/locales/en.json');
+    const { FUND_REPORT_THEMES, FUND_REPORT_THEME_PALETTES, DEFAULT_FUND_REPORT_THEME } = require('../packages/shared/dist');
+
+    assert.deepEqual([...FUND_REPORT_THEMES], ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey', 'christmas-wonderland']);
+    assert.equal(DEFAULT_FUND_REPORT_THEME, 'default');
+    for (const id of FUND_REPORT_THEMES) {
+        assert.ok(FUND_REPORT_THEME_PALETTES[id].background.startsWith('#'));
+        assert.ok(FUND_REPORT_THEME_PALETTES[id].primary.startsWith('#'));
+    }
+
+    const requiredKeys = [
+        'funds.cardTheme',
+        'funds.cardThemeHint',
+        'funds.defaultThemeBadge',
+        'funds.seasonalThemeBadge',
+        'funds.downloadPng',
+        'funds.downloadReportPngError',
+        'funds.failedToDownloadReportPng',
+        'funds.pngDownloaded',
+        'funds.themeDefaultName',
+        'funds.themeDefaultDesc',
+        'funds.themeMinimalFinanceName',
+        'funds.themeMinimalFinanceDesc',
+        'funds.themeArcadeQuestName',
+        'funds.themeArcadeQuestDesc',
+        'funds.themeCozyJourneyName',
+        'funds.themeCozyJourneyDesc',
+        'funds.themeChristmasWonderlandName',
+        'funds.themeChristmasWonderlandDesc',
+        'funds.themeUpdating',
+    ];
+    for (const key of requiredKeys) {
+        assert.ok(typeof th[key] === 'string' && th[key].length > 0, `missing th key: ${key}`);
+        assert.ok(typeof en[key] === 'string' && en[key].length > 0, `missing en key: ${key}`);
+    }
+});

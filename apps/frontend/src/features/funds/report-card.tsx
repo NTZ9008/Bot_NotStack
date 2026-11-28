@@ -1,7 +1,7 @@
-import type { FundTopicDetail } from '@notstack/shared';
+import { DEFAULT_FUND_REPORT_THEME, isFundReportTheme, type FundReportThemeId, type FundTopicDetail } from '@notstack/shared';
 import { Spinner } from '@/components/ui/spinner';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Bell, Eye, EyeOff, Image as ImageIcon, MessageSquareShare, Send } from '@/components/icons';
+import { Eye, EyeOff, MessageSquareShare, Send } from '@/components/icons';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { fundApi } from '@/api/fund';
@@ -13,11 +13,30 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useGuildId } from '@/hooks/use-guild';
+import { ReportCardPreview } from './report-card-preview';
+import { ReportThemeSelector } from './report-theme-selector';
 import { onFundError, useFundRefresh } from './utils';
 import { tr } from '../../lib/i18n';
 
+function readStoredTheme(topicId: number): FundReportThemeId {
+    try {
+        const stored = localStorage.getItem(`notstack:fund-report-theme:${topicId}`);
+        return isFundReportTheme(stored) ? stored : DEFAULT_FUND_REPORT_THEME;
+    } catch {
+        return DEFAULT_FUND_REPORT_THEME;
+    }
+}
+
+function saveStoredTheme(topicId: number, theme: FundReportThemeId): void {
+    try {
+        localStorage.setItem(`notstack:fund-report-theme:${topicId}`, theme);
+    } catch {
+        // โหมดส่วนตัวหรือปิด storage
+    }
+}
+
 // ==========================================
-// ส่งรายงานเข้า Discord (แถบกะทัดรัด + ดูตัวอย่างรูปการ์ด PNG ก่อนส่ง)
+// ส่งรายงานเข้า Discord (เลือกธีมการ์ด + แถบกะทัดรัด + ดูตัวอย่างรูปการ์ด PNG ก่อนส่ง)
 // ==========================================
 export function ReportCard({ topic }: { topic: FundTopicDetail }) {
     const guildId = useGuildId();
@@ -26,9 +45,19 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
     const textChannels = allChannels.filter((ch) => ch.sendable);
     const [mentionUnpaid, setMentionUnpaid] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+    const [selectedTheme, setSelectedTheme] = useState<FundReportThemeId>(() => readStoredTheme(topic.id));
 
     const unpaidMembers = useMemo(() => topic.members.filter((m) => m.status !== 'paid'), [topic.members]);
-    const previewUrl = useMemo(() => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt), [guildId, topic.id, topic.updatedAt]);
+    const previewUrl = useMemo(
+        () => fundApi.reportImageUrl(guildId, topic.id, topic.updatedAt, selectedTheme),
+        [guildId, topic.id, topic.updatedAt, selectedTheme],
+    );
+
+    const handleThemeChange = (theme: FundReportThemeId) => {
+        setSelectedTheme(theme);
+        saveStoredTheme(topic.id, theme);
+        if (!showPreview) setShowPreview(true);
+    };
 
     const saveChannel = useMutation({
         mutationFn: (reportChannelId: string) => fundApi.update(guildId, topic.id, { reportChannelId }),
@@ -39,14 +68,14 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
         onError: onFundError,
     });
     const send = useMutation({
-        mutationFn: () => fundApi.sendReport(guildId, topic.id, { mentionUnpaid }),
+        mutationFn: () => fundApi.sendReport(guildId, topic.id, { mentionUnpaid, theme: selectedTheme }),
         onSuccess: (res) => toast.success(res.message ?? tr('funds.reportCardSentToDiscord')),
         onError: onFundError,
     });
 
     return (
         <Card className="border-border/80">
-            <CardContent className="space-y-3 py-3.5">
+            <CardContent className="space-y-4 py-3.5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
                         <div className="flex items-center gap-2 text-sm font-semibold">
@@ -93,37 +122,17 @@ export function ReportCard({ topic }: { topic: FundTopicDetail }) {
                     </div>
                 </div>
 
+                <ReportThemeSelector value={selectedTheme} onChange={handleThemeChange} disabled={send.isPending} />
+
                 {showPreview && (
-                    <div className="dark rounded-xl border bg-[#313338] p-2.5 text-xs text-[#dbdee1] shadow-inner sm:p-3.5">
-                        <div className="mb-2 flex flex-wrap items-center justify-between gap-1 text-[11px] text-[#949ba4]">
-                            <span className="flex items-center gap-1.5">
-                                <ImageIcon className="size-3.5 shrink-0" /> {tr('funds.reportCardPreviewPng')}
-                            </span>
-                            {topic.reportChannelId && <span>{tr('funds.channelIs', { 0: channelLabel(textChannels, topic.reportChannelId) })}</span>}
-                        </div>
-
-                        {mentionUnpaid && unpaidMembers.length > 0 && (
-                            <p className="mb-2.5 flex flex-wrap items-center gap-1 rounded bg-[#5865f2]/15 px-2.5 py-1.5 text-[#c9cdfb]">
-                                <Bell className="size-3.5 shrink-0 text-[#dee0fc]" />
-                                <span>{tr('funds.notFullyPaid')}</span>
-                                {unpaidMembers.slice(0, 8).map((m) => (
-                                    <span key={m.id} className="font-medium text-[#dee0fc]">
-                                        @{m.displayName}
-                                    </span>
-                                ))}
-                                {unpaidMembers.length > 8 && <span>{tr('funds.andMorePeople', { 0: unpaidMembers.length - 8 })}</span>}
-                            </p>
-                        )}
-
-                        <div className="dark overflow-hidden rounded-lg border border-white/10 bg-[#18191c]">
-                            <img
-                                src={previewUrl}
-                                alt={tr('funds.fundReportAlt', { 0: topic.name })}
-                                className="h-auto w-full max-w-3xl object-contain"
-                                loading="lazy"
-                            />
-                        </div>
-                    </div>
+                    <ReportCardPreview
+                        topic={topic}
+                        theme={selectedTheme}
+                        previewUrl={previewUrl}
+                        channelText={topic.reportChannelId ? tr('funds.channelIs', { 0: channelLabel(textChannels, topic.reportChannelId) }) : ''}
+                        mentionUnpaid={mentionUnpaid}
+                        unpaidMembers={unpaidMembers}
+                    />
                 )}
             </CardContent>
         </Card>

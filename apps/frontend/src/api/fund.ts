@@ -1,16 +1,18 @@
 import { tr } from '../lib/i18n';
-import type {
-    AddFundMembersInput,
-    BatchFundPaymentInput,
-    CreateFundPaymentInput,
-    CreateFundTopicInput,
-    FundTopicDetail,
-    FundTopicSummary,
-    SendFundReportInput,
-    SuccessResponse,
-    UpdateFundMemberInput,
-    UpdateFundPaymentInput,
-    UpdateFundTopicInput,
+import {
+    DEFAULT_FUND_REPORT_THEME,
+    type AddFundMembersInput,
+    type BatchFundPaymentInput,
+    type CreateFundPaymentInput,
+    type CreateFundTopicInput,
+    type FundReportThemeId,
+    type FundTopicDetail,
+    type FundTopicSummary,
+    type SendFundReportInput,
+    type SuccessResponse,
+    type UpdateFundMemberInput,
+    type UpdateFundPaymentInput,
+    type UpdateFundTopicInput,
 } from '@notstack/shared';
 import { queryOptions } from '@tanstack/react-query';
 import { api, apiUrl, refreshSession } from '@/lib/api';
@@ -20,6 +22,28 @@ import { guildKey } from './guilds';
 // เก็บเงินตามเป้า — /api/guilds/:guildId/funds/*
 // ==========================================
 const f = (guildId: string, path = '') => `/guilds/${guildId}/funds${path}`;
+
+async function fetchAuthed(url: string): Promise<Response> {
+    let res = await fetch(url, { credentials: 'include' });
+    if (res.status === 401) {
+        const refreshed = await refreshSession();
+        if (refreshed) {
+            res = await fetch(url, { credentials: 'include' });
+        }
+    }
+    return res;
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+}
 
 export const fundsKey = (guildId: string) => [...guildKey(guildId), 'funds'] as const;
 
@@ -47,25 +71,30 @@ export const fundApi = {
     removePayment: (guildId: string, id: number, paymentId: number) =>
         api<SuccessResponse>(f(guildId, `/${id}/payments/${paymentId}/delete`), { method: 'POST' }),
     sendReport: (guildId: string, id: number, input: SendFundReportInput) => api<SuccessResponse>(f(guildId, `/${id}/report`), { body: input }),
-    reportImageUrl: (guildId: string, id: number, version = '') =>
-        apiUrl(`${f(guildId, `/${id}/report-image`)}${version ? `?v=${encodeURIComponent(version)}` : ''}`),
+    reportImageUrl: (guildId: string, id: number, version = '', theme: FundReportThemeId = DEFAULT_FUND_REPORT_THEME) => {
+        const params = new URLSearchParams();
+        params.set('theme', theme);
+        if (version) params.set('v', version);
+        return apiUrl(`${f(guildId, `/${id}/report-image`)}?${params.toString()}`);
+    },
+    downloadReportPng: async (guildId: string, id: number, topicName: string, theme: FundReportThemeId = DEFAULT_FUND_REPORT_THEME) => {
+        const url = fundApi.reportImageUrl(guildId, id, String(Date.now()), theme);
+        const res = await fetchAuthed(url);
+        if (!res.ok) {
+            const errData = (await res.json().catch(() => ({}))) as { message?: string };
+            throw new Error(errData.message || tr('funds.failedToDownloadReportPng'));
+        }
+        const safeName = (topicName || 'fund').replace(/[/\\?%*:|"<>]/g, '_').slice(0, 50);
+        triggerBlobDownload(await res.blob(), `fund-report-${safeName}-${theme}.png`);
+    },
     exportCsv: async (guildId: string, id: number) => {
         const url = apiUrl(f(guildId, `/${id}/export`));
-        let res = await fetch(url, { credentials: 'include' });
-        if (res.status === 401) {
-            const refreshed = await refreshSession();
-            if (refreshed) {
-                res = await fetch(url, { credentials: 'include' });
-            }
-        }
+        const res = await fetchAuthed(url);
         if (!res.ok) {
             const errData = (await res.json().catch(() => ({}))) as { message?: string };
             throw new Error(errData.message || tr('common.failedToDownloadCsv'));
         }
         const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
         const disposition = res.headers.get('Content-Disposition');
         let filename = `fund-${id}.csv`;
         if (disposition) {
@@ -85,10 +114,6 @@ export const fundApi = {
                 }
             }
         }
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
+        triggerBlobDownload(blob, filename);
     },
 };

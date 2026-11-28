@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+    DEFAULT_FUND_REPORT_THEME,
     FUND_LIMITS,
     defaultAvatarUrl,
     fundCsvFilename,
@@ -12,6 +13,7 @@ import {
     type CreateFundTopicData,
     type FundMemberView,
     type FundPaymentView,
+    type FundReportThemeId,
     type FundTopicDetail,
     type FundTopicSummary,
     type SendFundReportInput,
@@ -307,9 +309,14 @@ export class FundService {
     }
 
     // ---------- รายงาน ----------
-    async renderReportImage(guildId: string, topicId: number, compact = false): Promise<Buffer> {
+    async renderReportImage(
+        guildId: string,
+        topicId: number,
+        compact = false,
+        theme: FundReportThemeId = DEFAULT_FUND_REPORT_THEME,
+    ): Promise<Buffer> {
         const detail = await this.detail(guildId, topicId);
-        return renderFundReportCard(detail, compact);
+        return renderFundReportCard(detail, compact, theme);
     }
 
     async sendReport(guildId: string, topicId: number, body: SendFundReportInput): Promise<{ channelName: string }> {
@@ -317,10 +324,11 @@ export class FundService {
         const channelId = body.channelId || detail.reportChannelId;
         if (!channelId) throw badRequest('ยังไม่ได้เลือกห้องส่งรายงานของหัวข้อนี้');
         const channel = await this.assertSendableChannel(guildId, channelId);
+        const theme = body.theme ?? DEFAULT_FUND_REPORT_THEME;
 
         const payload = buildFundReport(detail, { mentionUnpaid: body.mentionUnpaid ?? false });
         try {
-            const image = await renderFundReportCard(detail);
+            const image = await renderFundReportCard(detail, false, theme);
             await channel.send({
                 ...(payload.content ? { content: payload.content } : {}),
                 files: [new AttachmentBuilder(image, { name: 'fund-report.png' })],
