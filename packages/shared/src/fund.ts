@@ -279,10 +279,226 @@ export const batchFundPaymentSchema = z.object({
 export type BatchFundPaymentInput = z.input<typeof batchFundPaymentSchema>;
 export type BatchFundPaymentData = z.output<typeof batchFundPaymentSchema>;
 
+// ==========================================
+// 🎨 REPORT CARD THEMES — ธีมการ์ดรายงานและตัวคำนวณข้อมูลกลางสำหรับทุกธีม
+// ==========================================
+export const FUND_REPORT_THEMES = ['default', 'minimal-finance', 'arcade-quest', 'cozy-journey'] as const;
+export type FundReportThemeId = (typeof FUND_REPORT_THEMES)[number];
+export const DEFAULT_FUND_REPORT_THEME: FundReportThemeId = 'default';
+export const fundReportThemeSchema = z.enum(FUND_REPORT_THEMES);
+
 export const sendFundReportSchema = z.object({
     // ไม่ส่ง = ใช้ห้องรายงานที่ตั้งไว้ในหัวข้อ
     channelId: snowflake.optional(),
     // แท็กคนที่ยังจ่ายไม่ครบในรายงาน
     mentionUnpaid: z.boolean().optional(),
+    // ธีมการ์ดรายงาน (ไม่ส่ง = default)
+    theme: fundReportThemeSchema.optional(),
 });
 export type SendFundReportInput = z.input<typeof sendFundReportSchema>;
+
+export interface FundReportThemePalette {
+    background: string;
+    surface: string;
+    primary: string;
+    secondary: string;
+    accent: string;
+    text: string;
+}
+
+export const FUND_REPORT_THEME_PALETTES: Record<FundReportThemeId, FundReportThemePalette> = {
+    default: {
+        background: '#0F172A',
+        surface: '#15203B',
+        primary: '#10B981',
+        secondary: '#38BDF8',
+        accent: '#F59E0B',
+        text: '#F1F5FB',
+    },
+    'minimal-finance': {
+        background: '#F8F6F0',
+        surface: '#FFFFFF',
+        primary: '#059669',
+        secondary: '#164E3B',
+        accent: '#D4A853',
+        text: '#1F2937',
+    },
+    'arcade-quest': {
+        background: '#17132E',
+        surface: '#241C46',
+        primary: '#22D3EE',
+        secondary: '#8B5CF6',
+        accent: '#FBBF24',
+        text: '#F8FAFC',
+    },
+    'cozy-journey': {
+        background: '#FFF8EA',
+        surface: '#FFFCF5',
+        primary: '#8BAF91',
+        secondary: '#A8D8EA',
+        accent: '#F4B183',
+        text: '#55483E',
+    },
+};
+
+const THEME_SET = new Set<string>(FUND_REPORT_THEMES);
+
+export function isFundReportTheme(value: unknown): value is FundReportThemeId {
+    return typeof value === 'string' && THEME_SET.has(value);
+}
+
+export function resolveFundReportTheme(value?: string | null): FundReportThemeId {
+    if (value === undefined || value === null || value === '') return DEFAULT_FUND_REPORT_THEME;
+    return fundReportThemeSchema.parse(value);
+}
+
+export type FundReportProgressTier = 'low' | 'medium' | 'complete';
+export type FundReportDueTone = 'paid' | 'partial' | 'unpaid' | 'closed' | null;
+
+export interface FundReportDueInfo {
+    dateLabel: string;
+    remainingDaysLabel: string;
+    tone: FundReportDueTone;
+}
+
+export interface FundReportMemberRow {
+    id: number;
+    userId: string;
+    displayName: string;
+    paid: number;
+    target: number;
+    remaining: number;
+    customTarget: boolean;
+    progressRatio: number;
+    progressPct: number;
+    status: FundMemberStatus;
+}
+
+export interface FundReportCardData {
+    title: string;
+    description: string;
+    target: number;
+    collected: number;
+    remaining: number;
+    progressRatio: number;
+    progressPct: number;
+    progressTier: FundReportProgressTier;
+    amountPerMember: number;
+    dailyRate: number | null;
+    rateLabel: string;
+    paidCount: number;
+    memberCount: number;
+    unpaidCount: number;
+    partialCount: number;
+    outstandingMemberCount: number;
+    due: FundReportDueInfo;
+    closed: boolean;
+    isCompleted: boolean;
+    statusLabel: string;
+    members: FundReportMemberRow[];
+    groups: {
+        unpaid: FundReportMemberRow[];
+        partial: FundReportMemberRow[];
+        paid: FundReportMemberRow[];
+    };
+    generatedAtLabel: string;
+}
+
+const BANGKOK_OFFSET_MS = 7 * 3600_000;
+const DAY_MS = 86_400_000;
+
+function bangkokDayKey(date: Date): number {
+    return Math.floor((date.getTime() + BANGKOK_OFFSET_MS) / DAY_MS);
+}
+
+function buildDueInfo(dueDate: string | null, closed: boolean, now: Date): FundReportDueInfo {
+    if (!dueDate) return { dateLabel: 'ไม่กำหนด', remainingDaysLabel: '', tone: null };
+    const due = new Date(dueDate);
+    if (Number.isNaN(due.getTime())) return { dateLabel: 'ไม่กำหนด', remainingDaysLabel: '', tone: null };
+    const dateLabel = due.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' });
+    if (closed) return { dateLabel, remainingDaysLabel: '', tone: 'closed' };
+    const diff = bangkokDayKey(due) - bangkokDayKey(now);
+    if (diff > 0) return { dateLabel, remainingDaysLabel: `อีก ${diff} วัน`, tone: diff <= 3 ? 'partial' : null };
+    if (diff === 0) return { dateLabel, remainingDaysLabel: 'ครบกำหนดวันนี้', tone: 'partial' };
+    return { dateLabel, remainingDaysLabel: `เลยกำหนด ${-diff} วัน`, tone: 'unpaid' };
+}
+
+export function buildFundReportCardData(topic: FundTopicDetail, now = new Date()): FundReportCardData {
+    const target = roundMoney(topic.target);
+    const collected = roundMoney(topic.collected);
+    const remaining = Math.max(0, roundMoney(target - collected));
+    const progressRatio = target > 0 ? Math.max(0, Math.min(1, collected / target)) : topic.memberCount > 0 ? 1 : 0;
+    const progressPct = Math.round(progressRatio * 100);
+    const isCompleted = topic.memberCount > 0 && topic.paidCount === topic.memberCount;
+    let progressTier: FundReportProgressTier = 'low';
+    if (isCompleted || progressPct >= 100) progressTier = 'complete';
+    else if (progressPct >= 40) progressTier = 'medium';
+
+    const dailyRate = topic.dailyRate && topic.dailyRate > 0 ? roundMoney(topic.dailyRate) : null;
+    const amountPerMember = roundMoney(topic.amountPerMember);
+    const rateLabel = dailyRate ? `${formatBaht(dailyRate)}/วัน` : `${formatBaht(amountPerMember)}/คน`;
+
+    const order: Record<FundMemberStatus, number> = { unpaid: 0, partial: 1, paid: 2 };
+    const sorted = [...topic.members].sort(
+        (a, b) => b.remaining - a.remaining || order[a.status] - order[b.status] || a.displayName.localeCompare(b.displayName, 'th'),
+    );
+
+    const members: FundReportMemberRow[] = sorted.map((m) => {
+        const mTarget = roundMoney(m.target);
+        const mPaid = roundMoney(m.paid);
+        const mRemaining = Math.max(0, roundMoney(m.remaining));
+        const mRatio = mTarget > 0 ? Math.max(0, Math.min(1, mPaid / mTarget)) : m.status === 'paid' ? 1 : 0;
+        return {
+            id: m.id,
+            userId: m.userId,
+            displayName: m.displayName,
+            paid: mPaid,
+            target: mTarget,
+            remaining: mRemaining,
+            customTarget: m.customTarget,
+            progressRatio: mRatio,
+            progressPct: Math.round(mRatio * 100),
+            status: m.status,
+        };
+    });
+
+    const unpaid = members.filter((m) => m.status === 'unpaid');
+    const partial = members.filter((m) => m.status === 'partial');
+    const paid = members.filter((m) => m.status === 'paid');
+
+    const statusLabel = topic.closed ? 'ปิดการเก็บแล้ว' : isCompleted ? 'เก็บครบแล้ว' : 'เปิดรับเงิน';
+    const description = topic.description.trim().split(/\r?\n/)[0] ?? '';
+
+    return {
+        title: topic.name,
+        description,
+        target,
+        collected,
+        remaining,
+        progressRatio,
+        progressPct,
+        progressTier,
+        amountPerMember,
+        dailyRate,
+        rateLabel,
+        paidCount: topic.paidCount,
+        memberCount: topic.memberCount,
+        unpaidCount: unpaid.length,
+        partialCount: partial.length,
+        outstandingMemberCount: unpaid.length + partial.length,
+        due: buildDueInfo(topic.dueDate, topic.closed, now),
+        closed: topic.closed,
+        isCompleted,
+        statusLabel,
+        members,
+        groups: { unpaid, partial, paid },
+        generatedAtLabel: now.toLocaleString('th-TH', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            timeZone: 'Asia/Bangkok',
+        }),
+    };
+}

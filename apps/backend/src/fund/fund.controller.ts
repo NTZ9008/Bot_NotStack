@@ -1,8 +1,9 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Res } from '@nestjs/common';
-import type { FundTopicDetail, FundTopicSummary, SuccessResponse } from '@notstack/shared';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, Res } from '@nestjs/common';
+import { DEFAULT_FUND_REPORT_THEME, fundReportThemeSchema, type FundTopicDetail, type FundTopicSummary, type SuccessResponse } from '@notstack/shared';
 import type { Response } from 'express';
 import { Audit, AuditCtx } from '../common/decorators/audit.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { badRequest } from '../common/exceptions/api.exception';
 import type { AuditContext } from '../common/interfaces/app-request.interface';
 import { requireId } from '../common/utils/parse.util';
 import type { User } from '../generated/prisma/client';
@@ -79,8 +80,15 @@ export class FundController {
     }
 
     @Get(':id/report-image')
-    async reportImage(@GuildId() guildId: string, @Param('id') id: string, @Res() res: Response): Promise<void> {
-        const buffer = await this.fund.renderReportImage(guildId, topicId(id));
+    async reportImage(
+        @GuildId() guildId: string,
+        @Param('id') id: string,
+        @Query('theme') theme: string | undefined,
+        @Res() res: Response,
+    ): Promise<void> {
+        const parsed = theme ? fundReportThemeSchema.safeParse(theme) : { success: true as const, data: DEFAULT_FUND_REPORT_THEME };
+        if (!parsed.success) throw badRequest('ไม่พบธีมการ์ดรายงานที่เลือก');
+        const buffer = await this.fund.renderReportImage(guildId, topicId(id), false, parsed.data);
         res.setHeader('Content-Type', 'image/png');
         res.setHeader('Cache-Control', 'no-store');
         res.send(buffer);
