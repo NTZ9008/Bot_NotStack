@@ -364,7 +364,25 @@ export class LevelsService {
             orderBy: { id: 'desc' },
             take: 51,
         });
-        const items = rows.slice(0, 50).map(({ guildId: _guild, ...row }) => ({ ...row, createdAt: row.createdAt.toISOString() }));
+        const page = rows.slice(0, 50);
+        // ชื่อให้หน้าเว็บแสดงแทน ID — สมาชิกจาก cache ของ Discord, แอดมินจากบัญชี Dashboard
+        const userIds = [...new Set(page.map((row) => row.userId))];
+        if (this.discord.ready) await this.discord.cacheMembers(guildId, userIds);
+        const cache = this.discord.guild(guildId)?.members.cache;
+        const actorIds = [...new Set(page.flatMap((row) => (row.actorId === null ? [] : [row.actorId])))];
+        const actors = actorIds.length
+            ? await this.prisma.user.findMany({
+                  where: { id: { in: actorIds } },
+                  select: { id: true, displayName: true, username: true, discordUsername: true },
+              })
+            : [];
+        const actorName = new Map(actors.map((a) => [a.id, a.displayName || a.username || a.discordUsername || `#${a.id}`]));
+        const items = page.map(({ guildId: _guild, ...row }) => ({
+            ...row,
+            createdAt: row.createdAt.toISOString(),
+            username: cache?.get(row.userId)?.displayName ?? null,
+            actorName: row.actorId === null ? null : (actorName.get(row.actorId) ?? null),
+        }));
         return { items, nextCursor: rows.length > 50 ? items.at(-1)!.id : null };
     }
 

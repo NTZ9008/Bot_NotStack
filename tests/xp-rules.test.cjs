@@ -84,3 +84,53 @@ test('invalid ranges, duplicate rule IDs and oversized configurations are reject
         assert.equal(xpSettingsSchema.safeParse(s).success, false);
     }
 });
+
+test('XP history names members from the Discord cache and admins from their dashboard account', async () => {
+    const { LevelsService } = require('../apps/backend/dist/levels/levels.service');
+    const at = new Date('2026-11-28T00:00:00Z');
+    const row = (id, userId, actorId) => ({ id, guildId: 'g', userId, source: 'admin.add', delta: 10, balance: 10, reason: 'r', actorId, createdAt: at });
+    const userQueries = [];
+    const prisma = (rows) => ({
+        xpHistory: { findMany: async () => rows },
+        user: {
+            findMany: async (query) => {
+                userQueries.push(query.where.id.in);
+                return [
+                    { id: 1, displayName: 'Mod Ann', username: 'ann', discordUsername: 'ann#1' },
+                    { id: 2, displayName: null, username: 'bob', discordUsername: null },
+                    { id: 3, displayName: '', username: null, discordUsername: 'carl_dc' },
+                    { id: 4, displayName: null, username: null, discordUsername: null },
+                ];
+            },
+        },
+    });
+    const cached = [];
+    const cache = new Map([['111', { displayName: 'Somchai' }]]);
+    const ready = { ready: true, cacheMembers: async (guild, ids) => cached.push([guild, ids]), guild: () => ({ members: { cache } }) };
+    const rows = [row(9, '111', 1), row(8, '222', 2), row(7, '111', 3), row(6, '333', 4), row(5, '333', null)];
+    const page = await new LevelsService(prisma(rows), ready).history('g', {});
+    assert.deepEqual(cached, [['g', ['111', '222', '333']]]);
+    assert.deepEqual(userQueries, [[1, 2, 3, 4]]);
+    assert.deepEqual(
+        page.items.map((r) => [r.username, r.actorName]),
+        [
+            ['Somchai', 'Mod Ann'],
+            [null, 'bob'],
+            ['Somchai', 'carl_dc'],
+            [null, '#4'],
+            [null, null],
+        ],
+    );
+    assert.equal(page.items[0].createdAt, at.toISOString());
+    assert.equal('guildId' in page.items[0], false);
+    assert.equal(page.nextCursor, null);
+
+    // Discord not connected yet and no admin rows: no member lookups, no user query, more pages → cursor
+    userQueries.length = 0;
+    const many = Array.from({ length: 51 }, (_, i) => row(100 - i, '444', null));
+    const offline = await new LevelsService(prisma(many), { ready: false, guild: () => undefined }).history('g', { cursor: 200 });
+    assert.equal(offline.items.length, 50);
+    assert.equal(offline.items[0].username, null);
+    assert.deepEqual(userQueries, []);
+    assert.equal(offline.nextCursor, offline.items.at(-1).id);
+});

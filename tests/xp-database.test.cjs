@@ -407,3 +407,20 @@ test('HTTP API enforces manage permission, guild boundary and Zod validation', a
         await app.close();
     }
 });
+
+test('history names the member from the Discord cache and the admin from their dashboard account', async () => {
+    const admin = await prisma.user.create({ data: { username: `xp-history-${Date.now()}`, passwordHash: 'unused', displayName: 'Mod Ann' } });
+    try {
+        const cache = new Map([['22222', { displayName: 'Somchai' }]]);
+        const named = new LevelsService(prisma, { ready: null, guild: () => ({ members: { cache } }), homeGuildId: '11111' });
+        await named.mutateMember('11111', mutation('22222', 'add', 50), admin.id);
+        await named.mutateMember('11111', mutation('33333', 'add', 10), admin.id);
+        const [unknown, known] = (await named.history('11111', {})).items;
+        assert.equal(known.username, 'Somchai');
+        assert.equal(known.actorName, 'Mod Ann');
+        // left the server → null, the page falls back to the ID (a deleted admin account sets actor_id to NULL via the FK)
+        assert.equal(unknown.username, null);
+    } finally {
+        await prisma.user.delete({ where: { id: admin.id } });
+    }
+});
